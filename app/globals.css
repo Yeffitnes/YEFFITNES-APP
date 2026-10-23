@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body { @apply bg-surface text-[#12141B] antialiased; }
+.btn-primary { @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-neon to-rose px-6 py-3 font-bold text-white disabled:opacity-60; }
+.input { @apply w-full rounded-xl border border-line bg-white px-4 py-3 text-sm outline-none focus:border-neon; }
