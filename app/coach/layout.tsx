@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
+import { Providers } from "@/components/Providers";
 import { SideNav, MobileNav } from "@/components/coach/CoachNav";
 import { initials } from "@/lib/format";
 import "./coach.css";
@@ -20,7 +21,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
           <form action={signOut}><button style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Salir</button></form>
         </div>
       </aside>
-      <main className="main"><MobileNav />{children}</main>
+      <main className="main"><MobileNav /><Providers workspaceId={profile.workspace_id}>{children}</Providers></main>
     </div>
   );
 }

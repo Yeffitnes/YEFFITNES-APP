@@ -27,3 +27,8 @@ Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flu
 - Shell del coach y pantallas Clientes, Ejercicios y Rutinas copiadas del diseño (coach.css viene de los mockups).
 - Migración 0003: exercises, routine_templates, template_items + RLS, y trigger que quita la ficha de cliente a un coach.
 - Pendiente de la Fase 2: asignar rutinas a clientes (clonado por cliente), dashboard con cola de revisión.
+
+## Rework de rendimiento (23-oct-2026)
+- Diagnóstico: sesión y perfil repetidos por pantalla, filtros por servidor, sin cargas visibles. Supabase en us-east-1; Netlify en Ohio (cercanos).
+- Cambio: lectura/escritura desde el navegador con RLS, caché (TanStack Query), precarga, modales del diseño, 0004 save_routine.
+- Pendiente de verificar en producción: tiempos reales tras redeploy.
