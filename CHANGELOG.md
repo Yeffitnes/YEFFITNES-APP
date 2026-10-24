@@ -1,7 +1,7 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
-## 2026-10-23 · Entrenamiento por días en la ficha del cliente
+## 2026-10-23 · 44bf02b · Entrenamiento por días en la ficha del cliente
 - Pestaña **Entrenamiento** según mockup: plan activo, historial, días LUN–DOM, asignar rutina a un día (clona la plantilla para poder cambiar pesos solo en ese cliente), peso objetivo por ejercicio.
 - SQL: `0005_training_plans.sql` (tablas `training_plans`, `plan_days`, `plan_items`; funciones `my_client_id`, `create_training_plan`, `assign_day`; RLS coach y lectura del cliente).
 - Código: `components/coach/TrainingTab.tsx`, `lib/queries.ts`, `components/coach/ClientFicha.tsx`.
