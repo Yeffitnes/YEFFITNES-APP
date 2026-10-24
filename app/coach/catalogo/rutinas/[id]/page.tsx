@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SubmitButton } from "@/components/coach/SubmitButton";
 import { requireUser } from "@/lib/session";
 import { RoutineForm } from "@/components/coach/RoutineForm";
 import { archiveRoutine, saveRoutine } from "../../actions";
@@ -28,7 +29,7 @@ export default async function RutinaForm({ params, searchParams }: { params: { i
             {lab("Duración aproximada (minutos)")}<input name="est_minutes" type="number" min={1} defaultValue={r?.est_minutes ?? ""} style={F} />
             <RoutineForm exercises={exs} initial={items.map((i) => ({ exercise_id: i.exercise_id, sets: i.sets, reps: i.reps, rest_seconds: i.rest_seconds }))} />
             {searchParams.error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{ERR[searchParams.error] ?? ERR.guardar}</p>}
-            <button className="primary-btn" style={{ marginTop: 18 }}>Guardar rutina</button>
+            <SubmitButton style={{ marginTop: 18 }}>Guardar rutina</SubmitButton>
           </form>
           {!isNew && <form action={archiveRoutine} style={{ marginTop: 14 }}><input type="hidden" name="id" value={r!.id} /><button className="ghost-btn" style={{ color: "var(--danger)" }}>Archivar rutina</button></form>}
         </div>)}

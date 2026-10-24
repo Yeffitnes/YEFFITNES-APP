@@ -15,7 +15,8 @@ export async function middleware(req: NextRequest) {
       },
     },
   });
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub;
   if (!user && PROTECTED.some((p) => req.nextUrl.pathname.startsWith(p))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }

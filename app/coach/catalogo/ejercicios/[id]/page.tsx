@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SubmitButton } from "@/components/coach/SubmitButton";
 import { requireUser } from "@/lib/session";
 import { archiveExercise, saveExercise } from "../../actions";
 const ERR: Record<string, string> = { nombre: "Escribe el nombre del ejercicio.", video: "Ese enlace de YouTube no es válido.", guardar: "No pudimos guardar. Inténtalo de nuevo." };
@@ -25,7 +26,7 @@ export default async function EjercicioForm({ params, searchParams }: { params: 
           {lab("Enlace de YouTube (opcional)")}<input name="video" defaultValue={e?.video_ref ? `https://youtu.be/${e.video_ref}` : ""} placeholder="https://youtu.be/..." style={F} />
           {lab("Instrucciones (opcional)")}<textarea name="instructions" defaultValue={e?.instructions ?? ""} rows={4} style={{ ...F, height: "auto", padding: 12 }} />
           {searchParams.error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, marginTop: 12 }}>{ERR[searchParams.error] ?? ERR.guardar}</p>}
-          <button className="primary-btn" style={{ marginTop: 18 }}>Guardar ejercicio</button>
+          <SubmitButton style={{ marginTop: 18 }}>Guardar ejercicio</SubmitButton>
         </form>
         {!isNew && <form action={archiveExercise} style={{ marginTop: 14 }}><input type="hidden" name="id" value={e!.id} /><button className="ghost-btn" style={{ color: "var(--danger)" }}>Archivar ejercicio</button></form>}
       </div>

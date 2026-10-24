@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SubmitButton } from "@/components/coach/SubmitButton";
 import { requireUser } from "@/lib/session";
 import { initials } from "@/lib/format";
 import { setClientPlan } from "../actions";
@@ -25,7 +26,7 @@ export default async function Ficha({ params, searchParams }: { params: { id: st
           <select name="planId" defaultValue={c.plan_id ?? ""} style={{ height: 38, borderRadius: 11, border: "1px solid var(--line)", padding: "0 12px", fontSize: 13, flex: 1 }}>
             <option value="">Sin plan (pendiente)</option>{plans?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <button className="primary-btn">Guardar</button>
+          <SubmitButton>Guardar</SubmitButton>
         </form>
         {searchParams.ok && <p style={{ color: "var(--accent)", fontSize: 13, marginTop: 10 }}>Cambios guardados.</p>}
         {searchParams.error && <p role="alert" style={{ color: "var(--danger)", fontSize: 13, marginTop: 10 }}>No pudimos guardar. Inténtalo de nuevo.</p>}
