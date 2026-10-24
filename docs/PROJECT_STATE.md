@@ -43,3 +43,7 @@ Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flu
 - Portal del cliente "Hoy" hecho (migración 0006). Migraciones vigentes: 0001–0006.
 - Siguiente: reporte diario con vídeo (Bunny: firma de subida en servidor + borrado automático) → dashboard con cola de revisión (ya hay datos de series y esfuerzo) → nutrición → progreso → agenda → material → onboarding.
 - Por validar tras redeploy: flujo completo cliente (asignar plan y rutina desde el coach, registrar series, terminar entrenamiento, ver el resultado).
+
+## Actualización 24-oct-2026 (2)
+- Dashboard + ciclo de revisión hechos (migración 0007). Migraciones vigentes: 0001–0007.
+- Siguiente: reporte diario con vídeo (Bunny) → nutrición → progreso → agenda → material → onboarding → confirmación de correo y Supabase Pro antes de lanzar.

@@ -21,7 +21,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
           <form action={signOut}><button style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Salir</button></form>
         </div>
       </aside>
-      <main className="main"><MobileNav /><Providers workspaceId={profile.workspace_id}>{children}</Providers></main>
+      <main className="main"><MobileNav /><Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name}>{children}</Providers></main>
     </div>
   );
 }

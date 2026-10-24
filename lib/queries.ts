@@ -153,14 +153,14 @@ export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileI
   return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [] };
 } });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
-export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; sets: SetLog[] };
-type LogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; set_logs: { plan_item_id: string | null; set_number: number; reps: number | null; weight: number | null }[] };
+export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; sets: SetLog[] };
+type LogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_comment: string | null; set_logs: { plan_item_id: string | null; set_number: number; reps: number | null; weight: number | null }[] };
 export const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<WorkoutLog[]> => {
   const since = new Date(); since.setDate(since.getDate() - 90);
-  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,set_logs(plan_item_id,set_number,reps,weight)").eq("client_id", clientId).gte("log_date", localDate(since)).order("log_date", { ascending: false });
+  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_comment,set_logs(plan_item_id,set_number,reps,weight)").eq("client_id", clientId).gte("log_date", localDate(since)).order("log_date", { ascending: false });
   if (error) throw error;
-  return (data as unknown as LogRaw[]).map((l) => ({ id: l.id, date: l.log_date, effort: l.effort, note: l.note, completed: !!l.completed_at, sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, setNumber: s.set_number, reps: s.reps, weight: s.weight })) }));
+  return (data as unknown as LogRaw[]).map((l) => ({ id: l.id, date: l.log_date, effort: l.effort, note: l.note, completed: !!l.completed_at, coachComment: l.coach_comment, sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, setNumber: s.set_number, reps: s.reps, weight: s.weight })) }));
 } });
 export function useLogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
@@ -173,7 +173,7 @@ export function useLogSet(clientId: string) {
       qc.setQueryData<WorkoutLog[]>(key, (l = []) => {
         const s: SetLog = { itemId: v.itemId, setNumber: v.setNumber, reps: v.reps, weight: v.weight };
         const has = l.some((x) => x.date === v.date);
-        const base = has ? l : [{ id: "tmp", date: v.date, effort: null, note: null, completed: false, sets: [] }, ...l];
+        const base = has ? l : [{ id: "tmp", date: v.date, effort: null, note: null, completed: false, coachComment: null, sets: [] }, ...l];
         return base.map((x) => (x.date === v.date ? { ...x, sets: [...x.sets.filter((y) => !(y.itemId === v.itemId && y.setNumber === v.setNumber)), s] } : x));
       });
       return { prev };
@@ -188,5 +188,33 @@ export function useFinish(clientId: string) {
     mutationFn: async (v: { date: string; effort: number; note: string }) => { const { error } = await db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note }); if (error) throw error; },
     onSuccess: () => { toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
     onError: () => toast("No pudimos guardar tu entrenamiento. Revisa tu conexión e inténtalo de nuevo.", true),
+  });
+}
+
+// ---- Revisión del coach (dashboard y ficha) ----
+export type RecentLog = { id: string; clientId: string; clientName: string; date: string; routine: string | null; effort: number | null; completed: boolean; completedAt: string | null; seen: boolean };
+type RecentRaw = { id: string; client_id: string; log_date: string; effort: number | null; completed_at: string | null; coach_seen_at: string | null; plan_days: { name: string } | null; clients: { profiles: { full_name: string } | null } | null };
+export const useRecentLogs = () => useQuery({ queryKey: ["recent-logs"], staleTime: 30_000, queryFn: async (): Promise<RecentLog[]> => {
+  const since = new Date(); since.setDate(since.getDate() - 21);
+  const { data, error } = await db().from("workout_logs").select("id,client_id,log_date,effort,completed_at,coach_seen_at,plan_days(name),clients(profiles(full_name))").gte("log_date", localDate(since)).order("log_date", { ascending: false }).limit(300);
+  if (error) throw error;
+  return (data as unknown as RecentRaw[]).map((l) => ({ id: l.id, clientId: l.client_id, clientName: l.clients?.profiles?.full_name || "Cliente", date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, completed: !!l.completed_at, completedAt: l.completed_at, seen: !!l.coach_seen_at }));
+} });
+export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: async (): Promise<string[]> => {
+  const { data, error } = await db().from("training_plans").select("client_id").eq("status", "active"); if (error) throw error; return (data as unknown as { client_id: string }[]).map((r) => r.client_id);
+} });
+export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; sets: { exercise: string; n: number; reps: number | null; weight: number | null }[] };
+type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null }[] };
+export const useClientLogs = (clientId: string) => useQuery({ queryKey: ["client-logs", clientId], staleTime: 30_000, queryFn: async (): Promise<ClientLog[]> => {
+  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,plan_days(name),set_logs(exercise_name,set_number,reps,weight)").eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
+  if (error) throw error;
+  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight })) }));
+} });
+export function useReviewWorkout(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { id: string; comment: string }) => { const { error } = await db().rpc("review_workout", { p_log: v.id, p_comment: v.comment }); if (error) throw error; },
+    onSuccess: () => { toast("Revisión guardada"); qc.invalidateQueries({ queryKey: ["client-logs", clientId] }); qc.invalidateQueries({ queryKey: ["recent-logs"] }); },
+    onError: () => toast("No pudimos guardar la revisión. Inténtalo de nuevo.", true),
   });
 }

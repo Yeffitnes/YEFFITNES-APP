@@ -1,6 +1,13 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-24 · Dashboard con cola de revisión y ciclo de revisión
+- `/coach` ahora es el dashboard del mockup: 4 indicadores (clientes activos, entrenaron hoy, revisiones pendientes, clientes por revisar), lista "Clientes por revisar" ordenada por urgencia y "Actividad" reciente. Solo datos reales.
+- Reglas de atención (`lib/attention.ts`, sin IA): entrenamientos sin revisar (urgente si esfuerzo ≥ 9), cliente activo sin plan de entrenamiento, y días sin entrenar (≥ 3; urgente desde 5).
+- En la ficha del cliente (Resumen): "Entrenamientos recientes" con series, peso, esfuerzo y comentario del cliente; Jeff escribe su comentario y marca revisado. El cliente lo ve en Hoy ("Comentario de tu coach").
+- SQL: `0007_review_loop.sql` (columnas `coach_seen_at`, `coach_comment`; trigger que impide que un cliente las escriba; función `review_workout`; política de UPDATE del coach).
+- Revertir código: `git revert` del commit. Revertir SQL: `drop function review_workout; drop trigger wl_protect on workout_logs; drop function protect_coach_columns; drop policy wl_coach_upd on workout_logs; alter table workout_logs drop column coach_seen_at, drop column coach_comment;`.
+
 ## 2026-10-24 · 0a4bcdd · Portal del cliente: pantalla "Hoy" con registro de series
 - Portal `/inicio` copiado de `design/mockups/portal-hoy.html` (menú lateral, barra inferior móvil, saludo, racha y semana, tarjeta "Rutina de hoy"). El cliente despliega un ejercicio, registra repeticiones y peso real por serie, y al final marca esfuerzo 1–10 y un comentario opcional para Jeff.
 - Solo se muestran tarjetas con datos reales (sesión, objetivo, nutrición y progreso se agregarán cuando existan sus datos). Sin plan "training": bloqueo borroso. Sin rutina asignada: estado vacío.

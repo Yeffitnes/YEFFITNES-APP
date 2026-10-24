@@ -9,9 +9,9 @@ const I = {
   ag: <><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5" /><line x1="3.2" y1="7.6" x2="16.8" y2="7.6" /></>,
   mat: <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z" />,
 };
-type Item = { href?: string; label: string; icon: keyof typeof I; sub?: boolean; badge?: number };
+type Item = { href?: string; label: string; icon: keyof typeof I; sub?: boolean; exact?: boolean };
 const GROUPS: { label?: string; items: Item[] }[] = [
-  { items: [{ label: "Dashboard", icon: "dash" }, { href: "/coach/clientes", label: "Clientes", icon: "cli" }] },
+  { items: [{ href: "/coach", label: "Dashboard", icon: "dash", exact: true }, { href: "/coach/clientes", label: "Clientes", icon: "cli" }] },
   { label: "Catálogo", items: [{ href: "/coach/catalogo/ejercicios", label: "Ejercicios", icon: "ex", sub: true }, { href: "/coach/catalogo/rutinas", label: "Rutinas", icon: "rut", sub: true }] },
   { label: "Operación", items: [{ label: "Agenda", icon: "ag" }, { label: "Material educativo", icon: "mat" }] },
 ];
@@ -27,7 +27,7 @@ export function SideNav({ clientCount }: { clientCount: number }) {
               const svg = <svg viewBox="0 0 20 20">{I[it.icon]}</svg>;
               const cls = `side-link${it.sub ? " sub" : ""}`;
               if (!it.href) return <span key={it.label} className={cls} style={{ opacity: 0.35, cursor: "default" }}>{svg}{it.label}<span className="badge">Pronto</span></span>;
-              return <Link key={it.label} href={it.href} className={`${cls}${path.startsWith(it.href) ? " active" : ""}`}>{svg}{it.label}{it.label === "Clientes" && <span className="badge">{clientCount}</span>}</Link>;
+              return <Link key={it.label} href={it.href} className={`${cls}${(it.exact ? path === it.href : path.startsWith(it.href)) ? " active" : ""}`}>{svg}{it.label}{it.label === "Clientes" && <span className="badge">{clientCount}</span>}</Link>;
             })}
           </nav>
         </div>
@@ -37,6 +37,6 @@ export function SideNav({ clientCount }: { clientCount: number }) {
 }
 export function MobileNav() {
   const path = usePathname();
-  const L = [["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"]];
-  return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} className={path.startsWith(h) ? "active" : ""}>{t}</Link>)}</nav>;
+  const L = [["/coach", "Dashboard"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"]];
+  return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}</Link>)}</nav>;
 }

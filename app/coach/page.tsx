@@ -1,2 +1,2 @@
-import { redirect } from "next/navigation";
-export default function CoachHome() { redirect("/coach/clientes"); }
+import { DashboardView } from "@/components/coach/DashboardView";
+export default function Page() { return <DashboardView />; }

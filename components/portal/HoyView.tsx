@@ -68,6 +68,7 @@ function Routine({ cid, title, items, log, today }: { cid: string; title: string
           </div>
           {open === i.id && <div className="ex-panel">{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} />)}</div>}
         </div>))}</div>
+      {log?.coachComment && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}</div>}
       <div style={{ marginTop: 18 }}>
         {closed ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><span className="pill-done">COMPLETADO · ESFUERZO {log?.effort}/10</span><button className="mini-btn ghost" onClick={() => setEditing(true)}>Editar</button></div> : (
           <>

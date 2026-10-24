@@ -7,7 +7,7 @@ Origen: extraídas de la propuesta comercial (`APROPUESTA-YEFFITNES.html`, repo 
 |---|---|---|
 | coach-clientes | /coach/clientes y /coach/clientes/[id] | lista y ficha hechas; pestañas pendientes salvo Resumen y Entrenamiento |
 | coach-catalogo | /coach/catalogo/ejercicios y /rutinas | hecho (formularios en modal, no diseñados en el mockup) |
-| coach-dashboard | /coach | pendiente (cola de revisión; necesita reportes diarios) |
+| coach-dashboard | /coach | hecho con datos reales (indicadores, clientes por revisar, actividad); pendientes: agenda del día y aviso de disponibilidad |
 | coach-agenda | /coach/agenda | pendiente |
 | coach-material | /coach/material | pendiente |
 | portal-hoy | /inicio | hecho: saludo, racha, semana y rutina de hoy con registro de series; faltan tarjetas de sesión, objetivo, nutrición, progreso y vídeo de la semana |
