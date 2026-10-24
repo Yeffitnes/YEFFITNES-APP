@@ -66,7 +66,7 @@ Tokens (`tailwind.config.ts`, `coach.css`): neon `#F7254B`, rose `#F2406B`, oro 
 
 ## 9. Puesta en marcha desde cero
 1. Supabase: crear proyecto; Auth → desactivar "Confirm email" (solo pruebas).
-2. SQL Editor: ejecutar en orden `supabase/migrations/0001…` (todas las numeradas). Luego los DATOS INICIALES de 0001 (espacio de trabajo con el WhatsApp) y `0002` (planes) **después** de crear el espacio.
+2. SQL Editor: ejecutar en orden `supabase/migrations/0001…` (todas las numeradas, hoy 0001–0006). Luego los DATOS INICIALES de 0001 (espacio de trabajo con el WhatsApp) y `0002` (planes) **después** de crear el espacio.
 3. Netlify: importar el repo, cargar las 3 variables, desplegar.
 4. Registrar el correo de Jeff y: `update public.profiles set role='coach' where id=(select id from auth.users where email='…');`
 5. Probar con un segundo correo (cliente) en ventana de incógnito.

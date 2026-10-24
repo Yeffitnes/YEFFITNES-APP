@@ -1,6 +1,13 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-24 · Portal del cliente: pantalla "Hoy" con registro de series
+- Portal `/inicio` copiado de `design/mockups/portal-hoy.html` (menú lateral, barra inferior móvil, saludo, racha y semana, tarjeta "Rutina de hoy"). El cliente despliega un ejercicio, registra repeticiones y peso real por serie, y al final marca esfuerzo 1–10 y un comentario opcional para Jeff.
+- Solo se muestran tarjetas con datos reales (sesión, objetivo, nutrición y progreso se agregarán cuando existan sus datos). Sin plan "training": bloqueo borroso. Sin rutina asignada: estado vacío.
+- SQL: `0006_workout_logs.sql` (`workout_logs`, `set_logs`, `client_has_feature`, `log_set`, `finish_workout`, lectura de `exercises` para el cliente con plan; RLS: el plan se valida en la base).
+- Código: `app/inicio/*`, `components/portal/*`, `lib/queries.ts` (useMe, useLogs, useLogSet, useFinish), `components/Providers.tsx` (perfil y precarga opcional).
+- Revertir código: `git revert` del commit. Revertir SQL: `drop function finish_workout, log_set, client_has_feature; drop table set_logs, workout_logs; drop policy ex_client_read on public.exercises;` (borra los registros de entrenamiento).
+
 ## 2026-10-23 · 44bf02b · Entrenamiento por días en la ficha del cliente
 - Pestaña **Entrenamiento** según mockup: plan activo, historial, días LUN–DOM, asignar rutina a un día (clona la plantilla para poder cambiar pesos solo en ese cliente), peso objetivo por ejercicio.
 - SQL: `0005_training_plans.sql` (tablas `training_plans`, `plan_days`, `plan_items`; funciones `my_client_id`, `create_training_plan`, `assign_day`; RLS coach y lectura del cliente).

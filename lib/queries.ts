@@ -109,7 +109,7 @@ export const fetchTrainingPlans = async (clientId: string): Promise<TrainingPlan
   return (data as unknown as PlanRaw[]).map((p) => ({ id: p.id, name: p.name, status: p.status, startsOn: p.starts_on, endsOn: p.ends_on,
     days: p.plan_days.map((d) => ({ id: d.id, weekday: d.weekday, name: d.name, items: d.plan_items.sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, position: i.position, sets: i.sets, reps: i.reps, rest: i.rest_seconds, weight: i.target_weight, name: i.exercises?.name ?? "—" })) })) }));
 };
-export const useTrainingPlans = (clientId: string) => useQuery({ queryKey: ["plans-of", clientId], queryFn: () => fetchTrainingPlans(clientId), staleTime: 60_000 });
+export const useTrainingPlans = (clientId: string) => useQuery({ queryKey: ["plans-of", clientId], queryFn: () => fetchTrainingPlans(clientId), staleTime: 60_000, enabled: !!clientId });
 export function useCreatePlan(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
@@ -141,5 +141,52 @@ export function useSetWeight(clientId: string) {
     onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<TrainingPlan[]>(key);
       qc.setQueryData<TrainingPlan[]>(key, (l) => l?.map((p) => ({ ...p, days: p.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === v.itemId ? { ...i, weight: v.weight } : i)) })) }))); return { prev }; },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar el peso. Inténtalo de nuevo.", true); },
+  });
+}
+
+// ---- Portal del cliente ----
+export type Me = { id: string; status: string; planName: string | null; features: string[] };
+export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 300_000, queryFn: async (): Promise<Me | null> => {
+  const { data, error } = await db().from("clients").select("id,status,plans(name,features)").eq("profile_id", profileId).maybeSingle();
+  if (error) throw error; if (!data) return null;
+  const p = (data as unknown as { plans: { name: string; features: string[] } | null }).plans;
+  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [] };
+} });
+export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
+export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; sets: SetLog[] };
+type LogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; set_logs: { plan_item_id: string | null; set_number: number; reps: number | null; weight: number | null }[] };
+export const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<WorkoutLog[]> => {
+  const since = new Date(); since.setDate(since.getDate() - 90);
+  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,set_logs(plan_item_id,set_number,reps,weight)").eq("client_id", clientId).gte("log_date", localDate(since)).order("log_date", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as LogRaw[]).map((l) => ({ id: l.id, date: l.log_date, effort: l.effort, note: l.note, completed: !!l.completed_at, sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, setNumber: s.set_number, reps: s.reps, weight: s.weight })) }));
+} });
+export function useLogSet(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
+  return useMutation({
+    mutationFn: async (v: { date: string; itemId: string; setNumber: number; reps: number; weight: number | null }) => {
+      const { error } = await db().rpc("log_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber, p_reps: v.reps, p_weight: v.weight }); if (error) throw error;
+    },
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
+      qc.setQueryData<WorkoutLog[]>(key, (l = []) => {
+        const s: SetLog = { itemId: v.itemId, setNumber: v.setNumber, reps: v.reps, weight: v.weight };
+        const has = l.some((x) => x.date === v.date);
+        const base = has ? l : [{ id: "tmp", date: v.date, effort: null, note: null, completed: false, sets: [] }, ...l];
+        return base.map((x) => (x.date === v.date ? { ...x, sets: [...x.sets.filter((y) => !(y.itemId === v.itemId && y.setNumber === v.setNumber)), s] } : x));
+      });
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar la serie. Revisa tu conexión e inténtalo de nuevo.", true); },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  });
+}
+export function useFinish(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { date: string; effort: number; note: string }) => { const { error } = await db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note }); if (error) throw error; },
+    onSuccess: () => { toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
+    onError: () => toast("No pudimos guardar tu entrenamiento. Revisa tu conexión e inténtalo de nuevo.", true),
   });
 }

@@ -10,7 +10,7 @@ Origen: extraídas de la propuesta comercial (`APROPUESTA-YEFFITNES.html`, repo 
 | coach-dashboard | /coach | pendiente (cola de revisión; necesita reportes diarios) |
 | coach-agenda | /coach/agenda | pendiente |
 | coach-material | /coach/material | pendiente |
-| portal-hoy | /inicio | pendiente |
+| portal-hoy | /inicio | hecho: saludo, racha, semana y rutina de hoy con registro de series; faltan tarjetas de sesión, objetivo, nutrición, progreso y vídeo de la semana |
 | portal-mi-plan | /inicio/plan | pendiente |
 | portal-progreso | /inicio/progreso | pendiente |
 | portal-agenda | /inicio/agenda | pendiente |
