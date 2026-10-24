@@ -6,6 +6,6 @@ export async function requireUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const { data: profile } = await supabase.from("profiles").select("id, role, full_name, workspace_id").eq("id", user.id).single();
-  if (!profile) redirect("/login");
+  if (!profile) redirect("/sin-perfil");
   return { supabase, user, profile };
 }

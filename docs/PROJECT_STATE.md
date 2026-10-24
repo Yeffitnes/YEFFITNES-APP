@@ -22,3 +22,8 @@ Actualizado: 21-oct-2026
 
 ## Siguiente paso
 Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flujo.
+
+## Fase 2A (21-oct-2026)
+- Shell del coach y pantallas Clientes, Ejercicios y Rutinas copiadas del diseño (coach.css viene de los mockups).
+- Migración 0003: exercises, routine_templates, template_items + RLS, y trigger que quita la ficha de cliente a un coach.
+- Pendiente de la Fase 2: asignar rutinas a clientes (clonado por cliente), dashboard con cola de revisión.
