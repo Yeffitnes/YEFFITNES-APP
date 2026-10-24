@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yeffitnes.training — Portal del cliente · Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910;
+    --neon:#F7254B;
+    --rose:#F2406B;
+    --gold-deep:#8D6526;--pearl:#CDB170;
+    --surface:#F5F6FA;
+    --paper:#FFFFFF;
+    --text:#12141B;
+    --text-dim:#5B6172;
+    --text-faint:#9AA0AE;
+    --accent:#D41A40;
+    --garnet:#9C1535;
+    --line:#E1E3EC;
+    --ok:#3EEB8C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{
+    font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;
+    background:var(--surface); color:var(--text);
+  }
+  a{color:inherit; text-decoration:none;}
+  button{font:inherit;}
+
+  /* ================= SHELL ================= */
+  .shell{display:grid; grid-template-columns:236px 1fr; min-height:100vh;}
+
+  /* ---- Sidebar (desktop) ---- */
+  .sidebar{
+    background:var(--paper); border-right:1px solid var(--line);
+    padding:26px 18px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh;
+  }
+  .side-logo{
+    display:flex; align-items:center; gap:9px; padding:6px 10px 22px;
+    font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;
+  }
+  .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
+  .side-logo span.faint{color:var(--text-faint); font-weight:400;}
+
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .side-link{
+    display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px;
+    font-size:13.5px; font-weight:600; color:var(--text-dim); position:relative;
+    transition:background 0.18s ease, color 0.18s ease;
+  }
+  .side-link svg{width:18px; height:18px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.6;}
+  .side-link:hover{background:rgba(212,26,64,0.06); color:var(--text);}
+  .side-link.active{background:rgba(212,26,64,0.09); color:var(--accent);}
+  .side-link.active::before{
+    content:''; position:absolute; left:-18px; top:50%; transform:translateY(-50%);
+    width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg,var(--neon),var(--rose));
+  }
+
+  .side-spacer{flex:1;}
+
+  .side-client{
+    display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px;
+    background:var(--surface); margin-top:12px;
+  }
+  .side-avatar{
+    width:34px; height:34px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--neon),var(--rose));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13px; color:#fff;
+  }
+  .side-client-name{font-size:12.5px; font-weight:700;}
+  .side-client-plan{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); margin-top:1px;}
+
+  /* ================= MAIN ================= */
+  .main{padding:30px 36px 90px; max-width:1100px; width:100%; min-width:0;}
+
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; gap:16px;}
+  .greeting-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.07em; text-transform:uppercase;
+    color:var(--accent); margin-bottom:6px;
+  }
+  .greeting h1{
+    font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:26px; letter-spacing:-0.02em;
+  }
+  .greeting-sub{font-size:13.5px; color:var(--text-dim); margin-top:5px;}
+
+  .topbar-actions{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--paper);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:border-color 0.2s ease, transform 0.2s ease;
+  }
+  .icon-btn:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .icon-btn svg{width:17px; height:17px; stroke:var(--text); fill:none; stroke-width:1.6;}
+  .wa-btn{
+    display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px;
+    background:var(--ink); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+  }
+  .wa-btn:hover{opacity:0.88; transform:translateY(-1px);}
+  .wa-btn svg{width:15px; height:15px; stroke:#fff; fill:none; stroke-width:1.7;}
+
+  /* ---- Day selector ---- */
+  .day-selector{
+    display:flex; gap:8px; margin-bottom:22px; overflow-x:auto; padding-bottom:2px;
+  }
+  .day-pill{
+    flex:1; min-width:74px; background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:12px 10px; cursor:pointer; text-align:center; transition:border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    overflow:hidden;
+  }
+  .day-pill:hover{transform:translateY(-2px);}
+  .day-pill.active{background:var(--ink); border-color:var(--ink);}
+  .day-label{font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.05em; color:var(--text-faint);}
+  .day-pill.active .day-label{color:rgba(255,255,255,0.5);}
+  .day-tag{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:12.5px; margin-top:5px; color:var(--text); line-height:1.2;}
+  .day-pill.active .day-tag{color:#fff;}
+  .day-dot{width:5px; height:5px; border-radius:50%; margin:6px auto 0; background:var(--line);}
+  .day-pill[data-rest="0"] .day-dot{background:linear-gradient(135deg,var(--neon),var(--rose));}
+  .day-pill.active .day-dot{background:#fff;}
+
+  /* ---- Plan grid ---- */
+  .plan-grid{display:grid; grid-template-columns:1.55fr 1fr; gap:18px; align-items:start;}
+  .card{
+    background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:24px;
+    opacity:0; transform:translateY(10px); transition:opacity 0.5s ease, transform 0.5s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .card.in-view{opacity:1; transform:translateY(0);}
+  .card:hover{box-shadow:0 16px 34px -18px rgba(42,10,22,0.18); border-color:#DBDEE8;}
+  .card-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--accent); display:flex; align-items:center; gap:6px; margin-bottom:10px;
+  }
+  .card-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:18px;}
+  .card-meta{font-size:12.5px; color:var(--text-dim); margin-top:4px;}
+  .card-link{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--accent); display:inline-flex;
+    align-items:center; gap:5px; margin-top:16px; cursor:pointer;
+  }
+  .card-link svg{width:10px; height:10px; stroke:currentColor; fill:none; stroke-width:2; transition:transform 0.2s ease;}
+  .card-link:hover svg{transform:translateX(3px);}
+
+  /* Day detail card */
+  .card-day{display:flex; flex-direction:column;}
+  .routine-progress-bar{height:5px; border-radius:4px; background:var(--surface); margin-top:16px; overflow:hidden;}
+  .routine-progress-fill{
+    height:100%; border-radius:4px; background:linear-gradient(90deg,var(--neon),var(--pearl));
+    width:0%; transition:width 0.5s cubic-bezier(0.2,0.8,0.2,1);
+  }
+  .routine-progress-count{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); margin-top:8px;}
+  .exercise-list{margin-top:16px; display:flex; flex-direction:column;}
+  .ex-row{
+    display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #EFF0F4;
+    cursor:pointer; user-select:none;
+  }
+  .ex-row:last-child{border-bottom:none;}
+  .ex-thumb{
+    width:38px; height:38px; border-radius:10px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:700; color:#fff;
+  }
+  .ex-check{
+    width:19px; height:19px; border-radius:50%; border:1.6px solid #D7DAE3; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; transition:background 0.2s ease, border-color 0.2s ease;
+  }
+  .ex-check svg{width:10px; height:10px; opacity:0; stroke:#fff; fill:none; stroke-width:2.6; transition:opacity 0.15s ease;}
+  .ex-row.done .ex-check{background:var(--accent); border-color:var(--accent);}
+  .ex-row.done .ex-check svg{opacity:1;}
+  .ex-body{flex:1;}
+  .ex-name{font-size:13.5px; font-weight:600; transition:color 0.2s ease, text-decoration-color 0.2s ease;}
+  .ex-row.done .ex-name{color:var(--text-faint); text-decoration:line-through; text-decoration-color:#D7DAE3;}
+  .ex-sub{font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+  .ex-meta{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-faint); text-align:right;}
+
+  .ex-row-static{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #EFF0F4;}
+  .ex-row-static:last-child{border-bottom:none;}
+  .ex-row-static .ex-dot{width:6px; height:6px; border-radius:50%; background:#D7DAE3; flex-shrink:0;}
+
+  .rest-card{display:flex; flex-direction:column; align-items:flex-start; padding:40px 24px;}
+  .rest-icon{
+    width:44px; height:44px; border-radius:14px; background:var(--surface); display:flex; align-items:center;
+    justify-content:center; margin-bottom:16px;
+  }
+  .rest-icon svg{width:20px; height:20px; stroke:var(--accent); fill:none; stroke-width:1.6;}
+  .rest-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:17px;}
+  .rest-desc{font-size:13px; color:var(--text-dim); margin-top:6px; max-width:340px; line-height:1.5;}
+
+  /* Plan info card (side) */
+  .plan-status{display:flex; align-items:center; gap:7px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ok); margin-top:2px;}
+  .plan-status .pulse{width:6px; height:6px; border-radius:50%; background:var(--ok); box-shadow:0 0 6px 1px var(--ok);}
+  .plan-meta-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #EFF0F4; font-size:12.5px;}
+  .plan-meta-row:last-of-type{border-bottom:none;}
+  .plan-meta-row span:first-child{color:var(--text-dim);}
+  .plan-meta-row span:last-child{font-weight:600;}
+  .plan-note{
+    margin-top:14px; padding:13px; background:var(--surface); border-radius:12px; font-size:12.5px;
+    line-height:1.55; color:#2A2C36;
+  }
+
+  /* ---- Mode toggle (Entrenamiento / Nutrición) ---- */
+  .mode-toggle{
+    display:inline-flex; background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:4px; gap:2px; margin-bottom:20px;
+  }
+  .mode-btn{
+    border:none; background:transparent; padding:9px 18px; border-radius:10px;
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:12.5px; color:var(--text-dim);
+    cursor:pointer; transition:background 0.2s ease, color 0.2s ease;
+  }
+  .mode-btn:hover:not(.active){color:var(--text);}
+  .mode-btn.active{background:var(--ink); color:#fff;}
+
+  /* ---- Nutrition view ---- */
+  .meal-block{padding:14px 0; border-bottom:1px solid #EFF0F4;}
+  .meal-block:last-child{border-bottom:none;}
+  .meal-label{
+    font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:13.5px;
+    display:flex; align-items:center; gap:8px; margin-bottom:5px;
+  }
+  .meal-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--neon),var(--rose));}
+  .meal-text{font-size:13px; line-height:1.65; color:var(--text-dim);}
+
+  /* Week overview card (side) */
+  .week-ov-row{display:flex; align-items:center; gap:10px; padding:9px 0;}
+  .week-ov-dot{
+    width:9px; height:9px; border-radius:50%; flex-shrink:0; background:var(--line);
+  }
+  .week-ov-dot.trained{background:linear-gradient(135deg,var(--neon),var(--rose));}
+  .week-ov-day{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); width:34px; flex-shrink:0;}
+  .week-ov-name{flex:1; font-size:12.5px; font-weight:600;}
+  .week-ov-name.rest{color:var(--text-faint); font-weight:400;}
+
+  /* Floating WhatsApp (desktop) */
+  .fab-wa{
+    position:fixed; right:36px; bottom:32px; width:54px; height:54px; border-radius:50%;
+    background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 14px 30px -10px rgba(212,26,64,0.5); cursor:pointer; transition:transform 0.2s ease; z-index:50;
+  }
+  .fab-wa:hover{transform:scale(1.06);}
+  .fab-wa svg{width:22px; height:22px; stroke:#fff; fill:none; stroke-width:1.8;}
+
+  /* ---- Mobile bottom nav ---- */
+  .bottom-nav{display:none;}
+
+  @media (max-width:1020px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .main{padding:22px 16px 100px;}
+    .plan-grid{grid-template-columns:1fr;}
+    .day-selector{
+      gap:8px; flex-wrap:nowrap; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
+      margin-left:-16px; margin-right:-16px; padding-left:16px; padding-right:16px;
+    }
+    .day-pill{flex:0 0 auto; width:68px; min-width:68px; scroll-snap-align:center;}
+    .fab-wa{right:18px; bottom:86px; width:48px; height:48px;}
+    .fab-wa svg{width:19px; height:19px;}
+
+    .bottom-nav{
+      display:flex; justify-content:space-around; align-items:center;
+      position:fixed; left:0; right:0; bottom:0; background:var(--paper); border-top:1px solid var(--line);
+      padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:40;
+    }
+    .bn-link{
+      display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 10px;
+      color:var(--text-faint); position:relative;
+    }
+    .bn-link svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.7;}
+    .bn-link.active{color:var(--accent);}
+    .bn-link-label{font-family:'IBM Plex Mono', monospace; font-size:8.5px; letter-spacing:0.02em;}
+  }
+
+  @media (max-width:520px){
+    .greeting h1{font-size:21px;}
+    .topbar{flex-direction:column;}
+    .topbar-actions{align-self:flex-end;}
+    .day-pill{width:62px; min-width:62px; padding:10px 4px;}
+    .card{padding:18px;}
+
+    /* Filas de ejercicio: liberan espacio quitando la miniatura y bajando el detalle a una segunda línea */
+    .ex-row{flex-wrap:wrap; gap:10px 12px; padding:13px 0;}
+    .ex-thumb{display:none;}
+    .ex-body{flex:1 1 auto; min-width:0;}
+    .ex-name{white-space:normal;}
+    .ex-sub{display:none;}
+    .ex-meta{
+      flex:0 0 auto; margin-left:31px; text-align:left; font-size:10.5px;
+    }
+  }
+  /* ================= AGENDA — pieza clave del portal ================= */
+
+  .week-nav{display:flex; align-items:center; gap:14px; margin-bottom:20px;}
+  .week-nav-btn{
+    width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px; color:var(--text);
+    transition:border-color 0.2s ease, transform 0.2s ease; flex-shrink:0;
+  }
+  .week-nav-btn:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .week-nav-label{text-align:center; min-width:172px;}
+  .week-nav-range{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:15px;}
+  .week-nav-tag{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); margin-top:2px;}
+
+  .filter-row{display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;}
+  .filter-chip{
+    padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--paper);
+    font-size:11.5px; font-weight:700; color:var(--text-dim); cursor:pointer; display:flex; align-items:center; gap:7px;
+    transition:background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+  .filter-chip .fdot{width:7px; height:7px; border-radius:50%; background:var(--line); flex-shrink:0;}
+  .filter-chip:hover:not(.active){border-color:var(--accent); color:var(--text);}
+  .filter-chip.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .filter-chip.active .fdot{background:#fff;}
+
+  .agenda-grid{display:grid; grid-template-columns:1.6fr 1fr; gap:18px; align-items:start;}
+
+  .cal-legend{display:flex; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-dim); margin-bottom:18px; flex-wrap:wrap;}
+  .cal-legend span{display:flex; align-items:center; gap:6px;}
+  .cal-legend i{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .dot-avail{background:#fff; border:1.5px solid var(--accent);}
+  .dot-booked{background:var(--line);}
+  .dot-selected{background:linear-gradient(135deg,var(--neon),var(--rose));}
+  .dot-confirmed{background:var(--ok);}
+
+  .cal-card{position:relative;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px;}
+  .cal-day-col{display:flex; flex-direction:column; gap:7px; align-items:center;}
+  .cal-day-label{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.03em;}
+  .cal-day-num{
+    font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:13.5px; margin-bottom:2px;
+    width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  }
+  .cal-day-col.is-today .cal-day-num{background:var(--ink); color:#fff;}
+  .cal-day-col.is-today .cal-day-label{color:var(--accent);}
+
+  .slot{
+    width:100%; padding:9px 4px; border-radius:9px; border:1.5px solid var(--line); background:var(--paper);
+    font-family:'IBM Plex Mono', monospace; font-size:10px; cursor:pointer; text-align:center; color:var(--text);
+    display:flex; align-items:center; justify-content:center; gap:4px;
+    transition:border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, opacity 0.2s ease;
+  }
+  .slot .sdot{width:5px; height:5px; border-radius:50%; flex-shrink:0;}
+  .slot-cap{
+    display:block; font-family:'IBM Plex Mono', monospace; font-size:8.5px; font-weight:600;
+    margin-top:2px; opacity:0.75; letter-spacing:0.01em;
+  }
+  .slot.group-slot{border-style:dashed;}
+  .slot.booked .slot-cap{color:var(--text-faint); opacity:1;}
+  .slot.available:hover{border-color:var(--neon); background:rgba(212,26,64,0.06); transform:translateY(-1px);}
+  .slot.booked{background:#F1F1F5; border-color:#F1F1F5; color:var(--text-faint); cursor:not-allowed;}
+  .slot.selected{background:linear-gradient(135deg,var(--neon),var(--rose)); border-color:transparent; color:#fff; transform:translateY(-1px);}
+  .slot.confirmed{background:rgba(62,235,140,0.12); border-color:rgba(62,235,140,0.5); color:#1E9C5C; font-weight:700; cursor:default;}
+  .slot.dimmed{opacity:0.32; pointer-events:none;}
+  .cal-empty-day{font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--text-faint); padding:9px 0;}
+
+  /* Tarjeta de selección — contraste oscuro intencional dentro de la vista clara */
+  .summary-card{
+    background:var(--ink); color:#fff; border-radius:18px; padding:24px; position:relative; overflow:hidden;
+    background-image:radial-gradient(420px 320px at 100% 0%, rgba(247,37,75,0.24), transparent 60%);
+  }
+  .summary-card.card{border:none;}
+  .summary-card:hover{box-shadow:0 20px 44px -20px rgba(42,10,22,0.5); border-color:transparent;}
+  .summary-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:rgba(255,255,255,0.5); margin-bottom:16px;
+  }
+  .summary-empty{font-size:13px; color:rgba(255,255,255,0.55); line-height:1.6;}
+  .summary-datetime{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:19px; margin-bottom:16px;}
+  .type-toggle{display:flex; flex-direction:column; gap:8px;}
+  .type-pill{
+    text-align:left; padding:10px 14px; border-radius:9px; border:1px solid rgba(255,255,255,0.16);
+    background:transparent; color:rgba(255,255,255,0.7); font-family:'Manrope', sans-serif; font-size:12.5px;
+    cursor:pointer; transition:all 0.15s ease; display:flex; align-items:center; gap:9px;
+  }
+  .type-pill .tdot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .type-pill.active{background:rgba(247,37,75,0.2); border-color:var(--neon); color:#fff; font-weight:700;}
+  .summary-confirm{
+    width:100%; margin-top:18px; padding:13px; border-radius:11px; border:none; cursor:pointer;
+    background:linear-gradient(100deg,var(--neon),var(--rose)); color:#fff;
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:13.5px;
+    transition:opacity 0.2s ease, transform 0.2s ease;
+  }
+  .summary-confirm:hover{opacity:0.9; transform:translateY(-1px);}
+  .summary-confirm:disabled{opacity:0.35; cursor:not-allowed; transform:none;}
+
+  /* Próximas sesiones */
+  .sess-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #EFF0F4;}
+  .sess-row:last-child{border-bottom:none;}
+  .sess-date{
+    width:42px; flex-shrink:0; text-align:center; background:var(--surface); border-radius:11px; padding:6px 0;
+  }
+  .sess-date .dow{font-family:'IBM Plex Mono', monospace; font-size:8.5px; color:var(--text-faint); letter-spacing:0.03em;}
+  .sess-date .dnum{font-family:'Instrument Sans', sans-serif; font-size:14px; font-weight:700; color:var(--text);}
+  .sess-body{flex:1; min-width:0;}
+  .sess-time{font-size:13px; font-weight:600;}
+  .sess-type{font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+  .sess-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; padding:5px 9px; border-radius:20px;
+    background:rgba(62,235,140,0.12); color:#1E9C5C; font-weight:700; flex-shrink:0; white-space:nowrap;
+  }
+  .sess-empty-note{font-size:12.5px; color:var(--text-dim); line-height:1.55; margin-top:2px;}
+
+  @media (max-width:1020px){
+    .agenda-grid{grid-template-columns:1fr;}
+
+    .week-nav{gap:8px;}
+    .week-nav-label{min-width:0; flex:1;}
+    .week-nav-range{font-size:14px;}
+
+    /* El calendario se encoge fluido: 7 columnas siempre visibles,
+       sin scroll horizontal. La tarjeta reduce su padding y cada
+       columna/slot se compacta para que quepa entera en pantalla,
+       sin importar cuántos horarios tenga cada día. */
+    .cal-card{padding:16px 8px;}
+    .cal-legend{gap:10px; font-size:9px;}
+    .cal-legend i{width:6px; height:6px;}
+
+    .cal-grid{grid-template-columns:repeat(7, minmax(0,1fr)); gap:4px;}
+    .cal-day-col{gap:5px;}
+    .cal-day-label{font-size:8px;}
+    .cal-day-num{width:21px; height:21px; font-size:11px;}
+
+    .slot{padding:7px 1px; font-size:8.5px; gap:2px; border-radius:7px; line-height:1.25;}
+    .slot .sdot{width:4px; height:4px;}
+    .cal-empty-day{font-size:8px; padding:6px 0;}
+
+    .filter-row{overflow-x:auto; flex-wrap:nowrap; padding-bottom:2px; margin-left:-16px; margin-right:-16px; padding-left:16px; padding-right:16px;}
+    .filter-chip{flex-shrink:0; padding:7px 12px; font-size:11px;}
+  }
+
+  @media (max-width:360px){
+    .cal-grid{gap:3px;}
+    .slot{font-size:7.8px; padding:6px 1px;}
+    .cal-day-num{width:19px; height:19px; font-size:10px;}
+  }
+
+
+.m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ================= SIDEBAR (desktop) ================= -->
+  <aside class="sidebar">
+    <div class="side-logo"><svg width="164" height="29" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="yp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#yp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+
+    <nav class="side-nav">
+      <a class="side-link" href="#">
+        <svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none"/></svg>
+        Hoy
+      </a>
+      <a class="side-link" href="#">
+        <svg viewBox="0 0 20 20"><circle cx="4.5" cy="10" r="1.8"/><circle cx="15.5" cy="10" r="1.8"/><line x1="6.3" y1="10" x2="13.7" y2="10"/></svg>
+        Mi plan
+      </a>
+      <a class="side-link active" href="#">
+        <svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/><line x1="6.8" y1="2.6" x2="6.8" y2="5.4"/><line x1="13.2" y1="2.6" x2="13.2" y2="5.4"/></svg>
+        Agenda
+      </a>
+      <a class="side-link" href="#">
+        <svg viewBox="0 0 20 20"><line x1="4.5" y1="16" x2="4.5" y2="11"/><line x1="10" y1="16" x2="10" y2="6.5"/><line x1="15.5" y1="16" x2="15.5" y2="9"/></svg>
+        Progreso
+      </a>
+      <a class="side-link" href="#">
+        <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.6"/><circle cx="10" cy="10" r="2.4"/></svg>
+        Objetivos
+      </a>
+          <a class="side-link" href="#">
+        <svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>
+        Material
+      </a>
+</nav>
+
+    <div class="side-spacer"></div>
+
+    <div class="side-client">
+      <div class="side-avatar">CR</div>
+      <div>
+        <div class="side-client-name">Camila R.</div>
+        <div class="side-client-plan">Plan Progreso</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main"><div class="m-logo"><svg width="150" height="27" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="ym" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#ym)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+
+    <div class="topbar">
+      <div class="greeting">
+        <div class="greeting-eyebrow">Agenda</div>
+        <h1>Reserva tu próxima sesión</h1>
+        <p class="greeting-sub">Coach publica horarios nuevos cada semana. Elige el que te sirve y confirma al instante por WhatsApp.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" aria-label="Notificaciones">
+          <svg viewBox="0 0 20 20"><path d="M5 8a5 5 0 0 1 10 0c0 3.2 1 4.4 1 4.4H4S5 11.2 5 8z"/><path d="M8.2 15.4a1.9 1.9 0 0 0 3.6 0"/></svg>
+        </button>
+        <button class="wa-btn">
+          <svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg>
+          Escribir a Coach
+        </button>
+      </div>
+    </div>
+
+    <div class="week-nav">
+      <button class="week-nav-btn" id="prevWeekBtn" aria-label="Semana anterior">‹</button>
+      <div class="week-nav-label">
+        <div class="week-nav-range" id="weekRange">15 – 21 junio</div>
+        <div class="week-nav-tag" id="weekTag">Semana actual</div>
+      </div>
+      <button class="week-nav-btn" id="nextWeekBtn" aria-label="Semana siguiente">›</button>
+    </div>
+
+    <div class="filter-row" id="filterRow">
+      <button class="filter-chip active" data-type="all"><span class="fdot" style="background:linear-gradient(135deg,#F7254B,#F2406B);"></span>Todas</button>
+      <button class="filter-chip" data-type="Presencial"><span class="fdot" style="background:#F7254B;"></span>Presencial</button>
+      <button class="filter-chip" data-type="Online"><span class="fdot" style="background:#B08A3E;"></span>Online</button>
+      <button class="filter-chip" data-type="Nutrición"><span class="fdot" style="background:#F2406B;"></span>Nutrición</button>
+    </div>
+
+    <div class="agenda-grid">
+
+      <!-- Calendario semanal -->
+      <div class="card cal-card" id="calCard">
+        <div class="cal-legend">
+          <span><i class="dot-avail"></i> Disponible</span>
+          <span><i class="dot-booked"></i> Ocupado</span>
+          <span><i class="dot-selected"></i> Seleccionado</span>
+          <span><i class="dot-confirmed"></i> Confirmada</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <!-- Lateral: selección + próximas sesiones -->
+      <div style="display:flex; flex-direction:column; gap:18px;">
+
+        <div class="card summary-card" id="summaryCard">
+          <div class="summary-label">Tu selección</div>
+          <div class="summary-empty" id="summaryEmpty">Elige un horario disponible en el calendario.</div>
+          <div id="summaryFilled" style="display:none;">
+            <div class="summary-datetime" id="summaryDatetime">—</div>
+            <div class="type-toggle" id="typeToggle">
+              <button class="type-pill" data-type="Presencial"><span class="tdot" style="background:#F7254B;"></span>Presencial</button>
+              <button class="type-pill" data-type="Online"><span class="tdot" style="background:#B08A3E;"></span>Online</button>
+              <button class="type-pill" data-type="Nutrición"><span class="tdot" style="background:#F2406B;"></span>Nutrición</button>
+            </div>
+            <button class="summary-confirm" id="summaryConfirm">Confirmar por WhatsApp</button>
+          </div>
+        </div>
+
+        <div class="card" id="upcomingCard">
+          <div class="card-tag">Tus próximas sesiones</div>
+          <div style="margin-top:6px;">
+            <div class="sess-row">
+              <div class="sess-date"><div class="dow">MIÉ</div><div class="dnum">24</div></div>
+              <div class="sess-body">
+                <div class="sess-time">18:00 — Online</div>
+                <div class="sess-type">Sesión de fuerza</div>
+              </div>
+              <span class="sess-tag">Confirmada</span>
+            </div>
+          </div>
+          <div class="sess-empty-note">Elige más horarios disponibles en el calendario para agendar tu próxima sesión.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Floating WhatsApp -->
+<div class="fab-wa" aria-label="Escribir a Coach por WhatsApp">
+  <svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg>
+</div>
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottom-nav">
+  <a class="bn-link" href="#">
+    <svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none"/></svg>
+    <span class="bn-link-label">HOY</span>
+  </a>
+  <a class="bn-link" href="#">
+    <svg viewBox="0 0 20 20"><circle cx="4.5" cy="10" r="1.8"/><circle cx="15.5" cy="10" r="1.8"/><line x1="6.3" y1="10" x2="13.7" y2="10"/></svg>
+    <span class="bn-link-label">PLAN</span>
+  </a>
+  <a class="bn-link active" href="#">
+    <svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/></svg>
+    <span class="bn-link-label">AGENDA</span>
+  </a>
+  <a class="bn-link" href="#">
+    <svg viewBox="0 0 20 20"><line x1="4.5" y1="16" x2="4.5" y2="11"/><line x1="10" y1="16" x2="10" y2="6.5"/><line x1="15.5" y1="16" x2="15.5" y2="9"/></svg>
+    <span class="bn-link-label">PROGR.</span>
+  </a>
+  <a class="bn-link" href="#">
+    <svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>
+    <span class="bn-link-label">MATERIAL</span>
+  </a>
+</nav>
+
+<script>
+  const COACH_PHONE = '34600000000'; // mismo patrón que en la landing
+
+  // ---- Datos de dos semanas (mock) ----
+  // type: 'Presencial' | 'Online' | 'Nutrición' — usado por los chips de filtro y la tarjeta de selección
+  const weeks = [
+    {
+      range: '15 – 21 junio',
+      tag: 'Semana actual',
+      todayLabel: 'JUE',
+      days: [
+        { label: 'LUN', num: 15, slots: [
+          { t: '08:00', s: 'available', type: 'Presencial' }, { t: '09:00', s: 'booked' },
+          { t: '10:30', s: 'available', type: 'Online' }, { t: '12:00', s: 'available', type: 'Presencial' },
+          { t: '14:00', s: 'booked' }, { t: '16:00', s: 'available', type: 'Nutrición' },
+          { t: '17:30', s: 'available', type: 'Presencial' }, { t: '19:00', s: 'available', type: 'Online' },
+          { t: '20:30', s: 'available', type: 'Presencial' }
+        ] },
+        { label: 'MAR', num: 16, slots: [{ t: '08:30', s: 'available', type: 'Nutrición' }, { t: '10:00', s: 'booked' }, { t: '18:00', s: 'available', type: 'Online' }] },
+        { label: 'MIÉ', num: 17, slots: [{ t: '09:00', s: 'available', type: 'Presencial' }, { t: '12:00', s: 'available', type: 'Presencial' }, { t: '17:30', s: 'booked' }] },
+        { label: 'JUE', num: 18, slots: [{ t: '10:00', s: 'available', type: 'Presencial' }, { t: '13:00', s: 'booked' }, { t: '19:00', s: 'available', type: 'Online' }] },
+        { label: 'VIE', num: 19, slots: [{ t: '08:30', s: 'available', type: 'Nutrición' }, { t: '11:00', s: 'available', type: 'Presencial' }, { t: '16:00', s: 'booked' }] },
+        { label: 'SÁB', num: 20, slots: [{ t: '09:00', s: 'available', type: 'Presencial', cap: 4, taken: 3 }, { t: '10:30', s: 'available', type: 'Online' }] },
+        { label: 'DOM', num: 21, slots: [] }
+      ]
+    },
+    {
+      range: '22 – 28 junio',
+      tag: 'Próxima semana',
+      todayLabel: null,
+      days: [
+        { label: 'LUN', num: 22, slots: [{ t: '08:30', s: 'available', type: 'Presencial' }, { t: '10:00', s: 'available', type: 'Presencial' }, { t: '17:00', s: 'booked' }] },
+        { label: 'MAR', num: 23, slots: [{ t: '09:00', s: 'booked' }, { t: '11:00', s: 'available', type: 'Online' }, { t: '18:00', s: 'available', type: 'Nutrición' }] },
+        { label: 'MIÉ', num: 24, slots: [{ t: '09:00', s: 'available', type: 'Presencial' }, { t: '12:00', s: 'booked' }, { t: '18:00', s: 'confirmed', type: 'Online' }] },
+        { label: 'JUE', num: 25, slots: [{ t: '10:00', s: 'available', type: 'Presencial' }, { t: '13:00', s: 'available', type: 'Online' }, { t: '19:00', s: 'booked' }] },
+        { label: 'VIE', num: 26, slots: [{ t: '08:30', s: 'available', type: 'Nutrición' }, { t: '11:00', s: 'booked' }, { t: '16:00', s: 'available', type: 'Presencial' }] },
+        { label: 'SÁB', num: 27, slots: [{ t: '09:00', s: 'available', type: 'Presencial', cap: 4, taken: 4 }, { t: '10:30', s: 'available', type: 'Online' }] },
+        { label: 'DOM', num: 28, slots: [] }
+      ]
+    }
+  ];
+
+  const typeColor = { Presencial: '#F7254B', Online: '#B08A3E', Nutrición: '#F2406B' };
+
+  let weekIndex = 0;
+  let activeFilter = 'all';
+  let selectedSlot = null;   // { dayLabel, num, time, type }
+  let selectedType = null;
+
+  const calGrid = document.getElementById('calGrid');
+  const weekRangeEl = document.getElementById('weekRange');
+  const weekTagEl = document.getElementById('weekTag');
+
+  function isSlotDimmed(slot) {
+    return activeFilter !== 'all' && slot.type !== activeFilter;
+  }
+
+  function makeSlotBtn(day, slot) {
+    const btn = document.createElement('button');
+    const isGroup = typeof slot.cap === 'number' && slot.cap > 1;
+    const spotsLeft = isGroup ? slot.cap - (slot.taken || 0) : null;
+    const isFull = isGroup && spotsLeft <= 0;
+    const effectiveState = isFull ? 'booked' : slot.s;
+
+    const isSelected = selectedSlot && selectedSlot.dayLabel === day.label && selectedSlot.num === day.num && selectedSlot.time === slot.t;
+    let cls = 'slot ' + (isSelected ? 'selected' : effectiveState);
+    if (isGroup && !isFull) cls += ' group-slot';
+    const dimmed = isSlotDimmed(slot);
+    if (dimmed && !isSelected) cls += ' dimmed';
+    btn.className = cls;
+
+    if (effectiveState === 'available' || isSelected) {
+      const dotColor = isSelected ? '#fff' : (typeColor[slot.type] || 'var(--line)');
+      const capBadge = isGroup ? `<span class="slot-cap">${spotsLeft} cupo${spotsLeft === 1 ? '' : 's'}</span>` : '';
+      btn.innerHTML = `<span class="sdot" style="background:${dotColor};"></span>${slot.t}${capBadge}`;
+    } else if (effectiveState === 'confirmed') {
+      btn.innerHTML = `${slot.t}`;
+    } else if (isFull) {
+      btn.innerHTML = `${slot.t}<span class="slot-cap">Sin cupos</span>`;
+    } else {
+      btn.textContent = slot.t;
+    }
+
+    btn.disabled = effectiveState === 'booked' || effectiveState === 'confirmed';
+
+    if (effectiveState === 'available') {
+      btn.addEventListener('click', () => {
+        selectedSlot = { dayLabel: day.label, num: day.num, time: slot.t, type: slot.type };
+        selectedType = slot.type;
+        renderCalendar();
+        updateSummary();
+      });
+    }
+    return btn;
+  }
+
+  function renderCalendar() {
+    const week = weeks[weekIndex];
+    weekRangeEl.textContent = week.range;
+    weekTagEl.textContent = week.tag;
+    calGrid.innerHTML = '';
+
+    week.days.forEach(day => {
+      const col = document.createElement('div');
+      col.className = 'cal-day-col' + (week.todayLabel === day.label ? ' is-today' : '');
+
+      const label = document.createElement('div');
+      label.className = 'cal-day-label';
+      label.textContent = day.label;
+      const num = document.createElement('div');
+      num.className = 'cal-day-num';
+      num.textContent = day.num;
+      col.appendChild(label);
+      col.appendChild(num);
+
+      if (!day.slots.length) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-empty-day';
+        empty.textContent = '—';
+        col.appendChild(empty);
+      }
+
+      day.slots.forEach(slot => col.appendChild(makeSlotBtn(day, slot)));
+      calGrid.appendChild(col);
+    });
+  }
+
+  // ---- Navegación de semana ----
+  document.getElementById('prevWeekBtn').addEventListener('click', () => {
+    weekIndex = (weekIndex - 1 + weeks.length) % weeks.length;
+    selectedSlot = null;
+    renderCalendar();
+    updateSummary();
+  });
+  document.getElementById('nextWeekBtn').addEventListener('click', () => {
+    weekIndex = (weekIndex + 1) % weeks.length;
+    selectedSlot = null;
+    renderCalendar();
+    updateSummary();
+  });
+
+  // ---- Filtro por tipo de sesión ----
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.type;
+      renderCalendar();
+    });
+  });
+
+  // ---- Tarjeta de selección ----
+  const summaryEmpty = document.getElementById('summaryEmpty');
+  const summaryFilled = document.getElementById('summaryFilled');
+  const summaryDatetime = document.getElementById('summaryDatetime');
+  const summaryConfirm = document.getElementById('summaryConfirm');
+
+  function updateSummary() {
+    if (!selectedSlot) {
+      summaryEmpty.style.display = 'block';
+      summaryFilled.style.display = 'none';
+      return;
+    }
+    summaryEmpty.style.display = 'none';
+    summaryFilled.style.display = 'block';
+    summaryDatetime.textContent = `${selectedSlot.dayLabel} ${selectedSlot.num} · ${selectedSlot.time}`;
+    document.querySelectorAll('#typeToggle .type-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.type === selectedType);
+    });
+  }
+
+  document.querySelectorAll('#typeToggle .type-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      selectedType = pill.dataset.type;
+      document.querySelectorAll('#typeToggle .type-pill').forEach(p => p.classList.toggle('active', p === pill));
+    });
+  });
+
+  // Mismo patrón que generateBookingLink() en lib/utils/whatsapp.ts:
+  // mensaje pre-armado con fecha, hora y tipo de sesión — el usuario lo envía con un toque.
+  summaryConfirm.addEventListener('click', () => {
+    if (!selectedSlot) return;
+    const message = `Hola Coach, te confirmo mi sesión ${selectedType.toLowerCase()} el ${selectedSlot.dayLabel} ${selectedSlot.num} a las ${selectedSlot.time}. ✅`;
+    window.open(`https://wa.me/${COACH_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
+  });
+
+  renderCalendar();
+  updateSummary();
+
+  // ---- Reveal cards on load / scroll ----
+  const cards = document.querySelectorAll('.card');
+  const cardIO = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('in-view'), i * 60);
+        cardIO.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  cards.forEach(c => cardIO.observe(c));
+
+  // ---- Sidebar / bottom nav visual active state (design only) ----
+  document.querySelectorAll('.side-link, .bn-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const group = link.classList.contains('side-link') ? '.side-link' : '.bn-link';
+      document.querySelectorAll(group).forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

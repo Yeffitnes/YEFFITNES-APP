@@ -1,0 +1,36 @@
+# CHANGELOG
+Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
+
+## 2026-10-23 · Entrenamiento por días en la ficha del cliente
+- Pestaña **Entrenamiento** según mockup: plan activo, historial, días LUN–DOM, asignar rutina a un día (clona la plantilla para poder cambiar pesos solo en ese cliente), peso objetivo por ejercicio.
+- SQL: `0005_training_plans.sql` (tablas `training_plans`, `plan_days`, `plan_items`; funciones `my_client_id`, `create_training_plan`, `assign_day`; RLS coach y lectura del cliente).
+- Código: `components/coach/TrainingTab.tsx`, `lib/queries.ts`, `components/coach/ClientFicha.tsx`.
+- Revertir código: `git revert` del commit. Revertir SQL: `drop function assign_day, create_training_plan, my_client_id; drop table plan_items, plan_days, training_plans;` (borra los planes asignados).
+
+## 2026-10-23 · Contexto para asistentes y mockups en el repo
+- Se agregan `docs/CONTEXT.md`, `AGENTS.md`, `design/` (10 mockups + guía de portado) y este CHANGELOG, para poder continuar con otro chat o asistente.
+- Revertir: borrar esos archivos; no afecta a la app.
+
+## 2026-10-23 · ab3d2c0 · Rework de rendimiento y flujo
+- Qué: datos leídos/escritos desde el navegador con RLS, caché TanStack Query con precarga, modales del diseño (agenda), ficha con pestañas, `save_routine` atómico.
+- Por qué: la app se sentía lenta (varios viajes en cadena al servidor por pantalla; sin estados de carga).
+- SQL: `0004_save_routine_rpc.sql`. Código: `lib/queries.ts`, `components/Providers.tsx`, `components/coach/*`, páginas delgadas.
+- Revertir: `git revert ab3d2c0`; SQL: `drop function public.save_routine(uuid,text,text,int,jsonb);`.
+
+## 2026-10-23 · 2230303 · Rendimiento v1
+- `getClaims()` en lugar de `getUser()`, sesión cacheada por petición, filtros en el cliente, esqueletos de carga. Revertir: `git revert 2230303`.
+
+## 2026-10-23 · 0316371 · Fase 2A: panel del coach
+- Shell del coach con CSS de los mockups, Clientes, Ejercicios, Rutinas; arreglo del texto borroso en `/pendiente`; página `/sin-perfil`.
+- SQL: `0003_catalog.sql` (`exercises`, `routine_templates`, `template_items`, trigger `drop_client_on_coach`, limpieza de la ficha de cliente del coach).
+- Revertir SQL: `drop trigger profile_became_coach on profiles; drop function drop_client_on_coach; drop table template_items, routine_templates, exercises;`.
+
+## 2026-10-23 · bcc0dfb / 66eb697 · `.env.example`
+- Se limpiaron los valores reales del archivo de plantilla (hechos por Cristian en GitHub). Los valores siguen en el historial de git; la clave anon es pública por diseño, pero el número de WhatsApp quedó expuesto en un repo público.
+
+## 2026-10-21 · 723bb5e / f59ba64 · Fundación (Fases 1A y 1B)
+- Next.js 14, marca, login/registro, rutas protegidas, estado "pendiente", PWA, FeatureGate (bloqueo borroso), panel de clientes inicial.
+- SQL: `0001_foundation.sql` (`workspaces`, `profiles`, `plans`, `clients`, trigger `handle_new_user`, RLS), `0002_default_plans.sql` (planes Esencial y Completo, propuesta).
+
+## 2026-10-21 · Documentos de producto (fuera del repo)
+- Product Blueprint v1 y propuesta comercial para Jefferson González (versiones publicadas como documentos de Claude).

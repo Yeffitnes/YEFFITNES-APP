@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yeffitnes.training — Portal del cliente · Progreso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910;
+    --neon:#F7254B;
+    --rose:#F2406B;
+    --gold-deep:#8D6526;--pearl:#CDB170;
+    --amber:#F5A623;
+    --surface:#F5F6FA;
+    --paper:#FFFFFF;
+    --text:#12141B;
+    --text-dim:#5B6172;
+    --text-faint:#9AA0AE;
+    --accent:#D41A40;
+    --garnet:#9C1535;
+    --line:#E1E3EC;
+    --ok:#3EEB8C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
+  a{color:inherit; text-decoration:none;}
+  button{font:inherit;}
+
+  /* ================= SHELL (idéntico a mi-plan / hoy) ================= */
+  .shell{display:grid; grid-template-columns:236px 1fr; min-height:100vh;}
+  .sidebar{background:var(--paper); border-right:1px solid var(--line); padding:26px 18px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh;}
+  .side-logo{display:flex; align-items:center; gap:9px; padding:6px 10px 22px; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
+  .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
+  .side-logo span.faint{color:var(--text-faint); font-weight:400;}
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .side-link{display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; font-size:13.5px; font-weight:600; color:var(--text-dim); position:relative; transition:background 0.18s ease, color 0.18s ease;}
+  .side-link svg{width:18px; height:18px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.6;}
+  .side-link:hover{background:rgba(212,26,64,0.06); color:var(--text);}
+  .side-link.active{background:rgba(212,26,64,0.09); color:var(--accent);}
+  .side-link.active::before{content:''; position:absolute; left:-18px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg,var(--neon),var(--rose));}
+  .side-spacer{flex:1;}
+  .side-client{display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:var(--surface); margin-top:12px;}
+  .side-avatar{width:34px; height:34px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13px; color:#fff;}
+  .side-client-name{font-size:12.5px; font-weight:700;}
+  .side-client-plan{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); margin-top:1px;}
+
+  .main{padding:30px 36px 90px; max-width:1160px; width:100%; min-width:0;}
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; gap:16px;}
+  .greeting-eyebrow{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.07em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;}
+  .greeting h1{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:26px; letter-spacing:-0.02em;}
+  .greeting-sub{font-size:13.5px; color:var(--text-dim); margin-top:5px;}
+  .topbar-actions{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .icon-btn{width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--paper); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color 0.2s ease, transform 0.2s ease;}
+  .icon-btn:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .icon-btn svg{width:17px; height:17px; stroke:var(--text); fill:none; stroke-width:1.6;}
+  .wa-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:var(--ink); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none; transition:opacity 0.2s ease, transform 0.2s ease;}
+  .wa-btn:hover{opacity:0.88; transform:translateY(-1px);}
+  .wa-btn svg{width:15px; height:15px; stroke:#fff; fill:none; stroke-width:1.7;}
+
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:24px; opacity:0; transform:translateY(10px); transition:opacity 0.5s ease, transform 0.5s ease, box-shadow 0.25s ease, border-color 0.25s ease;}
+  .card.in-view{opacity:1; transform:translateY(0);}
+  .card:hover{box-shadow:0 16px 34px -18px rgba(42,10,22,0.18); border-color:#DBDEE8;}
+  .card-tag{font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:6px; margin-bottom:10px;}
+  .card-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:18px;}
+  .card-meta{font-size:12.5px; color:var(--text-dim); margin-top:4px;}
+
+  .fab-wa{position:fixed; right:36px; bottom:32px; width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; box-shadow:0 14px 30px -10px rgba(212,26,64,0.5); cursor:pointer; transition:transform 0.2s ease; z-index:50;}
+  .fab-wa:hover{transform:scale(1.06);}
+  .fab-wa svg{width:22px; height:22px; stroke:#fff; fill:none; stroke-width:1.8;}
+  .bottom-nav{display:none;}
+
+  /* ================= RESUMEN DE MÉTRICAS ================= */
+  .metric-summary{display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:18px;}
+  .metric-summary-card{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px; opacity:0; transform:translateY(8px); transition:opacity 0.45s ease, transform 0.45s ease;}
+  .metric-summary-card.in-view{opacity:1; transform:translateY(0);}
+  .metric-summary-dot{width:8px; height:8px; border-radius:50%; margin-bottom:9px;}
+  .metric-summary-name{font-size:11px; color:var(--text-dim); font-weight:600;}
+  .metric-summary-val{font-family:'IBM Plex Mono', monospace; font-size:17px; font-weight:600; margin-top:3px;}
+  .metric-summary-delta{font-size:10.5px; font-weight:600; margin-left:4px;}
+  .metric-summary-delta.down{color:#1C9A5B;}
+  .metric-summary-delta.up{color:var(--amber);}
+
+  /* ================= GRÁFICA MULTI-MÉTRICA ================= */
+  .chart-toolbar{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:6px;}
+  .chip-row{display:flex; gap:7px; flex-wrap:wrap; margin-top:14px;}
+  .metric-chip{
+    display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:20px; border:1.4px solid var(--line);
+    background:var(--paper); cursor:pointer; font-size:11.5px; font-weight:700; color:var(--text-dim);
+    transition:border-color 0.18s ease, background 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+  }
+  .metric-chip .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .metric-chip.active{color:var(--text); border-color:transparent; background:var(--surface);}
+  .metric-chip.off{opacity:0.4;}
+  .add-btn{
+    display:flex; align-items:center; gap:7px; padding:0 16px; height:38px; border-radius:11px; border:none; cursor:pointer;
+    background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff; font-weight:700; font-size:12.5px;
+    transition:opacity 0.2s ease, transform 0.2s ease; flex-shrink:0;
+  }
+  .add-btn:hover{opacity:0.9; transform:translateY(-1px);}
+  .add-btn svg{width:14px; height:14px; stroke:#fff; fill:none; stroke-width:2.2;}
+
+  .chart-svg-wrap{margin-top:18px; position:relative;}
+  .chart-svg{width:100%; height:210px; display:block; overflow:visible;}
+  .metric-series{transition:opacity 0.25s ease;}
+  .metric-series.hidden{opacity:0; pointer-events:none;}
+  .metric-series polyline{fill:none; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+  .metric-series circle{stroke:#fff; stroke-width:1.6;}
+  .chart-x-axis{display:flex; justify-content:space-between; margin-top:8px; padding:0 2px;}
+  .chart-x-axis span{font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--text-faint);}
+
+  /* ================= HISTORIAL ================= */
+  .history-row{display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:1px solid #EFF0F4;}
+  .history-row:last-child{border-bottom:none;}
+  .history-date{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-faint); min-width:52px; flex-shrink:0;}
+  .history-body{flex:1; min-width:0;}
+  .history-vals{font-size:13px; font-weight:600;}
+  .history-vals span{color:var(--text-dim); font-weight:400; margin-right:10px;}
+  .history-source{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.04em;
+    padding:3px 8px; border-radius:20px; flex-shrink:0;
+  }
+  .history-source.coach{background:rgba(156,21,53,0.08); color:var(--garnet);}
+  .history-source.client{background:rgba(62,235,140,0.12); color:#1C9A5B;}
+
+  /* ================= FOTOS DE PROGRESO ================= */
+  .photo-compare{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;}
+  .photo-slot{display:flex; flex-direction:column; gap:8px;}
+  .photo-slot-label{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint);}
+  .photo-slot select{
+    width:100%; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--paper);
+    font-family:'Manrope', sans-serif; font-weight:600; font-size:12.5px; color:var(--text); cursor:pointer;
+  }
+  .photo-frame{
+    position:relative; aspect-ratio:3/4; border-radius:14px; overflow:hidden;
+    background:linear-gradient(160deg,#FBE3E8,#FDEEF1 55%,#FEF4F6);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .photo-frame::before{content:''; position:absolute; inset:0; background:radial-gradient(ellipse 160px 220px at 50% 40%, rgba(247,37,75,0.14), transparent 65%);}
+  .photo-frame svg{width:34px; height:34px; stroke:#E8A6B3; fill:none; stroke-width:1.4; z-index:1;}
+  .photo-frame-tag{
+    position:absolute; left:9px; top:9px; z-index:1; font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:600;
+    background:rgba(255,255,255,0.75); backdrop-filter:blur(4px); padding:4px 8px; border-radius:20px; color:var(--text-dim);
+  }
+  .photo-privacy-note{display:flex; align-items:center; gap:7px; margin-top:14px; font-size:11.5px; color:var(--text-dim);}
+  .photo-privacy-note svg{width:13px; height:13px; stroke:var(--text-faint); fill:none; stroke-width:1.7; flex-shrink:0;}
+
+  .photo-gallery{display:flex; gap:9px; margin-top:16px; overflow-x:auto; padding-bottom:4px;}
+  .photo-thumb{
+    flex:0 0 auto; width:56px; height:74px; border-radius:9px; cursor:pointer; position:relative; overflow:hidden;
+    background:linear-gradient(160deg,#FBE3E8,#FDEEF1 55%,#FEF4F6); border:2px solid transparent;
+    display:flex; align-items:center; justify-content:center; transition:border-color 0.18s ease;
+  }
+  .photo-thumb svg{width:16px; height:16px; stroke:#E8A6B3; fill:none; stroke-width:1.5;}
+  .photo-thumb.selected{border-color:var(--accent);}
+  .photo-thumb-date{position:absolute; bottom:2px; left:0; right:0; text-align:center; font-family:'IBM Plex Mono', monospace; font-size:7.5px; color:var(--text-dim);}
+  .upload-btn{
+    display:flex; align-items:center; gap:7px; margin-top:14px; padding:0 16px; height:36px; border-radius:11px;
+    border:1px solid var(--line); background:var(--paper); color:var(--text); font-weight:700; font-size:12px; cursor:pointer;
+  }
+  .upload-btn svg{width:13px; height:13px; stroke:var(--text); fill:none; stroke-width:2;}
+
+  /* ================= GRID GENERAL ================= */
+  .progress-grid{display:grid; grid-template-columns:1.55fr 1fr; gap:18px; align-items:start; margin-top:18px;}
+
+  /* ================= MODAL: REGISTRAR MEDICIÓN ================= */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(8,6,14,0.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s ease;}
+  .modal-backdrop.open{opacity:1; pointer-events:auto;}
+  .modal-box{width:100%; max-width:420px; background:var(--paper); border-radius:18px; padding:26px; transform:scale(0.96) translateY(10px); transition:transform 0.28s cubic-bezier(0.2,0.8,0.2,1); box-shadow:0 40px 80px -20px rgba(0,0,0,0.3);}
+  .modal-backdrop.open .modal-box{transform:scale(1) translateY(0);}
+  .modal-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:17px;}
+  .modal-sub{font-size:12.5px; color:var(--text-dim); margin-top:4px;}
+  .modal-field{margin-top:14px;}
+  .modal-field label{font-size:11.5px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;}
+  .modal-field input{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); font-family:'IBM Plex Mono', monospace; font-size:13px;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .modal-btn{flex:1; height:42px; border-radius:11px; border:none; font-weight:700; font-size:13px; cursor:pointer;}
+  .modal-btn.primary{background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff;}
+  .modal-btn.ghost{background:var(--surface); color:var(--text);}
+  .modal-close-x{position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:9px; border:none; background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .modal-close-x svg{width:13px; height:13px; stroke:var(--text-dim); fill:none; stroke-width:2;}
+  .modal-box{position:relative;}
+
+  @media (max-width:1020px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .main{padding:22px 16px 100px;}
+    .progress-grid{grid-template-columns:1fr;}
+    .metric-summary{grid-template-columns:repeat(3,1fr);}
+    .fab-wa{right:18px; bottom:86px; width:48px; height:48px;}
+    .fab-wa svg{width:19px; height:19px;}
+    .bottom-nav{display:flex; justify-content:space-around; align-items:center; position:fixed; left:0; right:0; bottom:0; background:var(--paper); border-top:1px solid var(--line); padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:40;}
+    .bn-link{display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 10px; color:var(--text-faint); position:relative;}
+    .bn-link svg{width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.7;}
+    .bn-link.active{color:var(--accent);}
+    .bn-link-label{font-family:'IBM Plex Mono', monospace; font-size:8.5px; letter-spacing:0.02em;}
+  }
+  @media (max-width:640px){
+    .metric-summary{grid-template-columns:repeat(2,1fr);}
+    .photo-compare{grid-template-columns:1fr; gap:16px;}
+  }
+  @media (max-width:520px){
+    .greeting h1{font-size:21px;}
+    .topbar{flex-direction:column;}
+    .topbar-actions{align-self:flex-end;}
+    .card{padding:18px;}
+  }
+
+
+.m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="side-logo"><svg width="164" height="29" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="yp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#yp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none"/></svg>Hoy</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><circle cx="4.5" cy="10" r="1.8"/><circle cx="15.5" cy="10" r="1.8"/><line x1="6.3" y1="10" x2="13.7" y2="10"/></svg>Mi plan</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/><line x1="6.8" y1="2.6" x2="6.8" y2="5.4"/><line x1="13.2" y1="2.6" x2="13.2" y2="5.4"/></svg>Agenda</a>
+      <a class="side-link active" href="#"><svg viewBox="0 0 20 20"><line x1="4.5" y1="16" x2="4.5" y2="11"/><line x1="10" y1="16" x2="10" y2="6.5"/><line x1="15.5" y1="16" x2="15.5" y2="9"/></svg>Progreso</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.6"/><circle cx="10" cy="10" r="2.4"/></svg>Objetivos</a>
+          <a class="side-link" href="#">
+        <svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>
+        Material
+      </a>
+</nav>
+    <div class="side-spacer"></div>
+    <div class="side-client">
+      <div class="side-avatar">CR</div>
+      <div><div class="side-client-name">Camila R.</div><div class="side-client-plan">Plan Progreso</div></div>
+    </div>
+  </aside>
+
+  <main class="main"><div class="m-logo"><svg width="150" height="27" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="ym" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#ym)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <div class="topbar">
+      <div class="greeting">
+        <div class="greeting-eyebrow">Progreso — junio 2026</div>
+        <h1>Tu evolución</h1>
+        <p class="greeting-sub">Última medición hace 2 días · 6 registros este mes</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn" aria-label="Notificaciones"><svg viewBox="0 0 20 20"><path d="M5 8a5 5 0 0 1 10 0c0 3.2 1 4.4 1 4.4H4S5 11.2 5 8z"/><path d="M8.2 15.4a1.9 1.9 0 0 0 3.6 0"/></svg></button>
+        <button class="wa-btn"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg>Escribir a Coach</button>
+      </div>
+    </div>
+
+    <!-- Resumen rápido de métricas -->
+    <div class="metric-summary" id="metricSummary">
+      <div class="metric-summary-card"><div class="metric-summary-dot" style="background:var(--neon);"></div><div class="metric-summary-name">Peso</div><div class="metric-summary-val">68.4<span class="metric-summary-delta down">↓1.2</span></div></div>
+      <div class="metric-summary-card"><div class="metric-summary-dot" style="background:var(--garnet);"></div><div class="metric-summary-name">Cintura</div><div class="metric-summary-val">71.0<span class="metric-summary-delta down">↓0.8</span></div></div>
+      <div class="metric-summary-card"><div class="metric-summary-dot" style="background:var(--pearl);"></div><div class="metric-summary-name">Caderas</div><div class="metric-summary-val">96.5<span class="metric-summary-delta down">↓0.5</span></div></div>
+      <div class="metric-summary-card"><div class="metric-summary-dot" style="background:var(--rose);"></div><div class="metric-summary-name">Pecho</div><div class="metric-summary-val">88.0<span class="metric-summary-delta down">↓0.3</span></div></div>
+      <div class="metric-summary-card"><div class="metric-summary-dot" style="background:var(--ok);"></div><div class="metric-summary-name">Brazo</div><div class="metric-summary-val">28.5<span class="metric-summary-delta up">↑0.4</span></div></div>
+      <div class="metric-summary-card"><div class="metric-summary-dot" style="background:var(--amber);"></div><div class="metric-summary-name">Pierna</div><div class="metric-summary-val">55.0<span class="metric-summary-delta up">↑0.6</span></div></div>
+    </div>
+
+    <div class="progress-grid">
+
+      <!-- Columna principal: gráfica + historial -->
+      <div style="display:flex; flex-direction:column; gap:18px;">
+
+        <div class="card">
+          <div class="chart-toolbar">
+            <div>
+              <div class="card-tag">Tendencia</div>
+              <div class="card-title">Evolución por métrica</div>
+              <div class="card-meta">Últimas 6 mediciones · activa o desactiva cada línea</div>
+            </div>
+            <button class="add-btn" onclick="openMeasureModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Registrar medición</button>
+          </div>
+
+          <div class="chip-row" id="chipRow">
+            <div class="metric-chip active" data-metric="peso"><span class="dot" style="background:var(--neon);"></span>Peso</div>
+            <div class="metric-chip active" data-metric="cintura"><span class="dot" style="background:var(--garnet);"></span>Cintura</div>
+            <div class="metric-chip off" data-metric="caderas"><span class="dot" style="background:var(--pearl);"></span>Caderas</div>
+            <div class="metric-chip off" data-metric="pecho"><span class="dot" style="background:var(--rose);"></span>Pecho</div>
+            <div class="metric-chip off" data-metric="brazo"><span class="dot" style="background:var(--ok);"></span>Brazo</div>
+            <div class="metric-chip off" data-metric="pierna"><span class="dot" style="background:var(--amber);"></span>Pierna</div>
+          </div>
+
+          <div class="chart-svg-wrap">
+            <svg class="chart-svg" viewBox="0 0 600 200" preserveAspectRatio="none">
+              <g class="metric-series" data-metric="peso">
+                <polyline points="0,30 120,55 240,80 360,110 480,140 600,165" stroke="var(--neon)"/>
+                <circle cx="0" cy="30" r="3.5" fill="var(--neon)"/><circle cx="120" cy="55" r="3.5" fill="var(--neon)"/><circle cx="240" cy="80" r="3.5" fill="var(--neon)"/><circle cx="360" cy="110" r="3.5" fill="var(--neon)"/><circle cx="480" cy="140" r="3.5" fill="var(--neon)"/><circle cx="600" cy="165" r="4" fill="var(--neon)"/>
+              </g>
+              <g class="metric-series" data-metric="cintura">
+                <polyline points="0,45 120,70 240,88 360,105 480,130 600,150" stroke="var(--garnet)"/>
+                <circle cx="0" cy="45" r="3.5" fill="var(--garnet)"/><circle cx="120" cy="70" r="3.5" fill="var(--garnet)"/><circle cx="240" cy="88" r="3.5" fill="var(--garnet)"/><circle cx="360" cy="105" r="3.5" fill="var(--garnet)"/><circle cx="480" cy="130" r="3.5" fill="var(--garnet)"/><circle cx="600" cy="150" r="4" fill="var(--garnet)"/>
+              </g>
+              <g class="metric-series hidden" data-metric="caderas">
+                <polyline points="0,40 120,58 240,75 360,95 480,115 600,128" stroke="var(--pearl)"/>
+                <circle cx="0" cy="40" r="3.5" fill="var(--pearl)"/><circle cx="120" cy="58" r="3.5" fill="var(--pearl)"/><circle cx="240" cy="75" r="3.5" fill="var(--pearl)"/><circle cx="360" cy="95" r="3.5" fill="var(--pearl)"/><circle cx="480" cy="115" r="3.5" fill="var(--pearl)"/><circle cx="600" cy="128" r="4" fill="var(--pearl)"/>
+              </g>
+              <g class="metric-series hidden" data-metric="pecho">
+                <polyline points="0,90 120,95 240,88 360,92 480,85 600,88" stroke="var(--rose)"/>
+                <circle cx="0" cy="90" r="3.5" fill="var(--rose)"/><circle cx="120" cy="95" r="3.5" fill="var(--rose)"/><circle cx="240" cy="88" r="3.5" fill="var(--rose)"/><circle cx="360" cy="92" r="3.5" fill="var(--rose)"/><circle cx="480" cy="85" r="3.5" fill="var(--rose)"/><circle cx="600" cy="88" r="4" fill="var(--rose)"/>
+              </g>
+              <g class="metric-series hidden" data-metric="brazo">
+                <polyline points="0,150 120,142 240,135 360,125 480,115 600,105" stroke="var(--ok)"/>
+                <circle cx="0" cy="150" r="3.5" fill="var(--ok)"/><circle cx="120" cy="142" r="3.5" fill="var(--ok)"/><circle cx="240" cy="135" r="3.5" fill="var(--ok)"/><circle cx="360" cy="125" r="3.5" fill="var(--ok)"/><circle cx="480" cy="115" r="3.5" fill="var(--ok)"/><circle cx="600" cy="105" r="4" fill="var(--ok)"/>
+              </g>
+              <g class="metric-series hidden" data-metric="pierna">
+                <polyline points="0,140 120,130 240,120 360,112 480,100 600,90" stroke="var(--amber)"/>
+                <circle cx="0" cy="140" r="3.5" fill="var(--amber)"/><circle cx="120" cy="130" r="3.5" fill="var(--amber)"/><circle cx="240" cy="120" r="3.5" fill="var(--amber)"/><circle cx="360" cy="112" r="3.5" fill="var(--amber)"/><circle cx="480" cy="100" r="3.5" fill="var(--amber)"/><circle cx="600" cy="90" r="4" fill="var(--amber)"/>
+              </g>
+            </svg>
+            <div class="chart-x-axis"><span>2 jun</span><span>9 jun</span><span>16 jun</span><span>23 jun</span><span>30 jun</span><span>Hoy</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-tag">Historial</div>
+          <div class="card-title" style="font-size:16px;">Mediciones registradas</div>
+          <div style="margin-top:6px;">
+            <div class="history-row"><div class="history-date">30 jun</div><div class="history-body"><div class="history-vals"><span>Peso</span>68.4 kg &nbsp; <span>Cintura</span>71.0 cm</div></div><div class="history-source coach">Coach</div></div>
+            <div class="history-row"><div class="history-date">23 jun</div><div class="history-body"><div class="history-vals"><span>Peso</span>69.1 kg</div></div><div class="history-source client">Tú</div></div>
+            <div class="history-row"><div class="history-date">16 jun</div><div class="history-body"><div class="history-vals"><span>Peso</span>69.6 kg &nbsp; <span>Caderas</span>97.0 cm</div></div><div class="history-source coach">Coach</div></div>
+            <div class="history-row"><div class="history-date">9 jun</div><div class="history-body"><div class="history-vals"><span>Peso</span>70.2 kg</div></div><div class="history-source client">Tú</div></div>
+            <div class="history-row"><div class="history-date">2 jun</div><div class="history-body"><div class="history-vals"><span>Peso</span>71.0 kg &nbsp; <span>Cintura</span>75.5 cm &nbsp; <span>Caderas</span>98.5 cm</div></div><div class="history-source coach">Coach</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Columna lateral: fotos de progreso -->
+      <div class="card">
+        <div class="card-tag">Fotos de progreso</div>
+        <div class="card-title" style="font-size:16px;">Antes / Después</div>
+        <div class="card-meta">Compara dos fechas cualquiera</div>
+
+        <div class="photo-compare">
+          <div class="photo-slot">
+            <div class="photo-slot-label">Antes</div>
+            <select id="photoBefore" onchange="renderPhotoTags()">
+              <option value="2 jun">2 jun 2026</option>
+              <option value="16 jun">16 jun 2026</option>
+              <option value="30 jun">30 jun 2026</option>
+            </select>
+            <div class="photo-frame"><div class="photo-frame-tag" id="tagBefore">2 jun</div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6.5 7-6.5S19 16 19 20"/></svg></div>
+          </div>
+          <div class="photo-slot">
+            <div class="photo-slot-label">Después</div>
+            <select id="photoAfter" onchange="renderPhotoTags()">
+              <option value="2 jun">2 jun 2026</option>
+              <option value="16 jun">16 jun 2026</option>
+              <option value="30 jun" selected>30 jun 2026</option>
+            </select>
+            <div class="photo-frame"><div class="photo-frame-tag" id="tagAfter">30 jun</div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6.5 7-6.5S19 16 19 20"/></svg></div>
+          </div>
+        </div>
+
+        <div class="photo-gallery" id="photoGallery">
+          <div class="photo-thumb" data-date="2 jun" onclick="setAfter('2 jun')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6.5 7-6.5S19 16 19 20"/></svg><div class="photo-thumb-date">2 jun</div></div>
+          <div class="photo-thumb" data-date="16 jun" onclick="setAfter('16 jun')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6.5 7-6.5S19 16 19 20"/></svg><div class="photo-thumb-date">16 jun</div></div>
+          <div class="photo-thumb selected" data-date="30 jun" onclick="setAfter('30 jun')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-4 3-6.5 7-6.5S19 16 19 20"/></svg><div class="photo-thumb-date">30 jun</div></div>
+        </div>
+
+        <button class="upload-btn"><svg viewBox="0 0 20 20"><path d="M10 13V4M6 8l4-4 4 4"/><path d="M4 16h12"/></svg>Subir foto de hoy</button>
+
+        <div class="photo-privacy-note"><svg viewBox="0 0 20 20"><rect x="4" y="8.5" width="12" height="8" rx="2"/><path d="M6.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/></svg>Solo tú y Coach pueden ver tus fotos.</div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="fab-wa" aria-label="Escribir a Coach por WhatsApp"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+
+<nav class="bottom-nav">
+  <a class="bn-link" href="#"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none"/></svg><span class="bn-link-label">HOY</span></a>
+  <a class="bn-link" href="#"><svg viewBox="0 0 20 20"><circle cx="4.5" cy="10" r="1.8"/><circle cx="15.5" cy="10" r="1.8"/><line x1="6.3" y1="10" x2="13.7" y2="10"/></svg><span class="bn-link-label">PLAN</span></a>
+  <a class="bn-link" href="#"><svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/></svg><span class="bn-link-label">AGENDA</span></a>
+  <a class="bn-link active" href="#"><svg viewBox="0 0 20 20"><line x1="4.5" y1="16" x2="4.5" y2="11"/><line x1="10" y1="16" x2="10" y2="6.5"/><line x1="15.5" y1="16" x2="15.5" y2="9"/></svg><span class="bn-link-label">PROGR.</span></a>
+  <a class="bn-link" href="#">
+    <svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>
+    <span class="bn-link-label">MATERIAL</span>
+  </a>
+</nav>
+
+<!-- Modal registrar medición -->
+<div class="modal-backdrop" id="measureModal">
+  <div class="modal-box">
+    <button class="modal-close-x" onclick="closeMeasureModal()"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    <div class="modal-title">Registrar medición</div>
+    <div class="modal-sub">Se guardará con la etiqueta "Registrado por ti".</div>
+    <div class="modal-field"><label>Peso (kg)</label><input type="number" step="0.1" placeholder="68.4"></div>
+    <div class="modal-field"><label>Cintura (cm)</label><input type="number" step="0.1" placeholder="71.0"></div>
+    <div class="modal-field"><label>Caderas (cm)</label><input type="number" step="0.1" placeholder="96.5"></div>
+    <div class="modal-actions">
+      <button class="modal-btn ghost" onclick="closeMeasureModal()">Cancelar</button>
+      <button class="modal-btn primary" onclick="closeMeasureModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- Reveal cards on load / scroll ----
+  const revealTargets = document.querySelectorAll('.card, .metric-summary-card');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('in-view'), i * 40);
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  revealTargets.forEach(c => io.observe(c));
+
+  // ---- Toggle de métricas en la gráfica ----
+  document.querySelectorAll('.metric-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const metric = chip.dataset.metric;
+      const series = document.querySelector(`.metric-series[data-metric="${metric}"]`);
+      chip.classList.toggle('active');
+      chip.classList.toggle('off');
+      series.classList.toggle('hidden');
+    });
+  });
+
+  // ---- Comparación de fotos ----
+  function renderPhotoTags() {
+    document.getElementById('tagBefore').textContent = document.getElementById('photoBefore').value;
+    document.getElementById('tagAfter').textContent = document.getElementById('photoAfter').value;
+    document.querySelectorAll('.photo-thumb').forEach(t => {
+      t.classList.toggle('selected', t.dataset.date === document.getElementById('photoAfter').value);
+    });
+  }
+  function setAfter(date) {
+    document.getElementById('photoAfter').value = date;
+    renderPhotoTags();
+  }
+
+  // ---- Modal registrar medición ----
+  const measureModal = document.getElementById('measureModal');
+  function openMeasureModal(){ measureModal.classList.add('open'); }
+  function closeMeasureModal(){ measureModal.classList.remove('open'); }
+  measureModal.addEventListener('click', (e) => { if (e.target === measureModal) closeMeasureModal(); });
+
+  // ---- Sidebar / bottom nav visual active state ----
+  document.querySelectorAll('.side-link, .bn-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const group = link.classList.contains('side-link') ? '.side-link' : '.bn-link';
+      document.querySelectorAll(group).forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

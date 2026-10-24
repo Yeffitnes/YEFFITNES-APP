@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yeffitnes.training — Panel del coach · Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910; --neon:#F7254B; --rose:#F2406B; --gold-deep:#8D6526;--pearl:#CDB170; --amber:#F5A623;
+    --surface:#F5F6FA; --paper:#FFFFFF; --text:#12141B; --text-dim:#5B6172; --text-faint:#9AA0AE;
+    --accent:#D41A40; --garnet:#9C1535; --line:#E1E3EC; --ok:#3EEB8C; --danger:#E8536B;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
+  a{color:inherit; text-decoration:none;}
+  button{font:inherit;}
+
+  /* ================= SHELL ================= */
+  .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
+  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; color:#fff;}
+  .side-logo{display:flex; align-items:center; gap:9px; padding:6px 8px 24px; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
+  .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
+  .side-logo span.faint{color:rgba(255,255,255,0.4); font-weight:400;}
+  .side-group-label{font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.07em; color:rgba(255,255,255,0.32); padding:16px 12px 8px;}
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .side-link{display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:10px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.62); position:relative;}
+  .side-link svg{width:17px; height:17px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.6;}
+  .side-link:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .side-link.active{background:rgba(255,255,255,0.09); color:#fff;}
+  .side-link.active::before{content:''; position:absolute; left:-16px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg,var(--neon),var(--rose));}
+  .side-link .badge{margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:9.5px; background:rgba(255,255,255,0.12); padding:2px 6px; border-radius:20px;}
+  .side-link.sub{padding-left:32px; font-size:12.5px; font-weight:500;}
+  .side-spacer{flex:1;}
+  .side-coach{display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(255,255,255,0.05); margin-top:12px;}
+  .side-avatar{width:34px; height:34px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13px; color:#fff;}
+  .side-coach-name{font-size:12.5px; font-weight:700; color:#fff;}
+  .side-coach-role{font-family:'IBM Plex Mono', monospace; font-size:10px; color:rgba(255,255,255,0.4); margin-top:1px;}
+  .mobile-nav{display:none;}
+
+  .main{padding:30px 40px 90px; max-width:1320px; width:100%; min-width:0;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:24px;}
+
+  /* ================= TOPBAR ================= */
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:16px; flex-wrap:wrap;}
+  .greeting-eyebrow{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.07em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; display:flex; align-items:center; gap:8px;}
+  .live-dot{width:6px; height:6px; border-radius:50%; background:var(--ok); position:relative;}
+  .live-dot::after{content:''; position:absolute; inset:-4px; border-radius:50%; background:var(--ok); opacity:0.35; animation:pulse 1.8s infinite ease-out;}
+  @keyframes pulse{0%{transform:scale(0.6); opacity:0.5;} 100%{transform:scale(2.2); opacity:0;}}
+  .greeting h1{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:24px; letter-spacing:-0.02em;}
+  .greeting-sub{font-size:13.5px; color:var(--text-dim); margin-top:5px;}
+  .topbar-actions{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .primary-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none;}
+  .primary-btn svg{width:14px; height:14px; stroke:#fff; fill:none; stroke-width:2.2;}
+  .ghost-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:var(--paper); border:1px solid var(--line); color:var(--text); font-weight:700; font-size:12.5px; cursor:pointer;}
+
+  /* ---- Week nav ---- */
+  .week-nav{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .week-nav-btn{width:32px; height:32px; border-radius:9px; border:1px solid var(--line); background:var(--paper); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .week-nav-btn svg{width:12px; height:12px; stroke:var(--text); fill:none; stroke-width:2;}
+  .week-nav-label{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:15px;}
+  .week-today-btn{margin-left:auto; font-size:11.5px; font-weight:700; color:var(--accent); background:rgba(212,26,64,0.08); padding:6px 12px; border-radius:20px; border:none; cursor:pointer;}
+
+  /* ---- Day pills (mobile) ---- */
+  .day-tab-row{display:none;}
+
+  /* ================= WEEK GRID ================= */
+  .week-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:12px;}
+  .day-col-head{text-align:center; margin-bottom:10px;}
+  .day-col-name{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint);}
+  .day-col-num{font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:17px; margin-top:2px;}
+  .day-col.today .day-col-num{color:#fff; background:linear-gradient(135deg,var(--neon),var(--rose)); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:2px auto 0;}
+
+  .day-col-body{display:flex; flex-direction:column; gap:8px; min-height:80px;}
+
+  .slot-card{border-radius:12px; padding:10px; font-size:11.5px;}
+
+  /* ---- Clase grupal con cupos ---- */
+  .slot-card.group{background:rgba(212,26,64,0.07); border:1.4px dashed rgba(212,26,64,0.35);}
+  .slot-card-head{display:flex; align-items:center; justify-content:space-between;}
+  .slot-cap-badge{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700; color:var(--accent);
+    background:rgba(212,26,64,0.12); padding:2px 7px; border-radius:20px;
+  }
+  .slot-roster{display:flex; flex-wrap:wrap; gap:4px; margin-top:7px;}
+  .roster-chip{
+    font-size:10px; font-weight:600; color:var(--text-dim); background:var(--paper);
+    border:1px solid var(--line); padding:2px 7px; border-radius:20px;
+  }
+  .slot-card.confirmed{background:rgba(62,235,140,0.09); border:1px solid rgba(62,235,140,0.35);}
+  .slot-card.pending{background:rgba(245,166,35,0.09); border:1px solid rgba(245,166,35,0.35);}
+  .slot-time{font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:11px;}
+  .slot-client{font-weight:700; margin-top:3px;}
+  .slot-type{color:var(--text-dim); margin-top:1px;}
+  .slot-actions{display:flex; gap:6px; margin-top:7px;}
+  .slot-actions button{width:22px; height:22px; border-radius:6px; border:none; background:rgba(255,255,255,0.7); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .slot-actions button svg{width:10px; height:10px; stroke:var(--text-dim); fill:none; stroke-width:2;}
+
+  .slot-available{
+    border-radius:12px; padding:10px; font-size:11.5px; border:1.4px dashed var(--line); background:var(--surface); color:var(--text-dim);
+    display:flex; align-items:center; justify-content:space-between; cursor:pointer;
+  }
+  .slot-available .slot-time{color:var(--text-dim);}
+  .slot-available:hover{border-color:var(--accent); color:var(--accent);}
+  .slot-available button{width:20px; height:20px; border-radius:6px; border:none; background:transparent; display:flex; align-items:center; justify-content:center;}
+  .slot-available button svg{width:9px; height:9px; stroke:var(--text-faint); fill:none; stroke-width:2;}
+
+  .add-slot-btn{
+    border-radius:12px; border:1.4px dashed var(--line); background:transparent; color:var(--text-faint);
+    padding:10px; font-size:11.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;
+  }
+  .add-slot-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .add-slot-btn svg{width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2.3;}
+
+  /* ---- Leyenda ---- */
+  .legend-row{display:flex; gap:18px; margin-top:20px; flex-wrap:wrap;}
+  .legend-item{display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text-dim);}
+  .legend-dot{width:9px; height:9px; border-radius:3px;}
+
+  /* ---- Modal ---- */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(8,6,14,0.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s ease;}
+  .modal-backdrop.open{opacity:1; pointer-events:auto;}
+  .modal-box{position:relative; width:100%; max-width:420px; background:var(--paper); border-radius:18px; padding:26px; transform:scale(0.96) translateY(10px); transition:transform 0.28s cubic-bezier(0.2,0.8,0.2,1); box-shadow:0 40px 80px -20px rgba(0,0,0,0.3);}
+  .modal-backdrop.open .modal-box{transform:scale(1) translateY(0);}
+  .modal-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:17px;}
+  .modal-sub{font-size:12.5px; color:var(--text-dim); margin-top:4px; line-height:1.5;}
+  .modal-field{margin-top:14px;}
+  .modal-field label{font-size:11.5px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;}
+  .modal-field input, .modal-field select{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); font-family:'Manrope', sans-serif; font-size:13px; background:var(--paper);}
+  .modal-row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-cap-hint{font-size:11px; color:var(--text-faint); margin-top:8px; line-height:1.4;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .modal-btn{flex:1; height:42px; border-radius:11px; border:none; font-weight:700; font-size:13px; cursor:pointer;}
+  .modal-btn.primary{background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff;}
+  .modal-btn.ghost{background:var(--surface); color:var(--text);}
+  .modal-close-x{position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:9px; border:none; background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .modal-close-x svg{width:13px; height:13px; stroke:var(--text-dim); fill:none; stroke-width:2;}
+
+  @media (max-width:1080px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .main{padding:20px 16px 60px;}
+    .mobile-nav{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:20px; -webkit-overflow-scrolling:touch;}
+    .mobile-nav a{flex:0 0 auto; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:20px; background:var(--paper); border:1px solid var(--line); color:var(--text-dim); white-space:nowrap;}
+    .mobile-nav a.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+    .day-tab-row{display:flex; gap:8px; overflow-x:auto; margin-bottom:16px; -webkit-overflow-scrolling:touch;}
+    .day-tab{flex:0 0 auto; padding:9px 15px; border-radius:20px; border:1px solid var(--line); background:var(--paper); font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;}
+    .day-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+    .week-grid{grid-template-columns:1fr; gap:0;}
+    .day-col{display:none;}
+    .day-col.mobile-visible{display:block;}
+    .day-col-head{text-align:left; display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+    .day-col.today .day-col-num{margin:0;}
+  }
+
+
+.m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="side-logo"><svg width="164" height="29" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="yp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#yp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>Dashboard</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg>Clientes<span class="badge">24</span></a>
+    </nav>
+    <div class="side-group-label">Catálogo</div>
+    <nav class="side-nav">
+      <a class="side-link sub" href="#"><svg viewBox="0 0 20 20"><path d="M4.5 6.5h11M4.5 10h11M4.5 13.5h7"/></svg>Ejercicios</a>
+      <a class="side-link sub" href="#"><svg viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="13" height="13" rx="3"/><path d="M7 10h6M10 7v6"/></svg>Rutinas</a>
+    </nav>
+    <div class="side-group-label">Operación</div>
+    <nav class="side-nav">
+      <a class="side-link active" href="#"><svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/></svg>Agenda</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>Material educativo</a>
+    </nav>
+    <div class="side-spacer"></div>
+    <div class="side-coach">
+      <div class="side-avatar">D</div>
+      <div><div class="side-coach-name">Coach</div><div class="side-coach-role">Coach</div></div>
+    </div>
+  </aside>
+
+  <main class="main"><div class="m-logo"><svg width="150" height="27" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="ym" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#ym)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="mobile-nav">
+      <a href="#">Dashboard</a><a href="#">Clientes</a><a href="#">Ejercicios</a><a href="#">Rutinas</a><a class="active" href="#">Agenda</a><a href="#">Material</a>
+    </nav>
+
+    <div class="topbar">
+      <div class="greeting">
+        <div class="greeting-eyebrow"><span class="live-dot"></span>Tiempo real</div>
+        <h1>Agenda</h1>
+        <p class="greeting-sub">12 sesiones confirmadas · 3 huecos disponibles sin reservar</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="ghost-btn" onclick="openAssignModal()"><svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:var(--text);fill:none;stroke-width:1.8;"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M14.5 8.5l1.3 1.3 2.2-2.6" stroke="var(--accent)"/></svg>Agendar cliente</button>
+        <button class="primary-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Publicar disponibilidad</button>
+      </div>
+    </div>
+
+    <div class="week-nav">
+      <button class="week-nav-btn"><svg viewBox="0 0 20 20"><path d="M12 4L6 10l6 6"/></svg></button>
+      <div class="week-nav-label">16 – 22 de junio, 2026</div>
+      <button class="week-nav-btn"><svg viewBox="0 0 20 20"><path d="M8 4l6 6-6 6"/></svg></button>
+      <button class="week-today-btn">Hoy</button>
+    </div>
+
+    <div class="day-tab-row" id="dayTabRow">
+      <div class="day-tab" data-day="0">LUN 16</div>
+      <div class="day-tab" data-day="1">MAR 17</div>
+      <div class="day-tab" data-day="2">MIÉ 18</div>
+      <div class="day-tab active" data-day="3">JUE 18</div>
+      <div class="day-tab" data-day="4">VIE 19</div>
+      <div class="day-tab" data-day="5">SÁB 20</div>
+      <div class="day-tab" data-day="6">DOM 21</div>
+    </div>
+
+    <div class="card">
+      <div class="week-grid" id="weekGrid">
+
+        <div class="day-col" data-day="0">
+          <div class="day-col-head"><div><div class="day-col-name">Lunes</div><div class="day-col-num">16</div></div></div>
+          <div class="day-col-body">
+            <div class="slot-card confirmed"><div class="slot-time">09:00</div><div class="slot-client">Sofía L.</div><div class="slot-type">Presencial · Fuerza</div></div>
+            <div class="slot-available">08:00 · Disponible <button><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Añadir</button>
+          </div>
+        </div>
+
+        <div class="day-col" data-day="1">
+          <div class="day-col-head"><div><div class="day-col-name">Martes</div><div class="day-col-num">17</div></div></div>
+          <div class="day-col-body">
+            <div class="slot-card confirmed"><div class="slot-time">11:00</div><div class="slot-client">Andrés M.</div><div class="slot-type">Online · Fuerza</div></div>
+            <div class="slot-card confirmed"><div class="slot-time">17:30</div><div class="slot-client">Sofía L.</div><div class="slot-type">Presencial · Fuerza</div></div>
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Añadir</button>
+          </div>
+        </div>
+
+        <div class="day-col" data-day="2">
+          <div class="day-col-head"><div><div class="day-col-name">Miércoles</div><div class="day-col-num">18</div></div></div>
+          <div class="day-col-body">
+            <div class="slot-available">10:00 · Disponible <button><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
+            <div class="slot-available">16:00 · Disponible <button><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Añadir</button>
+          </div>
+        </div>
+
+        <div class="day-col today" data-day="3">
+          <div class="day-col-head"><div><div class="day-col-name">Jueves</div><div class="day-col-num">18</div></div></div>
+          <div class="day-col-body">
+            <div class="slot-card confirmed"><div class="slot-time">10:00</div><div class="slot-client">Camila R.</div><div class="slot-type">Presencial · Fuerza</div></div>
+            <div class="slot-card pending"><div class="slot-time">13:30</div><div class="slot-client">Andrés M.</div><div class="slot-type">Online · Fuerza</div>
+              <div class="slot-actions"><button title="Confirmar"><svg viewBox="0 0 20 20"><path d="M4 10l4 4 8-8"/></svg></button><button title="Cancelar"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
+            </div>
+            <div class="slot-card confirmed"><div class="slot-time">18:00</div><div class="slot-client">Ana T.</div><div class="slot-type">Nutrición</div></div>
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Añadir</button>
+          </div>
+        </div>
+
+        <div class="day-col" data-day="4">
+          <div class="day-col-head"><div><div class="day-col-name">Viernes</div><div class="day-col-num">19</div></div></div>
+          <div class="day-col-body">
+            <div class="slot-card confirmed"><div class="slot-time">08:30</div><div class="slot-client">María T.</div><div class="slot-type">Presencial · Fuerza</div></div>
+            <div class="slot-available">15:00 · Disponible <button><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Añadir</button>
+          </div>
+        </div>
+
+        <div class="day-col" data-day="5">
+          <div class="day-col-head"><div><div class="day-col-name">Sábado</div><div class="day-col-num">20</div></div></div>
+          <div class="day-col-body">
+            <div class="slot-card group">
+              <div class="slot-card-head">
+                <div class="slot-time">09:00</div>
+                <div class="slot-cap-badge">3/4 cupos</div>
+              </div>
+              <div class="slot-type">Clase grupal · Presencial · HIIT</div>
+              <div class="slot-roster">
+                <span class="roster-chip">Juan P.</span>
+                <span class="roster-chip">Sofía L.</span>
+                <span class="roster-chip">Andrés M.</span>
+              </div>
+            </div>
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Añadir</button>
+          </div>
+        </div>
+
+        <div class="day-col" data-day="6">
+          <div class="day-col-head"><div><div class="day-col-name">Domingo</div><div class="day-col-num">21</div></div></div>
+          <div class="day-col-body">
+            <button class="add-slot-btn" onclick="openPublishModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Descanso — añadir hueco</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:rgba(62,235,140,0.5); border:1px solid rgba(62,235,140,0.8);"></span>Confirmada</div>
+        <div class="legend-item"><span class="legend-dot" style="background:rgba(245,166,35,0.5); border:1px solid rgba(245,166,35,0.8);"></span>Por confirmar</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--surface); border:1.4px dashed var(--line);"></span>Disponible sin reservar</div>
+        <div class="legend-item"><span class="legend-dot" style="background:rgba(212,26,64,0.15); border:1.4px dashed rgba(212,26,64,0.6);"></span>Clase grupal (con cupos)</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal: publicar disponibilidad -->
+<div class="modal-backdrop" id="publishModal">
+  <div class="modal-box">
+    <button class="modal-close-x" onclick="closePublishModal()"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    <div class="modal-title">Publicar disponibilidad</div>
+    <div class="modal-sub">Este hueco quedará visible para que cualquier cliente lo reserve.</div>
+    <div class="modal-field"><label>Fecha</label><input type="date"></div>
+    <div class="modal-row2">
+      <div class="modal-field"><label>Hora</label><input type="time"></div>
+      <div class="modal-field"><label>Duración</label><select><option>45 min</option><option>60 min</option><option>90 min</option></select></div>
+    </div>
+    <div class="modal-row2">
+      <div class="modal-field">
+        <label>Tipo de sesión</label>
+        <select><option>Presencial</option><option>Online</option><option>Asesoría de nutrición</option></select>
+      </div>
+      <div class="modal-field">
+        <label>Cupos</label>
+        <input type="number" min="1" value="1" id="publishCapacity">
+      </div>
+    </div>
+    <div class="modal-cap-hint" id="publishCapHint">1 cupo = sesión individual (como hoy). Más de 1 la convierte en clase grupal.</div>
+    <div class="modal-actions">
+      <button class="modal-btn ghost" onclick="closePublishModal()">Cancelar</button>
+      <button class="modal-btn primary" onclick="closePublishModal()">Publicar hueco</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: agendar cliente manualmente -->
+<div class="modal-backdrop" id="assignModal">
+  <div class="modal-box">
+    <button class="modal-close-x" onclick="closeAssignModal()"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    <div class="modal-title">Agendar cliente</div>
+    <div class="modal-sub">Se reserva directamente en su nombre, sin pasar por el portal. Queda confirmada de inmediato.</div>
+    <div class="modal-field">
+      <label>Cliente</label>
+      <select id="assignClient">
+        <option>Camila R.</option><option>Juan P.</option><option>María T.</option><option>Ana T.</option><option>Andrés M.</option><option>Sofía L.</option>
+      </select>
+    </div>
+    <div class="modal-row2">
+      <div class="modal-field">
+        <label>Día</label>
+        <select id="assignDay">
+          <option value="0">Lunes 16</option><option value="1">Martes 17</option><option value="2">Miércoles 18</option>
+          <option value="3" selected>Jueves 18</option><option value="4">Viernes 19</option><option value="5">Sábado 20</option><option value="6">Domingo 21</option>
+        </select>
+      </div>
+      <div class="modal-field"><label>Hora</label><input type="time" id="assignTime" value="16:00"></div>
+    </div>
+    <div class="modal-field">
+      <label>Tipo de sesión</label>
+      <select id="assignType"><option>Presencial</option><option>Online</option><option>Asesoría de nutrición</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn ghost" onclick="closeAssignModal()">Cancelar</button>
+      <button class="modal-btn primary" onclick="submitAssign()">Agendar sesión</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const publishModal = document.getElementById('publishModal');
+  function openPublishModal(){ publishModal.classList.add('open'); }
+  function closePublishModal(){ publishModal.classList.remove('open'); }
+  publishModal.addEventListener('click', (e) => { if (e.target === publishModal) closePublishModal(); });
+
+  const assignModal = document.getElementById('assignModal');
+  function openAssignModal(){ assignModal.classList.add('open'); }
+  function closeAssignModal(){ assignModal.classList.remove('open'); }
+  assignModal.addEventListener('click', (e) => { if (e.target === assignModal) closeAssignModal(); });
+
+  function submitAssign(){
+    const client = document.getElementById('assignClient').value;
+    const day = document.getElementById('assignDay').value;
+    const time = document.getElementById('assignTime').value;
+    const type = document.getElementById('assignType').value;
+    const col = document.querySelector(`.day-col[data-day="${day}"] .day-col-body`);
+    const card = document.createElement('div');
+    card.className = 'slot-card confirmed';
+    card.innerHTML = `<div class="slot-time">${time}</div><div class="slot-client">${client}</div><div class="slot-type">${type}</div>`;
+    col.insertBefore(card, col.querySelector('.add-slot-btn'));
+    closeAssignModal();
+  }
+
+  // Mobile day tabs control which day-col is visible
+  function setMobileDay(idx){
+    document.querySelectorAll('.day-col').forEach(c => c.classList.toggle('mobile-visible', c.dataset.day === String(idx)));
+    document.querySelectorAll('.day-tab').forEach(t => t.classList.toggle('active', t.dataset.day === String(idx)));
+  }
+  document.querySelectorAll('.day-tab').forEach(tab => {
+    tab.addEventListener('click', () => setMobileDay(tab.dataset.day));
+  });
+  setMobileDay('3');
+</script>
+
+</body>
+</html>

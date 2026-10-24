@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yeffitnes.training — Panel del coach · Material educativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910; --neon:#F7254B; --rose:#F2406B; --gold-deep:#8D6526;--pearl:#CDB170; --amber:#F5A623;
+    --surface:#F5F6FA; --paper:#FFFFFF; --text:#12141B; --text-dim:#5B6172; --text-faint:#9AA0AE;
+    --accent:#D41A40; --garnet:#9C1535; --line:#E1E3EC; --ok:#3EEB8C; --danger:#E8536B;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
+  a{color:inherit; text-decoration:none;}
+  button{font:inherit;}
+  textarea{font:inherit;}
+
+  /* ================= SHELL ================= */
+  .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
+  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; color:#fff;}
+  .side-logo{display:flex; align-items:center; gap:9px; padding:6px 8px 24px; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
+  .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
+  .side-logo span.faint{color:rgba(255,255,255,0.4); font-weight:400;}
+  .side-group-label{font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.07em; color:rgba(255,255,255,0.32); padding:16px 12px 8px;}
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .side-link{display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:10px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.62); position:relative;}
+  .side-link svg{width:17px; height:17px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.6;}
+  .side-link:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .side-link.active{background:rgba(255,255,255,0.09); color:#fff;}
+  .side-link.active::before{content:''; position:absolute; left:-16px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg,var(--neon),var(--rose));}
+  .side-link .badge{margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:9.5px; background:rgba(255,255,255,0.12); padding:2px 6px; border-radius:20px;}
+  .side-link.sub{padding-left:32px; font-size:12.5px; font-weight:500;}
+  .side-spacer{flex:1;}
+  .side-coach{display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(255,255,255,0.05); margin-top:12px;}
+  .side-avatar{width:34px; height:34px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13px; color:#fff;}
+  .side-coach-name{font-size:12.5px; font-weight:700; color:#fff;}
+  .side-coach-role{font-family:'IBM Plex Mono', monospace; font-size:10px; color:rgba(255,255,255,0.4); margin-top:1px;}
+  .mobile-nav{display:none;}
+
+  .main{padding:30px 40px 90px; max-width:1280px; width:100%; min-width:0;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:24px;}
+
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:16px; flex-wrap:wrap;}
+  .greeting-eyebrow{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.07em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;}
+  .greeting h1{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:26px; letter-spacing:-0.02em;}
+  .greeting-sub{font-size:13.5px; color:var(--text-dim); margin-top:5px;}
+  .primary-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none;}
+  .primary-btn svg{width:14px; height:14px; stroke:#fff; fill:none; stroke-width:2.2;}
+
+  .filter-row{display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .search-box{display:flex; align-items:center; gap:8px; padding:0 14px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--paper); flex:1; min-width:200px; max-width:300px;}
+  .search-box svg{width:15px; height:15px; stroke:var(--text-faint); fill:none; stroke-width:1.8; flex-shrink:0;}
+  .search-box input{border:none; outline:none; font-size:13px; background:transparent; width:100%;}
+  .filter-chip{font-size:12px; font-weight:700; padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--paper); color:var(--text-dim); cursor:pointer;}
+  .filter-chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  /* ================= GRID DE CONTENIDO ================= */
+  .content-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .content-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; overflow:hidden; transition:box-shadow 0.2s ease, border-color 0.2s ease; position:relative;}
+  .content-card:hover{box-shadow:0 14px 30px -16px rgba(42,10,22,0.18); border-color:#DBDEE8;}
+  .content-thumb{position:relative; aspect-ratio:16/10; display:flex; align-items:center; justify-content:center;}
+  .content-thumb.video{background:linear-gradient(135deg,#2a1119,#1B0A10 60%,#0A0910);}
+  .content-thumb.articulo{background:linear-gradient(135deg,#FCEBEF,#FEF1F3);}
+  .content-thumb.documento{background:linear-gradient(135deg,#FFEFE8,#FFF6F2);}
+  .content-thumb .play{width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center;}
+  .content-thumb .play svg{width:12px; height:12px; fill:#fff; margin-left:1px;}
+  .content-thumb.articulo svg{width:24px; height:24px; stroke:var(--accent); fill:none; stroke-width:1.5;}
+  .content-thumb.documento svg{width:24px; height:24px; stroke:var(--pearl); fill:none; stroke-width:1.5;}
+  .content-type-tag{position:absolute; left:9px; top:9px; font-family:'IBM Plex Mono', monospace; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; padding:4px 8px; border-radius:20px; background:rgba(255,255,255,0.85); color:var(--text-dim);}
+  .content-body{padding:14px;}
+  .content-title{font-size:13.5px; font-weight:700; line-height:1.35;}
+  .content-cat{font-size:11px; color:var(--accent); font-weight:700; margin-top:5px;}
+  .content-meta{display:flex; justify-content:space-between; align-items:center; margin-top:9px;}
+  .content-date{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint);}
+  .content-views{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint);}
+  .content-actions{position:absolute; right:9px; top:9px; display:flex; gap:5px; opacity:0; transition:opacity 0.15s ease;}
+  .content-card:hover .content-actions{opacity:1;}
+  .content-actions button{width:24px; height:24px; border-radius:7px; border:none; background:rgba(255,255,255,0.9); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .content-actions button svg{width:11px; height:11px; stroke:var(--text-dim); fill:none; stroke-width:1.8;}
+
+  /* ---- Destacar como vídeo de la semana ---- */
+  .featured-toggle{
+    position:absolute; right:9px; bottom:9px; width:28px; height:28px; border-radius:8px; border:none;
+    background:rgba(0,0,0,0.35); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:background 0.18s ease;
+  }
+  .featured-toggle svg{width:14px; height:14px; stroke:rgba(255,255,255,0.8); fill:none; stroke-width:1.6; transition:fill 0.18s ease, stroke 0.18s ease;}
+  .featured-toggle.active{background:linear-gradient(135deg,var(--neon),var(--rose));}
+  .featured-toggle.active svg{fill:#fff; stroke:#fff;}
+  .featured-banner{
+    display:flex; align-items:center; gap:10px; background:rgba(212,26,64,0.07); border:1px solid rgba(212,26,64,0.18);
+    border-radius:12px; padding:12px 16px; margin-bottom:16px; font-size:12.5px; color:var(--text-dim);
+  }
+  .featured-banner svg{width:15px; height:15px; stroke:var(--accent); fill:none; stroke-width:1.6; flex-shrink:0;}
+  .featured-banner b{color:var(--text); font-weight:700;}
+
+  /* ================= MODAL NUEVO CONTENIDO ================= */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(8,6,14,0.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s ease;}
+  .modal-backdrop.open{opacity:1; pointer-events:auto;}
+  .modal-box{position:relative; width:100%; max-width:480px; background:var(--paper); border-radius:18px; padding:26px; transform:scale(0.96) translateY(10px); transition:transform 0.28s cubic-bezier(0.2,0.8,0.2,1); box-shadow:0 40px 80px -20px rgba(0,0,0,0.3); max-height:88vh; overflow-y:auto;}
+  .modal-backdrop.open .modal-box{transform:scale(1) translateY(0);}
+  .modal-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:17px;}
+  .modal-sub{font-size:12.5px; color:var(--text-dim); margin-top:4px; line-height:1.5;}
+  .type-select-row{display:flex; gap:8px; margin-top:16px;}
+  .type-select-btn{flex:1; padding:12px 8px; border-radius:12px; border:1.4px solid var(--line); background:var(--paper); cursor:pointer; text-align:center; font-size:11.5px; font-weight:700; color:var(--text-dim);}
+  .type-select-btn svg{width:18px; height:18px; stroke:var(--text-dim); fill:none; stroke-width:1.6; display:block; margin:0 auto 6px;}
+  .type-select-btn.active{border-color:var(--accent); background:rgba(212,26,64,0.06); color:var(--accent);}
+  .type-select-btn.active svg{stroke:var(--accent);}
+  .modal-field{margin-top:14px;}
+  .modal-field label{font-size:11.5px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;}
+  .modal-field input, .modal-field select{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); font-family:'Manrope', sans-serif; font-size:13px;}
+  .modal-field textarea{width:100%; min-height:130px; padding:12px; border-radius:10px; border:1px solid var(--line); font-size:13px; resize:vertical;}
+  .upload-zone{border:1.5px dashed var(--line); border-radius:12px; padding:22px; text-align:center; color:var(--text-dim); font-size:12.5px; cursor:pointer;}
+  .upload-zone svg{width:20px; height:20px; stroke:var(--text-faint); fill:none; stroke-width:1.6; margin-bottom:7px;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .modal-btn{flex:1; height:42px; border-radius:11px; border:none; font-weight:700; font-size:13px; cursor:pointer;}
+  .modal-btn.primary{background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff;}
+  .modal-btn.ghost{background:var(--surface); color:var(--text);}
+  .modal-close-x{position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:9px; border:none; background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .modal-close-x svg{width:13px; height:13px; stroke:var(--text-dim); fill:none; stroke-width:2;}
+  .field-group{display:none;}
+  .field-group.active{display:block;}
+
+  @media (max-width:1080px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .main{padding:20px 16px 60px;}
+    .mobile-nav{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:20px; -webkit-overflow-scrolling:touch;}
+    .mobile-nav a{flex:0 0 auto; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:20px; background:var(--paper); border:1px solid var(--line); color:var(--text-dim); white-space:nowrap;}
+    .mobile-nav a.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+    .content-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:640px){ .content-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:520px){ .greeting h1{font-size:21px;} .content-grid{grid-template-columns:1fr;} .card{padding:18px;} }
+
+
+.m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="side-logo"><svg width="164" height="29" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="yp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#yp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>Dashboard</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg>Clientes<span class="badge">24</span></a>
+    </nav>
+    <div class="side-group-label">Catálogo</div>
+    <nav class="side-nav">
+      <a class="side-link sub" href="#"><svg viewBox="0 0 20 20"><path d="M4.5 6.5h11M4.5 10h11M4.5 13.5h7"/></svg>Ejercicios</a>
+      <a class="side-link sub" href="#"><svg viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="13" height="13" rx="3"/><path d="M7 10h6M10 7v6"/></svg>Rutinas</a>
+    </nav>
+    <div class="side-group-label">Operación</div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/></svg>Agenda</a>
+      <a class="side-link active" href="#"><svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>Material educativo</a>
+    </nav>
+    <div class="side-spacer"></div>
+    <div class="side-coach">
+      <div class="side-avatar">D</div>
+      <div><div class="side-coach-name">Coach</div><div class="side-coach-role">Coach</div></div>
+    </div>
+  </aside>
+
+  <main class="main"><div class="m-logo"><svg width="150" height="27" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="ym" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#ym)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="mobile-nav">
+      <a href="#">Dashboard</a><a href="#">Clientes</a><a href="#">Ejercicios</a><a href="#">Rutinas</a><a href="#">Agenda</a><a class="active" href="#">Material</a>
+    </nav>
+
+    <div class="topbar">
+      <div class="greeting">
+        <div class="greeting-eyebrow">Material educativo</div>
+        <h1>12 publicaciones</h1>
+        <p class="greeting-sub">Visible para tus 24 clientes activos</p>
+      </div>
+      <button class="primary-btn" onclick="openContentModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Nuevo contenido</button>
+    </div>
+
+    <div class="featured-banner" id="featuredBanner">
+      <svg viewBox="0 0 20 20"><path d="M10 2.5l2.3 4.9 5.3.7-3.9 3.7.9 5.4-4.6-2.5-4.6 2.5.9-5.4-3.9-3.7 5.3-.7L10 2.5z"/></svg>
+      <span>Vídeo de la semana actual: <b id="featuredName">Cómo hacer un calentamiento correcto</b> — visible en "Hoy" para todos tus clientes.</span>
+    </div>
+
+    <div class="filter-row">
+      <div class="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/></svg><input type="text" placeholder="Buscar contenido..."></div>
+      <div class="filter-chip active">Todos</div>
+      <div class="filter-chip">Artículos</div>
+      <div class="filter-chip">Vídeos</div>
+      <div class="filter-chip">Documentos</div>
+    </div>
+
+    <div class="content-grid">
+
+      <div class="content-card">
+        <div class="content-actions"><button><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 20 20"><path d="M5 6h10M8 6V4.5h4V6M6 6l.6 9.5a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6"/></svg></button></div>
+        <div class="content-thumb video">
+          <div class="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div>
+          <button class="featured-toggle active" onclick="event.stopPropagation(); toggleFeatured(this)" title="Destacar como vídeo de la semana">
+            <svg viewBox="0 0 20 20"><path d="M10 2.5l2.3 4.9 5.3.7-3.9 3.7.9 5.4-4.6-2.5-4.6 2.5.9-5.4-3.9-3.7 5.3-.7L10 2.5z"/></svg>
+          </button>
+        </div>
+        <div class="content-body">
+          <div class="content-title">Cómo hacer un calentamiento correcto</div>
+          <div class="content-cat">Técnica</div>
+          <div class="content-meta"><span class="content-date">12 jun 2026</span><span class="content-views">Visto por 18</span></div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="content-actions"><button><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 20 20"><path d="M5 6h10M8 6V4.5h4V6M6 6l.6 9.5a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6"/></svg></button></div>
+        <div class="content-thumb articulo"><svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z"/></svg></div>
+        <div class="content-body">
+          <div class="content-title">Mitos comunes sobre la proteína</div>
+          <div class="content-cat">Nutrición</div>
+          <div class="content-meta"><span class="content-date">8 jun 2026</span><span class="content-views">Visto por 22</span></div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="content-actions"><button><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 20 20"><path d="M5 6h10M8 6V4.5h4V6M6 6l.6 9.5a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6"/></svg></button></div>
+        <div class="content-thumb documento"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3z"/><path d="M15 3v4h4"/></svg></div>
+        <div class="content-body">
+          <div class="content-title">Guía de movilidad — cadera y hombro</div>
+          <div class="content-cat">Movilidad</div>
+          <div class="content-meta"><span class="content-date">2 jun 2026</span><span class="content-views">Visto por 9</span></div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="content-actions"><button><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 20 20"><path d="M5 6h10M8 6V4.5h4V6M6 6l.6 9.5a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6"/></svg></button></div>
+        <div class="content-thumb articulo"><svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z"/></svg></div>
+        <div class="content-body">
+          <div class="content-title">Por qué el descanso es parte del entrenamiento</div>
+          <div class="content-cat">Recuperación</div>
+          <div class="content-meta"><span class="content-date">28 may 2026</span><span class="content-views">Visto por 15</span></div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="content-actions"><button><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 20 20"><path d="M5 6h10M8 6V4.5h4V6M6 6l.6 9.5a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6"/></svg></button></div>
+        <div class="content-thumb video">
+          <div class="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div>
+          <button class="featured-toggle" onclick="event.stopPropagation(); toggleFeatured(this)" title="Destacar como vídeo de la semana">
+            <svg viewBox="0 0 20 20"><path d="M10 2.5l2.3 4.9 5.3.7-3.9 3.7.9 5.4-4.6-2.5-4.6 2.5.9-5.4-3.9-3.7 5.3-.7L10 2.5z"/></svg>
+          </button>
+        </div>
+        <div class="content-body">
+          <div class="content-title">3 estiramientos para después de entrenar</div>
+          <div class="content-cat">Movilidad</div>
+          <div class="content-meta"><span class="content-date">20 may 2026</span><span class="content-views">Visto por 24</span></div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="content-actions"><button><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg></button><button><svg viewBox="0 0 20 20"><path d="M5 6h10M8 6V4.5h4V6M6 6l.6 9.5a1 1 0 001 .9h4.8a1 1 0 001-.9L14 6"/></svg></button></div>
+        <div class="content-thumb documento"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3z"/><path d="M15 3v4h4"/></svg></div>
+        <div class="content-body">
+          <div class="content-title">Lista de compras — semana tipo</div>
+          <div class="content-cat">Nutrición</div>
+          <div class="content-meta"><span class="content-date">14 may 2026</span><span class="content-views">Visto por 20</span></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Modal: nuevo contenido -->
+<div class="modal-backdrop" id="contentModal">
+  <div class="modal-box">
+    <button class="modal-close-x" onclick="closeContentModal()"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+    <div class="modal-title">Nuevo contenido educativo</div>
+    <div class="modal-sub">Aparecerá automáticamente en el portal de todos tus clientes.</div>
+
+    <div class="type-select-row">
+      <div class="type-select-btn active" data-type="articulo" onclick="setContentType('articulo')">
+        <svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z"/></svg>Artículo
+      </div>
+      <div class="type-select-btn" data-type="video" onclick="setContentType('video')">
+        <svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg>Vídeo
+      </div>
+      <div class="type-select-btn" data-type="documento" onclick="setContentType('documento')">
+        <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6V3z"/><path d="M15 3v4h4"/></svg>Documento
+      </div>
+    </div>
+
+    <div class="modal-field"><label>Título</label><input type="text" placeholder="Ej. Cómo prevenir lesiones de rodilla"></div>
+    <div class="modal-field">
+      <label>Categoría</label>
+      <select><option>Técnica</option><option>Nutrición</option><option>Movilidad</option><option>Recuperación</option><option>Motivación</option></select>
+    </div>
+
+    <div class="field-group active" id="field-articulo">
+      <div class="modal-field"><label>Contenido</label><textarea placeholder="Escribe el artículo aquí..."></textarea></div>
+    </div>
+    <div class="field-group" id="field-video">
+      <div class="modal-field"><label>Archivo de vídeo</label>
+        <div class="upload-zone"><svg viewBox="0 0 20 20"><path d="M10 13V4M6 8l4-4 4 4"/><path d="M4 16h12"/></svg><br>Arrastra el vídeo aquí o toca para elegir archivo</div>
+      </div>
+    </div>
+    <div class="field-group" id="field-documento">
+      <div class="modal-field"><label>Archivo (PDF)</label>
+        <div class="upload-zone"><svg viewBox="0 0 20 20"><path d="M10 13V4M6 8l4-4 4 4"/><path d="M4 16h12"/></svg><br>Arrastra el PDF aquí o toca para elegir archivo</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="modal-btn ghost" onclick="closeContentModal()">Cancelar</button>
+      <button class="modal-btn primary" onclick="closeContentModal()">Publicar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const contentModal = document.getElementById('contentModal');
+  function openContentModal(){ contentModal.classList.add('open'); }
+  function closeContentModal(){ contentModal.classList.remove('open'); }
+  contentModal.addEventListener('click', (e) => { if (e.target === contentModal) closeContentModal(); });
+
+  function setContentType(type){
+    document.querySelectorAll('.type-select-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+    document.querySelectorAll('.field-group').forEach(f => f.classList.toggle('active', f.id === 'field-' + type));
+  }
+
+  function toggleFeatured(btn){
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.featured-toggle').forEach(b => b.classList.remove('active'));
+    if(!wasActive){
+      btn.classList.add('active');
+      const title = btn.closest('.content-card').querySelector('.content-title').textContent;
+      document.getElementById('featuredName').textContent = title;
+      document.getElementById('featuredBanner').style.display = 'flex';
+    } else {
+      document.getElementById('featuredBanner').style.display = 'none';
+    }
+  }
+
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

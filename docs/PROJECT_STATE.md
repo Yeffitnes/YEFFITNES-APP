@@ -32,3 +32,9 @@ Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flu
 - Diagnóstico: sesión y perfil repetidos por pantalla, filtros por servidor, sin cargas visibles. Supabase en us-east-1; Netlify en Ohio (cercanos).
 - Cambio: lectura/escritura desde el navegador con RLS, caché (TanStack Query), precarga, modales del diseño, 0004 save_routine.
 - Pendiente de verificar en producción: tiempos reales tras redeploy.
+
+## Estado al 23-oct-2026 (cierre de sesión 1)
+- Funciona (a validar tras redeploy): login/registro, estado pendiente, bloqueo por plan, panel del coach (clientes, ficha con Resumen y Entrenamiento, ejercicios, rutinas).
+- Migraciones: 0001–0005. Ejecutar en orden en Supabase.
+- Siguiente: portal del cliente "Hoy" (rutina del día + registro de series + esfuerzo) → reporte diario con vídeo → dashboard con cola de revisión (necesita esos datos) → nutrición → progreso → agenda → material.
+- Pendientes de seguridad: revocar token de GitHub, repo privado, Supabase Pro y confirmación de correo antes de lanzar.

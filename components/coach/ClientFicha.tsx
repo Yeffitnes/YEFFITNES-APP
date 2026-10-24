@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useClients, usePlans, useSetPlan } from "@/lib/queries";
 import { initials } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
+import { TrainingTab } from "./TrainingTab";
 const TABS = ["Resumen", "Entrenamiento", "Nutrición", "Progreso", "Notas privadas"];
-const SOON: Record<string, string> = { Entrenamiento: "Aquí Jeff asignará la rutina de cada día de la semana, partiendo de sus plantillas.", "Nutrición": "Aquí se armará el plan de nutrición del cliente a partir de plantillas.", Progreso: "Aquí aparecerán el peso, las medidas, las fotos y la evolución.", "Notas privadas": "Notas solo para ti: el cliente nunca las ve." };
+const SOON: Record<string, string> = { "Nutrición": "Aquí se armará el plan de nutrición del cliente a partir de plantillas.", Progreso: "Aquí aparecerán el peso, las medidas, las fotos y la evolución.", "Notas privadas": "Notas solo para ti: el cliente nunca las ve." };
 export function ClientFicha({ id }: { id: string }) {
   const { data, isPending } = useClients(), { data: plans } = usePlans(), setPlan = useSetPlan();
   const [tab, setTab] = useState("Resumen");
@@ -40,7 +41,7 @@ export function ClientFicha({ id }: { id: string }) {
             </div>
           </div>
         </>
-      ) : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
+      ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
     </div>
   );
 }

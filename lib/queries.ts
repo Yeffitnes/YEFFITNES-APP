@@ -97,3 +97,49 @@ export function useSaveRoutine() {
     onError: () => toast("No pudimos guardar la rutina. Revisa tu conexión e inténtalo de nuevo.", true),
   });
 }
+
+// ---- Entrenamiento por días ----
+export type PlanItem = { id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string };
+export type PlanDay = { id: string; weekday: number; name: string; items: PlanItem[] };
+export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; days: PlanDay[] };
+type PlanRaw = { id: string; name: string; status: "active" | "finished"; starts_on: string; ends_on: string | null; plan_days: { id: string; weekday: number; name: string; plan_items: { id: string; position: number; sets: number; reps: string; rest_seconds: number | null; target_weight: number | null; exercises: { name: string } | null }[] }[] };
+export const fetchTrainingPlans = async (clientId: string): Promise<TrainingPlan[]> => {
+  const { data, error } = await db().from("training_plans").select("id,name,status,starts_on,ends_on,plan_days(id,weekday,name,plan_items(id,position,sets,reps,rest_seconds,target_weight,exercises(name)))").eq("client_id", clientId).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as PlanRaw[]).map((p) => ({ id: p.id, name: p.name, status: p.status, startsOn: p.starts_on, endsOn: p.ends_on,
+    days: p.plan_days.map((d) => ({ id: d.id, weekday: d.weekday, name: d.name, items: d.plan_items.sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, position: i.position, sets: i.sets, reps: i.reps, rest: i.rest_seconds, weight: i.target_weight, name: i.exercises?.name ?? "—" })) })) }));
+};
+export const useTrainingPlans = (clientId: string) => useQuery({ queryKey: ["plans-of", clientId], queryFn: () => fetchTrainingPlans(clientId), staleTime: 60_000 });
+export function useCreatePlan(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (name: string) => { const { error } = await db().rpc("create_training_plan", { p_client: clientId, p_name: name }); if (error) throw error; },
+    onSuccess: () => { toast("Plan creado"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
+    onError: () => toast("No pudimos crear el plan. Inténtalo de nuevo.", true),
+  });
+}
+export function useAssignDay(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { planId: string; weekday: number; templateId: string }) => { const { error } = await db().rpc("assign_day", { p_plan: v.planId, p_weekday: v.weekday, p_template: v.templateId }); if (error) throw error; },
+    onSuccess: () => { toast("Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
+    onError: () => toast("No pudimos asignar la rutina. Inténtalo de nuevo.", true),
+  });
+}
+export function useClearDay(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (dayId: string) => { const { error } = await db().from("plan_days").delete().eq("id", dayId); if (error) throw error; },
+    onSuccess: () => { toast("Día liberado"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
+    onError: () => toast("No pudimos quitar la rutina. Inténtalo de nuevo.", true),
+  });
+}
+export function useSetWeight(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["plans-of", clientId];
+  return useMutation({
+    mutationFn: async (v: { itemId: string; weight: number | null }) => { const { error } = await db().from("plan_items").update({ target_weight: v.weight }).eq("id", v.itemId); if (error) throw error; },
+    onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<TrainingPlan[]>(key);
+      qc.setQueryData<TrainingPlan[]>(key, (l) => l?.map((p) => ({ ...p, days: p.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === v.itemId ? { ...i, weight: v.weight } : i)) })) }))); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar el peso. Inténtalo de nuevo.", true); },
+  });
+}

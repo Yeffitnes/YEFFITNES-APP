@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yeffitnes.training — Panel del coach · Catálogo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910; --neon:#F7254B; --rose:#F2406B; --gold-deep:#8D6526;--pearl:#CDB170; --amber:#F5A623;
+    --surface:#F5F6FA; --paper:#FFFFFF; --text:#12141B; --text-dim:#5B6172; --text-faint:#9AA0AE;
+    --accent:#D41A40; --garnet:#9C1535; --line:#E1E3EC; --ok:#3EEB8C; --danger:#E8536B;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
+  a{color:inherit; text-decoration:none;}
+  button{font:inherit;}
+
+  /* ================= SHELL ================= */
+  .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
+  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; color:#fff;}
+  .side-logo{display:flex; align-items:center; gap:9px; padding:6px 8px 24px; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
+  .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
+  .side-logo span.faint{color:rgba(255,255,255,0.4); font-weight:400;}
+  .side-group-label{font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.07em; color:rgba(255,255,255,0.32); padding:16px 12px 8px;}
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .side-link{display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:10px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.62); position:relative;}
+  .side-link svg{width:17px; height:17px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.6;}
+  .side-link:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .side-link.active{background:rgba(255,255,255,0.09); color:#fff;}
+  .side-link.active::before{content:''; position:absolute; left:-16px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg,var(--neon),var(--rose));}
+  .side-link .badge{margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:9.5px; background:rgba(255,255,255,0.12); padding:2px 6px; border-radius:20px;}
+  .side-link.sub{padding-left:32px; font-size:12.5px; font-weight:500;}
+  .side-spacer{flex:1;}
+  .side-coach{display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(255,255,255,0.05); margin-top:12px;}
+  .side-avatar{width:34px; height:34px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13px; color:#fff;}
+  .side-coach-name{font-size:12.5px; font-weight:700; color:#fff;}
+  .side-coach-role{font-family:'IBM Plex Mono', monospace; font-size:10px; color:rgba(255,255,255,0.4); margin-top:1px;}
+  .mobile-nav{display:none;}
+
+  .main{padding:30px 40px 90px; max-width:1280px; width:100%; min-width:0;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:24px;}
+  .card-tag{font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:6px;}
+
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; gap:16px; flex-wrap:wrap;}
+  .greeting-eyebrow{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.07em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;}
+  .greeting h1{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:26px; letter-spacing:-0.02em;}
+  .greeting-sub{font-size:13.5px; color:var(--text-dim); margin-top:5px;}
+  .primary-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none;}
+  .primary-btn svg{width:14px; height:14px; stroke:#fff; fill:none; stroke-width:2.2;}
+  .ghost-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:var(--paper); border:1px solid var(--line); color:var(--text); font-weight:700; font-size:12.5px; cursor:pointer;}
+
+  .subtab-row{display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:20px;}
+  .subtab-btn{font-size:13.5px; font-weight:700; color:var(--text-dim); padding:10px 4px; margin-right:22px; border:none; background:none; cursor:pointer; position:relative;}
+  .subtab-btn.active{color:var(--text);}
+  .subtab-btn.active::after{content:''; position:absolute; left:0; right:0; bottom:-1px; height:2.5px; border-radius:2px; background:linear-gradient(90deg,var(--neon),var(--rose));}
+  .subtab-panel{display:none;}
+  .subtab-panel.active{display:block;}
+
+  .filter-row{display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .search-box{display:flex; align-items:center; gap:8px; padding:0 14px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--paper); flex:1; min-width:200px; max-width:300px;}
+  .search-box svg{width:15px; height:15px; stroke:var(--text-faint); fill:none; stroke-width:1.8; flex-shrink:0;}
+  .search-box input{border:none; outline:none; font-size:13px; background:transparent; width:100%;}
+  .filter-chip{font-size:12px; font-weight:700; padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--paper); color:var(--text-dim); cursor:pointer;}
+  .filter-chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  /* ================= EJERCICIOS ================= */
+  .ex-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .ex-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; overflow:hidden; cursor:pointer; transition:box-shadow 0.2s ease, border-color 0.2s ease;}
+  .ex-card:hover{box-shadow:0 14px 30px -16px rgba(42,10,22,0.18); border-color:#DBDEE8;}
+  .ex-thumb{position:relative; aspect-ratio:16/10; background:linear-gradient(135deg,#2a1119,#1B0A10 60%,#0A0910); display:flex; align-items:center; justify-content:center;}
+  .ex-thumb.no-video{background:var(--surface);}
+  .ex-thumb.no-video svg{width:26px; height:26px; stroke:var(--text-faint); fill:none; stroke-width:1.5;}
+  .ex-thumb-play{width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center;}
+  .ex-thumb-play svg{width:13px; height:13px; fill:#fff; margin-left:1px;}
+  .ex-body{padding:14px;}
+  .ex-name{font-size:13.5px; font-weight:700;}
+  .ex-used{font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-faint); margin-top:2px;}
+  .ex-tags{display:flex; gap:6px; margin-top:9px; flex-wrap:wrap;}
+  .ex-tag{font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; background:var(--surface); color:var(--text-dim);}
+  .ex-diff{display:flex; gap:3px; margin-top:9px;}
+  .ex-diff span{width:14px; height:4px; border-radius:2px; background:var(--line);}
+  .ex-diff span.filled{background:var(--accent);}
+
+  /* ================= RUTINAS ================= */
+  .routine-card{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:14px; cursor:pointer;}
+  .routine-card-head{display:flex; align-items:center; gap:14px;}
+  .routine-mini-thumb{width:64px; height:44px; border-radius:9px; flex-shrink:0; background:linear-gradient(135deg,#2a1119,#1B0A10 60%,#0A0910); display:flex; align-items:center; justify-content:center;}
+  .routine-mini-thumb.no-video{background:var(--surface); border:1.5px dashed var(--line);}
+  .routine-mini-thumb.no-video svg{width:15px; height:15px; stroke:var(--text-faint); fill:none; stroke-width:1.6;}
+  .routine-mini-thumb .play{width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center;}
+  .routine-mini-thumb .play svg{width:8px; height:8px; fill:#fff; margin-left:1px;}
+  .routine-info{flex:1; min-width:0;}
+  .routine-name{font-size:14.5px; font-weight:700;}
+  .routine-meta{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .routine-used{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); flex-shrink:0;}
+  .routine-chev{width:9px; height:9px; stroke:var(--text-faint); fill:none; stroke-width:2; flex-shrink:0; transition:transform 0.2s ease;}
+  .routine-card.expanded .routine-chev{transform:rotate(90deg);}
+  .routine-detail{display:none; margin-top:16px; padding-top:16px; border-top:1px solid #EFF0F4;}
+  .routine-card.expanded .routine-detail{display:block;}
+  .ex-row-static{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid #EFF0F4;}
+  .ex-row-static:last-child{border-bottom:none;}
+  .ex-row-name{display:flex; align-items:center; gap:9px; font-size:13px;}
+  .ex-dot{width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0;}
+  .ex-row-sets{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-dim);}
+
+  @media (max-width:1080px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .main{padding:20px 16px 60px;}
+    .mobile-nav{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:20px; -webkit-overflow-scrolling:touch;}
+    .mobile-nav a{flex:0 0 auto; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:20px; background:var(--paper); border:1px solid var(--line); color:var(--text-dim); white-space:nowrap;}
+    .mobile-nav a.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+    .ex-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:640px){
+    .ex-grid{grid-template-columns:1fr 1fr;}
+    .routine-used{display:none;}
+  }
+  @media (max-width:520px){
+    .greeting h1{font-size:21px;}
+    .ex-grid{grid-template-columns:1fr;}
+    .card{padding:18px;}
+  }
+
+
+.m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="side-logo"><svg width="164" height="29" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="yp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#yp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>Dashboard</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg>Clientes<span class="badge">24</span></a>
+    </nav>
+    <div class="side-group-label">Catálogo</div>
+    <nav class="side-nav">
+      <a class="side-link sub active" href="#" onclick="switchTab(event,'ejercicios')"><svg viewBox="0 0 20 20"><path d="M4.5 6.5h11M4.5 10h11M4.5 13.5h7"/></svg>Ejercicios</a>
+      <a class="side-link sub" href="#" onclick="switchTab(event,'rutinas')"><svg viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="13" height="13" rx="3"/><path d="M7 10h6M10 7v6"/></svg>Rutinas</a>
+    </nav>
+    <div class="side-group-label">Operación</div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/></svg>Agenda</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>Material educativo</a>
+    </nav>
+    <div class="side-spacer"></div>
+    <div class="side-coach">
+      <div class="side-avatar">D</div>
+      <div><div class="side-coach-name">Coach</div><div class="side-coach-role">Coach</div></div>
+    </div>
+  </aside>
+
+  <main class="main"><div class="m-logo"><svg width="150" height="27" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="ym" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#ym)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="mobile-nav">
+      <a href="#">Dashboard</a><a href="#">Clientes</a><a class="active" href="#" onclick="switchTab(event,'ejercicios')">Ejercicios</a><a href="#" onclick="switchTab(event,'rutinas')">Rutinas</a><a href="#">Agenda</a><a href="#">Material</a>
+    </nav>
+
+    <div class="topbar">
+      <div class="greeting">
+        <div class="greeting-eyebrow">Catálogo</div>
+        <h1 id="catalogTitle">Ejercicios</h1>
+        <p class="greeting-sub" id="catalogSub">32 ejercicios · contenido reutilizable en todas las rutinas</p>
+      </div>
+      <button class="primary-btn" id="catalogAddBtn" onclick="openExerciseModal()"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Nuevo ejercicio</button>
+    </div>
+
+    <div class="subtab-row">
+      <button class="subtab-btn active" data-tab="ejercicios" onclick="switchTab(event,'ejercicios')">Ejercicios</button>
+      <button class="subtab-btn" data-tab="rutinas" onclick="switchTab(event,'rutinas')">Rutinas</button>
+    </div>
+
+    <!-- ============ EJERCICIOS ============ -->
+    <div class="subtab-panel active" id="panel-ejercicios">
+      <div class="filter-row">
+        <div class="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/></svg><input type="text" placeholder="Buscar ejercicio..."></div>
+        <div class="filter-chip active">Todos</div>
+        <div class="filter-chip">Tren superior</div>
+        <div class="filter-chip">Tren inferior</div>
+        <div class="filter-chip">Core</div>
+        <div class="filter-chip">Con vídeo</div>
+      </div>
+
+      <div class="ex-grid">
+        <div class="ex-card">
+          <div class="ex-thumb"><div class="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+          <div class="ex-body"><div class="ex-name">Press banca</div><div class="ex-used">Usado en 5 rutinas</div>
+            <div class="ex-tags"><span class="ex-tag">Pecho</span><span class="ex-tag">Barra</span></div>
+            <div class="ex-diff"><span class="filled"></span><span class="filled"></span><span></span></div>
+          </div>
+        </div>
+        <div class="ex-card">
+          <div class="ex-thumb"><div class="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+          <div class="ex-body"><div class="ex-name">Sentadilla trasera</div><div class="ex-used">Usado en 4 rutinas</div>
+            <div class="ex-tags"><span class="ex-tag">Piernas</span><span class="ex-tag">Barra</span></div>
+            <div class="ex-diff"><span class="filled"></span><span class="filled"></span><span class="filled"></span></div>
+          </div>
+        </div>
+        <div class="ex-card">
+          <div class="ex-thumb no-video"><svg viewBox="0 0 24 24"><path d="M6 4l11 6-11 6V4z"/></svg></div>
+          <div class="ex-body"><div class="ex-name">Remo con barra</div><div class="ex-used">Usado en 3 rutinas</div>
+            <div class="ex-tags"><span class="ex-tag">Espalda</span><span class="ex-tag">Barra</span></div>
+            <div class="ex-diff"><span class="filled"></span><span class="filled"></span><span></span></div>
+          </div>
+        </div>
+        <div class="ex-card">
+          <div class="ex-thumb"><div class="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+          <div class="ex-body"><div class="ex-name">Press militar</div><div class="ex-used">Usado en 3 rutinas</div>
+            <div class="ex-tags"><span class="ex-tag">Hombro</span><span class="ex-tag">Mancuerna</span></div>
+            <div class="ex-diff"><span class="filled"></span><span class="filled"></span><span></span></div>
+          </div>
+        </div>
+        <div class="ex-card">
+          <div class="ex-thumb no-video"><svg viewBox="0 0 24 24"><path d="M6 4l11 6-11 6V4z"/></svg></div>
+          <div class="ex-body"><div class="ex-name">Dominadas asistidas</div><div class="ex-used">Usado en 2 rutinas</div>
+            <div class="ex-tags"><span class="ex-tag">Espalda</span><span class="ex-tag">Peso corporal</span></div>
+            <div class="ex-diff"><span class="filled"></span><span class="filled"></span><span class="filled"></span></div>
+          </div>
+        </div>
+        <div class="ex-card">
+          <div class="ex-thumb"><div class="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+          <div class="ex-body"><div class="ex-name">Plancha</div><div class="ex-used">Usado en 6 rutinas</div>
+            <div class="ex-tags"><span class="ex-tag">Core</span><span class="ex-tag">Sin equipo</span></div>
+            <div class="ex-diff"><span class="filled"></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ RUTINAS ============ -->
+    <div class="subtab-panel" id="panel-rutinas">
+      <div class="filter-row">
+        <div class="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/></svg><input type="text" placeholder="Buscar rutina..."></div>
+        <div class="filter-chip active">Todas</div>
+        <div class="filter-chip">Fuerza</div>
+        <div class="filter-chip">HIIT</div>
+        <div class="filter-chip">Sin vídeo</div>
+      </div>
+
+      <div class="routine-card" onclick="this.classList.toggle('expanded')">
+        <div class="routine-card-head">
+          <div class="routine-mini-thumb"><div class="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+          <div class="routine-info"><div class="routine-name">Tren Superior Completo</div><div class="routine-meta">5 ejercicios · 45 min aprox. · Fuerza</div></div>
+          <div class="routine-used">7 clientes activos</div>
+          <svg class="routine-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="routine-detail">
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Press banca</div><div class="ex-row-sets">4×8 · 90s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Remo con barra</div><div class="ex-row-sets">4×10 · 75s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Press militar</div><div class="ex-row-sets">3×10 · 75s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Dominadas asistidas</div><div class="ex-row-sets">3×8 · 90s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Curl bíceps</div><div class="ex-row-sets">3×12 · 60s desc.</div></div>
+        </div>
+      </div>
+
+      <div class="routine-card" onclick="this.classList.toggle('expanded')">
+        <div class="routine-card-head">
+          <div class="routine-mini-thumb no-video"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div>
+          <div class="routine-info"><div class="routine-name">HIIT Quema Grasa</div><div class="routine-meta">6 ejercicios · 30 min aprox. · HIIT</div></div>
+          <div class="routine-used">4 clientes activos</div>
+          <svg class="routine-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="routine-detail">
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Burpees</div><div class="ex-row-sets">4×15 · 30s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Mountain climbers</div><div class="ex-row-sets">4×30s · 20s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Sentadilla con salto</div><div class="ex-row-sets">4×15 · 30s desc.</div></div>
+        </div>
+      </div>
+
+      <div class="routine-card" onclick="this.classList.toggle('expanded')">
+        <div class="routine-card-head">
+          <div class="routine-mini-thumb"><div class="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+          <div class="routine-info"><div class="routine-name">Piernas — Fuerza Base</div><div class="routine-meta">4 ejercicios · 40 min aprox. · Fuerza</div></div>
+          <div class="routine-used">9 clientes activos</div>
+          <svg class="routine-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="routine-detail">
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Sentadilla trasera</div><div class="ex-row-sets">4×8 · 120s desc.</div></div>
+          <div class="ex-row-static"><div class="ex-row-name"><span class="ex-dot"></span>Peso muerto rumano</div><div class="ex-row-sets">3×10 · 90s desc.</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function switchTab(e, tab){
+    if(e) e.preventDefault();
+    document.querySelectorAll('.subtab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.subtab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+    document.querySelectorAll('.side-link.sub').forEach((l,i) => l.classList.toggle('active', (tab==='ejercicios' && i===0) || (tab==='rutinas' && i===1)));
+    document.querySelectorAll('.mobile-nav a').forEach(a => a.classList.remove('active'));
+    if(e && e.currentTarget.tagName === 'A' && e.currentTarget.closest('.mobile-nav')) e.currentTarget.classList.add('active');
+
+    if(tab === 'ejercicios'){
+      document.getElementById('catalogTitle').textContent = 'Ejercicios';
+      document.getElementById('catalogSub').textContent = '32 ejercicios · contenido reutilizable en todas las rutinas';
+      document.getElementById('catalogAddBtn').innerHTML = '<svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Nuevo ejercicio';
+    } else {
+      document.getElementById('catalogTitle').textContent = 'Rutinas';
+      document.getElementById('catalogSub').textContent = '9 rutinas · colecciones reutilizables de ejercicios';
+      document.getElementById('catalogAddBtn').innerHTML = '<svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Nueva rutina';
+    }
+  }
+  function openExerciseModal(){ /* placeholder de creación */ }
+</script>
+
+</body>
+</html>

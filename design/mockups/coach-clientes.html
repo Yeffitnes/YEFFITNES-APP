@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yeffitnes.training — Panel del coach · Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910; --neon:#F7254B; --rose:#F2406B; --gold-deep:#8D6526;--pearl:#CDB170; --amber:#F5A623;
+    --surface:#F5F6FA; --paper:#FFFFFF; --text:#12141B; --text-dim:#5B6172; --text-faint:#9AA0AE;
+    --accent:#D41A40; --garnet:#9C1535; --line:#E1E3EC; --ok:#3EEB8C; --danger:#E8536B;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
+  a{color:inherit; text-decoration:none;}
+  button{font:inherit;}
+  textarea{font:inherit;}
+
+  /* ================= SHELL (igual al dashboard) ================= */
+  .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
+  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; color:#fff;}
+  .side-logo{display:flex; align-items:center; gap:9px; padding:6px 8px 24px; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
+  .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
+  .side-logo span.faint{color:rgba(255,255,255,0.4); font-weight:400;}
+  .side-group-label{font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.07em; color:rgba(255,255,255,0.32); padding:16px 12px 8px;}
+  .side-nav{display:flex; flex-direction:column; gap:2px;}
+  .side-link{display:flex; align-items:center; gap:12px; padding:9px 12px; border-radius:10px; font-size:13.5px; font-weight:600; color:rgba(255,255,255,0.62); position:relative;}
+  .side-link svg{width:17px; height:17px; flex-shrink:0; stroke:currentColor; fill:none; stroke-width:1.6;}
+  .side-link:hover{background:rgba(255,255,255,0.06); color:#fff;}
+  .side-link.active{background:rgba(255,255,255,0.09); color:#fff;}
+  .side-link.active::before{content:''; position:absolute; left:-16px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg,var(--neon),var(--rose));}
+  .side-link .badge{margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:9.5px; background:rgba(255,255,255,0.12); padding:2px 6px; border-radius:20px;}
+  .side-link.sub{padding-left:32px; font-size:12.5px; font-weight:500;}
+  .side-spacer{flex:1;}
+  .side-coach{display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(255,255,255,0.05); margin-top:12px;}
+  .side-avatar{width:34px; height:34px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13px; color:#fff;}
+  .side-coach-name{font-size:12.5px; font-weight:700; color:#fff;}
+  .side-coach-role{font-family:'IBM Plex Mono', monospace; font-size:10px; color:rgba(255,255,255,0.4); margin-top:1px;}
+  .mobile-nav{display:none;}
+
+  .main{padding:30px 40px 90px; max-width:1280px; width:100%; min-width:0;}
+  .card{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:24px;}
+  .card-tag{font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:6px;}
+
+  /* ================= TOPBAR LISTA ================= */
+  .topbar{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; gap:16px; flex-wrap:wrap;}
+  .greeting-eyebrow{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.07em; text-transform:uppercase; color:var(--accent); margin-bottom:6px;}
+  .greeting h1{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:26px; letter-spacing:-0.02em;}
+  .greeting-sub{font-size:13.5px; color:var(--text-dim); margin-top:5px;}
+  .primary-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none;}
+  .primary-btn svg{width:14px; height:14px; stroke:#fff; fill:none; stroke-width:2.2;}
+
+  .filter-row{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .search-box{display:flex; align-items:center; gap:8px; padding:0 14px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--paper); flex:1; min-width:200px; max-width:320px;}
+  .search-box svg{width:15px; height:15px; stroke:var(--text-faint); fill:none; stroke-width:1.8; flex-shrink:0;}
+  .search-box input{border:none; outline:none; font-size:13px; background:transparent; width:100%;}
+  .filter-chip{font-size:12px; font-weight:700; padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--paper); color:var(--text-dim); cursor:pointer;}
+  .filter-chip.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+
+  /* ================= LISTA DE CLIENTES ================= */
+  .client-row{display:flex; align-items:center; gap:14px; padding:14px 4px; border-bottom:1px solid #EFF0F4; cursor:pointer; transition:background 0.15s ease;}
+  .client-row:hover{background:var(--surface);}
+  .client-row:last-child{border-bottom:none;}
+  .client-avatar{width:40px; height:40px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:13.5px; color:#fff;}
+  .client-info{flex:1; min-width:0;}
+  .client-name{font-size:14px; font-weight:700;}
+  .client-plan{font-size:12px; color:var(--text-dim); margin-top:1px;}
+  .client-activity{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-faint); min-width:110px; text-align:right; flex-shrink:0;}
+  .client-status{font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; letter-spacing:0.04em; padding:4px 9px; border-radius:20px; flex-shrink:0; min-width:88px; text-align:center;}
+  .client-status.ok{background:rgba(62,235,140,0.14); color:#1C9A5B;}
+  .client-status.review{background:rgba(232,83,107,0.1); color:var(--danger);}
+  .client-status.new{background:rgba(212,26,64,0.1); color:var(--accent);}
+  .client-wa{width:32px; height:32px; border-radius:9px; border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .client-wa svg{width:14px; height:14px; stroke:var(--text-dim); fill:none; stroke-width:1.7;}
+  .client-chev{width:9px; height:9px; stroke:var(--text-faint); fill:none; stroke-width:2; flex-shrink:0;}
+
+  /* ================= FICHA DE CLIENTE (detalle) ================= */
+  #clientDetail{display:none;}
+  .back-link{display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer; margin-bottom:18px;}
+  .back-link svg{width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2.2;}
+
+  .ficha-header{display:flex; align-items:center; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
+  .ficha-avatar{width:58px; height:58px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center; font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:19px; color:#fff; flex-shrink:0;}
+  .ficha-name{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:22px;}
+  .ficha-meta{font-size:12.5px; color:var(--text-dim); margin-top:3px;}
+  .ficha-actions{display:flex; gap:10px; margin-left:auto;}
+  .wa-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:var(--ink); color:#fff; font-weight:700; font-size:12.5px; cursor:pointer; border:none;}
+  .wa-btn svg{width:15px; height:15px; stroke:#fff; fill:none; stroke-width:1.7;}
+  .ghost-btn{display:flex; align-items:center; gap:8px; padding:0 16px; height:38px; border-radius:11px; background:var(--paper); border:1px solid var(--line); color:var(--text); font-weight:700; font-size:12.5px; cursor:pointer;}
+
+  .tab-row{display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:22px; overflow-x:auto;}
+  .tab-btn{font-size:13px; font-weight:700; color:var(--text-dim); padding:10px 16px; border:none; background:none; cursor:pointer; position:relative; white-space:nowrap;}
+  .tab-btn.active{color:var(--text);}
+  .tab-btn.active::after{content:''; position:absolute; left:12px; right:12px; bottom:-1px; height:2.5px; border-radius:2px; background:linear-gradient(90deg,var(--neon),var(--rose));}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* ---- Resumen ---- */
+  .mini-kpi-strip{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px;}
+  .mini-kpi{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px;}
+  .mini-kpi-label{font-size:11px; color:var(--text-dim); font-weight:600;}
+  .mini-kpi-val{font-family:'IBM Plex Mono', monospace; font-size:19px; font-weight:600; margin-top:5px;}
+  .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .info-list-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #EFF0F4; font-size:13px;}
+  .info-list-row:last-child{border-bottom:none;}
+  .info-list-row span:first-child{color:var(--text-dim);}
+  .info-list-row span:last-child{font-weight:600;}
+
+  /* ---- Entrenamiento ---- */
+  .day-pill-row{display:flex; gap:8px; overflow-x:auto; margin-bottom:16px;}
+  .day-pill{flex:0 0 auto; padding:9px 15px; border-radius:20px; border:1px solid var(--line); background:var(--paper); font-size:12.5px; font-weight:700; color:var(--text-dim); cursor:pointer;}
+  .day-pill.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .ex-row-static{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid #EFF0F4;}
+  .ex-row-static:last-child{border-bottom:none;}
+  .ex-dot{width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0;}
+
+  /* ---- Gestión de vídeo por día (catálogo vs personalizado) ---- */
+  .video-manage-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px;}
+  .video-manage-label{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); margin-bottom:8px;}
+  .video-manage-thumb{
+    position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; cursor:pointer;
+    background:linear-gradient(135deg,#2a1119,#1B0A10 60%,#0A0910); display:flex; align-items:center; justify-content:center;
+  }
+  .video-manage-thumb .play{width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--neon),var(--rose)); display:flex; align-items:center; justify-content:center;}
+  .video-manage-thumb .play svg{width:13px; height:13px; fill:#fff; margin-left:1px;}
+  .video-manage-thumb .vm-duration{position:absolute; right:8px; bottom:8px; font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; color:#fff; background:rgba(0,0,0,0.4); padding:3px 7px; border-radius:6px;}
+  .video-manage-thumb.empty{background:var(--surface); border:1.5px dashed var(--line);}
+  .video-manage-thumb.empty svg{width:22px; height:22px; stroke:var(--text-faint); fill:none; stroke-width:1.6;}
+  .video-manage-note{font-size:11.5px; color:var(--text-dim); margin-top:8px; line-height:1.5;}
+
+  /* ---- Nutrición ---- */
+  .nutri-editor{width:100%; min-height:220px; border:1px solid var(--line); border-radius:14px; padding:16px; font-size:13.5px; line-height:1.65; resize:vertical;}
+  .nutri-meta{display:flex; justify-content:space-between; align-items:center; margin-top:12px;}
+  .nutri-updated{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-faint);}
+
+  /* ---- Progreso (coach) ---- */
+  .chip-row{display:flex; gap:7px; flex-wrap:wrap; margin:14px 0;}
+  .metric-chip{display:flex; align-items:center; gap:6px; padding:7px 12px; border-radius:20px; border:1.4px solid var(--line); background:var(--paper); cursor:pointer; font-size:11.5px; font-weight:700; color:var(--text-dim);}
+  .metric-chip .dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .metric-chip.active{color:var(--text); border-color:transparent; background:var(--surface);}
+  .metric-chip.off{opacity:0.4;}
+  .chart-svg{width:100%; height:190px; display:block; overflow:visible;}
+  .metric-series{transition:opacity 0.25s ease;}
+  .metric-series.hidden{opacity:0; pointer-events:none;}
+  .metric-series polyline{fill:none; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+  .metric-series circle{stroke:#fff; stroke-width:1.6;}
+  .history-row{display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid #EFF0F4;}
+  .history-row:last-child{border-bottom:none;}
+  .history-date{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-faint); min-width:52px; flex-shrink:0;}
+  .history-source{font-family:'IBM Plex Mono', monospace; font-size:9.5px; text-transform:uppercase; padding:3px 8px; border-radius:20px; margin-left:auto;}
+  .history-source.coach{background:rgba(156,21,53,0.08); color:var(--garnet);}
+  .history-source.client{background:rgba(62,235,140,0.12); color:#1C9A5B;}
+
+  /* ---- Notas privadas ---- */
+  .private-warning{display:flex; align-items:center; gap:9px; padding:12px 14px; border-radius:12px; background:rgba(232,83,107,0.07); color:var(--danger); font-size:12px; font-weight:600; margin-bottom:16px;}
+  .private-warning svg{width:15px; height:15px; stroke:var(--danger); fill:none; stroke-width:1.8; flex-shrink:0;}
+  .note-item{padding:14px 0; border-bottom:1px solid #EFF0F4;}
+  .note-item:last-child{border-bottom:none;}
+  .note-date{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint);}
+  .note-text{font-size:13px; margin-top:5px; line-height:1.55;}
+  .note-textarea{width:100%; min-height:70px; border:1px solid var(--line); border-radius:12px; padding:12px; font-size:13px; resize:vertical; margin-top:14px;}
+
+  /* ---- Modal genérico ---- */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(8,6,14,0.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:24px; z-index:100; opacity:0; pointer-events:none; transition:opacity 0.25s ease;}
+  .modal-backdrop.open{opacity:1; pointer-events:auto;}
+  .modal-box{position:relative; width:100%; max-width:420px; background:var(--paper); border-radius:18px; padding:26px; transform:scale(0.96) translateY(10px); transition:transform 0.28s cubic-bezier(0.2,0.8,0.2,1); box-shadow:0 40px 80px -20px rgba(0,0,0,0.3);}
+  .modal-backdrop.open .modal-box{transform:scale(1) translateY(0);}
+  .modal-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:17px;}
+  .modal-sub{font-size:12.5px; color:var(--text-dim); margin-top:4px; line-height:1.5;}
+  .modal-field{margin-top:14px;}
+  .modal-field label{font-size:11.5px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:6px;}
+  .modal-field input{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); font-family:'Manrope', sans-serif; font-size:13px;}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .modal-btn{flex:1; height:42px; border-radius:11px; border:none; font-weight:700; font-size:13px; cursor:pointer;}
+  .modal-btn.primary{background:linear-gradient(90deg,var(--neon),var(--rose)); color:#fff;}
+  .modal-btn.ghost{background:var(--surface); color:var(--text);}
+  .modal-close-x{position:absolute; top:16px; right:16px; width:30px; height:30px; border-radius:9px; border:none; background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .modal-close-x svg{width:13px; height:13px; stroke:var(--text-dim); fill:none; stroke-width:2;}
+
+  @media (max-width:1080px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .main{padding:20px 16px 60px;}
+    .mobile-nav{display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:20px; -webkit-overflow-scrolling:touch;}
+    .mobile-nav a{flex:0 0 auto; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:20px; background:var(--paper); border:1px solid var(--line); color:var(--text-dim); white-space:nowrap;}
+    .mobile-nav a.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+    .info-grid{grid-template-columns:1fr;}
+    .mini-kpi-strip{grid-template-columns:1fr 1fr;}
+    .client-activity{display:none;}
+  }
+  @media (max-width:560px){
+    .greeting h1{font-size:21px;}
+    .client-status{min-width:auto;}
+    .ficha-actions{width:100%; margin-left:0;}
+    .card{padding:18px;}
+  }
+
+
+.m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="side-logo"><svg width="164" height="29" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="yp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#yp)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><rect x="11" y="11" width="6" height="6" rx="1.5"/></svg>Dashboard</a>
+      <a class="side-link active" href="#"><svg viewBox="0 0 20 20"><circle cx="10" cy="7" r="3.2"/><path d="M3.5 17c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/></svg>Clientes<span class="badge">24</span></a>
+    </nav>
+    <div class="side-group-label">Catálogo</div>
+    <nav class="side-nav">
+      <a class="side-link sub" href="#"><svg viewBox="0 0 20 20"><path d="M4.5 6.5h11M4.5 10h11M4.5 13.5h7"/></svg>Ejercicios</a>
+      <a class="side-link sub" href="#"><svg viewBox="0 0 20 20"><rect x="3.5" y="3.5" width="13" height="13" rx="3"/><path d="M7 10h6M10 7v6"/></svg>Rutinas</a>
+    </nav>
+    <div class="side-group-label">Operación</div>
+    <nav class="side-nav">
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/></svg>Agenda</a>
+      <a class="side-link" href="#"><svg viewBox="0 0 20 20"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v10L10 13l-6 2.5v-10z"/></svg>Material educativo</a>
+    </nav>
+    <div class="side-spacer"></div>
+    <div class="side-coach">
+      <div class="side-avatar">D</div>
+      <div><div class="side-coach-name">Coach</div><div class="side-coach-role">Coach</div></div>
+    </div>
+  </aside>
+
+  <main class="main"><div class="m-logo"><svg width="150" height="27" viewBox="0 0 168 30" role="img" aria-label="YEFFITNES TRAINING"><defs><linearGradient id="ym" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8D6526"/><stop offset=".3" stop-color="#CDB170"/><stop offset=".45" stop-color="#FBE59B"/><stop offset=".55" stop-color="#B08A3E"/><stop offset="1" stop-color="#8D6526"/></linearGradient></defs><g fill="none" stroke="url(#ym)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 15 17M26 5 15 17M15 17V26"/></g><circle cx="26" cy="5" r="2.3" fill="#B08A3E"/><text x="38" y="19" font-family="Instrument Sans,sans-serif" font-weight="700" font-size="15" letter-spacing="2.4" fill="#12141B">YEFFITNES</text><text x="39" y="28.5" font-family="IBM Plex Mono,monospace" font-size="6.5" letter-spacing="5.2" fill="#B08A3E">TRAINING</text></svg></div>
+    <nav class="mobile-nav">
+      <a href="#">Dashboard</a><a class="active" href="#">Clientes</a><a href="#">Ejercicios</a><a href="#">Rutinas</a><a href="#">Agenda</a><a href="#">Material</a>
+    </nav>
+
+    <!-- ============ VISTA LISTA ============ -->
+    <div id="clientList">
+      <div class="topbar">
+        <div class="greeting">
+          <div class="greeting-eyebrow">Clientes</div>
+          <h1>24 clientes activos</h1>
+          <p class="greeting-sub">2 necesitan revisión · 1 nuevo esta semana</p>
+        </div>
+        <button class="primary-btn"><svg viewBox="0 0 20 20"><path d="M10 4v12M4 10h12"/></svg>Nuevo cliente</button>
+      </div>
+
+      <div class="filter-row">
+        <div class="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5"/><line x1="13.2" y1="13.2" x2="17" y2="17"/></svg><input type="text" placeholder="Buscar cliente..."></div>
+        <div class="filter-chip active">Todos</div>
+        <div class="filter-chip">Por revisar</div>
+        <div class="filter-chip">Nuevos</div>
+        <div class="filter-chip">Inactivos</div>
+      </div>
+
+      <div class="card">
+        <div class="client-row" onclick="openClient()">
+          <div class="client-avatar" style="background:linear-gradient(135deg,#F7254B,#F2406B);">CR</div>
+          <div class="client-info"><div class="client-name">Camila R.</div><div class="client-plan">Plan Fuerza · Presencial</div></div>
+          <div class="client-activity">Hoy · 10:00</div>
+          <div class="client-status ok">Al día</div>
+          <div class="client-wa" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+          <svg class="client-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="client-row" onclick="openClient()">
+          <div class="client-avatar" style="background:linear-gradient(135deg,#F5A623,#E8536B);">JP</div>
+          <div class="client-info"><div class="client-name">Juan P.</div><div class="client-plan">Plan Fuerza · Online</div></div>
+          <div class="client-activity">Hace 18 días</div>
+          <div class="client-status review">Por revisar</div>
+          <div class="client-wa" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+          <svg class="client-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="client-row" onclick="openClient()">
+          <div class="client-avatar" style="background:linear-gradient(135deg,#B08A3E,#D41A40);">MT</div>
+          <div class="client-info"><div class="client-name">María T.</div><div class="client-plan">Plan Fuerza · Presencial</div></div>
+          <div class="client-activity">Hace 2 h</div>
+          <div class="client-status review">Plan vence</div>
+          <div class="client-wa" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+          <svg class="client-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="client-row" onclick="openClient()">
+          <div class="client-avatar" style="background:linear-gradient(135deg,#3EEB8C,#B08A3E);">AT</div>
+          <div class="client-info"><div class="client-name">Ana T.</div><div class="client-plan">Nutrición · Online</div></div>
+          <div class="client-activity">Hoy · 18:00</div>
+          <div class="client-status ok">Al día</div>
+          <div class="client-wa" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+          <svg class="client-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="client-row" onclick="openClient()">
+          <div class="client-avatar" style="background:linear-gradient(135deg,#F2406B,#F7254B);">AM</div>
+          <div class="client-info"><div class="client-name">Andrés M.</div><div class="client-plan">Plan Fuerza · Online</div></div>
+          <div class="client-activity">Hoy · 13:30</div>
+          <div class="client-status ok">Al día</div>
+          <div class="client-wa" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+          <svg class="client-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+        <div class="client-row" onclick="openClient()">
+          <div class="client-avatar" style="background:linear-gradient(135deg,#9C1535,#B08A3E);">SL</div>
+          <div class="client-info"><div class="client-name">Sofía L.</div><div class="client-plan">Plan Fuerza · Presencial</div></div>
+          <div class="client-activity">Hace 3 días</div>
+          <div class="client-status new">Nuevo</div>
+          <div class="client-wa" onclick="event.stopPropagation()"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg></div>
+          <svg class="client-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ FICHA DE CLIENTE ============ -->
+    <div id="clientDetail">
+      <div class="back-link" onclick="closeClient()"><svg viewBox="0 0 20 20"><path d="M12 4L6 10l6 6"/></svg>Volver a clientes</div>
+
+      <div class="ficha-header">
+        <div class="ficha-avatar">CR</div>
+        <div>
+          <div class="ficha-name">Camila R.</div>
+          <div class="ficha-meta">Cliente desde marzo 2026 · Plan Fuerza · Presencial</div>
+        </div>
+        <div class="ficha-actions">
+          <button class="ghost-btn"><svg viewBox="0 0 20 20" style="width:14px;height:14px;stroke:var(--text);fill:none;stroke-width:1.8;"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
+          <button class="wa-btn"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z"/></svg>WhatsApp</button>
+        </div>
+      </div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" data-tab="resumen">Resumen</button>
+        <button class="tab-btn" data-tab="entrenamiento">Entrenamiento</button>
+        <button class="tab-btn" data-tab="nutricion">Nutrición</button>
+        <button class="tab-btn" data-tab="progreso">Progreso</button>
+        <button class="tab-btn" data-tab="notas">Notas privadas</button>
+      </div>
+
+      <!-- Resumen -->
+      <div class="tab-panel active" id="tab-resumen">
+        <div class="mini-kpi-strip">
+          <div class="mini-kpi"><div class="mini-kpi-label">Peso actual</div><div class="mini-kpi-val">68.4 kg</div></div>
+          <div class="mini-kpi"><div class="mini-kpi-label">Adherencia al plan</div><div class="mini-kpi-val">92%</div></div>
+          <div class="mini-kpi"><div class="mini-kpi-label">Próxima sesión</div><div class="mini-kpi-val">Hoy 10:00</div></div>
+        </div>
+        <div class="info-grid">
+          <div class="card">
+            <div class="card-tag">Contacto</div>
+            <div class="info-list-row"><span>Teléfono</span><span>+52 55 1234 5678</span></div>
+            <div class="info-list-row"><span>Email</span><span>camila.r@mail.com</span></div>
+            <div class="info-list-row"><span>Ingreso</span><span>4 mar 2026</span></div>
+          </div>
+          <div class="card">
+            <div class="card-tag">Plan activo</div>
+            <div class="info-list-row"><span>Plan de entrenamiento</span><span>Fuerza — semana 6</span></div>
+            <div class="info-list-row"><span>Modalidad</span><span>Presencial</span></div>
+            <div class="info-list-row"><span>Plan nutricional</span><span>Actualizado hace 3 días</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Entrenamiento -->
+      <div class="tab-panel" id="tab-entrenamiento">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-tag">Plan asignado</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:16px;">Fuerza — semana 6</div>
+              <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">Activo desde 4 mar 2026 · <span style="color:#1C9A5B; font-weight:700;">● En curso</span></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="ghost-btn" style="height:34px; padding:0 13px; font-size:11.5px;" onclick="togglePlanHistory()">Ver planes anteriores</button>
+              <button class="primary-btn" style="height:34px; font-size:11.5px;" onclick="openNewPlan()">Crear nuevo plan</button>
+            </div>
+          </div>
+
+          <div id="planHistory" style="display:none; margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
+            <div class="info-list-row"><span>Fuerza — semana 6</span><span style="color:#1C9A5B;">Activo · desde 4 mar 2026</span></div>
+            <div class="info-list-row"><span>Adaptación — enero 2026</span><span style="color:var(--text-faint);">Finalizado · 6 ene – 3 mar 2026</span></div>
+            <div class="info-list-row"><span>Evaluación inicial</span><span style="color:var(--text-faint);">Finalizado · 15 dic – 5 ene 2026</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-tag" style="margin-bottom:0;">Días del plan activo</div>
+            <button class="ghost-btn" style="height:34px; padding:0 13px; font-size:11.5px;">Asignar rutina a este día</button>
+          </div>
+          <div class="day-pill-row">
+            <div class="day-pill">LUN</div><div class="day-pill">MAR</div><div class="day-pill">MIÉ</div>
+            <div class="day-pill active">JUE</div><div class="day-pill">VIE</div><div class="day-pill">SÁB</div><div class="day-pill">DOM</div>
+          </div>
+          <div style="font-weight:700; font-size:14px; margin-bottom:10px;">Tren superior completo</div>
+
+          <div class="video-manage-row">
+            <div class="video-manage-slot">
+              <div class="video-manage-label">Vídeo de catálogo</div>
+              <div class="video-manage-thumb"><div class="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div><span class="vm-duration">8:12</span></div>
+              <div class="video-manage-note">Visible para todos los clientes con esta rutina. <a onclick="return false;" style="color:var(--accent); font-weight:700;">Editar en Catálogo →</a></div>
+            </div>
+            <div class="video-manage-slot">
+              <div class="video-manage-label">Vídeo personalizado para Camila</div>
+              <div class="video-manage-thumb empty" onclick="openVideoUpload()">
+                <svg viewBox="0 0 20 20"><path d="M10 13V4M6 8l4-4 4 4"/><path d="M4 16h12"/></svg>
+              </div>
+              <div class="video-manage-note">Solo Camila lo ve — reemplaza al de catálogo para ella. <a onclick="openVideoUpload(); return false;" style="color:var(--accent); font-weight:700;">Subir vídeo personalizado →</a></div>
+            </div>
+          </div>
+
+          <div class="ex-row-static"><span class="ex-dot"></span><span style="font-size:13px;">Press banca — 4×8</span></div>
+          <div class="ex-row-static"><span class="ex-dot"></span><span style="font-size:13px;">Remo con barra — 4×10</span></div>
+          <div class="ex-row-static"><span class="ex-dot"></span><span style="font-size:13px;">Press militar — 3×10</span></div>
+          <div class="ex-row-static"><span class="ex-dot"></span><span style="font-size:13px;">Dominadas asistidas — 3×8</span></div>
+          <div class="ex-row-static"><span class="ex-dot"></span><span style="font-size:13px;">Curl bíceps — 3×12</span></div>
+        </div>
+      </div>
+
+      <!-- Modal: crear nuevo plan -->
+      <div class="modal-backdrop" id="newPlanModal">
+        <div class="modal-box">
+          <button class="modal-close-x" onclick="closeNewPlan()"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+          <div class="modal-title">Crear nuevo plan</div>
+          <div class="modal-sub">El plan actual ("Fuerza — semana 6") pasará a Finalizado con la fecha de hoy.</div>
+          <div class="modal-field"><label>Nombre del plan</label><input type="text" placeholder="Ej. Fuerza — semana 7"></div>
+          <div class="modal-field"><label>Fecha de inicio</label><input type="date"></div>
+          <div class="modal-actions">
+            <button class="modal-btn ghost" onclick="closeNewPlan()">Cancelar</button>
+            <button class="modal-btn primary" onclick="closeNewPlan()">Crear y activar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: subir vídeo personalizado -->
+      <div class="modal-backdrop" id="videoUploadModal">
+        <div class="modal-box">
+          <button class="modal-close-x" onclick="closeVideoUpload()"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+          <div class="modal-title">Vídeo personalizado para Camila</div>
+          <div class="modal-sub">Solo Camila podrá verlo. Reemplaza al vídeo de catálogo únicamente en su plan — la rutina general no cambia para el resto de tus clientes.</div>
+          <div class="modal-field">
+            <label>Archivo de vídeo</label>
+            <div style="border:1.5px dashed var(--line); border-radius:12px; padding:24px; text-align:center; color:var(--text-dim); font-size:12.5px;">
+              <svg viewBox="0 0 20 20" style="width:22px; height:22px; stroke:var(--text-faint); fill:none; stroke-width:1.6; margin-bottom:8px;"><path d="M10 13V4M6 8l4-4 4 4"/><path d="M4 16h12"/></svg><br>
+              Arrastra el vídeo aquí o toca para elegir archivo
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="modal-btn ghost" onclick="closeVideoUpload()">Cancelar</button>
+            <button class="modal-btn primary" onclick="closeVideoUpload()">Subir y asignar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nutrición -->
+      <div class="tab-panel" id="tab-nutricion">
+        <div class="card">
+          <div class="card-tag">Plan nutricional — texto libre</div>
+          <textarea class="nutri-editor">Desayuno: avena con fruta y claras de huevo.
+Almuerzo: proteína magra + arroz integral + vegetales.
+Cena: pescado o pollo a la plancha + ensalada.
+
+Hidratación: mínimo 2.5L de agua al día.
+Nota: reducir azúcares procesados esta semana, seguimos afinando por WhatsApp.</textarea>
+          <div class="nutri-meta">
+            <span class="nutri-updated">Actualizado hace 3 días</span>
+            <button class="primary-btn">Guardar cambios</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progreso -->
+      <div class="tab-panel" id="tab-progreso">
+        <div class="card">
+          <div class="card-tag">Tendencia</div>
+          <div style="font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:16px; margin-top:4px;">Evolución por métrica</div>
+          <div class="chip-row">
+            <div class="metric-chip active" data-metric="peso"><span class="dot" style="background:var(--neon);"></span>Peso</div>
+            <div class="metric-chip active" data-metric="cintura"><span class="dot" style="background:var(--garnet);"></span>Cintura</div>
+            <div class="metric-chip off" data-metric="caderas"><span class="dot" style="background:var(--pearl);"></span>Caderas</div>
+          </div>
+          <svg class="chart-svg" viewBox="0 0 600 190" preserveAspectRatio="none">
+            <g class="metric-series" data-metric="peso">
+              <polyline points="0,25 120,50 240,75 360,105 480,135 600,160" stroke="var(--neon)"/>
+              <circle cx="600" cy="160" r="4" fill="var(--neon)"/>
+            </g>
+            <g class="metric-series" data-metric="cintura">
+              <polyline points="0,40 120,65 240,83 360,100 480,125 600,145" stroke="var(--garnet)"/>
+              <circle cx="600" cy="145" r="4" fill="var(--garnet)"/>
+            </g>
+            <g class="metric-series hidden" data-metric="caderas">
+              <polyline points="0,35 120,53 240,70 360,90 480,110 600,123" stroke="var(--pearl)"/>
+              <circle cx="600" cy="123" r="4" fill="var(--pearl)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="card-tag">Historial completo</div>
+          <div class="history-row"><div class="history-date">30 jun</div><div style="font-size:13px; font-weight:600;">Peso 68.4 kg · Cintura 71.0 cm</div><div class="history-source coach">Coach</div></div>
+          <div class="history-row"><div class="history-date">23 jun</div><div style="font-size:13px; font-weight:600;">Peso 69.1 kg</div><div class="history-source client">Camila</div></div>
+          <div class="history-row"><div class="history-date">16 jun</div><div style="font-size:13px; font-weight:600;">Peso 69.6 kg · Caderas 97.0 cm</div><div class="history-source coach">Coach</div></div>
+        </div>
+      </div>
+
+      <!-- Notas privadas -->
+      <div class="tab-panel" id="tab-notas">
+        <div class="private-warning"><svg viewBox="0 0 20 20"><rect x="4" y="8.5" width="12" height="8" rx="2"/><path d="M6.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/></svg>Estas notas nunca son visibles para Camila. Solo tú las ves.</div>
+        <div class="card">
+          <div class="note-item"><div class="note-date">28 jun 2026</div><div class="note-text">Comentó molestia leve en el hombro derecho — bajar volumen en press militar 2 semanas.</div></div>
+          <div class="note-item"><div class="note-date">10 jun 2026</div><div class="note-text">Muy motivada esta semana, aumentar carga progresivamente en tren inferior.</div></div>
+          <textarea class="note-textarea" placeholder="Escribir una nota privada..."></textarea>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  function openClient(){
+    document.getElementById('clientList').style.display = 'none';
+    document.getElementById('clientDetail').style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function closeClient(){
+    document.getElementById('clientDetail').style.display = 'none';
+    document.getElementById('clientList').style.display = 'block';
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.metric-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const metric = chip.dataset.metric;
+      const series = document.querySelector(`.metric-series[data-metric="${metric}"]`);
+      chip.classList.toggle('active');
+      chip.classList.toggle('off');
+      series.classList.toggle('hidden');
+    });
+  });
+
+  document.querySelectorAll('.day-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.day-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+    });
+  });
+
+  function togglePlanHistory(){
+    const el = document.getElementById('planHistory');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+  const newPlanModal = document.getElementById('newPlanModal');
+  function openNewPlan(){ newPlanModal.classList.add('open'); }
+  function closeNewPlan(){ newPlanModal.classList.remove('open'); }
+  newPlanModal.addEventListener('click', (e) => { if (e.target === newPlanModal) closeNewPlan(); });
+
+  const videoUploadModal = document.getElementById('videoUploadModal');
+  function openVideoUpload(){ videoUploadModal.classList.add('open'); }
+  function closeVideoUpload(){ videoUploadModal.classList.remove('open'); }
+  videoUploadModal.addEventListener('click', (e) => { if (e.target === videoUploadModal) closeVideoUpload(); });
+
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.filter-chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
