@@ -1,7 +1,7 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
-## 2026-10-24 · Progreso: mediciones y fotos privadas
+## 2026-10-24 · 4348e14 · Progreso: mediciones y fotos privadas
 - Portal `/inicio/progreso` copiado de `design/mockups/portal-progreso.html`: resumen por métrica con variación, gráfica con líneas activables, historial (Tú / Coach), comparador Antes/Después y galería. Registro de medición en modal (peso, cintura, caderas, pecho, brazo, pierna; si ya registraste hoy, se actualiza).
 - Fotos: se comprimen en el teléfono (máx. 1600 px), se guardan en un bucket **privado** y se muestran con enlaces que vencen. Antes de la primera foto el cliente acepta un consentimiento (`clients.image_consent_at`).
 - La ficha del coach tiene la pestaña **Progreso** (solo lectura) con lo mismo.
