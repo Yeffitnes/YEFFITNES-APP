@@ -66,19 +66,4 @@ Tokens (`tailwind.config.ts`, `coach.css`): neon `#F7254B`, rose `#F2406B`, oro 
 
 ## 9. Puesta en marcha desde cero
 1. Supabase: crear proyecto; Auth → desactivar "Confirm email" (solo pruebas).
-2. SQL Editor: ejecutar en orden `supabase/migrations/0001…` (todas las numeradas, hoy 0001–0008). Luego los DATOS INICIALES de 0001 (espacio de trabajo con el WhatsApp) y `0002` (planes) **después** de crear el espacio.
-3. Netlify: importar el repo, cargar las 3 variables, desplegar.
-4. Registrar el correo de Jeff y: `update public.profiles set role='coach' where id=(select id from auth.users where email='…');`
-5. Probar con un segundo correo (cliente) en ventana de incógnito.
-
-## 10. Lecciones aprendidas
-- Hacer consultas de sesión/perfil en cadena en el servidor por pantalla la volvió lenta → ahora cacheado y datos desde el navegador.
-- Copiar el CSS del mockup no basta: hay que copiar también **el flujo** (filtros instantáneos, modales, pestañas).
-- Un `blur` accidental en una tarjeta volvió borroso un mensaje entero: el desenfoque es solo para contenido bloqueado.
-- Los mockups no traen diseñados los formularios de crear ejercicio/rutina; se resolvieron con el modal de agenda.
-
-## 11. Pendientes y riesgos vivos
-Ver `PROJECT_STATE.md`. Resumen: revocar token · repo privado · Supabase Pro antes de lanzar · confirmación de correo · definir planes y precios con Jeff · plantillas de Jeff · plazo de borrado de vídeos · propiedad intelectual de lo heredado de DaniFit (confirmar que se puede reutilizar).
-
-## 12. Cómo se trabaja
-Cristian pide por chat; el asistente entrega cambios al repo (por token de sesión o por archivos), Netlify despliega solo desde `main`. Cada cambio se documenta en `CHANGELOG.md` con: qué cambió, por qué, archivos/SQL tocados y **cómo revertir**.
+2. SQL Editor: ejecutar en orden `supabase/migrations/0001…` (todas las numeradas, hoy 0001–0011; pruebas de ataque RLS en supabase/tests/). Luego los DATOS INICIALES de 0001 (espacio de trabajo con el WhatsApp) y `0002` (planes) **después** de crear el espacio.

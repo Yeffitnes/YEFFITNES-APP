@@ -12,7 +12,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="side-logo"><img src="/brand/logo-coach.svg" alt="YEFFITNES TRAINING" height={29} /></div>
+        <div className="side-logo"><img src="/brand/logo.svg" alt="YEFFITNES TRAINING" height={29} /></div>
         <SideNav clientCount={count ?? 0} />
         <div className="side-spacer" />
         <div className="side-coach">

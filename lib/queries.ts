@@ -99,15 +99,15 @@ export function useSaveRoutine() {
 }
 
 // ---- Entrenamiento por días ----
-export type PlanItem = { id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string };
-export type PlanDay = { id: string; weekday: number; name: string; items: PlanItem[] };
+export type PlanItem = { id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
+export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; items: PlanItem[] };
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; days: PlanDay[] };
-type PlanRaw = { id: string; name: string; status: "active" | "finished"; starts_on: string; ends_on: string | null; plan_days: { id: string; weekday: number; name: string; plan_items: { id: string; position: number; sets: number; reps: string; rest_seconds: number | null; target_weight: number | null; exercises: { name: string } | null }[] }[] };
+type PlanRaw = { id: string; name: string; status: "active" | "finished"; starts_on: string; ends_on: string | null; plan_days: { id: string; weekday: number; name: string; est_minutes: number | null; category: string | null; plan_items: { id: string; position: number; sets: number; reps: string; rest_seconds: number | null; target_weight: number | null; exercises: { name: string; muscle_group: string | null; equipment: string | null; video_ref: string | null; instructions: string | null } | null }[] }[] };
 export const fetchTrainingPlans = async (clientId: string): Promise<TrainingPlan[]> => {
-  const { data, error } = await db().from("training_plans").select("id,name,status,starts_on,ends_on,plan_days(id,weekday,name,plan_items(id,position,sets,reps,rest_seconds,target_weight,exercises(name)))").eq("client_id", clientId).order("created_at", { ascending: false });
+  const { data, error } = await db().from("training_plans").select("id,name,status,starts_on,ends_on,plan_days(id,weekday,name,est_minutes,category,plan_items(id,position,sets,reps,rest_seconds,target_weight,exercises(name,muscle_group,equipment,video_ref,instructions)))").eq("client_id", clientId).order("created_at", { ascending: false });
   if (error) throw error;
   return (data as unknown as PlanRaw[]).map((p) => ({ id: p.id, name: p.name, status: p.status, startsOn: p.starts_on, endsOn: p.ends_on,
-    days: p.plan_days.map((d) => ({ id: d.id, weekday: d.weekday, name: d.name, items: d.plan_items.sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, position: i.position, sets: i.sets, reps: i.reps, rest: i.rest_seconds, weight: i.target_weight, name: i.exercises?.name ?? "—" })) })) }));
+    days: p.plan_days.map((d) => ({ id: d.id, weekday: d.weekday, name: d.name, minutes: d.est_minutes, category: d.category, items: d.plan_items.sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, position: i.position, sets: i.sets, reps: i.reps, rest: i.rest_seconds, weight: i.target_weight, name: i.exercises?.name ?? "—", muscle: i.exercises?.muscle_group ?? null, equipment: i.exercises?.equipment ?? null, videoRef: i.exercises?.video_ref ?? null, instructions: i.exercises?.instructions ?? null })) })) }));
 };
 export const useTrainingPlans = (clientId: string) => useQuery({ queryKey: ["plans-of", clientId], queryFn: () => fetchTrainingPlans(clientId), staleTime: 60_000, enabled: !!clientId });
 export function useCreatePlan(clientId: string) {

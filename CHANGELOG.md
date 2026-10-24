@@ -8,6 +8,14 @@ Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir
 - SQL: `0008_progress.sql` (`measurements`, `progress_photos`, `client_has_consent`, `give_image_consent`, bucket `progress-photos` y sus políticas; el plan debe incluir `progress`).
 - Código: `components/portal/ProgressPanels.tsx`, `ProgressView.tsx`, `lib/image.ts`, `lib/queries.ts`, `PortalNav.tsx`, `ClientFicha.tsx`.
 - Revertir código: `git revert`. Revertir SQL: `drop table progress_photos, measurements; drop function give_image_consent, client_has_consent;` y borrar las políticas `fotos: …` de `storage.objects` y el bucket (esto borra mediciones y fotos).
+## 2026-10-24 · Mi plan (portal), endurecimiento de seguridad y logo
+- **Seguridad (0009):** las políticas de escritura del cliente permitían, vía API pública, registrar series en planes/clientes ajenos o sin plan de entrenamiento. Ahora exigen `client_id = my_client_id()`, feature `training`, mismo workspace y pertenencia de `plan_day`/`workout_log`/`plan_item`. Pruebas de ataque reproducibles en `supabase/tests/` (resultado esperado: "ninguno").
+- **Mi plan** en `/inicio/plan` según `design/mockups/portal-mi-plan.html`: semana LUN–DOM, detalle del día, pestaña Nutrición bloqueable, estados carga/vacío/error. Omitido por no tener datos aún: vídeo de rutina, próxima revisión, nivel, nota del coach.
+- **0010:** `plan_days.est_minutes` y `category` (copiados de la plantilla al asignar, porque el cliente no lee plantillas). En Hoy: botón "Ver técnica" con vídeo de YouTube si el ejercicio lo tiene.
+- Logo: texto invisible en el menú del coach corregido (`/brand/logo.svg`; portal usa `logo-claro.svg`). Fix de desbordamiento horizontal en móvil.
+- Código: `components/portal/{MiPlanView,VideoModal}.tsx`, `lib/week.ts`, `app/inicio/plan/`, `lib/queries.ts`, `portal.css`.
+- Ejecutar en Supabase SQL Editor, en orden: `0009` y luego `0010` (la numeración original del parche era 0008/0009; se renumeró porque 0008 ya era Progreso).
+- Revertir código: `git revert`. Revertir SQL 0010: `alter table plan_days drop column est_minutes, drop column category;` y restaurar `assign_day` de 0005. 0009: restaurar las políticas `wl_client_*`/`sl_client_*` de 0006 (solo si es imprescindible: reabre la brecha).
 
 ## 2026-10-24 · 29d6daa · Dashboard con cola de revisión y ciclo de revisión
 - `/coach` ahora es el dashboard del mockup: 4 indicadores (clientes activos, entrenaron hoy, revisiones pendientes, clientes por revisar), lista "Clientes por revisar" ordenada por urgencia y "Actividad" reciente. Solo datos reales.

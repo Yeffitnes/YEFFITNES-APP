@@ -12,7 +12,7 @@ export default async function PortalLayout({ children }: { children: React.React
     <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name} prefetch={false}>
       <div className="shell">
         <PortalSide />
-        <main className="main"><div className="m-logo"><img src="/brand/logo-coach.svg" alt="YEFFITNES TRAINING" height={29} /></div>{children}</main>
+        <main className="main"><div className="m-logo"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /></div>{children}</main>
         <PortalBottomNav />
       </div>
     </Providers>

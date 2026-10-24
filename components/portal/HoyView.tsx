@@ -4,12 +4,10 @@ import { localDate, useFinish, useLogs, useLogSet, useMe, useTrainingPlans, type
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { CHECK_ICON } from "./icons";
+import { VideoModal, PLAY_PATH } from "./VideoModal";
+import { weekDates } from "@/lib/week";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
-function weekDates() {
-  const t = new Date(), mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
-  return Array.from({ length: 7 }, (_, i) => { const d = new Date(mon); d.setDate(mon.getDate() + i); return localDate(d); });
-}
 function streak(days: number[], logs: WorkoutLog[]) {
   if (!days.length) return 0;
   const done = new Set(logs.filter((l) => l.completed).map((l) => l.date)); let n = 0;
@@ -48,7 +46,7 @@ export function HoyView() {
   );
 }
 function Routine({ cid, title, items, log, today }: { cid: string; title: string; items: PlanItem[]; log?: WorkoutLog; today: string }) {
-  const [open, setOpen] = useState<string | null>(null), [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState<string | null>(null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? "");
   const finish = useFinish(cid);
   const saved = (id: string) => log?.sets.filter((s) => s.itemId === id) ?? [];
@@ -66,9 +64,10 @@ function Routine({ cid, title, items, log, today }: { cid: string; title: string
           <div className={`ex-row${saved(i.id).length >= i.sets ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => e.key === "Enter" && setOpen(open === i.id ? null : i.id)}>
             <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><div className="ex-name">{i.name}</div><div className="ex-meta">{i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
-          {open === i.id && <div className="ex-panel">{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} />)}</div>}
+          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} />)}</div>}
         </div>))}</div>
       {log?.coachComment && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}</div>}
+      {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
       <div style={{ marginTop: 18 }}>
         {closed ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><span className="pill-done">COMPLETADO · ESFUERZO {log?.effort}/10</span><button className="mini-btn ghost" onClick={() => setEditing(true)}>Editar</button></div> : (
           <>

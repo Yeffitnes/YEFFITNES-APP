@@ -52,3 +52,4 @@ Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flu
 - Progreso hecho (migración 0008): mediciones, gráfica y fotos privadas con consentimiento. Migraciones vigentes: 0001–0008.
 - Siguiente: reporte diario con vídeo (necesita cuenta Bunny) → nutrición con plantillas → agenda (coach publica horarios, cliente reserva) → material educativo (YouTube) → onboarding (tour, medidas iniciales, agendar llamada) → confirmación de correo, Supabase Pro y repo privado antes de lanzar.
 - Verificar en producción: que el bucket `progress-photos` se creó y que subir una foto funciona desde un celular real (cámara).
+- Mi plan hecho (`/inicio/plan`), endurecimiento RLS (0009) y metadatos de día (0010). Migraciones vigentes: 0001–0010. Pruebas RLS en `supabase/tests/`. Siguiente: reporte diario/vídeo, nutrición, progreso, agenda, material, onboarding.
