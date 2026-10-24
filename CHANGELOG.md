@@ -1,6 +1,14 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-24 · Progreso: mediciones y fotos privadas
+- Portal `/inicio/progreso` copiado de `design/mockups/portal-progreso.html`: resumen por métrica con variación, gráfica con líneas activables, historial (Tú / Coach), comparador Antes/Después y galería. Registro de medición en modal (peso, cintura, caderas, pecho, brazo, pierna; si ya registraste hoy, se actualiza).
+- Fotos: se comprimen en el teléfono (máx. 1600 px), se guardan en un bucket **privado** y se muestran con enlaces que vencen. Antes de la primera foto el cliente acepta un consentimiento (`clients.image_consent_at`).
+- La ficha del coach tiene la pestaña **Progreso** (solo lectura) con lo mismo.
+- SQL: `0008_progress.sql` (`measurements`, `progress_photos`, `client_has_consent`, `give_image_consent`, bucket `progress-photos` y sus políticas; el plan debe incluir `progress`).
+- Código: `components/portal/ProgressPanels.tsx`, `ProgressView.tsx`, `lib/image.ts`, `lib/queries.ts`, `PortalNav.tsx`, `ClientFicha.tsx`.
+- Revertir código: `git revert`. Revertir SQL: `drop table progress_photos, measurements; drop function give_image_consent, client_has_consent;` y borrar las políticas `fotos: …` de `storage.objects` y el bucket (esto borra mediciones y fotos).
+
 ## 2026-10-24 · 29d6daa · Dashboard con cola de revisión y ciclo de revisión
 - `/coach` ahora es el dashboard del mockup: 4 indicadores (clientes activos, entrenaron hoy, revisiones pendientes, clientes por revisar), lista "Clientes por revisar" ordenada por urgencia y "Actividad" reciente. Solo datos reales.
 - Reglas de atención (`lib/attention.ts`, sin IA): entrenamientos sin revisar (urgente si esfuerzo ≥ 9), cliente activo sin plan de entrenamiento, y días sin entrenar (≥ 3; urgente desde 5).

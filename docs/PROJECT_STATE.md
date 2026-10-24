@@ -47,3 +47,8 @@ Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flu
 ## Actualización 24-oct-2026 (2)
 - Dashboard + ciclo de revisión hechos (migración 0007). Migraciones vigentes: 0001–0007.
 - Siguiente: reporte diario con vídeo (Bunny) → nutrición → progreso → agenda → material → onboarding → confirmación de correo y Supabase Pro antes de lanzar.
+
+## Actualización 24-oct-2026 (3)
+- Progreso hecho (migración 0008): mediciones, gráfica y fotos privadas con consentimiento. Migraciones vigentes: 0001–0008.
+- Siguiente: reporte diario con vídeo (necesita cuenta Bunny) → nutrición con plantillas → agenda (coach publica horarios, cliente reserva) → material educativo (YouTube) → onboarding (tour, medidas iniciales, agendar llamada) → confirmación de correo, Supabase Pro y repo privado antes de lanzar.
+- Verificar en producción: que el bucket `progress-photos` se creó y que subir una foto funciona desde un celular real (cámara).

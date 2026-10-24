@@ -6,8 +6,8 @@ import { useProfile } from "@/components/Providers";
 import { initials } from "@/lib/format";
 import { signOut } from "@/app/login/actions";
 import { BN_ICONS, SIDE_ICONS } from "./icons";
-const SIDE = [["Hoy", "/inicio"], ["Mi plan", ""], ["Agenda", ""], ["Progreso", ""], ["Objetivos", ""], ["Material", ""]];
-const BN = [["HOY", "/inicio"], ["PLAN", ""], ["AGENDA", ""], ["PROGRESO", ""], ["MATERIAL", ""]];
+const SIDE = [["Hoy", "/inicio"], ["Mi plan", ""], ["Agenda", ""], ["Progreso", "/inicio/progreso"], ["Objetivos", ""], ["Material", ""]];
+const BN = [["HOY", "/inicio"], ["PLAN", ""], ["AGENDA", ""], ["PROGRESO", "/inicio/progreso"], ["MATERIAL", ""]];
 export function PortalSide() {
   const path = usePathname(), { profileId, name } = useProfile(), me = useMe(profileId);
   return (

@@ -218,3 +218,54 @@ export function useReviewWorkout(clientId: string) {
     onError: () => toast("No pudimos guardar la revisión. Inténtalo de nuevo.", true),
   });
 }
+
+// ---- Progreso (mediciones y fotos) ----
+export type Measure = { id: string; date: string; weight: number | null; waist: number | null; hip: number | null; chest: number | null; arm: number | null; thigh: number | null; by: "client" | "coach" };
+type MeasureRaw = { id: string; measured_on: string; weight_kg: number | null; waist_cm: number | null; hip_cm: number | null; chest_cm: number | null; arm_cm: number | null; thigh_cm: number | null; recorded_by: "client" | "coach" };
+export const useMeasures = (clientId: string) => useQuery({ queryKey: ["measures", clientId], staleTime: 60_000, enabled: !!clientId, queryFn: async (): Promise<Measure[]> => {
+  const { data, error } = await db().from("measurements").select("id,measured_on,weight_kg,waist_cm,hip_cm,chest_cm,arm_cm,thigh_cm,recorded_by").eq("client_id", clientId).order("measured_on", { ascending: true });
+  if (error) throw error;
+  return (data as unknown as MeasureRaw[]).map((m) => ({ id: m.id, date: m.measured_on, weight: m.weight_kg, waist: m.waist_cm, hip: m.hip_cm, chest: m.chest_cm, arm: m.arm_cm, thigh: m.thigh_cm, by: m.recorded_by }));
+} });
+export type MeasureInput = Partial<Record<"weight" | "waist" | "hip" | "chest" | "arm" | "thigh", number>>;
+export function useSaveMeasure(clientId: string, workspaceId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: MeasureInput) => {
+      const row: Record<string, unknown> = { workspace_id: workspaceId, client_id: clientId, measured_on: localDate(), recorded_by: "client" };
+      const col = { weight: "weight_kg", waist: "waist_cm", hip: "hip_cm", chest: "chest_cm", arm: "arm_cm", thigh: "thigh_cm" } as const;
+      (Object.keys(v) as (keyof MeasureInput)[]).forEach((k) => { if (v[k] != null) row[col[k]] = v[k]; });
+      const { error } = await db().from("measurements").upsert(row, { onConflict: "client_id,measured_on" }); if (error) throw error;
+    },
+    onSuccess: () => { toast("Medición guardada"); qc.invalidateQueries({ queryKey: ["measures", clientId] }); },
+    onError: () => toast("No pudimos guardar la medición. Revisa los valores e inténtalo de nuevo.", true),
+  });
+}
+export type Photo = { id: string; date: string; url: string | null };
+export const usePhotos = (clientId: string) => useQuery({ queryKey: ["photos", clientId], staleTime: 30 * 60_000, enabled: !!clientId, queryFn: async (): Promise<Photo[]> => {
+  const { data, error } = await db().from("progress_photos").select("id,taken_on,storage_path").eq("client_id", clientId).order("taken_on", { ascending: true }); if (error) throw error;
+  const rows = data as unknown as { id: string; taken_on: string; storage_path: string }[];
+  if (!rows.length) return [];
+  const { data: urls } = await db().storage.from("progress-photos").createSignedUrls(rows.map((r) => r.storage_path), 3600);
+  return rows.map((r) => ({ id: r.id, date: r.taken_on, url: (urls as { path: string | null; signedUrl: string }[] | null)?.find((u) => u.path === r.storage_path)?.signedUrl ?? null }));
+} });
+export function useUploadPhoto(clientId: string, workspaceId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (blob: Blob) => {
+      const path = `${workspaceId}/${clientId}/${crypto.randomUUID()}.jpg`;
+      const up = await db().storage.from("progress-photos").upload(path, blob, { contentType: "image/jpeg" }); if (up.error) throw up.error;
+      const { error } = await db().from("progress_photos").insert({ workspace_id: workspaceId, client_id: clientId, taken_on: localDate(), storage_path: path });
+      if (error) { await db().storage.from("progress-photos").remove([path]); throw error; }
+    },
+    onSuccess: () => { toast("Foto guardada"); qc.invalidateQueries({ queryKey: ["photos", clientId] }); },
+    onError: () => toast("No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true),
+  });
+}
+export function useGiveConsent(profileId: string) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: async () => { const { error } = await db().rpc("give_image_consent"); if (error) throw error; }, onSuccess: () => qc.invalidateQueries({ queryKey: ["consent", profileId] }) });
+}
+export const useConsent = (profileId: string) => useQuery({ queryKey: ["consent", profileId], staleTime: 300_000, enabled: !!profileId, queryFn: async () => {
+  const { data, error } = await db().from("clients").select("image_consent_at").eq("profile_id", profileId).maybeSingle(); if (error) throw error; return !!data?.image_consent_at;
+} });

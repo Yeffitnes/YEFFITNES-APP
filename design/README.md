@@ -12,7 +12,7 @@ Origen: extraídas de la propuesta comercial (`APROPUESTA-YEFFITNES.html`, repo 
 | coach-material | /coach/material | pendiente |
 | portal-hoy | /inicio | hecho: saludo, racha, semana y rutina de hoy con registro de series; faltan tarjetas de sesión, objetivo, nutrición, progreso y vídeo de la semana |
 | portal-mi-plan | /inicio/plan | pendiente |
-| portal-progreso | /inicio/progreso | pendiente |
+| portal-progreso | /inicio/progreso | hecho (mediciones, gráfica, historial, fotos antes/después) |
 | portal-agenda | /inicio/agenda | pendiente |
 | portal-material | /inicio/material | pendiente |
 
