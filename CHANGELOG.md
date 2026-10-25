@@ -10,6 +10,9 @@ Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir
 - **Bolita viva** (`live-dot`) en Rutina de hoy, Próxima sesión y Objetivo (Objetivo: "Actualizado hace N días"; pasa a dorado si pasan 30 días).
 - **Nutrición:** cada comida se pliega (solo el nombre); tocarla muestra qué toca; el círculo marca y desmarca.
 - **Color:** tarjeta de nivel, sesión y semana en tonos oscuros con degradado; barra lateral del coach con degradado rojo/dorado y marca activa más visible.
+- **Botones principales** (mini-btn, reporte, confirmar, serie hecha, esfuerzo) en negro de marca con brillo rojo, en vez de rojo plano.
+- **Entorno de pruebas:** Vercel (Hobby, solo pruebas) despliega la rama `bloque-hoy`; Netlify solo `main`. Mismas variables de entorno en ambos.
+- **App descargable (pendiente a propósito):** hoy es una app instalable (PWA) desde el navegador. Subirla a App Store / Google Play sería un envoltorio aparte (cuentas de desarrollador de pago y revisión); decidir después del lanzamiento.
 - **Archivos:** `0026_fix_client_slot_read.sql`, `lib/queries.ts`, `lib/upload-video.ts`, `components/portal/{QuickRow,RoutineVideo,HoyView,HoySide,ReportCard,MealChecklist,MiPlanView}.tsx`, `components/ui/Icon.tsx`, `app/inicio/portal.css`, `app/coach/coach.css`.
 - **Sin probar:** flujo autenticado completo y teléfono real (solo maqueta renderizada y pruebas de base de datos).
 - **Revertir:** `git revert`; SQL: `drop function public.unlog_set(date, uuid, int);` y recrear la política anterior (no recomendado).

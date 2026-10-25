@@ -1011,3 +1011,12 @@ html, body{overflow-x:hidden; max-width:100%;}
 .level-block .level-reason{color:rgba(255,255,255,.72);}
 .level-block .level-reason b{color:var(--pearl);}
 .card-session .session-date{background:linear-gradient(135deg,var(--neon),var(--rose));}
+
+/* Botones principales: negro de marca con brillo rojo (en vez de rojo plano) */
+.mini-btn.primary,.report-btn:not(.ghost),.modal-btn.primary,.summary-confirm{
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.55),transparent 58%),radial-gradient(90% 200% at 100% 100%,rgba(205,177,112,.22),transparent 60%),var(--ink);
+  color:#fff;border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 18px -10px rgba(10,9,16,.7);}
+.mini-btn.primary:hover,.report-btn:not(.ghost):hover,.modal-btn.primary:hover,.summary-confirm:hover{opacity:1;box-shadow:0 10px 22px -10px rgba(247,37,75,.55);}
+.set-save.on{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.6),transparent 62%),var(--ink);border-color:var(--ink);}
+.set-save.on:hover{background:var(--garnet);border-color:var(--garnet);}
+.effort-btn.on{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.6),transparent 62%),var(--ink);border-color:var(--ink);}
