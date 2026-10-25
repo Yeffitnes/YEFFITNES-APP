@@ -1,14 +1,16 @@
 "use client";
+import { Icon } from "@/components/ui/Icon";
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useClients } from "@/lib/queries";
-import { useThreads } from "@/lib/messages";
+import { usePurgeMessages, useThreads } from "@/lib/messages";
 import { ThreadView } from "@/components/ui/ThreadView";
 import { ago, gradient, initials } from "@/lib/format";
 import "@/app/messages.css";
 
 function Inbox() {
   const router = useRouter(), sp = useSearchParams(), sel = sp.get("c");
+  usePurgeMessages();
   const threads = useThreads(), clients = useClients(), [q, setQ] = useState("");
   const list = useMemo(() => {
     const t = threads.data ?? [], have = new Set(t.map((x) => x.clientId));
@@ -20,7 +22,7 @@ function Inbox() {
   const select = (id: string | null) => router.replace(id ? `/coach/mensajes?c=${id}` : "/coach/mensajes", { scroll: false });
   return (
     <>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Mensajes</div><h1>Bandeja de mensajes</h1><p className="greeting-sub">Escríbeles cuando quieras: texto, foto, vídeo propio o de YouTube. Les llega un aviso a su teléfono.</p></div></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Mensajes</div><h1>Bandeja de mensajes</h1><p className="greeting-sub">Cada cliente puede dejarte hasta 3 mensajes sin leer. Respóndeles con texto, foto, vídeo o YouTube; les llega un aviso. Todo se borra solo 24 horas después de leerse.</p></div></div>
       <div className={`inbox-layout${current ? " open" : ""}`}>
         <div className="inbox-side">
           <div className="search-box" style={{ maxWidth: "none", marginBottom: 10 }}><input type="search" placeholder="Buscar cliente…" aria-label="Buscar cliente" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: 16 }} /></div>
@@ -40,7 +42,7 @@ function Inbox() {
         </div>
         <div className="inbox-main">
           {current
-            ? <><button className="filter-chip inbox-back" onClick={() => select(null)}>‹ Bandeja</button><div style={{ fontWeight: 700, marginBottom: 8 }}>{current.name}</div><ThreadView key={current.clientId} clientId={current.clientId} otherName={current.name} coach /></>
+            ? <><button className="filter-chip inbox-back" onClick={() => select(null)}><Icon name="chevronLeft" size={13} /> Bandeja</button><div style={{ fontWeight: 700, marginBottom: 8 }}>{current.name}</div><ThreadView key={current.clientId} clientId={current.clientId} otherName={current.name} coach /></>
             : <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Elige un cliente para ver o escribir sus mensajes.</p></div>}
         </div>
       </div>

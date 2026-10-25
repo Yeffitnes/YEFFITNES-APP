@@ -13,12 +13,12 @@ type Raw = { id: string; sender: string; body: string | null; image_path: string
 const ME = "me";
 export const threadKey = (clientId?: string) => ["thread", clientId ?? ME] as const;
 export const fetchThread = async (clientId?: string): Promise<Msg[]> => {
-  let q = db().from("messages").select("id,sender,body,image_path,video_id,youtube_id,read_at,created_at").order("created_at", { ascending: false }).limit(100);
+  let q = db().from("messages").select("id,sender,body,image_path,video_id,youtube_id,read_at,created_at").order("created_at", { ascending: false }).limit(30);
   if (clientId) q = q.eq("client_id", clientId);
   const { data, error } = await q; if (error) throw error;
   return (data as Raw[]).reverse().map((m) => ({ id: m.id, sender: m.sender as Msg["sender"], body: m.body, imagePath: m.image_path, hasVideo: !!m.video_id, youtubeId: m.youtube_id, readAt: m.read_at, createdAt: m.created_at }));
 };
-export const useThread = (clientId?: string, enabled = true) => useQuery({ queryKey: threadKey(clientId), queryFn: () => fetchThread(clientId), enabled, staleTime: 10_000, refetchInterval: 60_000 });
+export const useThread = (clientId?: string, enabled = true) => useQuery({ queryKey: threadKey(clientId), queryFn: () => fetchThread(clientId), enabled, staleTime: 15_000, refetchInterval: 120_000 });
 export const useThreads = () => useQuery({
   queryKey: ["threads"], staleTime: 10_000, refetchInterval: 60_000,
   queryFn: async (): Promise<Thread[]> => {
@@ -41,7 +41,7 @@ export function useMarkRead(clientId?: string) {
 
 export type SendInput = { body: string; image?: File | null; video?: File | null; youtube?: string | null; onProgress?: (pct: number) => void };
 export class SendError extends Error { constructor(public code: string) { super(code); } }
-const ERR: Record<string, string> = { too_many: "Enviaste muchos mensajes seguidos. Espera un rato.", not_allowed: "No puedes enviar eso con tu cuenta.", too_long: "El mensaje es muy largo.", empty: "Escribe algo antes de enviar.", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa tu conexión y vuelve a intentarlo.", not_configured: "Los vídeos aún no están activados." };
+const ERR: Record<string, string> = { too_many: "Ya enviaste varios mensajes hoy. Escríbele de nuevo mañana.", wait_reply: "Tu coach aún no ha visto tus últimos mensajes. Cuando los vea podrás enviar más.", not_allowed: "No puedes enviar eso con tu cuenta.", too_long: "El mensaje es muy largo (máximo 600 caracteres).", empty: "Escribe algo antes de enviar.", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa tu conexión y vuelve a intentarlo.", not_configured: "Los vídeos aún no están activados." };
 export const sendErrorText = (e: unknown) => (e instanceof SendError || e instanceof UploadError ? ERR[e.code] : null) ?? "No se pudo enviar. Inténtalo de nuevo.";
 
 export function useSendMessage(clientId?: string, ownClientId?: string) {
@@ -52,14 +52,14 @@ export function useSendMessage(clientId?: string, ownClientId?: string) {
       const cid = clientId ?? ownClientId ?? null;
       if (x.image) {
         if (!cid) throw new SendError("not_allowed");
-        const blob = await compressImage(x.image, 1400, 0.85);
+        const blob = await compressImage(x.image, 1280, 0.75);
         imagePath = `${ws}/${cid}/${crypto.randomUUID()}.jpg`;
         const up = await db().storage.from("message-images").upload(imagePath, blob, { contentType: "image/jpeg" });
         if (up.error) throw new SendError("not_allowed");
       }
       if (x.video) videoId = await uploadVideo(x.video, x.onProgress ?? (() => {}), { purpose: "message", clientId });
       const { data, error } = await db().rpc("send_message", { p_client: clientId ?? null, p_body: x.body || null, p_image: imagePath, p_video: videoId, p_youtube: x.youtube ?? null });
-      if (error) throw new SendError(/too_many|too_long|empty|not_allowed/.exec(error.message)?.[0] ?? "failed");
+      if (error) throw new SendError(/too_many|wait_reply|too_long|empty|not_allowed/.exec(error.message)?.[0] ?? "failed");
       void fetch("/api/push/notify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messageId: data }) }).catch(() => {});
       return data as string;
     },
@@ -90,4 +90,24 @@ export function useMessagesRealtime(side: "client" | "coach") {
       .subscribe();
     return () => { void c.removeChannel(ch); };
   }, [qc, toast, side]);
+}
+
+// Limpieza al abrir la bandeja del coach: borra los mensajes ya cumplidos y elimina sus fotos (Storage) y vídeos (Bunny).
+export function usePurgeMessages() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    let off = false;
+    void (async () => {
+      try {
+        const c = db(); await c.rpc("purge_messages");
+        const { data } = await c.rpc("due_message_trash"), rows = (data ?? []) as { id: string; kind: string; ref: string }[];
+        if (off || !rows.length) return;
+        const imgs = rows.filter((r) => r.kind === "image");
+        if (imgs.length) { const { error } = await c.storage.from("message-images").remove(imgs.map((r) => r.ref)); if (!error) await c.rpc("clear_message_trash", { p_ids: imgs.map((r) => r.id) }); }
+        if (rows.some((r) => r.kind === "video")) await fetch("/api/messages/purge", { method: "POST" }).catch(() => {});
+        void qc.invalidateQueries({ queryKey: ["threads"] }); void qc.invalidateQueries({ queryKey: ["thread"] });
+      } catch { /* se reintenta la próxima vez */ }
+    })();
+    return () => { off = true; };
+  }, [qc]);
 }

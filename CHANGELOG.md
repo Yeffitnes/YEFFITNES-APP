@@ -1,6 +1,14 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Fluidez, mensajes tipo tablón (migración 0028), cargador de marca, iconos (rama `bloque-fluidez`, sin subir a main)
+- **Mensajes ya no son un chat:** tablón con redacción arriba y tarjetas abajo. Límites (PROPUESTA): cliente máx. 600 caracteres, máx. 3 mensajes sin leer por el coach, máx. 12 por 24 h. Un mensaje leído se borra a las 24 h; sin leer, a los 30 días. Imágenes/vídeos de mensajes borrados se eliminan del Storage/Bunny (tabla `message_trash`, ruta `/api/messages/purge`, el coach limpia al abrir Mensajes). Imágenes de mensajes comprimidas a 1280 px / 0.75. **Hay que correr la migración 0028 en Supabase antes de probar o fusionar.**
+- **Velocidad:** caché de consultas 30 s, `staleTimes` de Next, `prefetch` en todas las navegaciones, precarga en segundo plano de agenda/material/avisos/nutrición/mensajes (`Warmup`), subida de fotos optimista con compresión por `createImageBitmap`, animación de tarjetas más corta, respuesta táctil en botones.
+- **Cargador de marca** (`BrandLoader`, logo de Jeff pulsando) en reproducción de vídeos (Bunny y VideoModal).
+- **Iconos de marca** en lugar de flechas de texto (‹ › → ← ↑ ↓); deltas ahora con + / −.
+- Pruebas: tsc limpio, lint sin errores, suite RLS "TODO OK" (rls_messages adaptada), build compila. Sin probar: dispositivos reales ni flujos autenticados.
+- Revertir: `git revert` del commit; en Supabase `drop table message_trash cascade;` y recrear `send_message` de la migración anterior.
+
 ## 2026-10-25 · Landing dentro del sitio de la app, en `/landing` (temporal)
 - La carpeta `landing/` pasó a `public/landing/` y se sirve en `/landing` (regla en `next.config.mjs`; excluida del `middleware`). Rutas de imágenes ahora absolutas (`/landing/assets/…`). Se quitó el `netlify.toml` de la landing y la regla `ignore` del `netlify.toml` raíz (ya es parte del sitio). Probado en local: `/landing` 200, imágenes 200, `/login` 200, `/inicio` sigue protegido. Sin probar en Netlify/Vercel.
 - Pendiente a futuro: moverla a su propia dirección (ver `public/landing/README.md`).

@@ -10,7 +10,7 @@ export const useProfile = () => useContext(Prof);
 export const useWorkspaceId = () => useContext(Ws);
 export function Providers({ workspaceId, profileId = "", name = "", prefetch = true, me, children }: { workspaceId: string; profileId?: string; name?: string; prefetch?: boolean; me?: Me | null; children: React.ReactNode }) {
   const [qc] = useState(() => {
-    const c = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true } } });
+    const c = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 30_000, gcTime: 10 * 60_000 } } });
     if (me) c.setQueryData(["me", profileId], me); // el servidor ya lo leyó: la primera pantalla no espera ese viaje
     return c;
   });

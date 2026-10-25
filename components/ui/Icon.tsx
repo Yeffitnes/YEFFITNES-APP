@@ -17,6 +17,11 @@ const PATHS = {
   image: <><rect x="3.2" y="4.2" width="13.6" height="11.6" rx="2.2" /><circle cx="7.6" cy="8.4" r="1.4" /><path d="M3.6 14l4-3.8 3 2.8 2.2-2 3.6 3.2" /></>,
   message: <path d="M4.2 5h11.6a1.2 1.2 0 0 1 1.2 1.2v6.1a1.2 1.2 0 0 1-1.2 1.2H9.6L6.2 16.4v-2.9H4.2A1.2 1.2 0 0 1 3 12.3V6.2A1.2 1.2 0 0 1 4.2 5z" />,
   chevron: <path d="M7.6 5l5 5-5 5" />,
+  chevronLeft: <path d="M12.4 5l-5 5 5 5" />,
+  arrow: <path d="M4 10h12M11.2 5.2L16 10l-4.8 4.8" />,
+  back: <path d="M16 10H4M8.8 5.2L4 10l4.8 4.8" />,
+  up: <path d="M10 15V5M5.5 9.5L10 5l4.5 4.5" />,
+  down: <path d="M10 5v10M5.5 10.5L10 15l4.5-4.5" />,
   target: <><circle cx="10" cy="10" r="6.6" /><circle cx="10" cy="10" r="3.2" /><circle cx="10" cy="10" r=".6" fill="currentColor" /></>,
   megaphone: <><path d="M4 8.5v3l8 3.5V5L4 8.5z" /><path d="M6 11.7l.8 3.3h2" /><path d="M15 8.2a2.4 2.4 0 0 1 0 3.6" /></>,
 } as const;

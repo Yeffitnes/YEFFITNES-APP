@@ -369,7 +369,7 @@
 
 .m-logo{display:none}@media (max-width:1080px){.m-logo{display:block;margin-bottom:16px}}
 
-.card{opacity:1;transform:none;animation:rise .5s ease both}@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card{opacity:1;transform:none;animation:rise .26s ease-out both}@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .set-row{display:grid;grid-template-columns:54px 1fr 1fr 40px;gap:8px;align-items:center;margin:6px 0}
 .set-row label{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint)}
 .set-input{height:40px;border-radius:10px;border:1px solid var(--line);padding:0 10px;font-size:14px;width:100%;background:var(--paper);font-family:var(--font-body)}

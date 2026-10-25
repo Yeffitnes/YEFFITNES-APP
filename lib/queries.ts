@@ -290,8 +290,11 @@ export function useUploadPhoto(clientId: string, workspaceId: string) {
       const { error } = await db().from("progress_photos").insert({ workspace_id: workspaceId, client_id: clientId, taken_on: localDate(), storage_path: path });
       if (error) { await db().storage.from("progress-photos").remove([path]); throw error; }
     },
-    onSuccess: () => { toast("Foto guardada"); qc.invalidateQueries({ queryKey: ["photos", clientId] }); },
-    onError: () => toast("No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true),
+    // La foto aparece al instante (vista previa local) mientras sube; al terminar se reemplaza por la guardada.
+    onMutate: async (blob) => { const key = ["photos", clientId]; await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<unknown[]>(key); qc.setQueryData<unknown[]>(key, (l = []) => [...l, { id: "tmp-upload", date: localDate(), url: URL.createObjectURL(blob), path: "" }]); return { prev }; },
+    onSuccess: () => { toast("Foto guardada"); },
+    onError: (_e, _b, ctx) => { if (ctx) qc.setQueryData(["photos", clientId], ctx.prev); toast("No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true); },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["photos", clientId] }),
   });
 }
 export function useDeletePhoto(clientId: string) {

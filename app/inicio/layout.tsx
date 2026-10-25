@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { PortalBottomNav, PortalSide } from "@/components/portal/PortalNav";
 import { ActionsBar } from "@/components/ActionsBar";
 import { Onboarding } from "@/components/portal/Onboarding";
+import { Warmup } from "@/components/portal/Warmup";
 import "./portal.css";
 // La barra del navegador (Safari/Chrome) toma este color: igual que la barra de menú del portal, para que no se vea una banda oscura debajo.
 export const viewport: Viewport = { themeColor: "#FFFFFF", viewportFit: "cover", width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false };
@@ -20,6 +21,7 @@ export default async function PortalLayout({ children }: { children: React.React
         <main className="main"><div className="m-logo"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /></div><ActionsBar side="client" />{children}</main>
         <PortalBottomNav />
         <Onboarding />
+        <Warmup />
       </div>
     </Providers>
   );

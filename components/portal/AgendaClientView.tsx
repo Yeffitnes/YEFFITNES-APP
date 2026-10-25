@@ -18,9 +18,9 @@ export function AgendaClientView() {
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Reserva tu próxima sesión</h1><p className="greeting-sub">Tu coach publica horarios cada semana. Elige el que te sirve y confirma al instante. Puedes tener una sesión reservada a la vez y cancelarla hasta 24 horas antes.</p></div></div>
-      <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" disabled={off <= 0} onClick={() => { setOff(off - 1); setSel(null); }}>‹</button>
+      <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" disabled={off <= 0} onClick={() => { setOff(off - 1); setSel(null); }}><Icon name="chevronLeft" size={16} /></button>
         <div className="week-nav-label"><div className="week-nav-range">{weekLabel(from)}</div><div className="week-nav-tag">{off === 0 ? "Semana actual" : off === 1 ? "Próxima semana" : `En ${off} semanas`}</div></div>
-        <button className="week-nav-btn" aria-label="Semana siguiente" disabled={off >= 6} onClick={() => { setOff(off + 1); setSel(null); }}>›</button></div>
+        <button className="week-nav-btn" aria-label="Semana siguiente" disabled={off >= 6} onClick={() => { setOff(off + 1); setSel(null); }}><Icon name="chevron" size={16} /></button></div>
       <div className="filter-row">{[["all", "Todas"], ["initial", "Llamada inicial"], ["followup", "Seguimiento"]].map(([k, t]) => <button key={k} className={`filter-chip${filter === k ? " active" : ""}`} onClick={() => setFilter(k)}><span className="fdot" style={{ background: k === "all" ? "linear-gradient(135deg,#F7254B,#F2406B)" : KIND_COLOR[k] }} />{t}</button>)}</div>
       <div className="agenda-grid">
         <div className="card cal-card">

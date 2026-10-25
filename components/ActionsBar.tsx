@@ -66,7 +66,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
       {open && <div className="act-pop" role="dialog" aria-label="Avisos">
         <div className="act-pop-title">Avisos</div>
         {!items.length && <p className="act-empty">Todo al día. No tienes pendientes.</p>}
-        {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={() => setOpen(false)}>{i.text}<span aria-hidden>›</span></Link>)}
+        {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={() => setOpen(false)}>{i.text}<Icon name="chevron" size={14} /></Link>)}
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
         <button type="button" className="act-push" onClick={togglePush} disabled={busy || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>

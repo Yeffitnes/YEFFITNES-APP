@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/Icon";
 import { useRef, useState } from "react";
 import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
@@ -78,7 +79,7 @@ function AssignModal({ clientId, planId, weekday, dayLabel, replacing, onClose }
   const toggle = (w: number) => setDays((l) => (l.includes(w) ? l.filter((x) => x !== w) : [...l, w].sort()));
   return (
     <Modal title={`Rutina para ${dayLabel}`} sub={replacing ? "Reemplazará la rutina que ya tenga cada día elegido. Se copia la plantilla: los cambios aquí no afectan al catálogo." : "Se copia la plantilla: los cambios aquí no afectan al catálogo."} onClose={onClose}>
-      {!data ? <Skeleton rows={2} /> : !data.length ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Aún no tienes rutinas. Créalas en Catálogo → Rutinas.</p> : (
+      {!data ? <Skeleton rows={2} /> : !data.length ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Aún no tienes rutinas. Créalas en Catálogo, sección Rutinas.</p> : (
         <div style={{ marginTop: 14, maxHeight: 300, overflowY: "auto" }}>{data.map((r) => (
           <label key={r.id} className="info-list-row" style={{ cursor: "pointer", gap: 10, justifyContent: "flex-start" }}>
             <input type="radio" name="tpl" checked={sel === r.id} onChange={() => setSel(r.id)} /><span style={{ fontWeight: 700 }}>{r.name}</span><span style={{ color: "var(--text-faint)", fontSize: 12 }}>{r.items.length} ejercicios</span></label>))}</div>)}
@@ -105,7 +106,7 @@ function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientNa
   };
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
-      {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir →</a></div>}
+      {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a></div>}
       <div className="info-list-row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <span><b>Vídeo personalizado para {clientName.split(" ")[0]}</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Solo {clientName.split(" ")[0]} lo ve — reemplaza al de catálogo en su plan.</span></span>
         <span style={{ display: "flex", gap: 8, alignItems: "center" }}>

@@ -16,7 +16,7 @@ export function PortalSide() {
     <aside className="sidebar">
       <div className="side-logo"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /></div>
       <nav className="side-nav">{SIDE.map(([t, h], i) => h
-        ? <Link key={t} href={h} className={`side-link${path === h ? " active" : ""}`}><span dangerouslySetInnerHTML={{ __html: t === "Mensajes" ? MSG_ICON : SIDE_ICONS[i > 5 ? 5 : i] }} style={{ display: "contents" }} />{t}{t === "Mensajes" && unread > 0 && <span className="badge">{unread}</span>}</Link>
+        ? <Link key={t} href={h} prefetch className={`side-link${path === h ? " active" : ""}`}><span dangerouslySetInnerHTML={{ __html: t === "Mensajes" ? MSG_ICON : SIDE_ICONS[i > 5 ? 5 : i] }} style={{ display: "contents" }} />{t}{t === "Mensajes" && unread > 0 && <span className="badge">{unread}</span>}</Link>
         : <span key={t} className="side-link" style={{ opacity: 0.35, cursor: "default" }}><span dangerouslySetInnerHTML={{ __html: SIDE_ICONS[i] }} style={{ display: "contents" }} />{t}</span>)}</nav>
       <div className="side-spacer" />
       <div className="side-client"><div className="side-avatar">{initials(name)}</div>
@@ -29,7 +29,7 @@ export function PortalBottomNav() {
   const path = usePathname();
   return (
     <nav className="bottom-nav">{BN.map(([t, h], i) => h
-      ? <Link key={t} href={h} className={`bn-link${path === h ? " active" : ""}`}><span dangerouslySetInnerHTML={{ __html: BN_ICONS[i] }} style={{ display: "contents" }} /><span className="bn-link-label">{t}</span></Link>
+      ? <Link key={t} href={h} prefetch className={`bn-link${path === h ? " active" : ""}`}><span dangerouslySetInnerHTML={{ __html: BN_ICONS[i] }} style={{ display: "contents" }} /><span className="bn-link-label">{t}</span></Link>
       : <span key={t} className="bn-link" style={{ opacity: 0.35 }}><span dangerouslySetInnerHTML={{ __html: BN_ICONS[i] }} style={{ display: "contents" }} /><span className="bn-link-label">{t}</span></span>)}</nav>
   );
 }

@@ -107,7 +107,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
         </div>))}</div>
       {log?.coachComment && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}</div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
-      <Link href="/inicio/plan" className="tech-link" style={{ marginTop: 14, display: "inline-flex" }}>Ver rutina completa →</Link>
+      <Link href="/inicio/plan" className="tech-link" style={{ marginTop: 14, display: "inline-flex" }}>Ver rutina completa <Icon name="arrow" size={13} /></Link>
       <div style={{ marginTop: 18 }}>
         {closed ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><span className="pill-done">COMPLETADO · ESFUERZO {log?.effort}/10</span><button className="mini-btn ghost" onClick={() => setEditing(true)}>Editar</button></div> : (
           <>

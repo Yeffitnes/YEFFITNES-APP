@@ -28,7 +28,7 @@ export function ProgressPanels({ clientId, mode }: { clientId: string; mode: "cl
       {!list.length ? <div className="card"><div className="card-tag">Mediciones</div><p style={{ fontSize: 14, color: "var(--text-dim)", margin: "8px 0 12px", lineHeight: 1.6 }}>{mine ? "Aún no tienes mediciones. Registra tu peso y tus medidas para empezar a ver tu evolución." : "El cliente aún no ha registrado mediciones."}</p>{mine && <button className="add-btn" onClick={() => setModal(true)}>Registrar medición</button>}</div> : (
         <>
           <div className="metric-summary">{M.filter((m) => series(m.k).length).map((m) => { const s = series(m.k), last = s[s.length - 1].v, d = s.length > 1 ? last - s[s.length - 2].v : null;
-            return <div key={m.id} className="metric-summary-card"><div className="metric-summary-dot" style={{ background: m.color }} /><div className="metric-summary-name">{m.label}</div><div className="metric-summary-val">{fmt(last)}{d != null && d !== 0 && <span className={`metric-summary-delta ${d < 0 ? "down" : "up"}`}>{d < 0 ? "↓" : "↑"}{fmt(Math.abs(d))}</span>}</div></div>; })}</div>
+            return <div key={m.id} className="metric-summary-card"><div className="metric-summary-dot" style={{ background: m.color }} /><div className="metric-summary-name">{m.label}</div><div className="metric-summary-val">{fmt(last)}{d != null && d !== 0 && <span className={`metric-summary-delta ${d < 0 ? "down" : "up"}`}>{d < 0 ? "−" : "+"}{fmt(Math.abs(d))}</span>}</div></div>; })}</div>
           <div className="progress-grid">
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               <div className="card">
@@ -70,7 +70,8 @@ function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; p
   const { profileId } = useProfile(), ws = useWorkspaceId(), consent = useConsent(mine ? profileId : ""), give = useGiveConsent(profileId), up = useUploadPhoto(clientId, ws), del = useDeletePhoto(clientId), toast = useToast(), [rm, setRm] = useState<{ id: string; path: string; date: string } | null>(null);
   const [a, setA] = useState<string>(""), [b, setB] = useState<string>(""), [ask, setAsk] = useState(false), file = useRef<HTMLInputElement>(null);
   const ph = photos.data ?? [], before = ph.find((p) => p.id === (a || ph[0]?.id)), after = ph.find((p) => p.id === (b || ph[ph.length - 1]?.id));
-  const pick = async (f?: File) => { if (!f) return; try { up.mutate(await compressImage(f)); } catch { toast("No pudimos procesar esa imagen. Prueba con otra foto.", true); } if (file.current) file.current.value = ""; };
+  const [prep, setPrep] = useState(false);
+  const pick = async (f?: File) => { if (!f) return; setPrep(true); try { up.mutate(await compressImage(f)); } catch { toast("No pudimos procesar esa imagen. Prueba con otra foto.", true); } finally { setPrep(false); } if (file.current) file.current.value = ""; };
   const frame = (p?: typeof ph[number]) => <div className="photo-frame">{p?.url ? <img src={p.url} alt={`Foto del ${day(p.date)}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 12, color: "var(--text-faint)" }}>Sin foto</span>}{p && <div className="photo-frame-tag">{day(p.date)}</div>}</div>;
   return (
     <div className="card">
@@ -83,10 +84,10 @@ function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; p
               <div className="photo-slot"><div className="photo-slot-label">Después</div><select aria-label="Foto de después" value={after?.id} onChange={(e) => setB(e.target.value)}>{ph.map((p) => <option key={p.id} value={p.id}>{day(p.date, true)}</option>)}</select>{frame(after)}</div>
             </div>
             {mine && after && <button className="filter-chip" style={{ marginTop: 10 }} onClick={() => setRm(after)}>Eliminar la foto “Después” ({day(after.date)})</button>}
-            <div className="photo-gallery">{ph.map((p) => <button key={p.id} className={`photo-thumb${after?.id === p.id ? " selected" : ""}`} onClick={() => setB(p.id)} aria-label={`Usar foto del ${day(p.date)}`}>{p.url && <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}<div className="photo-thumb-date">{day(p.date)}</div></button>)}</div>
+            <div className="photo-gallery">{ph.map((p) => <button key={p.id} className={`photo-thumb${after?.id === p.id ? " selected" : ""}`} onClick={() => setB(p.id)} aria-label={`Usar foto del ${day(p.date)}`}>{p.url && <img src={p.url} alt="" loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}<div className="photo-thumb-date">{day(p.date)}</div></button>)}</div>
           </>)}
       {mine && <><input ref={file} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
-        <button className="upload-btn" disabled={up.isPending || consent.isPending} onClick={() => (consent.data ? file.current?.click() : setAsk(true))}>{up.isPending ? "Subiendo…" : "Subir foto de hoy"}</button></>}
+        <button className="upload-btn" disabled={up.isPending || prep || consent.isPending} onClick={() => (consent.data ? file.current?.click() : setAsk(true))}>{prep ? "Preparando…" : up.isPending ? "Subiendo…" : "Subir foto de hoy"}</button></>}
       <div className="photo-privacy-note">Solo {mine ? "tú y tu coach" : "el cliente y tú"} pueden ver estas fotos.</div>
       {rm && <Modal title="¿Eliminar esta foto?" sub={`Foto del ${day(rm.date, true)}. Se borra para siempre y tu coach ya no podrá verla.`} onClose={() => setRm(null)}>
         <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setRm(null)}>Conservar</button><button className="modal-btn danger" disabled={del.isPending} onClick={() => { del.mutate({ id: rm.id, path: rm.path }); setRm(null); setB(""); }}>Sí, eliminar</button></div></Modal>}

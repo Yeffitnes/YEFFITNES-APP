@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { useActivePlanClients, useClients, useCoachReports, useCoachSlots, useRecentLogs, localDate } from "@/lib/queries";
 import { useThreads } from "@/lib/messages";
@@ -34,7 +35,7 @@ export function DashboardView() {
       <div className="dash-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="card">
-            <div className="card-head"><div><div className="card-tag">Necesitan atención</div><div className="card-title">Clientes por revisar</div></div><Link href="/coach/clientes" className="card-link">Ver todos →</Link></div>
+            <div className="card-head"><div><div className="card-tag">Necesitan atención</div><div className="card-title">Clientes por revisar</div></div><Link href="/coach/clientes" className="card-link">Ver todos <Icon name="arrow" size={12} /></Link></div>
             {!attn.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 8 }}>{active.length ? "Todo al día. Ningún cliente necesita atención ahora." : "Aún no hay clientes activos. Activa a un cliente asignándole un plan."}</p>}
             {attn.map((a, i) => (
               <Link key={a.clientId} href={`/coach/clientes/${a.clientId}`} className="attn-row">
@@ -44,7 +45,7 @@ export function DashboardView() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {unseenReports > 0 && <Link href="/coach/reportes" className="card" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar →</div></Link>}
+          {unseenReports > 0 && <Link href="/coach/reportes" className="card" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar <Icon name="arrow" size={13} /></div></Link>}
           <MessagesCard />
           <AgendaTodayCard />
           <ActivityCard />
@@ -69,7 +70,7 @@ function MessagesCard() {
   if (!total) return null;
   return (
     <div className="card">
-      <div className="card-head"><div><div className="card-tag">Mensajes</div><div className="card-title" style={{ fontSize: 15 }}>{total} sin leer</div></div><Link href="/coach/mensajes" className="card-link">Abrir →</Link></div>
+      <div className="card-head"><div><div className="card-tag">Mensajes</div><div className="card-title" style={{ fontSize: 15 }}>{total} sin leer</div></div><Link href="/coach/mensajes" className="card-link">Abrir <Icon name="arrow" size={12} /></Link></div>
       {unread.map((x) => <Link key={x.clientId} href={`/coach/mensajes?c=${x.clientId}`} className="activity-row"><div className="activity-icon"><svg viewBox="0 0 20 20"><path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z" /></svg></div><div><div className="activity-text"><b>{x.name}</b>{x.unread > 1 ? ` (${x.unread})` : ""}: {x.lastBody ?? (x.lastKind === "video" ? "Vídeo" : "Foto")}</div></div></Link>)}
     </div>
   );
@@ -81,7 +82,7 @@ function AgendaTodayCard() {
   const nudge = nx.data && !nx.data.length && (now.getDay() === 0 || now.getDay() >= 4);
   return (
     <div className="card">
-      <div className="card-head"><div><div className="card-tag">Agenda</div><div className="card-title" style={{ fontSize: 15 }}>Sesiones de hoy</div></div><Link href="/coach/agenda" className="card-link">Ver agenda →</Link></div>
+      <div className="card-head"><div><div className="card-tag">Agenda</div><div className="card-title" style={{ fontSize: 15 }}>Sesiones de hoy</div></div><Link href="/coach/agenda" className="card-link">Ver agenda <Icon name="arrow" size={12} /></Link></div>
       {wk.isPending && <div className="sk" style={{ height: 48 }} />}
       {wk.data && !todays.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>No tienes sesiones reservadas hoy.</p>}
       {todays.map((s) => <div key={s.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{hhmm(s.startsAt)}</span><span>{s.capacity > 1 ? `Clase grupal: ${s.bookings.map((b) => b.clientName).join(", ")}` : s.booking!.clientName}</span></div>)}

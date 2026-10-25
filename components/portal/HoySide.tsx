@@ -58,7 +58,7 @@ export function ProgressCard({ cid, features, name }: { cid: string; features: s
   return (
     <div className="card card-progress"><div className="card-tag">Progreso reciente</div>
       {!data?.length ? <p className="empty-note" style={{ marginTop: 10 }}>Aún no registras medidas. Agrégalas en Progreso.</p> : <>
-        {rows.map(([l, u, r]) => r && <div key={l} className="prog-metric"><span>{l}</span><span className="prog-val">{r.cur} {u}{r.prev != null && r.cur !== r.prev && <span className="prog-delta">{r.cur < r.prev ? "↓" : "↑"}{Math.abs(Math.round((r.cur - r.prev) * 10) / 10)}</span>}</span></div>)}
+        {rows.map(([l, u, r]) => r && <div key={l} className="prog-metric"><span>{l}</span><span className="prog-val">{r.cur} {u}{r.prev != null && r.cur !== r.prev && <span className="prog-delta">{r.cur < r.prev ? "−" : "+"}{Math.abs(Math.round((r.cur - r.prev) * 10) / 10)}</span>}</span></div>)}
         {line && <svg className="prog-chart" viewBox="0 0 260 60" preserveAspectRatio="none" aria-hidden><defs><linearGradient id="pgHoy" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#D41A40" /><stop offset="100%" stopColor="#B08A3E" /></linearGradient></defs><polyline points={line} fill="none" stroke="url(#pgHoy)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" /></svg>}</>}
       <Link href="/inicio/progreso" className="card-link" style={{ textDecoration: "none" }}>Ver evolución completa {ARROW}</Link>
     </div>

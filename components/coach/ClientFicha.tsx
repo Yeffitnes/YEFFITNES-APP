@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/Icon";
 import { useState } from "react";
 import Link from "next/link";
 import { useClientBookings, useClients, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
@@ -19,13 +20,13 @@ export function ClientFicha({ id }: { id: string }) {
   const c = data?.find((x) => x.id === id);
   const [sel, setSel] = useState<string | null>(null);
   if (isPending) return <Skeleton rows={3} />;
-  if (!c) return <div><Link href="/coach/clientes" className="back-link">← Volver a clientes</Link><div className="card"><p style={{ fontSize: 14 }}>No encontramos a este cliente.</p></div></div>;
+  if (!c) return <div><Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link><div className="card"><p style={{ fontSize: 14 }}>No encontramos a este cliente.</p></div></div>;
   const chosen = sel ?? c.planId ?? "";
   const since = new Date(c.createdAt).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" });
   const status = { pending: "Pendiente", active: "Activo", paused: "Pausado" }[c.status];
   return (
     <div>
-      <Link href="/coach/clientes" className="back-link">← Volver a clientes</Link>
+      <Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link>
       <div className="ficha-header"><div className="ficha-avatar">{initials(c.name)}</div>
         <div><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {c.plan ? `Plan ${c.plan}` : "Sin plan"}</div></div></div>
       <div className="tab-row">{TABS.map((t) => <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>{t}</button>)}</div>
@@ -73,7 +74,7 @@ function AgendaTab({ clientId, first }: { clientId: string; first: string }) {
   if (isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>;
   return (
     <div className="card" style={{ maxWidth: 620 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div className="card-tag" style={{ marginBottom: 0 }}>Sesiones de {first}</div><Link href="/coach/agenda" className="card-link">Ir a la agenda →</Link></div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div className="card-tag" style={{ marginBottom: 0 }}>Sesiones de {first}</div><Link href="/coach/agenda" className="card-link">Ir a la agenda <Icon name="arrow" size={12} /></Link></div>
       {!data.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 12 }}>{first} aún no tiene sesiones.</p>}
       {data.map((b) => <div key={b.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{new Date(b.startsAt).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })} · {hhmm(b.startsAt)}</span><span style={{ color: "var(--text-dim)" }}>{b.capacity > 1 ? "Clase grupal" : ""} {b.duration} min</span><span style={{ color: b.status === "confirmed" ? "#1C9A5B" : "var(--text-faint)", fontWeight: 700, fontSize: 12 }}>{BK[b.status] ?? b.status}</span></div>)}
     </div>

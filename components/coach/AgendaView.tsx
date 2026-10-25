@@ -1,4 +1,5 @@
 "use client";
+import { Icon } from "@/components/ui/Icon";
 import { useState } from "react";
 import { KIND_LABEL, useCancelBooking, useClients, useCoachBook, useCoachSlots, usePublishSlots, useRemoveSlot, weekBounds, type CoachSlot } from "@/lib/queries";
 import { useWorkspaceId } from "@/components/Providers";
@@ -14,7 +15,7 @@ export function AgendaView() {
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} sesión${conf === 1 ? "" : "es"} confirmada${conf === 1 ? "" : "s"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
         <div className="topbar-actions"><button className="ghost-btn" onClick={() => setAssign(true)}>Agendar cliente</button><button className="primary-btn" onClick={() => setPub(ymd(new Date()))}>Publicar disponibilidad</button></div></div>
-      <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" onClick={() => setOff(off - 1)}>‹</button><div className="week-nav-label">{weekLabel(from)}</div><button className="week-nav-btn" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}>›</button><button className="week-today-btn" onClick={() => { setOff(0); setSel(dayIdx(new Date())); }}>Hoy</button></div>
+      <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" onClick={() => setOff(off - 1)}><Icon name="chevronLeft" size={16} /></button><div className="week-nav-label">{weekLabel(from)}</div><button className="week-nav-btn" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}><Icon name="chevron" size={16} /></button><button className="week-today-btn" onClick={() => { setOff(0); setSel(dayIdx(new Date())); }}>Hoy</button></div>
       <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}</div>)}</div>
       {isPending && <Skeleton rows={3} />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}

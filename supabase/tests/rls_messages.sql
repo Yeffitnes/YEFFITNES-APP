@@ -40,11 +40,28 @@ begin
   if not pg_temp.try('select public.send_message(null,''Quiero activar mi plan'')') then bad:=bad||' [pendiente no puede escribir]'; end if;
   if pg_temp.try('select public.send_message(null,null,''ws/x/y.jpg'')') then bad:=bad||' [pendiente envió foto]'; end if;
 
-  -- límite por hora
+  -- no es un chat: máximo 3 sin leer, 600 caracteres, y se borra tras leerlo
   perform pg_temp.as_user(a);
-  for n in 1..45 loop begin perform public.send_message(null,'spam '||n); exception when others then exit; end; end loop;
-  perform pg_temp.reset(); select count(*) into n from public.messages where client_id=ca and sender='client' and created_at>now()-interval '1 hour';
-  if n>40 then bad:=bad||' [sin límite de envío: '||n||']'; end if;
+  if pg_temp.try('select public.send_message(null,''cuarto sin leer'')') then bad:=bad||' [más de 3 mensajes sin leer]'; end if;
+  if pg_temp.try('select public.send_message(null,'''||repeat('x',601)||''')') then bad:=bad||' [cliente envió más de 600 caracteres]'; end if;
+  perform pg_temp.reset(); update public.messages set read_at = now() where client_id=ca and sender='client';
+  perform pg_temp.as_user(a);
+  if not pg_temp.try('select public.send_message(null,''ya puedo escribir'')') then bad:=bad||' [no pudo escribir tras ser leído]'; end if;
+  if pg_temp.try('select public.purge_messages()') then bad:=bad||' [cliente ejecutó la limpieza del coach]'; end if;
+  if pg_temp.try('select public.due_message_trash()') and (select count(*) from public.due_message_trash())<>0 then bad:=bad||' [cliente ve la basura]'; end if;
+  perform pg_temp.reset();
+  update public.messages set read_at = now() - interval '25 hours', image_path = ws::text||'/'||ca::text||'/old.jpg' where client_id=ca and sender='client' and body='Hola Jeff';
+  perform pg_temp.as_user(o);
+  perform public.purge_messages(); select count(*) into n from public.due_message_trash(); if n<>0 then bad:=bad||' [otro coach vio basura ajena: '||n||']'; end if;
+  perform pg_temp.as_user(jeff);
+  perform public.purge_messages();
+  perform pg_temp.reset(); select count(*) into n from public.messages where body='Hola Jeff'; if n<>0 then bad:=bad||' [no se borró un mensaje leído hace 25 h]'; end if;
+  select count(*) into n from public.messages where body='ya puedo escribir'; if n<>1 then bad:=bad||' [se borró un mensaje reciente]'; end if;
+  perform pg_temp.as_user(jeff);
+  select count(*) into n from public.due_message_trash() where kind='image' and ref like '%/old.jpg'; if n<>1 then bad:=bad||' [la foto del mensaje borrado no quedó en la basura]'; end if;
+  perform public.clear_message_trash(array(select id from public.due_message_trash()));
+  select count(*) into n from public.due_message_trash(); if n<>0 then bad:=bad||' [la basura no se limpió]'; end if;
+  perform pg_temp.reset();
 
   -- Permiso de vídeo
   perform pg_temp.as_user(a);
@@ -65,7 +82,7 @@ begin
   perform public.send_message(ca, 'Hola, ¿cómo vas?', null, null, 'dQw4w9WgXcQ');
   if pg_temp.try('select public.send_message('''||ca||''',null,null,null,''corto'')') then bad:=bad||' [youtube inválido]'; end if;
   if pg_temp.try('select public.send_message('''||ca||''',null,''otro/ws/a.jpg'')') then bad:=bad||' [coach: ruta de imagen ajena]'; end if;
-  select public.unread_messages() into n; if n<3 then bad:=bad||' [contador coach]'; end if;
+  select public.unread_messages() into n; if n<2 then bad:=bad||' [contador coach]'; end if;
   perform public.mark_thread_read(ca);
   perform pg_temp.reset(); select count(*) into n from public.messages where client_id=ca and sender='client' and read_at is null; if n<>0 then bad:=bad||' [no marcó leídos]'; end if;
 

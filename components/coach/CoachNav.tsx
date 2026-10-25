@@ -31,7 +31,7 @@ export function SideNav({ clientCount }: { clientCount: number }) {
               const svg = <svg viewBox="0 0 20 20">{I[it.icon]}</svg>;
               const cls = `side-link${it.sub ? " sub" : ""}`;
               if (!it.href) return <span key={it.label} className={cls} style={{ opacity: 0.35, cursor: "default" }}>{svg}{it.label}<span className="badge">Pronto</span></span>;
-              return <Link key={it.label} href={it.href} className={`${cls}${(it.exact ? path === it.href : path.startsWith(it.href)) ? " active" : ""}`}>{svg}{it.label}{it.label === "Clientes" && <span className="badge">{clientCount}</span>}{it.label === "Mensajes" && unread > 0 && <span className="badge">{unread}</span>}</Link>;
+              return <Link key={it.label} href={it.href} prefetch className={`${cls}${(it.exact ? path === it.href : path.startsWith(it.href)) ? " active" : ""}`}>{svg}{it.label}{it.label === "Clientes" && <span className="badge">{clientCount}</span>}{it.label === "Mensajes" && unread > 0 && <span className="badge">{unread}</span>}</Link>;
             })}
           </nav>
         </div>
@@ -42,5 +42,5 @@ export function SideNav({ clientCount }: { clientCount: number }) {
 export function MobileNav() {
   const path = usePathname(), unread = useUnread().data ?? 0;
   const L = [["/coach", "Dashboard"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"], ["/coach/mensajes", "Mensajes"], ["/coach/reportes", "Reportes"], ["/coach/agenda", "Agenda"], ["/coach/material", "Material"]];
-  return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}{t === "Mensajes" && unread > 0 ? ` (${unread})` : ""}</Link>)}</nav>;
+  return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} prefetch className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}{t === "Mensajes" && unread > 0 ? ` (${unread})` : ""}</Link>)}</nav>;
 }
