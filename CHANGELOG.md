@@ -1,6 +1,12 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Arreglo: logo invisible en el panel del coach y lista de clientes que no se refrescaba
+- **Causa del logo:** al integrar Progreso se copió a `app/coach/coach.css` el CSS completo de un mockup del *portal* (sección `/* progreso */`), con reglas de barra lateral clara que pisaron la oscura del coach; el logo es blanco y quedó invisible. Se quitaron 33 reglas de estructura duplicadas de esa sección (`.sidebar`, `.side-*`, `.main`, `.topbar`, `.card`, `.fab-wa`…). Los estilos propios del tab de progreso del coach se conservan.
+- **Prevención:** `design/port_css.py` ya no añade reglas de estructura (`.shell`, `.sidebar`, `.side-*`, `.main`, `.topbar`, `.card`…) si el destino ya las tiene. Regla nueva: nunca portar un mockup del portal al CSS del coach ni al revés sin revisar.
+- **Clientes que "no aparecen":** la lista se cacheaba 30 s y no se refrescaba sola; ahora se actualiza cada 45 s y al volver a la pestaña. (El número junto a "Clientes" del menú lo calcula el servidor al cargar la página: se actualiza al recargar.)
+- Revertir: `git revert` del commit (sin SQL).
+
 ## 2026-10-25 · Material educativo (migración 0013)
 - **Coach `/coach/material`** (copiado de `coach-material.html`): rejilla de contenidos, búsqueda y filtros, crear/editar/eliminar, borrador o publicado, "quién lo ve" (todos los planes con material o solo plan completo), estrella de **vídeo de la semana** (solo uno; debe ser vídeo publicado de acceso básico) y "Visto por N".
 - **Cliente `/inicio/material`** (copiado de `portal-material.html`): vídeo de la semana, búsqueda, filtros, etiqueta "Nuevo" (14 días sin abrir), lectura de artículos y reproductor de vídeo. Lo que el plan no incluye se ve **bloqueado con título** y lleva a WhatsApp; su contenido nunca sale de la base (se abre solo con `open_material`).

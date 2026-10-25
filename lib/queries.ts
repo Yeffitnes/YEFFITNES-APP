@@ -35,7 +35,7 @@ export const fetchRoutines = async (): Promise<Routine[]> => {
 };
 
 export const KEYS = { plans: ["plans"], clients: ["clients"], exercises: ["exercises"], routines: ["routines"] } as const;
-export const useClients = () => useQuery({ queryKey: KEYS.clients, queryFn: fetchClients, staleTime: 30_000 });
+export const useClients = () => useQuery({ queryKey: KEYS.clients, queryFn: fetchClients, staleTime: 15_000, refetchInterval: 45_000 });
 export const usePlans = () => useQuery({ queryKey: KEYS.plans, queryFn: fetchPlans, staleTime: 300_000 });
 export const useExercises = () => useQuery({ queryKey: KEYS.exercises, queryFn: fetchExercises, staleTime: 120_000 });
 export const useRoutines = () => useQuery({ queryKey: KEYS.routines, queryFn: fetchRoutines, staleTime: 120_000 });
