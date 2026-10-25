@@ -1,8 +1,8 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
-## 2026-10-25 · Lista de paso de pruebas (Vercel) a producción (Netlify)
-- Nuevo `docs/PASO_A_PRODUCCION.md` con todo lo que hay que cambiar antes de entregar (variables, Supabase, cron, push, Bunny, dominio, landing, limpieza de datos, repo privado). Enlazado desde `AGENTS.md` y `docs/CONTEXT.md`.
+## 2026-10-25 · Producción en Netlify (plan de pago) y pruebas en Vercel
+- Decisión: Netlify Personal es la producción (`main`); Vercel Hobby solo prueba (`bloque-hoy`). Nuevo `docs/PASO_A_PRODUCCION.md` con variables, Supabase (Site URL = Netlify), tareas programadas apuntando a Netlify, notificaciones, Bunny, dominio, landing y limpieza. Enlazado desde `AGENTS.md` y `docs/CONTEXT.md`.
 - Revertir: borrar el archivo y las dos líneas añadidas.
 
 ## 2026-10-25 · Recordatorios a horas fijas (migración 0027; rama `bloque-hoy`)

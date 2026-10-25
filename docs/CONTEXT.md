@@ -93,7 +93,7 @@ Planes: nombres, precios y qué incluye cada uno (hoy PROPUESTA Esencial/Complet
 Textos "Jeff" fijos y `handle_new_user` asigna siempre el primer espacio (solo sirve con un coach) · zona horaria asumida única (Bogotá) · `ex_client_read` expone el catálogo completo de ejercicios al cliente con plan · menú con ítems sin pantalla (apagados) · los modales no atrapan el foco del teclado · PWA sin modo sin conexión · tablas de la cola de revisión calculadas en el navegador (suficiente hasta ~50 clientes; luego, una vista SQL).
 
 
-> Para pasar de pruebas (Vercel) a producción (Netlify) sigue `docs/PASO_A_PRODUCCION.md`.
+> Producción = Netlify, pruebas = Vercel: ver `docs/PASO_A_PRODUCCION.md`. Las tareas programadas apuntan SIEMPRE a la dirección de Netlify.
 
 ## 13. Activar los recordatorios automáticos y los avisos push (pendiente del lado de Cristian)
 1. Generar claves: `npx web-push generate-vapid-keys`. En Netlify → Environment variables: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (pública), `VAPID_PRIVATE_KEY` (privada, sin NEXT_PUBLIC_), `VAPID_SUBJECT=mailto:tu-correo`. Volver a desplegar (la pública se incrusta al construir).
