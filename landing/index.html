@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YEFFITNES TRAINING — Coaching online con Jeff González</title>
+<meta name="description" content="Entrenamiento, nutrición y seguimiento personalizados con Jeff González. Escríbele por WhatsApp para empezar.">
+<meta property="og:title" content="YEFFITNES TRAINING — Coaching online con Jeff González">
+<meta property="og:description" content="Un plan hecho para ti, revisado por una persona real. Escríbele a Jeff por WhatsApp.">
+<meta property="og:image" content="assets/og.png">
+<meta name="theme-color" content="#0A0910">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Manrope:wght@400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0A0910;
+    --ink-soft:rgba(255,255,255,0.64);
+    --ink-faint:rgba(255,255,255,0.4);
+    --paper:#FFFFFF;
+    --glow-blue:#CDB170;
+    --glow-violet:#F7254B;
+    --glow-magenta:#F2406B;
+    --line-dark:rgba(255,255,255,0.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth; overflow-x:hidden; width:100%;}
+  body{
+    font-family:'Manrope', sans-serif; -webkit-font-smoothing:antialiased;
+    background:var(--ink); color:var(--paper); overflow-x:hidden; width:100%; max-width:100vw;
+  }
+  img, svg{max-width:100%;}
+
+  /* evita que hijos de grid/flex fuercen overflow horizontal por su ancho mínimo de contenido */
+  .hero > *, .booking-widget > *, .preview-layout > *,
+  .plan-grid > *, .steps > *, .test-grid > *, .swatch-grid > *{
+    min-width:0;
+  }
+
+  .stage{
+    position:relative; min-height:100vh; display:flex; flex-direction:column;
+  }
+
+  /* ambient glow layers, following cursor subtly */
+  .ambient{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(700px 500px at var(--mx,20%) var(--my,10%), rgba(247,37,75,0.22), transparent 55%),
+      radial-gradient(600px 450px at 90% 85%, rgba(205,177,112,0.14), transparent 60%),
+      var(--ink);
+    transition:background-position 0.2s ease-out;
+  }
+
+  .wrap{max-width:1180px; margin:0 auto; padding:0 28px; width:100%; position:relative; z-index:2; box-sizing:border-box;}
+
+  .topnav{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:26px 0; border-bottom:1px solid var(--line-dark);
+  }
+  .logo{font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:19px; letter-spacing:-0.02em; display:flex; align-items:center; gap:9px;}
+  .logo .dot{width:7px; height:7px; border-radius:50%; background:var(--glow-violet); box-shadow:0 0 10px 2px var(--glow-violet);}
+  .navlinks{display:flex; gap:30px; font-size:13.5px; color:var(--ink-soft);}
+  .navlinks a{color:inherit; text-decoration:none;}
+
+  .hero{
+    flex:1; display:grid; grid-template-columns:1.05fr 0.95fr;
+    align-items:center; gap:40px; padding:56px 0 40px;
+  }
+
+  .hero-copy{position:relative;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.09em;
+    text-transform:uppercase; color:var(--glow-violet); margin-bottom:22px;
+    display:flex; align-items:center; gap:10px; opacity:0; animation:riseIn 0.8s ease forwards; animation-delay:0.1s;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--glow-violet); box-shadow:0 0 6px var(--glow-violet);}
+
+  h1{
+    font-family:'Instrument Sans', sans-serif; font-weight:600;
+    font-size:clamp(36px, 4.6vw, 58px); line-height:1.04; letter-spacing:-0.03em;
+    opacity:0; animation:riseIn 0.8s ease forwards; animation-delay:0.25s;
+  }
+  h1 .accent{
+    background:linear-gradient(100deg, var(--glow-violet), var(--glow-magenta) 60%, var(--glow-blue));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+
+  .hero-sub{
+    margin-top:22px; font-size:17px; line-height:1.65; color:var(--ink-soft); max-width:440px;
+    opacity:0; animation:riseIn 0.8s ease forwards; animation-delay:0.4s;
+  }
+
+  .cta-row{display:flex; gap:14px; margin-top:36px; opacity:0; animation:riseIn 0.8s ease forwards; animation-delay:0.55s;}
+  .btn{
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:14.5px;
+    padding:15px 26px; border-radius:11px; border:none; cursor:pointer;
+    position:relative; overflow:hidden; transition:transform 0.2s ease;
+  }
+  .btn-primary{
+    background:linear-gradient(100deg, var(--glow-violet), var(--glow-magenta));
+    color:#fff;
+  }
+  .btn-primary:hover{transform:translateY(-2px);}
+  .btn-ghost{
+    background:transparent; color:#fff; border:1px solid var(--line-dark);
+    display:flex; align-items:center; gap:9px;
+  }
+  .btn-ghost:hover{border-color:rgba(255,255,255,0.32); transform:translateY(-2px);}
+
+  .proof-row{
+    display:flex; gap:36px; margin-top:56px; padding-top:28px;
+    border-top:1px solid var(--line-dark);
+    opacity:0; animation:riseIn 0.8s ease forwards; animation-delay:0.7s;
+  }
+  .proof-num{
+    font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:600;
+  }
+  .proof-label{font-size:12px; color:var(--ink-faint); margin-top:3px;}
+
+  @keyframes riseIn{
+    from{opacity:0; transform:translateY(14px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---------- PHOTO ---------- */
+  .hero-photo{
+    position:relative; height:min(640px, 78vh); border-radius:22px; overflow:hidden;
+    opacity:0; animation:photoIn 1s cubic-bezier(0.2,0.8,0.2,1) forwards; animation-delay:0.15s;
+  }
+  @keyframes photoIn{
+    from{opacity:0; transform:scale(1.04);}
+    to{opacity:1; transform:scale(1);}
+  }
+  .hero-photo img{
+    width:100%; height:100%; object-fit:cover; display:block;
+    transform:scale(1.02);
+    transition:transform 0.6s ease;
+  }
+  .photo-frame{
+    position:absolute; inset:0; border-radius:22px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.14);
+    pointer-events:none;
+  }
+  .photo-glow{
+    position:absolute; inset:-2px; border-radius:24px; z-index:-1;
+    background:linear-gradient(135deg, var(--glow-violet), var(--glow-magenta), var(--glow-blue));
+    opacity:0.5; filter:blur(24px);
+  }
+  .photo-fade{
+    position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(10,9,16,0.85) 100%);
+  }
+
+  .photo-caption{
+    position:absolute; left:22px; right:22px; bottom:20px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
+  .caption-name{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:22px; letter-spacing:-0.01em;}
+  .caption-role{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
+  .live-badge{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.04em;
+    display:flex; align-items:center; gap:6px; color:var(--ink-soft);
+    background:rgba(255,255,255,0.08); backdrop-filter:blur(8px);
+    padding:7px 11px; border-radius:20px; border:1px solid rgba(255,255,255,0.14);
+  }
+  .live-badge .pulse{
+    width:6px; height:6px; border-radius:50%; background:#3EEB8C;
+    box-shadow:0 0 8px 1px #3EEB8C; animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1; transform:scale(1);}
+    50%{opacity:0.5; transform:scale(0.75);}
+  }
+
+  /* signature neon underline that mirrors the rig lighting in the photo */
+  .neon-underline{position:relative; height:44px; margin-top:8px;}
+  .neon-underline svg{width:100%; height:100%; display:block;}
+
+  footer.section{
+    border-top:1px solid var(--line-dark); padding:22px 0 40px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint);
+    position:relative; z-index:2;
+  }
+
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr; padding-top:32px;}
+    .hero-photo{order:-1; height:420px;}
+    .proof-row{gap:24px; flex-wrap:wrap;}
+    .navlinks{display:none;}
+  }
+
+  /* ================= COMO FUNCIONA (light) ================= */
+  .how{background:#FFFFFF; color:#12141B;}
+  .how-inner{padding-top:96px; padding-bottom:88px;}
+  .section-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.09em;
+    text-transform:uppercase; color:#D41A40; margin-bottom:16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-eyebrow::before{content:''; width:22px; height:1px; background:#D41A40;}
+  .how h2, .cta-final h2{
+    font-family:'Instrument Sans', sans-serif; font-weight:600;
+    font-size:clamp(28px, 3.4vw, 40px); letter-spacing:-0.02em; max-width:600px;
+  }
+  .steps{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:0; margin-top:64px;
+    position:relative;
+  }
+  .steps::before{
+    content:''; position:absolute; top:22px; left:8%; right:8%; height:1px;
+    background:linear-gradient(90deg, #E1E3EC, #F7B7C3 50%, #E1E3EC);
+  }
+  .steps-pulse{
+    position:absolute; top:19px; left:8%; width:6px; height:6px; border-radius:50%;
+    background:#D41A40; box-shadow:0 0 10px 2px rgba(212,26,64,0.55);
+    opacity:0; transition:opacity 0.4s ease;
+  }
+  .steps.in-view .steps-pulse{opacity:1; animation:stepsTravel 4.5s ease-in-out infinite;}
+  @keyframes stepsTravel{
+    0%,100%{left:8%;}
+    50%{left:83%;}
+  }
+  .step{
+    padding:0 24px 0 0; position:relative; cursor:pointer;
+    transition:transform 0.3s ease; -webkit-tap-highlight-color:transparent;
+  }
+  .step:first-child{padding-left:0;}
+  .step-num{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600;
+    width:44px; height:44px; border-radius:50%; background:#FFFFFF;
+    border:1.5px solid #D41A40; color:#D41A40;
+    display:flex; align-items:center; justify-content:center;
+    position:relative; z-index:1; margin-bottom:24px;
+    transition:background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .step.active .step-num{
+    background:#D41A40; color:#fff; box-shadow:0 0 0 5px rgba(212,26,64,0.14);
+  }
+  .step h3{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:18px; margin-bottom:10px;}
+  .step p{font-size:14.5px; line-height:1.6; color:#5B6172; max-width:280px;}
+
+  .step-hint{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#9AA0AE;
+    margin-top:14px; display:flex; align-items:center; gap:6px;
+  }
+  .step-hint svg{width:10px; height:10px; transition:transform 0.25s ease;}
+  .step.active .step-hint svg{transform:rotate(180deg);}
+
+  .step-artifact{
+    margin-top:0; max-height:0; opacity:0; overflow:hidden; max-width:280px;
+    transition:max-height 0.5s cubic-bezier(0.2,0.8,0.2,1), opacity 0.4s ease, margin-top 0.4s ease;
+  }
+  .step.active .step-artifact{
+    max-height:180px; opacity:1; margin-top:16px;
+  }
+
+  /* El hover solo se activa con dispositivos de puntero fino (mouse). En touch,
+     el estado lo controla exclusivamente la clase .active vía JS para evitar
+     que iOS deje el hover "pegado" tras un toque. */
+  @media (hover:hover) and (pointer:fine){
+    .step:hover{transform:translateY(-3px);}
+    .step:hover .step-num{background:#D41A40; color:#fff; box-shadow:0 0 0 5px rgba(212,26,64,0.14);}
+    .step:hover .step-artifact{max-height:180px; opacity:1; margin-top:16px;}
+    .step:hover .ac-line{stroke-dashoffset:0;}
+  }
+
+  .artifact-routine{
+    background:#F5F6FA; border:1px solid #E1E3EC; border-radius:12px; padding:12px 14px;
+  }
+  .ar-row{
+    display:flex; align-items:center; gap:8px; padding:6px 0; font-size:12px; color:#33353E;
+  }
+  .ar-dot{width:7px; height:7px; border-radius:50%; border:1.5px solid #D41A40; flex-shrink:0;}
+  .ar-dot.done{background:#D41A40;}
+  .ar-name{flex:1;}
+  .ar-meta{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#9AA0AE;}
+
+  .artifact-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .ag-item{
+    background:#F5F6FA; border:1px solid #E1E3EC; border-radius:10px; padding:10px 6px;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    font-family:'IBM Plex Mono', monospace; font-size:9px; color:#5B6172; text-align:center;
+  }
+  .ag-swatch{width:16px; height:16px; border-radius:5px;}
+
+  .artifact-chart{background:#F5F6FA; border:1px solid #E1E3EC; border-radius:12px; padding:12px 14px 10px;}
+  .ac-line{stroke-dasharray:280; stroke-dashoffset:280; transition:stroke-dashoffset 1.1s ease 0.15s;}
+  .step.active .ac-line{stroke-dashoffset:0;}
+  .ac-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#5B6172; margin-top:4px;
+    display:flex; justify-content:space-between;
+  }
+  .ac-delta{color:#8D6526; font-weight:600;}
+
+  /* ================= TESTIMONIOS (dark, brand) ================= */
+  .testimonials{
+    background:
+      radial-gradient(650px 400px at 85% 0%, rgba(247,37,75,0.14), transparent 60%),
+      #0A0910;
+    color:#fff; padding:96px 0;
+  }
+  .test-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:56px; gap:24px; flex-wrap:wrap;}
+  .test-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.09em;
+    text-transform:uppercase; color:#F2406B; margin-bottom:16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .test-eyebrow::before{content:''; width:22px; height:1px; background:#F2406B;}
+  .testimonials h2{
+    font-family:'Instrument Sans', sans-serif; font-weight:600;
+    font-size:clamp(28px, 3.4vw, 38px); letter-spacing:-0.02em; max-width:560px;
+  }
+  .test-note{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:rgba(255,255,255,0.35); max-width:220px;}
+  .test-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  .test-card{
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:20px;
+  }
+  .test-quote{font-size:15px; line-height:1.65; color:rgba(255,255,255,0.86);}
+  .test-person{display:flex; align-items:center; gap:12px; margin-top:auto;}
+  .test-avatar{
+    width:38px; height:38px; border-radius:50%;
+    background:linear-gradient(135deg, #F7254B, #CDB170);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600;
+  }
+  .test-person-name{font-size:13.5px; font-weight:700;}
+  .test-person-tag{font-family:'IBM Plex Mono', monospace; font-size:11px; color:rgba(255,255,255,0.4);}
+
+  /* ================= CTA FINAL (dark, glow) ================= */
+  .cta-final{
+    background:
+      radial-gradient(800px 500px at 50% 100%, rgba(247,37,75,0.22), transparent 60%),
+      #0A0910;
+    color:#fff; padding:110px 0 90px; text-align:center;
+  }
+  .cta-final .section-eyebrow{justify-content:center; color:#CDB170;}
+  .cta-final .section-eyebrow::before{display:none;}
+  .cta-final h2{margin:0 auto; text-align:center;}
+  .cta-final p{color:rgba(255,255,255,0.6); font-size:16px; margin-top:18px; max-width:440px; margin-left:auto; margin-right:auto;}
+  .cta-final .cta-row{justify-content:center; margin-top:36px;}
+
+  footer.site-footer{
+    background:#0A0910; border-top:1px solid rgba(255,255,255,0.1); padding:28px 0 44px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:rgba(255,255,255,0.35);
+  }
+
+  @media (max-width:860px){
+    .steps{grid-template-columns:1fr; gap:36px;}
+    .steps::before{display:none;}
+    .step{padding-left:0;}
+    .test-grid{grid-template-columns:1fr;}
+    .test-head{flex-direction:column; align-items:flex-start;}
+  }
+
+  /* ================= SCROLL REVEAL ================= */
+  .reveal{opacity:0; transform:translateY(22px); transition:opacity 0.7s ease, transform 0.7s ease;}
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+
+  /* ================= PORTAL PREVIEW (light) ================= */
+  .portal-preview{background:#F5F6FA; color:#12141B;}
+  .preview-inner{padding-top:96px; padding-bottom:100px;}
+  .preview-layout{
+    display:grid; grid-template-columns:0.85fr 1.15fr; gap:56px; align-items:center; margin-top:56px;
+    position:relative;
+  }
+  .preview-tabs{display:flex; flex-direction:column; gap:10px;}
+  .tab-btn{
+    text-align:left; background:transparent; border:1px solid transparent; border-radius:12px;
+    padding:16px 18px; cursor:pointer; font-family:'Manrope', sans-serif; position:relative; overflow:hidden;
+    transition:background 0.2s ease, border-color 0.2s ease;
+  }
+  .tab-btn:hover{background:rgba(212,26,64,0.06);}
+  .tab-btn.active{background:#FFFFFF; border-color:#E1E3EC; box-shadow:0 4px 18px rgba(20,20,40,0.06);}
+  .tab-btn-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:16px; display:flex; align-items:center; gap:10px;}
+  .tab-btn.active .tab-btn-title{color:#D41A40;}
+  .tab-dot{width:7px; height:7px; border-radius:50%; background:#D7DAE3; flex-shrink:0;}
+  .tab-btn.active .tab-dot{background:#D41A40; box-shadow:0 0 6px 1px rgba(212,26,64,0.5);}
+  .tab-btn-desc{font-size:13px; color:#5B6172; margin-top:4px;}
+  .tab-progress{
+    position:absolute; left:18px; right:18px; bottom:8px; height:2px; border-radius:2px;
+    background:#EDEEF3; overflow:hidden; opacity:0; transition:opacity 0.2s ease;
+  }
+  .tab-btn.active .tab-progress{opacity:1;}
+  .tab-progress-fill{
+    height:100%; width:0%; border-radius:2px; background:linear-gradient(90deg,#D41A40,#CDB170);
+    transition:width linear;
+  }
+  .tab-progress-fill.filling{width:100%;}
+  .tab-progress-fill.paused{transition:none;}
+
+  .phone-stage{position:relative;}
+  .phone-glow-ambient{
+    position:absolute; left:50%; top:50%; width:340px; height:440px;
+    transform:translate(-50%,-50%); border-radius:50%; filter:blur(60px); z-index:0;
+    background:radial-gradient(closest-side, var(--tab-accent, #F7254B), transparent 72%);
+    opacity:0.35; transition:background 0.5s ease;
+  }
+  .phone-frame{
+    width:300px; margin:0 auto; background:#0A0910; border-radius:38px; padding:14px;
+    box-shadow:0 30px 60px -20px rgba(20,10,40,0.35), 0 0 0 1px rgba(0,0,0,0.05);
+    position:relative; z-index:1; transition:transform 0.5s cubic-bezier(0.2,0.8,0.2,1);
+    transform-style:preserve-3d;
+  }
+  .phone-frame.tilting{transition:transform 0.08s linear;}
+  .phone-notch{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    width:90px; height:20px; background:#0A0910; border-radius:0 0 14px 14px; z-index:3;
+  }
+  .phone-screen{
+    background:#FFFFFF; border-radius:26px; overflow:hidden; height:560px;
+    display:flex; flex-direction:column; position:relative;
+  }
+  .phone-statusbar{
+    display:flex; justify-content:space-between; padding:16px 20px 8px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:#12141B; flex-shrink:0;
+  }
+  .phone-content{flex:1; position:relative; overflow:hidden;}
+  .pane-track{display:flex; height:100%; width:400%; transition:transform 0.5s cubic-bezier(0.2,0.8,0.2,1);}
+  .pane{width:25%; flex-shrink:0; padding:8px 18px 16px; box-sizing:border-box; overflow-y:auto;}
+
+  .p-slot-btn{
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:10.5px; color:#D41A40;
+    background:rgba(212,26,64,0.08); border:none; border-radius:7px; padding:7px 10px; cursor:pointer;
+    white-space:nowrap; transition:background 0.2s ease, color 0.2s ease;
+  }
+  .p-slot-btn.confirmed{background:#D41A40; color:#fff; cursor:default;}
+  .p-slot-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#8D6526; background:rgba(141,101,38,0.08);
+    padding:6px 9px; border-radius:7px; white-space:nowrap;
+  }
+  .pane-title{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:16px; margin-bottom:14px;}
+
+  .phone-navbar{
+    display:flex; justify-content:space-around; align-items:center; padding:10px 8px;
+    border-top:1px solid #EDEEF3; flex-shrink:0; background:#FFFFFF;
+  }
+  .pnav-btn{
+    background:transparent; border:none; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; gap:4px; padding:4px 8px; color:#B7BAC4; transition:color 0.2s ease;
+  }
+  .pnav-btn.active{color:#D41A40;}
+  .pnav-dot{width:18px; height:18px; opacity:0.4; transition:opacity 0.2s ease, transform 0.2s ease;}
+  .pnav-btn.active .pnav-dot{opacity:1; transform:scale(1.08);}
+  .pnav-label{font-family:'IBM Plex Mono', monospace; font-size:8.5px; letter-spacing:0.02em;}
+
+  .live-dot{
+    display:inline-block; width:6px; height:6px; border-radius:50%; background:#3EEB8C;
+    box-shadow:0 0 6px 1px #3EEB8C; margin-right:6px; animation:pulse 1.8s ease-in-out infinite;
+  }
+  .p-delta{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#8D6526; margin-left:6px;}
+
+  .p-fade-item{opacity:0; transform:translateY(6px); transition:opacity 0.4s ease, transform 0.4s ease;}
+  .pane.pane-live .p-fade-item{opacity:1; transform:translateY(0);}
+  .pane.pane-live .p-fade-item:nth-child(1){transition-delay:0.05s;}
+  .pane.pane-live .p-fade-item:nth-child(2){transition-delay:0.15s;}
+  .pane.pane-live .p-fade-item:nth-child(3){transition-delay:0.25s;}
+  .pane.pane-live .p-fade-item:nth-child(4){transition-delay:0.35s;}
+
+  .p-chart-line{stroke-dasharray:400; stroke-dashoffset:400; transition:stroke-dashoffset 1.1s ease 0.2s;}
+  .pane.pane-live .p-chart-line{stroke-dashoffset:0;}
+
+  .preview-annot{
+    position:absolute; max-width:170px; font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+    color:#5B6172; opacity:0; transform:translateY(6px); transition:opacity 0.6s ease, transform 0.6s ease;
+    pointer-events:none;
+  }
+  .preview-layout.in-view .preview-annot{opacity:1; transform:translateY(0);}
+  .preview-annot .dot{width:6px; height:6px; border-radius:50%; background:#D41A40; display:inline-block; margin-right:6px;}
+  .preview-annot .line{width:34px; height:1px; background:repeating-linear-gradient(90deg,#B7BAC4 0 4px,transparent 4px 8px); display:block; margin:6px 0 6px 3px;}
+  .annot-1{right:-8px; top:14%; text-align:left;}
+  .annot-2{left:-14px; bottom:10%; text-align:right;}
+  @media (max-width:1180px){ .preview-annot{display:none;} }
+
+  .p-routine-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 0; border-bottom:1px solid #EDEEF3; font-size:13px;
+  }
+  .p-routine-day{font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#D41A40; font-weight:600;}
+  .p-routine-name{font-weight:600; margin-top:2px;}
+
+  .p-metric{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #EDEEF3; font-size:13px;}
+  .p-metric b{font-family:'IBM Plex Mono', monospace;}
+  .p-chart{width:100%; height:60px; margin:14px 0 6px;}
+
+  .p-session{display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #EDEEF3;}
+  .p-session-time{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; color:#fff;
+    background:#0A0910; padding:6px 8px; border-radius:7px; text-align:center; min-width:44px;
+  }
+  .p-session-name{font-size:12.5px; font-weight:600;}
+  .p-session-type{font-size:11px; color:#5B6172;}
+
+  /* ---- Mini réplica del panel "Hoy" real, dentro del teléfono ---- */
+  .p-week-strip{display:flex; justify-content:space-between; gap:5px; margin-bottom:14px;}
+  .p-week-dot{
+    flex:1; height:16px; border-radius:5px; border:1.3px solid #E1E3EC; background:#F5F6FA;
+  }
+  .p-week-dot.done{border-color:transparent; background:linear-gradient(135deg,#F7254B,#F2406B);}
+  .p-week-dot.today{border-color:#D41A40; box-shadow:0 0 0 2px rgba(212,26,64,0.14);}
+
+  .p-ex-progress{height:4px; border-radius:4px; background:#EDEEF3; margin-top:14px; overflow:hidden;}
+  .p-ex-progress-fill{
+    height:100%; width:0%; border-radius:4px; background:linear-gradient(90deg,#F7254B,#CDB170);
+    transition:width 0.4s cubic-bezier(0.2,0.8,0.2,1);
+  }
+  .p-ex-count{font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#9AA0AE; margin-top:6px;}
+  .p-ex-list{margin-top:10px;}
+  .p-ex-row{
+    display:flex; align-items:center; gap:9px; padding:7px 0; cursor:pointer; user-select:none;
+  }
+  .p-ex-check{
+    width:15px; height:15px; border-radius:50%; border:1.4px solid #D7DAE3; flex-shrink:0;
+    position:relative; transition:background 0.2s ease, border-color 0.2s ease;
+  }
+  .p-ex-check::after{
+    content:''; position:absolute; left:3.5px; top:1.5px; width:4px; height:7.5px;
+    border:solid #fff; border-width:0 1.6px 1.6px 0; transform:rotate(40deg); opacity:0; transition:opacity 0.15s ease;
+  }
+  .p-ex-row.done .p-ex-check{background:#D41A40; border-color:#D41A40;}
+  .p-ex-row.done .p-ex-check::after{opacity:1;}
+  .p-ex-name{flex:1; font-size:11.5px; font-weight:600; transition:color 0.2s ease;}
+  .p-ex-row.done .p-ex-name{color:#B7BAC4; text-decoration:line-through;}
+  .p-ex-meta{font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#9AA0AE;}
+  .p-ex-more{font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#B7BAC4; margin-top:8px;}
+
+  /* ================= PLANES ================= */
+  .plans{background:#FFFFFF; color:#12141B;}
+  .plans-inner{padding-top:96px; padding-bottom:100px;}
+  .plans-note{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:#9AA0AE; margin-top:8px;
+  }
+  .plan-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:56px; align-items:stretch;}
+  .plan-card{
+    border:1px solid #E1E3EC; border-radius:18px; padding:32px 26px;
+    display:flex; flex-direction:column; position:relative; transition:transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .plan-card:hover{transform:translateY(-4px); box-shadow:0 20px 40px -20px rgba(20,10,40,0.18);}
+  .plan-card.featured{
+    border-color:transparent; background:linear-gradient(#fff,#fff) padding-box,
+      linear-gradient(135deg, #F7254B, #F2406B, #CDB170) border-box;
+    border-width:2px; border-style:solid;
+  }
+  .plan-badge{
+    position:absolute; top:-13px; left:26px; background:linear-gradient(100deg, #F7254B, #F2406B);
+    color:#fff; font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.04em;
+    padding:5px 12px; border-radius:20px; text-transform:uppercase;
+  }
+  .plan-name{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:20px;}
+  .plan-tagline{font-size:13px; color:#5B6172; margin-top:6px; min-height:34px;}
+  .plan-price{
+    font-family:'IBM Plex Mono', monospace; font-size:14px; color:#D41A40; margin-top:18px;
+    padding-top:18px; border-top:1px solid #EDEEF3;
+  }
+  .plan-features{list-style:none; margin-top:20px; flex:1; display:flex; flex-direction:column; gap:11px;}
+  .plan-features li{font-size:13.5px; display:flex; align-items:flex-start; gap:9px; color:#33353E;}
+  .plan-features li::before{content:'✓'; color:#D41A40; font-weight:700; flex-shrink:0;}
+  .plan-btn{
+    margin-top:26px; width:100%; padding:13px; border-radius:10px; border:1.5px solid #12141B;
+    background:transparent; color:#12141B; font-family:'Manrope', sans-serif; font-weight:700; font-size:14px;
+    cursor:pointer; transition:background 0.2s ease, color 0.2s ease;
+  }
+  .plan-card.featured .plan-btn{
+    background:linear-gradient(100deg, #F7254B, #F2406B); color:#fff; border:none;
+  }
+  .plan-btn:hover{background:#12141B; color:#fff;}
+  .plan-card.featured .plan-btn:hover{opacity:0.9;}
+
+  @media (max-width:900px){
+    .preview-layout{grid-template-columns:1fr;}
+    .preview-tabs{order:2;}
+    .plan-grid{grid-template-columns:1fr;}
+  }
+
+  /* ================= BOOKING FEATURE (flagship) ================= */
+  .booking-feature{background:#F5F6FA; color:#12141B;}
+  .booking-inner{padding-top:96px; padding-bottom:72px;}
+  .booking-sub{font-size:16px; color:#5B6172; max-width:560px; margin-top:16px; line-height:1.6;}
+
+  .booking-widget{
+    display:grid; grid-template-columns:1.5fr 1fr; gap:20px; margin-top:48px; align-items:start;
+  }
+  .booking-calendar{
+    background:#FFFFFF; border:1px solid #E1E3EC; border-radius:18px; padding:26px;
+  }
+  .booking-cal-head{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;
+    font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:15px;
+  }
+  .booking-legend{display:flex; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#5B6172; font-weight:400;}
+  .booking-legend span{display:flex; align-items:center; gap:6px;}
+  .booking-legend i{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .dot-avail{background:#FFFFFF; border:1.5px solid #D41A40;}
+  .dot-booked{background:#E1E3EC;}
+  .dot-selected{background:linear-gradient(135deg,#F7254B,#F2406B);}
+
+  .cal-grid{display:grid; grid-template-columns:repeat(7, 1fr); gap:8px;}
+  .cal-day{display:flex; flex-direction:column; gap:6px; align-items:center;}
+  .cal-day-label{font-family:'IBM Plex Mono', monospace; font-size:10px; color:#9AA0AE; text-transform:uppercase;}
+  .cal-day-num{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:14px; margin-bottom:6px;}
+  .slot{
+    width:100%; padding:8px 4px; border-radius:8px; border:1.5px solid #E1E3EC; background:#FFFFFF;
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; cursor:pointer; text-align:center;
+    transition:all 0.15s ease; color:#12141B;
+  }
+  .slot.available:hover{border-color:#F7254B; background:rgba(212,26,64,0.05);}
+  .slot.booked{background:#F1F1F5; border-color:#F1F1F5; color:#B7BAC4; cursor:not-allowed;}
+  .slot.selected{background:linear-gradient(135deg,#F7254B,#F2406B); border-color:transparent; color:#fff;}
+
+  .booking-summary{
+    background:#0A0910; color:#fff; border-radius:18px; padding:26px; min-height:100%;
+    background-image:radial-gradient(400px 300px at 100% 0%, rgba(247,37,75,0.22), transparent 60%);
+  }
+  .bs-label{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:18px;}
+  .bs-empty{font-size:14px; color:rgba(255,255,255,0.55); line-height:1.6;}
+  .bs-datetime{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:20px; margin-bottom:18px;}
+  .bs-type-toggle{display:flex; flex-direction:column; gap:8px;}
+  .type-pill{
+    text-align:left; padding:10px 14px; border-radius:9px; border:1px solid rgba(255,255,255,0.16);
+    background:transparent; color:rgba(255,255,255,0.7); font-family:'Manrope', sans-serif; font-size:13px;
+    cursor:pointer; transition:all 0.15s ease;
+  }
+  .type-pill.active{background:rgba(247,37,75,0.18); border-color:#F7254B; color:#fff; font-weight:700;}
+
+  .booking-footnote{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:#9AA0AE; margin-top:18px;
+  }
+
+  .today-card{
+    background:linear-gradient(135deg, rgba(212,26,64,0.08), rgba(205,177,112,0.06));
+    border:1px solid #FBE3E8; border-radius:14px; padding:18px; margin-top:4px;
+  }
+  .today-tag{font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#D41A40; letter-spacing:0.05em;}
+  .today-name{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:16px; margin-top:8px;}
+  .today-meta{font-size:12px; color:#5B6172; margin-top:4px;}
+
+  .nutri-block{display:flex; flex-direction:column; gap:3px; padding:11px 0; border-bottom:1px solid #EDEEF3; font-size:12.5px;}
+  .nutri-block b{font-family:'Instrument Sans', sans-serif; font-size:12.5px;}
+  .nutri-block span{color:#5B6172;}
+
+  .mini-toggle{display:inline-flex; background:#F5F6FA; border:1px solid #E1E3EC; border-radius:10px; padding:3px; gap:2px; margin-bottom:12px;}
+  .mini-toggle-btn{
+    border:none; background:transparent; padding:6px 12px; border-radius:7px;
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:10.5px; color:#5B6172;
+    cursor:pointer; transition:background 0.2s ease, color 0.2s ease;
+  }
+  .mini-toggle-btn.active{background:#12141B; color:#fff;}
+
+  /* ---- Racha (pane Hoy) ---- */
+  .p-streak-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .p-streak-num{font-family:'Instrument Sans', sans-serif; font-weight:700; font-size:15px;}
+  .p-streak-num b{background:linear-gradient(100deg,#F7254B,#F2406B); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .p-streak-label{font-family:'IBM Plex Mono', monospace; font-size:8.5px; color:#9AA0AE; text-transform:uppercase; text-align:right; max-width:88px; line-height:1.3;}
+
+  /* ---- Selector de días (pane Plan) ---- */
+  .p-day-selector{display:flex; gap:4px; margin-bottom:12px;}
+  .p-day-pill{
+    flex:1; text-align:center; padding:6px 2px; border-radius:8px; border:1px solid #E1E3EC;
+    font-family:'IBM Plex Mono', monospace; font-size:8px; color:#9AA0AE; text-transform:uppercase;
+  }
+  .p-day-pill.active{background:#12141B; border-color:#12141B; color:#fff;}
+  .p-day-pill .dot{width:3px; height:3px; border-radius:50%; background:#D7DAE3; margin:3px auto 0;}
+  .p-day-pill.active .dot{background:linear-gradient(135deg,#F7254B,#F2406B);}
+
+  /* ---- Filtros de tipo (pane Agenda) ---- */
+  .p-filter-row{display:flex; gap:5px; margin-bottom:12px; flex-wrap:wrap;}
+  .p-filter-chip{
+    display:flex; align-items:center; gap:4px; padding:5px 9px; border-radius:20px; border:1px solid #E1E3EC;
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:9px; color:#5B6172; background:#fff; cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .p-filter-chip .fdot{width:5px; height:5px; border-radius:50%; flex-shrink:0;}
+  .p-filter-chip.active{background:#F5F6FA; color:#12141B; border-color:transparent;}
+  .p-session.p-hidden{display:none;}
+
+  /* ---- Chips de métrica (pane Progreso) ---- */
+  .p-metric-chip-row{display:flex; gap:5px; margin:2px 0 10px;}
+  .p-metric-chip{
+    display:flex; align-items:center; gap:5px; padding:5px 9px; border-radius:20px; border:1.3px solid #E1E3EC;
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:9px; color:#5B6172; background:#fff; cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .p-metric-chip .dot{width:6px; height:6px; border-radius:50%; flex-shrink:0;}
+  .p-metric-chip.active{background:#F5F6FA; color:#12141B; border-color:transparent;}
+  .p-metric-chip.off{opacity:0.4;}
+  .p-chart-line.hidden{opacity:0; pointer-events:none;}
+
+  /* ---- Teaser de vídeo mini (pane Plan) ---- */
+  .p-video-teaser{
+    display:flex; align-items:center; gap:9px; margin-top:12px; padding:8px; border-radius:11px;
+    background:#F5F6FA;
+  }
+  .p-video-thumb{
+    position:relative; width:40px; height:40px; border-radius:8px; flex-shrink:0; overflow:hidden;
+    background:linear-gradient(135deg,#2A1218,#1A0A0F 60%,#0A0910);
+  }
+  .p-video-play{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:17px; height:17px; border-radius:50%; background:linear-gradient(135deg,#F7254B,#F2406B);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .p-video-play svg{width:7px; height:7px; fill:#fff; margin-left:1px;}
+  .p-video-title{font-size:10.5px; font-weight:700; color:#12141B;}
+  .p-video-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:8px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.03em; color:#D41A40; background:rgba(212,26,64,0.09); padding:2px 6px; border-radius:20px;
+    display:inline-block; margin-top:3px;
+  }
+
+  @media (max-width:860px){
+    .booking-widget{grid-template-columns:1fr;}
+    .cal-grid{grid-template-columns:repeat(7, 1fr); gap:4px;}
+    .slot{font-size:9px; padding:6px 2px;}
+  }
+
+  /* ================= MOBILE (≤480px) ================= */
+  @media (max-width:480px){
+    .wrap{padding:0 18px;}
+    .topnav{padding:18px 0;}
+    .logo{font-size:16px;}
+
+    .hero{padding:24px 0 28px; gap:28px;}
+    h1{font-size:clamp(28px,8vw,36px); line-height:1.08;}
+    .hero-sub{font-size:15px; margin-top:16px;}
+
+    .cta-row{flex-direction:column; align-items:stretch; margin-top:26px; gap:10px;}
+    .btn{width:100%; text-align:center; justify-content:center; padding:14px 20px;}
+
+    .proof-row{gap:20px; margin-top:34px; padding-top:20px;}
+    .proof-num{font-size:20px;}
+    .proof-label{font-size:10.5px;}
+
+    .hero-photo{height:320px; border-radius:16px;}
+    .caption-name{font-size:18px;}
+    .live-badge{font-size:9.5px; padding:6px 9px;}
+
+    .how-inner, .preview-inner, .plans-inner, .booking-inner{padding-top:56px; padding-bottom:48px;}
+    .how h2, .cta-final h2, .testimonials h2{font-size:24px;}
+    .steps{margin-top:36px; gap:28px;}
+
+    /* calendario: scroll horizontal en vez de comprimir 7 columnas */
+    .cal-grid{
+      display:flex; overflow-x:auto; gap:8px; padding-bottom:6px;
+      -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;
+      grid-template-columns:unset;
+    }
+    .cal-day{min-width:68px; flex:0 0 auto; scroll-snap-align:start;}
+    .slot{font-size:11px; padding:9px 4px;}
+    .booking-cal-head{flex-direction:column; align-items:flex-start; gap:10px;}
+    .booking-legend{flex-wrap:wrap; gap:10px;}
+    .booking-calendar{padding:18px;}
+    .booking-summary{padding:20px;}
+
+    /* preview del portal: frame de teléfono a ancho real de pantalla */
+    .phone-frame{width:100%; max-width:280px; padding:10px;}
+    .phone-screen{height:480px;}
+    .preview-tabs{gap:8px;}
+    .tab-btn{padding:13px 14px;}
+    .tab-btn-title{font-size:14.5px;}
+    .tab-btn-desc{font-size:12px;}
+
+    .plan-grid{gap:16px;}
+    .plan-card{padding:24px 20px;}
+
+    .test-grid{gap:14px;}
+    .test-card{padding:22px;}
+
+    .cta-final{padding:64px 0 56px;}
+    .cta-final .cta-row{max-width:320px; margin-left:auto; margin-right:auto;}
+
+    footer.site-footer .wrap{flex-direction:column; align-items:flex-start; gap:6px;}
+  }
+
+  /* blindaje extra: el calendario nunca debe forzar overflow del contenedor padre */
+  .booking-calendar, .booking-summary{min-width:0; max-width:100%; overflow:hidden;}
+  .cal-grid{max-width:100%;}
+
+  @media (max-width:360px){
+    .wrap{padding:0 14px;}
+    h1{font-size:26px;}
+    .btn{padding:13px 16px; font-size:13.5px;}
+    .phone-frame{max-width:250px;}
+  }
+  /* ================= VÍDEO — SPOTLIGHT (dark) ================= */
+  .video-spotlight{
+    background:
+      radial-gradient(700px 420px at 15% 0%, rgba(205,177,112,0.14), transparent 60%),
+      radial-gradient(650px 400px at 90% 100%, rgba(242,64,107,0.12), transparent 60%),
+      #0A0910;
+    color:#fff; padding:96px 0;
+  }
+  .vs-eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.09em;
+    text-transform:uppercase; color:#CDB170; margin-bottom:16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .vs-eyebrow::before{content:''; width:22px; height:1px; background:#CDB170;}
+  .video-spotlight h2{
+    font-family:'Instrument Sans', sans-serif; font-weight:600;
+    font-size:clamp(28px, 3.4vw, 38px); letter-spacing:-0.02em; max-width:620px;
+  }
+  .vs-sub{font-size:15.5px; line-height:1.6; color:rgba(255,255,255,0.6); max-width:520px; margin-top:16px;}
+  .vs-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:52px;}
+  .vs-card{
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px; padding:26px; display:flex; flex-direction:column; gap:14px;
+  }
+  .vs-thumb{
+    position:relative; width:100%; aspect-ratio:16/10; border-radius:12px; overflow:hidden;
+    background:linear-gradient(135deg,#2A1218,#1A0A0F 60%,#0A0910); isolation:isolate;
+  }
+  .vs-thumb::before{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse 160px 100px at 28% 32%, rgba(247,37,75,0.4), transparent 60%);
+  }
+  .vs-thumb .play{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#F7254B,#F2406B);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .vs-thumb .play svg{width:14px; height:14px; fill:#fff; margin-left:2px;}
+  .vs-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.05em; text-transform:uppercase;
+    color:#F7254B; background:rgba(247,37,75,0.12); padding:4px 10px; border-radius:20px; align-self:flex-start;
+  }
+  .vs-card h3{font-family:'Instrument Sans', sans-serif; font-weight:600; font-size:17px; letter-spacing:-0.01em;}
+  .vs-card p{font-size:13.5px; line-height:1.55; color:rgba(255,255,255,0.6);}
+
+  @media (max-width:860px){
+    .vs-grid{grid-template-columns:1fr;}
+  }
+
+  /* ---- Ajustes YEFFITNES ---- */
+  a.btn{display:inline-flex; align-items:center; justify-content:center; text-decoration:none;}
+  a.plan-btn{display:block; text-align:center; text-decoration:none;}
+  .logo img{display:block; height:26px; width:auto;}
+  .brand-panel{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(520px 420px at 25% 15%, rgba(247,37,75,0.38), transparent 60%), radial-gradient(480px 380px at 85% 90%, rgba(205,177,112,0.22), transparent 60%), linear-gradient(160deg,#16111a,#0A0910);}
+  .hero-photo .brand-logo{width:72%; max-width:340px; height:auto; object-fit:contain; transform:none; filter:drop-shadow(0 0 28px rgba(247,37,75,0.35));}
+  .hero-photo .jeff-photo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .plan-grid-2{grid-template-columns:repeat(2,minmax(0,1fr)); max-width:none;}
+  @media (max-width:860px){ .plan-grid-2{grid-template-columns:1fr;} }
+  .site-footer img{height:22px; width:auto; opacity:.9;}
+  .vs-thumb .play svg{fill:none; margin-left:0; width:17px; height:17px;}
+</style>
+</head>
+<body>
+
+<div class="stage" id="top">
+  <div class="ambient" id="ambient"></div>
+  <div class="wrap">
+    <div class="topnav">
+      <a class="logo" href="#top"><img src="assets/logo.svg" alt="YEFFITNES TRAINING" height="26"></a>
+      <div class="navlinks"><a href="#como">Cómo funciona</a><a href="#app">La app</a><a href="#planes">Planes</a><a href="#contacto">Contacto</a></div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">Coaching personalizado · 100 % online</div>
+        <h1>Entrena con un plan hecho para ti y un coach que <span class="accent">sí lo revisa</span>.</h1>
+        <p class="hero-sub">Rutina, nutrición y seguimiento personalizados con Jeff González, dentro de tu propia app privada. Sin plantillas genéricas.</p>
+
+        <div class="cta-row">
+          <a class="btn btn-primary" data-wa="Hola Jeff, quiero información para entrenar contigo." href="https://wa.me/57XXXXXXXXXX" target="_blank" rel="noopener">Hablar con Jeff por WhatsApp</a>
+          <a class="btn btn-ghost" href="#como">Ver cómo funciona</a>
+        </div>
+
+        <div class="proof-row">
+          <div><div class="proof-num">1:1</div><div class="proof-label">plan hecho a mano</div></div>
+          <div><div class="proof-num">Diario</div><div class="proof-label">reporte con vídeo corto</div></div>
+          <div><div class="proof-num">Online</div><div class="proof-label">desde cualquier lugar</div></div>
+        </div>
+      </div>
+
+      <div class="hero-photo" id="heroPhoto">
+        <div class="photo-glow"></div>
+        <div class="brand-panel"><img class="brand-logo" src="assets/logo.svg" alt="YEFFITNES TRAINING"></div>
+        <img class="jeff-photo" src="assets/jeff.jpg" alt="Jeff González" onerror="this.remove()">
+        <div class="photo-fade"></div>
+        <div class="photo-frame"></div>
+        <div class="photo-caption">
+          <div>
+            <div class="caption-name">Jeff González</div>
+            <div class="caption-role">Entrenador personal · YEFFITNES TRAINING</div>
+          </div>
+          <div class="live-badge"><span class="pulse"></span> Atiende por WhatsApp</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="neon-underline">
+      <svg viewBox="0 0 1200 44" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="ng" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#F7254B" stop-opacity="0.1"/>
+            <stop offset="35%" stop-color="#F7254B" stop-opacity="1"/>
+            <stop offset="65%" stop-color="#F2406B" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#CDB170" stop-opacity="0.1"/>
+          </linearGradient>
+          <filter id="gb" x="-20%" y="-300%" width="140%" height="700%">
+            <feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path d="M0,22 C300,22 320,4 600,4 C880,4 900,38 1200,38" fill="none" stroke="url(#ng)" stroke-width="2" filter="url(#gb)"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ================= COMO FUNCIONA ================= -->
+<section class="how" id="como">
+  <div class="wrap how-inner">
+    <div class="section-eyebrow">Cómo funciona</div>
+    <h2>Tres pasos entre tu objetivo y tu progreso.</h2>
+    <div class="steps" id="stepsGrid">
+      <div class="steps-pulse"></div>
+      <div class="step" data-step="1" tabindex="0">
+        <div class="step-num">01</div>
+        <h3>Hablas con Jeff</h3>
+        <p>Le cuentas tu objetivo por WhatsApp. Si encajan, te activa tu plan y arma tu rutina y tu nutrición a tu medida.</p>
+        <div class="step-hint">Ver ejemplo <svg viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <div class="step-artifact artifact-routine">
+          <div class="ar-row"><span class="ar-dot done"></span><span class="ar-name">Sentadilla búlgara</span><span class="ar-meta">4×10</span></div>
+          <div class="ar-row"><span class="ar-dot done"></span><span class="ar-name">Press militar</span><span class="ar-meta">3×8</span></div>
+          <div class="ar-row"><span class="ar-dot"></span><span class="ar-name">Remo con barra</span><span class="ar-meta">4×10</span></div>
+        </div>
+      </div>
+      <div class="step" data-step="2" tabindex="0">
+        <div class="step-num">02</div>
+        <h3>Todo en tu app privada</h3>
+        <p>Rutina, nutrición, agenda, mensajes con Jeff y material educativo, en una app que instalas en tu teléfono.</p>
+        <div class="step-hint">Ver ejemplo <svg viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <div class="step-artifact artifact-grid">
+          <div class="ag-item"><span class="ag-swatch" style="background:linear-gradient(135deg,#F7254B,#F2406B);"></span>Rutina</div>
+          <div class="ag-item"><span class="ag-swatch" style="background:linear-gradient(135deg,#CDB170,#D41A40);"></span>Nutrición</div>
+          <div class="ag-item"><span class="ag-swatch" style="background:linear-gradient(135deg,#D41A40,#F2406B);"></span>Agenda</div>
+          <div class="ag-item"><span class="ag-swatch" style="background:linear-gradient(135deg,#8D6526,#CDB170);"></span>Progreso</div>
+        </div>
+      </div>
+      <div class="step" data-step="3" tabindex="0">
+        <div class="step-num">03</div>
+        <h3>Progreso que se ve</h3>
+        <p>Registras series, peso, medidas y fotos. Jeff revisa tus reportes y ajusta tu plan con datos reales.</p>
+        <div class="step-hint">Ver ejemplo <svg viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+        <div class="step-artifact artifact-chart">
+          <svg viewBox="0 0 200 50" preserveAspectRatio="none" style="width:100%; height:44px; display:block;">
+            <defs>
+              <linearGradient id="stepChartGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#D41A40"/><stop offset="100%" stop-color="#CDB170"/>
+              </linearGradient>
+            </defs>
+            <polyline class="ac-line" points="0,38 40,34 80,40 120,18 160,24 200,8" fill="none" stroke="url(#stepChartGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="ac-label"><span>Ejemplo: 68.4 → 65.1 kg</span><span class="ac-delta">↓3.3</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RESERVA EN TIEMPO REAL (flagship) ================= -->
+<section class="booking-feature" id="agenda">
+  <div class="wrap booking-inner reveal">
+    <div class="section-eyebrow">Pieza clave</div>
+    <h2>Reserva tus sesiones con Jeff sin ir y venir preguntando horarios.</h2>
+    <p class="booking-sub">Jeff publica sus horarios disponibles. Tú eliges el que te sirve, reservas, y recibes una alarma en tu calendario para no olvidarla. También hay clases grupales con cupos.</p>
+
+    <div class="booking-widget">
+      <div class="booking-calendar">
+        <div class="booking-cal-head">
+          <span>Esta semana</span>
+          <div class="booking-legend">
+            <span><i class="dot-avail"></i> Disponible</span>
+            <span><i class="dot-booked"></i> Ocupado</span>
+            <span><i class="dot-selected"></i> Seleccionado</span>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+
+      <div class="booking-summary" id="bookingSummary">
+        <div class="bs-label">Tu selección</div>
+        <div class="bs-empty" id="bsEmpty">Elige un horario disponible en el calendario.</div>
+        <div class="bs-filled" id="bsFilled" style="display:none;">
+          <div class="bs-datetime" id="bsDatetime">—</div>
+          <div class="bs-type-toggle" id="bsTypeToggle">
+            <button class="type-pill active" data-type="Llamada de seguimiento">Seguimiento</button>
+            <button class="type-pill" data-type="Llamada inicial">Llamada inicial</button>
+            <button class="type-pill" data-type="Clase grupal">Clase grupal</button>
+          </div>
+          <button class="btn btn-primary bs-confirm" id="bsConfirm" style="width:100%; margin-top:18px;">Escribirle a Jeff por WhatsApp</button>
+        </div>
+      </div>
+    </div>
+    <p class="booking-footnote">Vista de ejemplo. Las reservas reales se hacen dentro de la app, una vez que eres cliente de Jeff.</p>
+  </div>
+</section>
+
+<!-- ================= PORTAL PREVIEW ================= -->
+<section class="portal-preview" id="app">
+  <div class="wrap preview-inner reveal">
+    <div class="section-eyebrow">Por dentro</div>
+    <h2>Así se ve tu semana de entrenamiento, nutrición y seguimiento.</h2>
+    <p class="booking-sub" style="max-width:560px;">Un vistazo a la app que usas como cliente de Jeff. Toca las pantallas: puedes marcar ejercicios y comidas.</p>
+
+    <div class="preview-layout" id="previewLayout">
+      <div class="preview-tabs" id="previewTabs">
+        <button class="tab-btn active" data-pane="hoy" data-accent="#F7254B">
+          <div class="tab-btn-title"><span class="tab-dot"></span> Hoy</div>
+          <div class="tab-btn-desc">Tu rutina de hoy y la próxima sesión.</div>
+          <div class="tab-progress"><div class="tab-progress-fill"></div></div>
+        </button>
+        <button class="tab-btn" data-pane="plan" data-accent="#CDB170">
+          <div class="tab-btn-title"><span class="tab-dot"></span> Mi plan</div>
+          <div class="tab-btn-desc">Tu rutina y tus comidas del día, con check.</div>
+          <div class="tab-progress"><div class="tab-progress-fill"></div></div>
+        </button>
+        <button class="tab-btn" data-pane="agenda" data-accent="#D41A40">
+          <div class="tab-btn-title"><span class="tab-dot"></span> Agenda</div>
+          <div class="tab-btn-desc">Los horarios que Jeff publica, listos para reservar.</div>
+          <div class="tab-progress"><div class="tab-progress-fill"></div></div>
+        </button>
+        <button class="tab-btn" data-pane="progreso" data-accent="#8D6526">
+          <div class="tab-btn-title"><span class="tab-dot"></span> Progreso</div>
+          <div class="tab-btn-desc">Peso, medidas y evolución en una gráfica.</div>
+          <div class="tab-progress"><div class="tab-progress-fill"></div></div>
+        </button>
+      </div>
+
+      <div class="phone-stage">
+        <div class="phone-glow-ambient" id="phoneGlow"></div>
+
+        <div class="preview-annot annot-1">
+          <span class="dot"></span>Se actualiza cuando Jeff edita tu plan
+          <span class="line"></span>
+        </div>
+        <div class="preview-annot annot-2">
+          Cada registro muestra quién lo anotó: tú o Jeff<span class="line"></span>
+        </div>
+
+        <div class="phone-frame" id="phoneFrame">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" id="phoneScreen">
+            <div class="phone-statusbar"><span>9:41</span><span>●●●●</span></div>
+            <div class="phone-content">
+              <div class="pane-track" id="paneTrack">
+
+                <div class="pane pane-live" data-pane="hoy">
+                  <div class="pane-title"><span class="live-dot"></span>Hoy · Jueves 18</div>
+
+                  <div class="p-streak-row p-fade-item">
+                    <div class="p-streak-num"><b>3</b> días de racha</div>
+                    <div class="p-streak-label">Constancia<br>esta semana</div>
+                  </div>
+                  <div class="p-week-strip p-fade-item">
+                    <div class="p-week-dot done"></div>
+                    <div class="p-week-dot done"></div>
+                    <div class="p-week-dot done"></div>
+                    <div class="p-week-dot today"></div>
+                    <div class="p-week-dot"></div>
+                    <div class="p-week-dot"></div>
+                    <div class="p-week-dot"></div>
+                  </div>
+
+                  <div class="today-card p-fade-item">
+                    <div class="today-tag">RUTINA DE HOY</div>
+                    <div class="today-name">Tren superior completo</div>
+                    <div class="today-meta">5 ejercicios · 45 min aprox.</div>
+
+                    <div class="p-ex-progress"><div class="p-ex-progress-fill" id="phoneExFill"></div></div>
+                    <div class="p-ex-count" id="phoneExCount">0 / 3 completados</div>
+                    <div class="p-ex-list" id="phoneExList">
+                      <div class="p-ex-row" data-done="0"><span class="p-ex-check"></span><span class="p-ex-name">Press banca</span><span class="p-ex-meta">4×8</span></div>
+                      <div class="p-ex-row" data-done="0"><span class="p-ex-check"></span><span class="p-ex-name">Remo con mancuerna</span><span class="p-ex-meta">4×10</span></div>
+                      <div class="p-ex-row" data-done="0"><span class="p-ex-check"></span><span class="p-ex-name">Press militar</span><span class="p-ex-meta">3×10</span></div>
+                    </div>
+                    <div class="p-ex-more">+ 2 ejercicios más en tu rutina completa</div>
+                  </div>
+
+                  <div class="p-routine-row p-fade-item" style="border-bottom:none; padding-top:14px;">
+                    <div><div class="p-routine-day">PRÓXIMA SESIÓN</div><div class="p-routine-name">Vie 19 · 08:30 · Seguimiento</div></div><svg viewBox="0 0 10 8" width="12" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 4h8M6 1l3 3-3 3"/></svg>
+                  </div>
+                </div>
+
+                <div class="pane" data-pane="plan">
+                  <div class="pane-title">Tu plan</div>
+
+                  <div class="p-day-selector p-fade-item">
+                    <div class="p-day-pill">L<div class="dot"></div></div>
+                    <div class="p-day-pill">M<div class="dot"></div></div>
+                    <div class="p-day-pill">X<div class="dot"></div></div>
+                    <div class="p-day-pill active">J<div class="dot"></div></div>
+                    <div class="p-day-pill">V<div class="dot"></div></div>
+                    <div class="p-day-pill">S<div class="dot"></div></div>
+                    <div class="p-day-pill">D<div class="dot"></div></div>
+                  </div>
+
+                  <div class="mini-toggle p-fade-item" id="miniToggle">
+                    <button class="mini-toggle-btn active" data-mode="training">Entreno</button>
+                    <button class="mini-toggle-btn" data-mode="nutrition">Nutrición</button>
+                  </div>
+
+                  <div id="miniTrainingPane">
+                    <div class="today-card p-fade-item">
+                      <div class="today-tag">JUEVES · TREN SUPERIOR</div>
+                      <div class="p-ex-list">
+                        <div class="p-ex-row" data-done="0"><span class="p-ex-check"></span><span class="p-ex-name">Press banca</span><span class="p-ex-meta">4×8</span></div>
+                        <div class="p-ex-row" data-done="0"><span class="p-ex-check"></span><span class="p-ex-name">Remo con mancuerna</span><span class="p-ex-meta">4×10</span></div>
+                        <div class="p-ex-row" data-done="0"><span class="p-ex-check"></span><span class="p-ex-name">Press militar</span><span class="p-ex-meta">3×10</span></div>
+                      </div>
+                      <div class="p-video-teaser">
+                        <div class="p-video-thumb"><div class="p-video-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z"/></svg></div></div>
+                        <div style="flex:1; min-width:0;">
+                          <div class="p-video-title">Ver vídeo de la rutina</div>
+                          <div class="p-video-tag">Grabado para ti</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="p-fade-item" style="font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#B7BAC4; margin-top:8px;">4 días de entrenamiento por semana</div>
+                  </div>
+
+                  <div id="miniNutritionPane" style="display:none;">
+                    <div class="p-fade-item" style="font-family:'IBM Plex Mono', monospace; font-size:10px; color:#D41A40; margin-bottom:8px;">TUS COMIDAS DE HOY</div>
+                    <div class="today-card p-fade-item"><div class="p-ex-progress"><div class="p-ex-progress-fill" id="phoneMealFill"></div></div><div class="p-ex-count" id="phoneMealCount">0 / 3 comidas</div><div class="p-ex-list" id="phoneMealList">
+<div class="p-ex-row"><span class="p-ex-check"></span><span class="p-ex-name">Desayuno</span><span class="p-ex-meta">Avena + huevos</span></div>
+<div class="p-ex-row"><span class="p-ex-check"></span><span class="p-ex-name">Almuerzo</span><span class="p-ex-meta">Pollo + arroz</span></div>
+<div class="p-ex-row"><span class="p-ex-check"></span><span class="p-ex-name">Cena</span><span class="p-ex-meta">Pescado + verduras</span></div>
+</div></div>
+                  </div>
+                </div>
+
+                <div class="pane" data-pane="agenda">
+                  <div class="pane-title">Tu agenda</div>
+
+                  <div class="p-filter-row p-fade-item" id="phoneFilterRow">
+                    <button class="p-filter-chip active" data-type="all"><span class="fdot" style="background:linear-gradient(135deg,#F7254B,#F2406B);"></span>Todas</button>
+                    <button class="p-filter-chip" data-type="Seguimiento"><span class="fdot" style="background:#F7254B;"></span>Seguimiento</button>
+                    <button class="p-filter-chip" data-type="Inicial"><span class="fdot" style="background:#CDB170;"></span>Inicial</button>
+                    <button class="p-filter-chip" data-type="Grupal"><span class="fdot" style="background:#F2406B;"></span>Grupal</button>
+                  </div>
+
+                  <div class="p-session p-fade-item" data-type="Seguimiento">
+                    <div class="p-session-time">VIE<span>19</span></div>
+                    <div style="flex:1;"><div class="p-session-name">08:30 — Llamada</div><div class="p-session-type">Seguimiento</div></div>
+                    <button class="p-slot-btn">Reservar</button>
+                  </div>
+                  <div class="p-session p-fade-item" data-type="Grupal">
+                    <div class="p-session-time">LUN<span>22</span></div>
+                    <div style="flex:1;"><div class="p-session-name">10:00 — Clase grupal</div><div class="p-session-type">3 cupos libres</div></div>
+                    <button class="p-slot-btn">Reservar</button>
+                  </div>
+                  <div class="p-session p-fade-item" data-type="Inicial">
+                    <div class="p-session-time">MIÉ<span>24</span></div>
+                    <div style="flex:1;"><div class="p-session-name">18:00 — Llamada</div><div class="p-session-type">Llamada inicial</div></div>
+                    <span class="p-slot-tag">Confirmada</span>
+                  </div>
+                  <div class="p-fade-item" style="font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:#B7BAC4; margin-top:8px;">Al reservar recibes una alarma en tu calendario.</div>
+                </div>
+
+                <div class="pane" data-pane="progreso">
+                  <div class="pane-title">Tu evolución</div>
+
+                  <div class="p-metric-chip-row p-fade-item" id="phoneMetricChips">
+                    <button class="p-metric-chip active" data-metric="peso"><span class="dot" style="background:#D41A40;"></span>Peso</button>
+                    <button class="p-metric-chip active" data-metric="cintura"><span class="dot" style="background:#CDB170;"></span>Cintura</button>
+                  </div>
+
+                  <div class="p-metric p-fade-item"><span>Peso</span><b>68.4 kg <span class="p-delta">↓1.2</span></b></div>
+                  <div class="p-metric p-fade-item"><span>Cintura</span><b>71.0 cm <span class="p-delta">↓0.8</span></b></div>
+                  <svg class="p-chart p-fade-item" viewBox="0 0 260 60" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#D41A40"/><stop offset="100%" stop-color="#CDB170"/>
+                      </linearGradient>
+                      <linearGradient id="pg2" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#CDB170"/><stop offset="100%" stop-color="#D41A40"/>
+                      </linearGradient>
+                    </defs>
+                    <polyline class="p-chart-line" data-metric="peso" points="0,42 50,38 100,45 150,26 200,30 260,10" fill="none" stroke="url(#pg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline class="p-chart-line" data-metric="cintura" points="0,20 50,26 100,18 150,30 200,22 260,34" fill="none" stroke="url(#pg2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+                  </svg>
+                  <div class="p-fade-item" style="font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:#9AA0AE;">Anotado por Jeff · hace 2 días</div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="phone-navbar" id="phoneNavbar">
+              <button class="pnav-btn active" data-pane="hoy">
+                <svg class="pnav-dot" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="2" fill="currentColor" stroke="none"/></svg>
+                <span class="pnav-label">HOY</span>
+              </button>
+              <button class="pnav-btn" data-pane="plan">
+                <svg class="pnav-dot" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="4.5" cy="10" r="1.8"/><circle cx="15.5" cy="10" r="1.8"/><line x1="6.3" y1="10" x2="13.7" y2="10"/></svg>
+                <span class="pnav-label">PLAN</span>
+              </button>
+              <button class="pnav-btn" data-pane="agenda">
+                <svg class="pnav-dot" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.2" y="4" width="13.6" height="12.5" rx="2.5"/><line x1="3.2" y1="7.6" x2="16.8" y2="7.6"/><line x1="6.8" y1="2.6" x2="6.8" y2="5.4"/><line x1="13.2" y1="2.6" x2="13.2" y2="5.4"/></svg>
+                <span class="pnav-label">AGENDA</span>
+              </button>
+              <button class="pnav-btn" data-pane="progreso">
+                <svg class="pnav-dot" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="4.5" y1="16" x2="4.5" y2="11"/><line x1="10" y1="16" x2="10" y2="6.5"/><line x1="15.5" y1="16" x2="15.5" y2="9"/></svg>
+                <span class="pnav-label">PROGR.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VÍDEO — ACOMPAÑAMIENTO REAL ================= -->
+<section class="video-spotlight" id="acompanamiento">
+  <div class="wrap reveal">
+    <div class="vs-eyebrow">Acompañamiento real</div>
+    <h2>No te dejan solo con una hoja de ejercicios.</h2>
+    <p class="vs-sub">Cada rutina viene con vídeo, y puedes escribirle a Jeff cuando lo necesites. No es un chat en vivo: él responde cuando revisa, y la app te avisa al teléfono.</p>
+
+    <div class="vs-grid">
+      <div class="vs-card">
+        <div class="vs-thumb"><div class="play"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="10.5" height="9" rx="2.2"/><path d="M13.5 9l3.5-2v6l-3.5-2"/></svg></div></div>
+        <div class="vs-tag">Grabado para ti</div>
+        <h3>Corrección personalizada</h3>
+        <p>Cuando tu ejecución necesita un ajuste, Jeff puede grabar un vídeo específico para ti, no una explicación genérica.</p>
+      </div>
+      <div class="vs-card">
+        <div class="vs-thumb"><div class="play"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z"/></svg></div></div>
+        <div class="vs-tag">Mensajes con Jeff</div>
+        <h3>Escríbele con foto o vídeo</h3>
+        <p>Dudas, cómo te sientes o una técnica que quieres que revise. Te contesta dentro de la app.</p>
+      </div>
+      <div class="vs-card">
+        <div class="vs-thumb"><div class="play"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.7 3.7L15.5 6.3"/></svg></div></div>
+        <div class="vs-tag">Tu día a día</div>
+        <h3>Reporte diario y material</h3>
+        <p>Un vídeo corto cada día para verificar tu cumplimiento, y contenido educativo para entender el porqué de tu plan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PLANES ================= -->
+<section class="plans" id="planes">
+  <div class="wrap plans-inner reveal">
+    <div class="section-eyebrow">Planes</div>
+    <h2>Dos formas de acompañarte.</h2>
+    
+
+    <div class="plan-grid plan-grid-2">
+      <div class="plan-card" data-plan="Esencial">
+        <div class="plan-name">Esencial</div>
+        <div class="plan-tagline">Tu entrenamiento guiado, con seguimiento de tu progreso.</div>
+        <div class="plan-price">Pregunta por tu plan</div>
+        <ul class="plan-features">
+          <li>Rutina por días con vídeo de cada ejercicio</li>
+          <li>Registro de series, peso y esfuerzo</li>
+          <li>Reporte diario con vídeo corto</li>
+          <li>Progreso: medidas y fotos</li>
+          <li>Anuncios y mensajes de Jeff</li>
+        </ul>
+        <a class="plan-btn" data-wa="Hola Jeff, me interesa el plan Esencial. ¿Me das más información?" href="https://wa.me/57XXXXXXXXXX" target="_blank" rel="noopener">Preguntar por este plan</a>
+      </div>
+
+      <div class="plan-card featured" data-plan="Completo">
+        <div class="plan-badge">Más completo</div>
+        <div class="plan-name">Completo</div>
+        <div class="plan-tagline">Entrenamiento y nutrición, con todo el material.</div>
+        <div class="plan-price">Pregunta por tu plan</div>
+        <ul class="plan-features">
+          <li>Todo lo del plan Esencial</li>
+          <li>Plan de nutrición con check diario</li>
+          <li>Biblioteca completa de material educativo</li>
+          <li>Agenda: llamadas y clases grupales</li>
+        </ul>
+        <a class="plan-btn" data-wa="Hola Jeff, me interesa el plan Completo. ¿Me das más información?" href="https://wa.me/57XXXXXXXXXX" target="_blank" rel="noopener">Preguntar por este plan</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA FINAL ================= -->
+<section class="cta-final" id="contacto">
+  <div class="wrap">
+    <div class="section-eyebrow">Siguiente paso</div>
+    <h2>Cuéntale a Jeff cuál es tu objetivo.</h2>
+    <p>Una conversación por WhatsApp basta para empezar. Sin formularios largos.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" data-wa="Hola Jeff, quiero información para entrenar contigo." href="https://wa.me/57XXXXXXXXXX" target="_blank" rel="noopener">Escribirle a Jeff por WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <img src="assets/logo.svg" alt="YEFFITNES TRAINING" height="22">
+    <span>Coaching online con Jeff González</span>
+  </div>
+</footer>
+
+<script>
+  // ambient glow follows cursor (desktop) — subtle, elegant, not distracting
+  const ambient = document.getElementById('ambient');
+  window.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth) * 100;
+    const y = (e.clientY / window.innerHeight) * 100;
+    ambient.style.setProperty('--mx', x + '%');
+    ambient.style.setProperty('--my', y + '%');
+  });
+
+    
+
+  // ---- Cómo funciona: pasos interactivos ----
+  const stepEls = document.querySelectorAll('.step');
+  stepEls.forEach(step => {
+    step.addEventListener('click', () => {
+      const wasActive = step.classList.contains('active');
+      stepEls.forEach(s => s.classList.remove('active'));
+      if (!wasActive) step.classList.add('active');
+    });
+    step.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); step.click(); }
+    });
+  });
+  const stepsGrid = document.getElementById('stepsGrid');
+  if (stepsGrid) {
+    const stepsIO = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { stepsGrid.classList.add('in-view'); stepsIO.unobserve(entry.target); }
+      });
+    }, { threshold: 0.3 });
+    stepsIO.observe(stepsGrid);
+  }
+
+  // ---- Portal preview: autoplay, carrusel deslizante, navbar interno, glow, tilt, swipe ----
+  (function () {
+    const tabBtns = Array.from(document.querySelectorAll('.tab-btn'));
+    const navBtns = Array.from(document.querySelectorAll('.pnav-btn'));
+    const paneTrack = document.getElementById('paneTrack');
+    const panes = Array.from(document.querySelectorAll('.pane'));
+    const phoneGlow = document.getElementById('phoneGlow');
+    const phoneFrame = document.getElementById('phoneFrame');
+    const phoneScreen = document.getElementById('phoneScreen');
+    const phoneStage = document.querySelector('.phone-stage');
+    const previewTabsWrap = document.getElementById('previewTabs');
+    if (!tabBtns.length || !paneTrack) return;
+
+    const order = ['hoy', 'plan', 'agenda', 'progreso'];
+    const trackStep = 100 / order.length;
+    const DURATION = 2500;
+    let activeIndex = 0;
+    let paused = false;
+    let autoplayTimer = null;
+
+    function goTo(index) {
+      activeIndex = (index + order.length) % order.length;
+      const key = order[activeIndex];
+      tabBtns.forEach(b => b.classList.toggle('active', b.dataset.pane === key));
+      navBtns.forEach(b => b.classList.toggle('active', b.dataset.pane === key));
+      panes.forEach(p => p.classList.toggle('pane-live', p.dataset.pane === key));
+      paneTrack.style.transform = `translateX(-${activeIndex * trackStep}%)`;
+
+      const accentBtn = tabBtns[activeIndex];
+      const accent = accentBtn && accentBtn.dataset.accent;
+      if (accent && phoneGlow) phoneGlow.style.background = `radial-gradient(closest-side, ${accent}, transparent 72%)`;
+
+      restartProgress();
+    }
+
+    function restartProgress() {
+      tabBtns.forEach(b => {
+        const fill = b.querySelector('.tab-progress-fill');
+        if (!fill) return;
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+      });
+      clearTimeout(autoplayTimer);
+      if (paused) return;
+      const activeFill = tabBtns[activeIndex] && tabBtns[activeIndex].querySelector('.tab-progress-fill');
+      if (activeFill) {
+        requestAnimationFrame(() => {
+          activeFill.style.transition = `width ${DURATION}ms linear`;
+          activeFill.style.width = '100%';
+        });
+      }
+      autoplayTimer = setTimeout(() => goTo(activeIndex + 1), DURATION);
+    }
+
+    function pause() {
+      if (paused) return;
+      paused = true;
+      clearTimeout(autoplayTimer);
+      const activeFill = tabBtns[activeIndex] && tabBtns[activeIndex].querySelector('.tab-progress-fill');
+      if (activeFill) {
+        const w = getComputedStyle(activeFill).width;
+        activeFill.style.transition = 'none';
+        activeFill.style.width = w;
+      }
+    }
+
+    function resume() {
+      if (!paused) return;
+      paused = false;
+      const activeFill = tabBtns[activeIndex] && tabBtns[activeIndex].querySelector('.tab-progress-fill');
+      if (!activeFill) { restartProgress(); return; }
+      const trackWidth = parseFloat(getComputedStyle(activeFill.parentElement).width) || 1;
+      const currentWidth = parseFloat(getComputedStyle(activeFill).width) || 0;
+      const remaining = Math.max((1 - currentWidth / trackWidth) * DURATION, 600);
+      requestAnimationFrame(() => {
+        activeFill.style.transition = `width ${remaining}ms linear`;
+        activeFill.style.width = '100%';
+      });
+      clearTimeout(autoplayTimer);
+      autoplayTimer = setTimeout(() => goTo(activeIndex + 1), remaining);
+    }
+
+    tabBtns.forEach(btn => btn.addEventListener('click', () => { goTo(order.indexOf(btn.dataset.pane)); }));
+    navBtns.forEach(btn => btn.addEventListener('click', () => { goTo(order.indexOf(btn.dataset.pane)); }));
+
+    [previewTabsWrap, phoneStage].forEach(el => {
+      if (!el) return;
+      el.addEventListener('mouseenter', pause);
+      el.addEventListener('mouseleave', resume);
+    });
+
+    goTo(0);
+
+    // Checklist de ejercicios dentro del teléfono (misma interacción que el panel real)
+    const phoneExRows = document.querySelectorAll('#phoneExList .p-ex-row');
+    const phoneExFill = document.getElementById('phoneExFill');
+    const phoneExCount = document.getElementById('phoneExCount');
+    function updatePhoneExProgress() {
+      const total = phoneExRows.length;
+      const done = document.querySelectorAll('#phoneExList .p-ex-row.done').length;
+      if (phoneExFill) phoneExFill.style.width = (done / total * 100) + '%';
+      if (phoneExCount) phoneExCount.textContent = done + ' / ' + total + ' completados';
+    }
+    phoneExRows.forEach(row => {
+      row.addEventListener('click', () => { row.classList.toggle('done'); updatePhoneExProgress(); });
+    });
+    updatePhoneExProgress();
+
+    // Botones "Reservar" del mini calendario (Agenda)
+    document.querySelectorAll('.pane[data-pane="agenda"] .p-slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.textContent = 'Confirmada';
+        btn.classList.add('confirmed');
+        btn.disabled = true;
+      });
+    });
+
+    // Filtros de tipo de sesión (mismo patrón que la agenda real: filtra la lista por tipo)
+    const phoneFilterRow = document.getElementById('phoneFilterRow');
+    if (phoneFilterRow) {
+      const filterChips = phoneFilterRow.querySelectorAll('.p-filter-chip');
+      const sessionRows = document.querySelectorAll('.pane[data-pane="agenda"] .p-session');
+      filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          filterChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const type = chip.dataset.type;
+          sessionRows.forEach(row => {
+            row.classList.toggle('p-hidden', type !== 'all' && row.dataset.type !== type);
+          });
+        });
+      });
+    }
+
+    // Chips de métrica del mini-gráfico (Progreso) — muestra/oculta cada serie, igual que en el portal real
+    const phoneMetricChips = document.getElementById('phoneMetricChips');
+    if (phoneMetricChips) {
+      phoneMetricChips.querySelectorAll('.p-metric-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const metric = chip.dataset.metric;
+          const line = document.querySelector(`.p-chart-line[data-metric="${metric}"]`);
+          chip.classList.toggle('active');
+          chip.classList.toggle('off');
+          if (line) line.classList.toggle('hidden');
+        });
+      });
+    }
+
+    // Mini-toggle Entreno/Nutrición dentro del pane "Mi plan" (mismo patrón que el portal real)
+    (function () {
+      const miniBtns = document.querySelectorAll('.mini-toggle-btn');
+      const miniTraining = document.getElementById('miniTrainingPane');
+      const miniNutrition = document.getElementById('miniNutritionPane');
+      if (!miniBtns.length) return;
+      miniBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          miniBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const mode = btn.dataset.mode;
+          miniTraining.style.display = mode === 'training' ? '' : 'none';
+          miniNutrition.style.display = mode === 'nutrition' ? '' : 'none';
+        });
+      });
+      document.querySelectorAll('#miniTrainingPane .p-ex-row').forEach(row => {
+        row.addEventListener('click', () => row.classList.toggle('done'));
+      });
+    })();
+
+    // Swipe en el teléfono (móvil)
+    let touchStartX = null;
+    if (phoneScreen) {
+      phoneScreen.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; pause(); }, { passive: true });
+      phoneScreen.addEventListener('touchend', (e) => {
+        if (touchStartX === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) goTo(activeIndex + (dx < 0 ? 1 : -1));
+        else resume();
+        touchStartX = null;
+      }, { passive: true });
+    }
+
+    // Tilt sutil con el mouse (solo escritorio)
+    if (phoneFrame && phoneStage && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      phoneStage.addEventListener('mousemove', (e) => {
+        const rect = phoneFrame.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        phoneFrame.classList.add('tilting');
+        phoneFrame.style.transform = `rotateY(${x * 9}deg) rotateX(${-y * 9}deg)`;
+      });
+      phoneStage.addEventListener('mouseleave', () => {
+        phoneFrame.classList.remove('tilting');
+        phoneFrame.style.transform = 'rotateY(0deg) rotateX(0deg)';
+      });
+    }
+
+    // Revela anotaciones flotantes al entrar en viewport
+    const previewLayout = document.getElementById('previewLayout');
+    if (previewLayout) {
+      const previewIO = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) { previewLayout.classList.add('in-view'); previewIO.unobserve(entry.target); }
+        });
+      }, { threshold: 0.25 });
+      previewIO.observe(previewLayout);
+    }
+  })();
+
+  // ---- Scroll reveal ----
+  const revealEls = document.querySelectorAll('.reveal');
+  const revealIO = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        revealIO.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => revealIO.observe(el));
+
+  // ---- WhatsApp: todos los botones de la landing llevan al WhatsApp de Jeff (nunca a la app) ----
+  const COACH_PHONE = '57XXXXXXXXXX'; // CAMBIAR: WhatsApp de Jeff, solo dígitos con indicativo de país (ej. 573001234567). Es el único lugar donde va el número.
+  document.querySelectorAll('[data-wa]').forEach(a => {
+    a.href = `https://wa.me/${COACH_PHONE}?text=${encodeURIComponent(a.dataset.wa)}`;
+  });
+
+  // Comidas con check dentro del teléfono
+  (function () {
+    const rows = document.querySelectorAll('#phoneMealList .p-ex-row');
+    const fill = document.getElementById('phoneMealFill'), count = document.getElementById('phoneMealCount');
+    const update = () => { const d = document.querySelectorAll('#phoneMealList .p-ex-row.done').length; if (fill) fill.style.width = (d / rows.length * 100) + '%'; if (count) count.textContent = d + ' / ' + rows.length + ' comidas'; };
+    rows.forEach(r => r.addEventListener('click', () => { r.classList.toggle('done'); update(); }));
+    update();
+  })();
+
+  // ---- Calendario de reserva en tiempo real ----
+  const days = [
+    { label: 'LUN', num: 15, slots: [{t:'09:00',s:'booked'},{t:'11:00',s:'available'},{t:'17:00',s:'available'}] },
+    { label: 'MAR', num: 16, slots: [{t:'08:30',s:'available'},{t:'10:00',s:'booked'},{t:'18:00',s:'available'}] },
+    { label: 'MIÉ', num: 17, slots: [{t:'09:00',s:'available'},{t:'12:00',s:'available'},{t:'17:30',s:'booked'}] },
+    { label: 'JUE', num: 18, slots: [{t:'10:00',s:'available'},{t:'13:00',s:'booked'},{t:'19:00',s:'available'}] },
+    { label: 'VIE', num: 19, slots: [{t:'08:30',s:'available'},{t:'11:00',s:'available'},{t:'16:00',s:'booked'}] },
+    { label: 'SÁB', num: 20, slots: [{t:'09:00',s:'available'},{t:'10:30',s:'available'}] },
+    { label: 'DOM', num: 21, slots: [{t:'—',s:'booked'}] }
+  ];
+
+  const calGrid = document.getElementById('calGrid');
+  let selectedSlot = null; // { day, num, time }
+  let selectedType = 'Llamada de seguimiento';
+
+  function renderCalendar() {
+    calGrid.innerHTML = '';
+    days.forEach(day => {
+      const col = document.createElement('div');
+      col.className = 'cal-day';
+      col.innerHTML = `<div class="cal-day-label">${day.label}</div><div class="cal-day-num">${day.num}</div>`;
+      day.slots.forEach(slot => {
+        const btn = document.createElement('button');
+        const isSelected = selectedSlot && selectedSlot.day === day.label && selectedSlot.time === slot.t;
+        btn.className = 'slot ' + (isSelected ? 'selected' : slot.s);
+        btn.textContent = slot.t;
+        btn.disabled = slot.s === 'booked';
+        if (slot.s === 'available') {
+          btn.addEventListener('click', () => {
+            selectedSlot = { day: day.label, num: day.num, time: slot.t };
+            renderCalendar();
+            updateSummary();
+          });
+        }
+        col.appendChild(btn);
+      });
+      calGrid.appendChild(col);
+    });
+  }
+
+  const bsEmpty = document.getElementById('bsEmpty');
+  const bsFilled = document.getElementById('bsFilled');
+  const bsDatetime = document.getElementById('bsDatetime');
+  const bsConfirm = document.getElementById('bsConfirm');
+
+  function updateSummary() {
+    if (!selectedSlot) {
+      bsEmpty.style.display = 'block';
+      bsFilled.style.display = 'none';
+      return;
+    }
+    bsEmpty.style.display = 'none';
+    bsFilled.style.display = 'block';
+    bsDatetime.textContent = `${selectedSlot.day} ${selectedSlot.num} · ${selectedSlot.time}`;
+  }
+
+  document.querySelectorAll('.type-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      selectedType = pill.dataset.type;
+      document.querySelectorAll('.type-pill').forEach(p => p.classList.toggle('active', p === pill));
+    });
+  });
+
+  // Mismo patrón que generateBookingLink() en lib/utils/whatsapp.ts:
+  // mensaje pre-armado con fecha, hora y tipo de sesión — el usuario lo envía con un toque.
+  bsConfirm.addEventListener('click', () => {
+    if (!selectedSlot) return;
+    const message = `Hola Jeff, me interesa una sesión (${selectedType.toLowerCase()}) el ${selectedSlot.day} ${selectedSlot.num} a las ${selectedSlot.time}. ¿Está disponible?`;
+    window.open(`https://wa.me/${COACH_PHONE}?text=${encodeURIComponent(message)}`, '_blank');
+  });
+
+  renderCalendar();
+  updateSummary();
+</script>
+
+</body>
+</html>

@@ -1,6 +1,14 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Landing de venta separada (carpeta `landing/`) y nueva entrada de la app (rama `bloque-landing`, sin subir a main)
+- **Landing de venta:** `landing/index.html`, sitio estático basado en la landing v3 de DaniFit pero con marca de Jeff (rojo/negro/dorado), sin emojis y con pantallas de ejemplo de la app real (Hoy, Mi plan con nutrición por comidas, Agenda, Progreso). **No enlaza a la app ni al login**: todos los botones van al WhatsApp de Jeff. Se quitaron contadores y testimonios inventados y los precios; los planes Esencial/Completo son PROPUESTA.
+- **WhatsApp:** número placeholder `57XXXXXXXXXX` (constante `COACH_PHONE` en `landing/index.html`). Falta el real y la foto `landing/assets/jeff.jpg`.
+- **Entrada de la app (`/`):** `app/page.tsx` ahora es una pantalla mínima y premium con solo "Iniciar sesión" (se eliminó la landing anterior con "Crear mi cuenta").
+- **Netlify:** `netlify.toml` ignora los cambios que solo toquen `landing/` (no gastan créditos del sitio de la app). La landing se publica como sitio aparte (ver `landing/README.md`).
+- **Sin probar:** landing en móviles reales; número de WhatsApp real.
+- **Revertir:** borrar `landing/`, `git revert` de `app/page.tsx` y de `netlify.toml`. Sin SQL.
+
 ## 2026-10-25 · Nutrición con checks, aviso a Jeff, guía para nuevos, nivel/revisión del plan y "Tiempo real" (migración 0025; rama `bloque-diseno`)
 - **Guía para clientes nuevos:** en Hoy, mientras el cliente tenga menos de 2 entrenamientos terminados, una tarjeta explica en 4 pasos cómo registrar series (tocar ejercicio, anotar reps/peso, tocar el check, terminar) y el primer check de serie late. Se puede cerrar ("Entendido", se guarda en el dispositivo).
 - **Nutrición interactiva (0025):** tabla `meal_logs` + `log_meal()`. Cada comida de HOY se marca con check (en Hoy y en Mi plan → Nutrición; otros días son de solo lectura). Al marcar todas: "Nutrición del día completada". Aviso de "Día completado" en Hoy cuando está hecho el entrenamiento y la nutrición del día. Nota: si Jeff edita el plan de nutrición del cliente, las comidas se recrean y se pierden las marcas de ese día.
