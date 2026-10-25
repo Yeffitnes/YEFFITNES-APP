@@ -17,3 +17,5 @@ Origen: extraídas de la propuesta comercial (`APROPUESTA-YEFFITNES.html`, repo 
 | portal-material | /inicio/material | pendiente |
 
 Cómo portar una pantalla: abrir el mockup, copiar su CSS a `app/<zona>/<zona>.css` (reemplazar `'Manrope'` por `var(--font-body)`, `'Instrument Sans'` por `var(--font-display)`, `'IBM Plex Mono'` por `var(--font-mono)`), reproducir su marcado en React y conectar datos. Los datos de ejemplo del mockup (nombres, cifras) nunca se copian a producción.
+
+Herramienta: `python3 design/port_css.py <mockup> <hoja destino>` porta el CSS de un mockup sin duplicar reglas (se puede repetir sin riesgo).

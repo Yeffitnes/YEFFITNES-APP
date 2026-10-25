@@ -1,3 +1,5 @@
+**Atajo:** `bash supabase/tests/run_local.sh` hace todo lo de abajo automáticamente (requiere Postgres 16; ver `docs/AGENT_PLAYBOOK.md` §3).
+
 # Pruebas de seguridad (RLS) en una base local
 Comprueban, contra un Postgres desechable (NO tu Supabase real), que un cliente no puede ver ni escribir datos de otro cliente ni de otro coach, ni cambiarse el rol o el plan, ni tocar las columnas del coach; y que sin la función "training" queda bloqueado.
 

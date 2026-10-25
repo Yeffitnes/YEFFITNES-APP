@@ -1,87 +1,77 @@
 # CONTEXTO DEL PROYECTO — leer ANTES de tocar nada
-Última actualización: 23-oct-2026. Si cambias algo importante, actualiza este archivo y `CHANGELOG.md`.
+Última actualización: 24-oct-2026. Si cambias algo importante, actualiza este archivo, `PROJECT_STATE.md` y `CHANGELOG.md`. Cómo trabajar: `docs/AGENT_PLAYBOOK.md`.
 
 ## 1. Qué es
-App web instalable (PWA) para **YEFFITNES TRAINING**, coaching fitness casi 100 % online del coach **Jefferson González ("Jeff")**. Construye y lidera el producto **Cristian Santiago Gómez Romero** (freelance, no es desarrollador senior: explica decisiones y da pasos concretos, sin asumir conocimiento de terminal). Idioma: español.
-Inicio 21-oct-2026. Plazo: **2 meses, ampliable a 3** (P0 y P1 primero; P2 puede usar el mes 3).
-Dos entornos: **panel del coach** (`/coach`, escritorio primero) y **portal del cliente** (`/inicio`, móvil primero).
+App web instalable (PWA) para **YEFFITNES TRAINING**, coaching fitness casi 100 % online del coach **Jefferson González ("Jeff")**. Lidera producto y desarrollo **Cristian Santiago Gómez Romero** (freelance, no usa terminal: explica y da pasos concretos, en español).
+Inicio 21-oct-2026. Plazo: **2 meses, ampliable a 3** (P0 y P1 primero; P2 puede usar el mes 3). Dos entornos: **panel del coach** (`/coach`, escritorio primero) y **portal del cliente** (`/inicio`, móvil primero). Repo: `Yeffitnes/YEFFITNES-APP` (rama `main` → Netlify). Producción de pruebas: `yeffitnes.netlify.app`.
 
 ## 2. Reglas de oro
-1. **Fidelidad al diseño.** `design/mockups/` es la fuente visual. Copiar, no reinterpretar. Ver `design/README.md`.
-2. **No inventar** reglas, precios, planes, horarios ni datos del coach. Lo no decidido se marca `NO DEFINIDO`. Distinguir REQUISITO / PROPUESTA / INFERENCIA.
-3. **Prioridades:** P0 crítico > P1 importante > P2 deseable > P3 futuro. P2/P3 nunca bloquean P0. Proteger el alcance.
+1. **Fidelidad al diseño.** `design/mockups/` es la fuente visual (colores rojo `#F7254B`, negro, dorado). Copiar estructura, clases, textos **y flujo**; mejorar sí, improvisar no.
+2. **No inventar** reglas, precios, planes, horarios ni datos del coach. Lo no decidido = `NO DEFINIDO`; lo que sugiere el agente = `PROPUESTA`; lo deducido = `INFERENCIA`.
+3. **Prioridades** P0 crítico > P1 importante > P2 deseable > P3 futuro. P2/P3 nunca bloquean P0.
 4. **Simple por dentro, premium por fuera.** Nada de infraestructura que no haga falta.
-5. **Definición de hecho:** funciona, es seguro (RLS), tiene estados loading/vacío/error, funciona en móvil y escritorio, no rompe otras áreas, documentado en CHANGELOG.
-6. **No ser complaciente:** si una idea es mala o costosa, decirlo.
+5. **Definición de hecho:** funciona, es seguro (RLS + pruebas de ataque), tiene estados cargando/vacío/error, sirve en móvil y escritorio, no rompe nada, está documentado en CHANGELOG.
+6. **Honestidad:** decir qué se verificó y qué no.
 
 ## 3. Requisitos del coach (nivel 1, dichos por Cristian/Jeff)
-- Sin pagos en la app: la venta se cierra por WhatsApp desde una landing; el cliente instala la PWA y se registra solo. Sin plan = **todo bloqueado y borroso** (con botón a WhatsApp). Jeff activa al cliente y le asigna el plan manualmente; el plan decide qué ve.
+- Sin pagos en la app: la venta se cierra por WhatsApp desde una landing; el cliente instala la PWA y se registra solo. Queda **pendiente**: todo bloqueado y borroso con botón a WhatsApp. Jeff lo activa y le asigna el plan (el plan decide qué ve).
 - Onboarding interactivo con personaje guía (P2): tour, peso, medidas, fotos con consentimiento y agendar llamada de sábado o domingo con Jeff.
 - Jeff arma nutrición y rutina **dentro de la app** (sin PDFs), desde plantillas que clona y ajusta por cliente.
-- Rutina por días (lunes, martes…), cada día con enfoque, ejercicios, vídeo e imágenes, peso e intensidad.
-- El cliente registra repeticiones, **peso real** (incluye aproximaciones; opcional pero algunas partes pueden ser obligatorias) y **esfuerzo 1–10**.
-- **Reporte diario obligatorio:** vídeo muy corto de verificación ("aquí estoy cumpliendo") + comentario. Vídeos del cliente se borran solos (propuesta: 24 h tras revisados, tope 7 días).
-- **Sin chat.** Jeff comenta a un cliente o publica anuncios a todos (visibles en el inicio). El cliente escribe una vez por noche, ligado a su reporte. Nada de "visto".
-- Jeff solo revisa **por las noches entre semana**; fines de semana llamadas y sesiones. El panel debe ser una **cola de revisión priorizada**.
-- Agenda: Jeff publica horarios y el cliente reserva manualmente. Sin sesiones presenciales por ahora.
-- Vídeos: material educativo de Jeff en **YouTube embebido**; privados en **Bunny Stream** (subidos desde la app; costo aceptado por Jeff).
+- Rutina por días con enfoque, ejercicios, vídeo/imágenes, peso e intensidad.
+- El cliente registra repeticiones y **peso real** (aproximaciones incluidas; opcional pero algunas partes pueden ser obligatorias) y **esfuerzo 1–10**.
+- **Reporte diario obligatorio:** vídeo muy corto de verificación + comentario. Vídeos de clientes se borran solos (propuesta: 24 h tras revisados, tope 7 días).
+- **Sin chat.** Jeff comenta a un cliente o publica anuncios a todos (visibles en el inicio). El cliente escribe una vez por noche, ligado a su reporte. Sin "visto".
+- Jeff solo revisa **por las noches entre semana**; fines de semana, llamadas y sesiones. El panel es una **cola de revisión priorizada**.
+- Agenda: Jeff publica horarios y el cliente reserva. Sin sesiones presenciales por ahora.
+- Vídeos: material educativo de Jeff en **YouTube embebido**; privados en **Bunny Stream** subidos desde la app (costo aceptado por Jeff).
 - Fotos de progreso del cliente y de Jeff (privadas, comprimidas).
-- Base para **multi-coach** (cada coach con su entorno, logo y colores). El cobro a coaches, dominios propios y similares son P3.
-- Planes: propuesta inicial Esencial / Completo (precios y contenido **NO DEFINIDO**, los decide Jeff).
+- Base **multi-coach** (cada coach con su entorno, logo y colores); cobro a coaches, dominios propios, etc. = P3.
 
 ## 4. Stack e infraestructura
-Next.js 14 (App Router) · TypeScript · Tailwind · Supabase (Postgres, Auth, Storage, RLS) · TanStack Query · Netlify (hosting) · GitHub `Yeffitnes/YEFFITNES-APP` (rama `main` → despliegue automático).
-- Supabase: proyecto en **us-east-1**. Plan gratis para desarrollar; **pasar a Pro (~US$25/mes) antes de clientes reales** (el gratis se pausa tras 7 días sin actividad y no tiene copias de seguridad).
-- Netlify: plan gratis permite uso comercial (Vercel Hobby no). Vigilar créditos.
-- Bunny Stream: no es gratis (mínimo ~US$1/mes). Aún no integrado.
-- Costos estimados al lanzar: ~US$26–30/mes + dominio. Son estimaciones de oct-2026.
-- Variables de entorno (Netlify y `.env.local`, nunca en el repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_COACH_WHATSAPP` (solo dígitos con código de país, sin `+`).
+Ver `ARCHITECTURE.md`. Supabase en **us-east-1**; Netlify (Ohio por defecto). Variables de entorno (Netlify y `.env.local`, jamás en el repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_COACH_WHATSAPP` (solo dígitos con código de país, sin `+`).
+Costos estimados al lanzar (oct-2026): Supabase Pro ~US$25/mes + Bunny ~US$1–3/mes + dominio ≈ US$26–30/mes. Bunny aún no está integrado.
 
-## 5. Arquitectura (lo esencial; detalle en `ARCHITECTURE.md`)
-- **Lectura y escritura del panel desde el navegador a Supabase**, protegidas por **RLS**; caché con TanStack Query (`lib/queries.ts`), precarga en `components/Providers.tsx`.
-- La sesión se valida en servidor una vez (`middleware.ts`, `app/coach/layout.tsx`, `lib/session.ts` con `getClaims()`).
-- Operaciones compuestas = **función SQL** (`SECURITY INVOKER`, un viaje, atómica), p. ej. `save_routine`, `create_training_plan`, `assign_day`.
-- Lo que necesite secretos o procesos (firmar subidas Bunny, borrado automático, avisos) va en servidor/edge/tareas programadas. **Nunca** la clave `service_role` en el navegador ni en variables `NEXT_PUBLIC_`.
-- Multi-coach: toda tabla de negocio lleva `workspace_id`.
+## 5. Estado funcional (qué existe)
+- **Coach:** Dashboard con cola de revisión · Clientes (lista, ficha con Resumen/Entrenamiento/Progreso; asignar plan) · Catálogo (ejercicios, rutinas en modal) · Entrenamiento por días (crear plan, asignar rutina a uno o varios días, peso objetivo) · Revisar entrenamientos y comentar · Agenda (publicar, agendar, cancelar).
+- **Cliente:** Hoy (rutina del día, series con repeticiones y peso, esfuerzo, comentario del coach, racha) · Mi plan (semana y técnica en vídeo) · Progreso (mediciones, gráfica, fotos antes/después, borrar fotos) · Agenda (reservar/cancelar) · pantallas bloqueadas por plan.
+- **Aún no existe:** reporte diario con vídeo, nutrición, material educativo, anuncios a todos, notas privadas del coach, onboarding/tour, objetivos, landing pública, avisos/recordatorios, modo sin conexión.
+- **Lo que NADIE ha probado de punta a punta contra el Supabase real** (a 24-oct): el flujo completo coach→cliente→revisión, subir foto desde celular, agenda con dos usuarios. Se verificó por tipos, lint y pruebas de ataque en Postgres de prueba.
 
 ## 6. Checklist para agregar una tabla o pantalla
-1. Migración nueva numerada en `supabase/migrations/` (nunca editar una ya ejecutada). `workspace_id` + RLS en la misma migración. Si el cliente la lee, política explícita por cliente.
-2. Consultas en `lib/queries.ts` con tipos y claves de caché; mutaciones con aviso de éxito/error (optimistas si es seguro).
-3. Pantalla = `page.tsx` delgada + vista cliente en `components/<zona>/`. Copiar el mockup (ver `design/README.md`).
-4. Estados obligatorios: cargando (esqueleto `.sk`), vacío (explica qué hacer), error (humano, con reintentar), éxito.
-5. Acciones destructivas con confirmación. Botones con estado "Guardando…".
-6. `npx tsc --noEmit` y `npx next lint` sin errores. Probar con un cliente y con el coach.
-7. Actualizar `CHANGELOG.md`, `PROJECT_STATE.md` y, si cambia una regla, este archivo.
+Ver `AGENT_PLAYBOOK.md` §4. Resumen: migración nueva numerada con `workspace_id` + RLS (validando TODAS las referencias) + caso en `supabase/tests/` → consultas en `lib/queries.ts` → `page.tsx` delgada + vista en `components/` copiando el mockup (`design/port_css.py`) → estados cargando/vacío/error → `tsc`, `lint`, `run_local.sh` → CHANGELOG.
 
 ## 7. Seguridad
-- RLS en todas las tablas. Cliente: solo lo suyo. Coach: solo su espacio. Nadie cambia su propio rol (no hay política de UPDATE en `profiles`); el rol coach se asigna por SQL.
-- El rol y el alta salen del trigger `handle_new_user` (cliente pendiente). **El espacio de trabajo debe existir antes de que alguien se registre**, o el trigger no crea perfil (causó un bloqueo el 23-oct).
-- Archivos privados (fotos, vídeos): bucket privado + URL firmada con vencimiento. Consentimiento antes de fotos corporales.
-- Secretos: jamás en el repo ni en el chat. Los tokens de GitHub se crean por sesión y se **revocan** al terminar (uno se pegó en el chat el 23-oct: revocar).
-- El repo es público hoy: pasarlo a **privado**.
-- La confirmación de correo está **desactivada** para pruebas; antes de lanzar, activarla y construir la página que recibe el enlace.
+RLS en todas las tablas; el cliente solo ve lo suyo; el coach solo su espacio; nadie cambia su rol (el coach se asigna por SQL); un cliente no escribe campos del coach (trigger). Las reglas de reserva viven en funciones SQL. Fotos en bucket privado con URL firmada y consentimiento. Cabeceras de seguridad en `next.config.mjs` (**ojo:** `microphone=()` hay que cambiarlo a `(self)` al construir el vídeo diario). **Lección del 24-oct:** las políticas "el cliente solo toca lo suyo" no bastan si no validan workspace, cliente, plan y ruta de archivo; se hallaron y corrigieron huecos (0009, 0011).
+Pendientes de seguridad antes de lanzar: revocar el token de GitHub usado en desarrollo · hacer el repo **privado** (hoy es público) · Supabase **Pro** · activar la **confirmación de correo** (hoy desactivada para pruebas; el código ya avisa al usuario si se activa) · revisar RLS otra vez.
 
 ## 8. Diseño y copy
-Tokens (`tailwind.config.ts`, `coach.css`): neon `#F7254B`, rose `#F2406B`, oro `#CDB170`/`#8D6526`, ink `#0A0910`, surface `#F5F6FA`. Fuentes: Instrument Sans (títulos), Manrope (texto), IBM Plex Mono (etiquetas). Modales: clases `modal-*` del mockup de agenda. Errores humanos en español, sin códigos. Accesibilidad: labels, foco, contraste, `aria-label` en iconos.
+Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/inicio/portal.css`, portados de los mockups): neon `#F7254B`, rose `#F2406B`, oro `#CDB170`/`#8D6526`, ink `#0A0910`, surface `#F5F6FA`. Fuentes: Instrument Sans (títulos), Manrope (texto), IBM Plex Mono (etiquetas). Modales: clases `modal-*`. Textos en español, tono cercano, errores humanos sin códigos, "Tu coach/Jeff".
 
 ## 9. Puesta en marcha desde cero
-1. Supabase: crear proyecto; Auth → desactivar "Confirm email" (solo pruebas).
-2. SQL Editor: ejecutar en orden `supabase/migrations/0001…` (todas las numeradas, hoy 0001–0012; **antes de desplegar, correr las pruebas de ataque RLS de `supabase/tests/` (ver su README)**). Luego los DATOS INICIALES de 0001 (espacio de trabajo con el WhatsApp) y `0002` (planes) **después** de crear el espacio.
+1. Supabase: crear proyecto (región us-east-1); Auth → desactivar "Confirm email" (solo pruebas).
+2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0012`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
 3. Netlify: importar el repo, cargar las 3 variables, desplegar.
 4. Registrar el correo de Jeff y: `update public.profiles set role='coach' where id=(select id from auth.users where email='…');`
-5. Probar con un segundo correo (cliente) en ventana de incógnito.
+5. Probar con otro correo (cliente) en una ventana de incógnito: queda pendiente → Jeff le asigna plan → ve su contenido.
 
-## 10. Lecciones aprendidas
-- Hacer consultas de sesión/perfil en cadena en el servidor por pantalla la volvió lenta → ahora cacheado y datos desde el navegador.
-- Copiar el CSS del mockup no basta: hay que copiar también **el flujo** (filtros instantáneos, modales, pestañas).
-- Un `blur` accidental en una tarjeta volvió borroso un mensaje entero: el desenfoque es solo para contenido bloqueado.
-- Los mockups no traen diseñados los formularios de crear ejercicio/rutina; se resolvieron con el modal de agenda.
+## 10. Mapa de migraciones (no editar las ya ejecutadas)
+| # | Contenido |
+|---|---|
+| 0001 | espacios, perfiles, planes, clientes, alta automática, RLS |
+| 0002 | planes iniciales Esencial/Completo (PROPUESTA) |
+| 0003 | ejercicios, rutinas plantilla, ítems; coach no es cliente |
+| 0004 | `save_routine` atómica |
+| 0005 | planes de entrenamiento, días, ítems; `create_training_plan`, `assign_day` |
+| 0006 | registros de entrenamiento y series; `log_set`, `finish_workout`; el plan se valida en la base |
+| 0007 | revisión del coach (comentario, visto) y su trigger de protección |
+| 0008 | mediciones y fotos privadas (bucket) |
+| 0009 | endurecimiento de escrituras del cliente (entrenamientos) |
+| 0010 | metadatos de día (minutos, tipo) y `assign_day` actualizada |
+| 0011 | endurecimiento de Progreso |
+| 0012 | agenda: huecos, reservas y sus funciones |
 
-## 10b. Seguridad: lección del 24-oct
-Las políticas "el cliente solo toca lo suyo" **no bastan** si no validan TODAS las referencias de la fila (workspace, cliente, plan, ruta de archivo): la API de Supabase es pública y se puede llamar sin pasar por la app. Toda tabla nueva con datos del cliente necesita su política con esas comprobaciones y un caso en `supabase/tests/`. Las pruebas encontraron huecos en 0006 y en 0008 (corregidos en 0009 y 0011).
+## 11. Decisiones pendientes con Jeff (no inventar)
+Planes: nombres, precios y qué incluye cada uno (hoy PROPUESTA Esencial/Completo) · reglas de agenda (hoy PROPUESTA: 1 reserva futura, cancelar hasta 24 h antes, tipos "Llamada inicial"/"Seguimiento") · duración y obligatoriedad del vídeo diario y plazo de borrado · qué partes del registro de series son obligatorias · contenido del onboarding y estilo del personaje · plantillas de rutina y nutrición de Jeff · nombre público (la marca dibujada en el logo es YEFFITNES TRAINING; Cristian lo llama "Jeff Fitness") · dominio propio · inversión/costos con Jeff · propiedad intelectual de lo heredado de DaniFit.
 
-## 11. Pendientes y riesgos vivos
-Ver `PROJECT_STATE.md`. Resumen: revocar token · repo privado · Supabase Pro antes de lanzar · confirmación de correo · definir planes y precios con Jeff · plantillas de Jeff · plazo de borrado de vídeos · propiedad intelectual de lo heredado de DaniFit (confirmar que se puede reutilizar).
-
-## 12. Cómo se trabaja
-Cristian pide por chat; el asistente entrega cambios al repo (por token de sesión o por archivos), Netlify despliega solo desde `main`. Cada cambio se documenta en `CHANGELOG.md` con: qué cambió, por qué, archivos/SQL tocados y **cómo revertir**.
+## 12. Deuda técnica conocida
+Textos "Jeff" fijos y `handle_new_user` asigna siempre el primer espacio (solo sirve con un coach) · zona horaria asumida única (Bogotá) · `ex_client_read` expone el catálogo completo de ejercicios al cliente con plan · menú con ítems sin pantalla (apagados) · los modales no atrapan el foco del teclado · PWA sin modo sin conexión · tablas de la cola de revisión calculadas en el navegador (suficiente hasta ~50 clientes; luego, una vista SQL).

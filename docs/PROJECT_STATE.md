@@ -1,63 +1,36 @@
 # PROJECT_STATE — YEFFITNES TRAINING
-Actualizado: 21-oct-2026
+Foto del estado al **24-oct-2026**. El historial detallado está en `CHANGELOG.md` (no se duplica aquí). Contexto: `CONTEXT.md`. Forma de trabajar: `AGENT_PLAYBOOK.md`.
 
-## Qué funciona (Fase 1A, sin probar contra Supabase real)
-- Next.js 14 + TypeScript + Tailwind con tokens de marca (rojo/oro/negro) y fuentes de la propuesta.
-- Login/registro, cierre de sesión, rutas protegidas por middleware, redirección por rol y estado.
-- Cliente nuevo queda PENDIENTE y ve la pantalla "Tu coach activará tu plan".
-- PWA: manifest e iconos.
-- Esquema 0001: workspaces, profiles, plans, clients con RLS.
+## Resumen
+Fundación, panel del coach y portal del cliente funcionando en el código, con 12 migraciones y 3 suites de pruebas de ataque en verde (Postgres de prueba). **Falta la validación de punta a punta con el Supabase real y con un celular** (ver "Sin verificar").
 
-## Añadido en 1B
-- FeatureGate (bloqueo borroso + WhatsApp), planes iniciales (0002), panel del coach con lista de clientes y asignación de plan.
+## Qué está hecho
+| Área | Estado |
+|---|---|
+| Acceso (login/registro, pendiente, bloqueo por plan, PWA) | hecho |
+| Coach: dashboard, clientes y ficha, catálogo, entrenamiento por días, revisión de entrenamientos, agenda | hecho |
+| Cliente: Hoy, Mi plan, Progreso (mediciones y fotos), Agenda | hecho |
+| Seguridad: RLS + trigger de columnas del coach + pruebas de ataque (`run_local.sh`) | hecho |
+| Herramientas para agentes: `AGENT_PLAYBOOK`, `run_local.sh`, `design/port_css.py`, mockups en el repo | hecho |
 
-## Qué falta
-- Landing pública (P2). Pruebas reales contra Supabase.
-- Fase 2 resto: ejercicios, plantillas de rutina, cola de revisión.
+## Sin verificar (riesgo real)
+- Nadie ha reportado la prueba completa en producción: coach crea ejercicio/rutina/plan → cliente entrena y mide → coach revisa → cliente ve el comentario.
+- Subida de foto desde celular (cámara, compresión) y creación del bucket `progress-photos`.
+- Agenda con dos usuarios reales y con la zona horaria del celular.
+- Las pantallas nuevas (Mi plan, logo corregido, series de un toque) no se han visto renderizadas por el agente.
+- Netlify: que el build completo pase (fuentes de Google).
 
-## Decisiones
-- Multi-coach desde la base: todo dato lleva workspace_id.
-- El rol nunca se toma del navegador; el coach se asigna manualmente por SQL.
-- Solo se crean las tablas que la fase necesita.
+## Siguiente (orden propuesto)
+1. **Probar lo existente** (Cristian) y corregir lo que falle.
+2. **Material educativo** (P1; hay mockups `coach-material` y `portal-material`; YouTube embebido; funciones `education_basic`/`education_full`).
+3. **Anuncios a todos** y **notas privadas del coach** (P1; requisito explícito, aún sin construir).
+4. **Reporte diario con vídeo** (P0; requiere cuenta de Bunny, endpoint de servidor que firma la subida, borrado automático y cambiar `Permissions-Policy` a `microphone=(self)`).
+5. **Nutrición con plantillas** (P1; sin mockup completo: diseñarlo con el estilo de Mi plan/catálogo).
+6. **Onboarding** (tour con personaje, medidas iniciales, agendar la llamada) (P1/P2; sin mockup).
+7. Landing pública, avisos/recordatorios, objetivos (P2).
+8. **Pre-lanzamiento:** revocar token, repo privado, Supabase Pro, confirmación de correo, revisión final de RLS, prueba con 2–3 clientes reales, dominio.
 
-## Siguiente paso
-Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flujo.
-
-## Fase 2A (21-oct-2026)
-- Shell del coach y pantallas Clientes, Ejercicios y Rutinas copiadas del diseño (coach.css viene de los mockups).
-- Migración 0003: exercises, routine_templates, template_items + RLS, y trigger que quita la ficha de cliente a un coach.
-- Pendiente de la Fase 2: asignar rutinas a clientes (clonado por cliente), dashboard con cola de revisión.
-
-## Rework de rendimiento (23-oct-2026)
-- Diagnóstico: sesión y perfil repetidos por pantalla, filtros por servidor, sin cargas visibles. Supabase en us-east-1; Netlify en Ohio (cercanos).
-- Cambio: lectura/escritura desde el navegador con RLS, caché (TanStack Query), precarga, modales del diseño, 0004 save_routine.
-- Pendiente de verificar en producción: tiempos reales tras redeploy.
-
-## Estado al 23-oct-2026 (cierre de sesión 1)
-- Funciona (a validar tras redeploy): login/registro, estado pendiente, bloqueo por plan, panel del coach (clientes, ficha con Resumen y Entrenamiento, ejercicios, rutinas).
-- Migraciones: 0001–0005. Ejecutar en orden en Supabase.
-- Siguiente: portal del cliente "Hoy" (rutina del día + registro de series + esfuerzo) → reporte diario con vídeo → dashboard con cola de revisión (necesita esos datos) → nutrición → progreso → agenda → material.
-- Pendientes de seguridad: revocar token de GitHub, repo privado, Supabase Pro y confirmación de correo antes de lanzar.
-
-## Actualización 24-oct-2026
-- Portal del cliente "Hoy" hecho (migración 0006). Migraciones vigentes: 0001–0006.
-- Siguiente: reporte diario con vídeo (Bunny: firma de subida en servidor + borrado automático) → dashboard con cola de revisión (ya hay datos de series y esfuerzo) → nutrición → progreso → agenda → material → onboarding.
-- Por validar tras redeploy: flujo completo cliente (asignar plan y rutina desde el coach, registrar series, terminar entrenamiento, ver el resultado).
-
-## Actualización 24-oct-2026 (2)
-- Dashboard + ciclo de revisión hechos (migración 0007). Migraciones vigentes: 0001–0007.
-- Siguiente: reporte diario con vídeo (Bunny) → nutrición → progreso → agenda → material → onboarding → confirmación de correo y Supabase Pro antes de lanzar.
-
-## Actualización 24-oct-2026 (3)
-- Progreso hecho (migración 0008): mediciones, gráfica y fotos privadas con consentimiento. Migraciones vigentes: 0001–0008.
-- Siguiente: reporte diario con vídeo (necesita cuenta Bunny) → nutrición con plantillas → agenda (coach publica horarios, cliente reserva) → material educativo (YouTube) → onboarding (tour, medidas iniciales, agendar llamada) → confirmación de correo, Supabase Pro y repo privado antes de lanzar.
-- Verificar en producción: que el bucket `progress-photos` se creó y que subir una foto funciona desde un celular real (cámara).
-- Mi plan hecho (`/inicio/plan`), endurecimiento RLS (0009) y metadatos de día (0010). Migraciones vigentes: 0001–0011 (0011 endurece Progreso). Pruebas RLS en `supabase/tests/`. Siguiente: reporte diario/vídeo, nutrición, progreso, agenda, material, onboarding.
-
-## Actualización 24-oct-2026 (4)
-- Agenda hecha (migración 0012; pruebas rls_agenda). Migraciones vigentes: 0001–0012. Reglas de reserva PROPUESTAS pendientes de confirmar con Jeff (ver CHANGELOG).
-- Siguiente: onboarding del cliente (tour con personaje, medidas iniciales, agendar la llamada) → nutrición con plantillas → material educativo (YouTube) → reporte diario con vídeo (Bunny) → confirmación de correo, Supabase Pro, repo privado.
-
-## Actualización 24-oct-2026 (5)
-- Auditoría 2: sin agujeros RLS nuevos; velocidad (datos del servidor + precarga), flujo de series (un toque), asignar rutina a varios días, borrar fotos, cabeceras de seguridad. Sin migraciones nuevas (siguen 0001–0011).
-- Deuda conocida: textos "Jeff" fijos y `handle_new_user` toma el primer workspace (multi-coach), zona horaria asumida Bogotá, `ex_client_read` expone el catálogo completo al cliente, ítems del menú sin pantalla (Agenda/Objetivos/Material) visibles apagados, sin trampa de foco en modales, sin service worker (PWA sin offline).
+## Bloqueos y dependencias
+- Bunny Stream: Cristian debe crear la cuenta/biblioteca y pasar `BUNNY_API_KEY` y `BUNNY_LIBRARY_ID` como variables de **servidor** (nunca `NEXT_PUBLIC_`).
+- Decisiones de Jeff pendientes: ver `CONTEXT.md` §11.
+- Plazo: 2 meses (hasta el 21-dic-2026), ampliable a 3 (21-ene-2027).

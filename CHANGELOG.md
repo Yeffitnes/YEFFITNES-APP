@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-24 · Documentación para continuidad y herramientas de agente
+- Reescritos `docs/CONTEXT.md`, `docs/ARCHITECTURE.md` (v3) y `docs/PROJECT_STATE.md` como foto actual (el historial vive aquí). Nuevo `docs/AGENT_PLAYBOOK.md` (cómo trabajar, verificar, entregar, integrar parches, errores ya cometidos). `AGENTS.md` y READMEs actualizados.
+- Nuevas herramientas: `supabase/tests/run_local.sh` (todas las migraciones + suites de ataque; devuelve error si algo falla) y `design/port_css.py` (portar CSS de un mockup sin duplicar). Ambas probadas: `TODO OK`; el portador no añade reglas al repetirse.
+- Revertir: borrar esos archivos; no afecta a la app.
+
 ## 2026-10-24 · Revisión del parche "Auditoría 2": ajustes al integrarlo
 - Se integró tal cual el parche de velocidad y flujo, con tres ajustes: (1) el "✓ de un toque" ya no guarda en silencio lo planeado: las casillas de repeticiones y peso **muestran** los valores planeados (editables) y se guarda lo que se ve, porque Jeff revisa datos "reales"; (2) borrar una foto elimina **primero el archivo** y luego la fila (antes podía quedar un archivo huérfano al que el coach aún tendría acceso); (3) asignar una rutina a varios días refresca la pantalla aunque falle uno (puede haber quedado guardado en otros).
 - **Aviso para la fase de vídeo:** `next.config.mjs` fija `Permissions-Policy: microphone=()`; al construir el reporte diario con vídeo hay que cambiarlo a `microphone=(self)` o la grabación saldrá sin sonido.
