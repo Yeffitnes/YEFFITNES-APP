@@ -4,6 +4,7 @@ import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, 
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, UploadError, uploadVideo, videoDuration } from "@/lib/upload-video";
 import { Modal, Skeleton } from "@/components/ui/Modal";
+import { PlanInfoForm } from "./PlanInfoForm";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function TrainingTab({ clientId, clientName }: { clientId: string; clientName: string }) {
@@ -31,6 +32,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
         </div>
         {hist && <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>{past.map((p) => <div key={p.id} className="info-list-row"><span>{p.name}</span><span style={{ color: "var(--text-faint)" }}>Finalizado · {fmt(p.startsOn)}{p.endsOn ? ` – ${fmt(p.endsOn)}` : ""}</span></div>)}</div>}
       </div>
+      {active && <PlanInfoForm key={active.id + (active.level ?? "") + (active.reviewOn ?? "")} plan={active} clientId={clientId} clientName={clientName} />}
       {active && (
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>

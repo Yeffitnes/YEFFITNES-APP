@@ -665,3 +665,11 @@ html{scroll-behavior:smooth;}
   }
 @media (max-width:640px){ .content-grid{grid-template-columns:1fr 1fr;} }
 @media (max-width:520px){ .greeting h1{font-size:21px;} .content-grid{grid-template-columns:1fr;} .card{padding:18px;} }
+
+/* Tiempo real */
+.live-dot{width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 0 rgba(247,37,75,.5); animation:livepulse 2s ease-out infinite;}
+@keyframes livepulse{70%{box-shadow:0 0 0 7px rgba(247,37,75,0);}100%{box-shadow:0 0 0 0 rgba(247,37,75,0);}}
+.activity-icon.strong{background:linear-gradient(135deg,var(--neon),var(--rose));}
+.activity-icon.strong svg{stroke:#fff;}
+.new-dot{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin-left:6px; vertical-align:middle;}
+@media (prefers-reduced-motion:reduce){.live-dot{animation:none;}}

@@ -8,6 +8,9 @@ import { KIND_LABEL } from "@/lib/queries";
 import { DAY3, hhmm } from "@/lib/dates";
 import { todayWeekday } from "@/lib/week";
 import { VideoModal } from "./VideoModal";
+import { MealChecklist } from "./MealChecklist";
+import { Icon } from "@/components/ui/Icon";
+import { icsHref } from "@/lib/ics";
 const ARROW = <svg viewBox="0 0 10 10"><path d="M2 5h6M5 2l3 3-3 3" /></svg>;
 // Tarjetas laterales de "Hoy" (diseño portal-hoy): próxima sesión, objetivo, nutrición de hoy y progreso reciente.
 export function SessionCard({ cid }: { cid: string }) {
@@ -18,7 +21,7 @@ export function SessionCard({ cid }: { cid: string }) {
         : <><div className="card-title" style={{ fontSize: 15 }}>Reservada</div>
           <div className="session-block"><div className="session-date">{DAY3[(new Date(b.startsAt).getDay() + 6) % 7]}<span>{new Date(b.startsAt).getDate()}</span></div>
             <div><div className="session-name">{hhmm(b.startsAt)} — {b.duration} min</div><div className="session-type">{KIND_LABEL[b.kind]}</div></div></div>
-          <div className="session-actions"><Link href="/inicio/agenda" className="mini-btn ghost" style={{ textDecoration: "none" }}>Ver o cambiar</Link></div></>}
+          <div className="session-actions"><a className="mini-btn primary" href={icsHref(b)} download="sesion-yeffitnes.ics" style={{ textDecoration: "none", textAlign: "center" }}><Icon name="bell" size={14} /> Recordarme</a><Link href="/inicio/agenda" className="mini-btn ghost" style={{ textDecoration: "none", textAlign: "center" }}>Ver o cambiar</Link></div></>}
     </div>
   );
 }
@@ -40,7 +43,7 @@ export function NutritionTodayCard({ cid, features, name }: { cid: string; featu
     <div className="card card-nutrition"><div className="card-tag">Tu plan de hoy</div><div className="card-title" style={{ fontSize: 15 }}>Nutrición</div>
       {!data ? <p className="empty-note" style={{ marginTop: 10 }}>Tu coach todavía no publica tu plan de nutrición.</p>
         : !meals.length ? <p className="empty-note" style={{ marginTop: 10 }}>No hay comidas cargadas para hoy.</p>
-        : <div style={{ marginTop: 10 }}>{meals.slice(0, 5).map((m, i) => <div key={i} className="nutri-row"><b>{m.name}</b><span>{m.content.split("\n")[0]}</span></div>)}</div>}
+        : <MealChecklist clientId={cid} meals={meals} compact />}
       {!!data && <Link href="/inicio/plan" className="card-link" style={{ textDecoration: "none" }}>Ver plan completo {ARROW}</Link>}
     </div>
   );

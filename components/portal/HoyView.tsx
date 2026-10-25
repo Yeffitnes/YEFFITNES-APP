@@ -7,6 +7,8 @@ import { localDate, useFinish, useLogs, useLogSet, useMe, useMyAnnouncements, us
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { ReportCard } from "./ReportCard";
+import { TrainingGuide } from "./TrainingGuide";
+import { DayDone } from "./DayDone";
 import { FeaturedVideo, NutritionTodayCard, ObjectiveCard, ProgressCard, SessionCard } from "./HoySide";
 import { CHECK_ICON } from "./icons";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
@@ -59,12 +61,13 @@ export function HoyView() {
         <div className="week-strip">{wk.map((d, i) => { const st = dayState(d, i + 1, today, planWd, logList, plan?.startsOn ?? ""); return <div key={d} className="week-day"><div className={`week-dot ${st.cls}${d === today ? " today" : ""}`} title={`${DAY_LONG[i]} — ${st.title}`}>{st.cls === "done" ? <Icon name="check" size={13} stroke={2.6} /> : d === today ? <span className="week-letter">{LBL[i]}</span> : null}</div>{d !== today && <div className="week-day-label">{LBL[i]}</div>}</div>; })}</div>
         </div>
       </div>
+      <DayDone cid={cid} features={me.data?.features ?? []} trainingToday={!!day} trainingDone={!!logToday?.completed} />
       <FeaturedVideo />
       <div className="dash-grid">
         {me.data && !me.data.features.includes("training") ? <FeatureGate features={me.data.features} feature="training" name={name}><span /></FeatureGate>
           : !plan ? <div className="card card-routine"><div className="card-tag">Tu rutina</div><p className="empty-note">Todavía no tienes una rutina asignada. Cuando tu coach publique tu plan, aparecerá aquí.</p></div>
           : !day ? <div className="card card-routine"><div className="card-tag">Hoy</div><div className="card-title">Día de descanso</div><p className="empty-note">No tienes rutina hoy. El descanso también es parte del entrenamiento.</p></div>
-          : <Routine key={day.id} cid={cid} day={day} title={day.name} items={day.items} log={logToday} today={today} />}
+          : <Routine key={day.id} cid={cid} day={day} title={day.name} items={day.items} log={logToday} today={today} guide={logList.filter((l) => l.completed).length < 2} />}
         <SessionCard cid={cid} />
         <ObjectiveCard />
         <NutritionTodayCard cid={cid} features={me.data?.features ?? []} name={name} />
@@ -73,7 +76,7 @@ export function HoyView() {
     </>
   );
 }
-function Routine({ cid, day, title, items, log, today }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; today: string }) {
+function Routine({ cid, day, title, items, log, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; today: string; guide: boolean }) {
   const firstTodo = items.find((i) => (log?.sets.filter((x) => x.itemId === i.id).length ?? 0) < i.sets);
   const [open, setOpen] = useState<string | null>(log?.completed ? null : firstTodo?.id ?? null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? "");
@@ -93,6 +96,7 @@ function Routine({ cid, day, title, items, log, today }: { cid: string; day: Pla
       </div>}
       {teaser === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setTeaser(null)} />}
       {teaser === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setTeaser(null)} />}
+      {guide && !closed && <TrainingGuide />}
       <div className="routine-progress-bar"><div className="routine-progress-fill" style={{ width: `${items.length ? (doneCount / items.length) * 100 : 0}%` }} /></div>
       <div className="routine-progress-count">{doneCount} / {items.length} completados</div>
       <div className="exercise-list">{items.map((i, idx) => (
@@ -100,7 +104,7 @@ function Routine({ cid, day, title, items, log, today }: { cid: string; day: Pla
           <div className={`ex-row${saved(i.id).length >= i.sets ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(open === i.id ? null : i.id); } }}>
             <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><div className="ex-name">{i.name}</div><div className="ex-meta">{i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
-          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}</div>}
+          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}</div>}
         </div>))}</div>
       {log?.coachComment && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}</div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
@@ -119,7 +123,7 @@ function Routine({ cid, day, title, items, log, today }: { cid: string; day: Pla
     </div>
   );
 }
-function SetRow({ cid, item, n, today, saved, locked, onLast }: { cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onLast: () => void }) {
+function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onLast: () => void }) {
   const target = parseInt(item.reps, 10);
   // Las casillas ya traen lo planeado (editable y visible): "✓" guarda exactamente lo que se ve, nunca algo oculto.
   const log = useLogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
@@ -133,7 +137,7 @@ function SetRow({ cid, item, n, today, saved, locked, onLast }: { cid: string; i
       <label>SERIE {n}</label>
       <input className="set-input" inputMode="numeric" type="number" min={0} value={reps} onChange={(e) => setReps(e.target.value)} placeholder={Number.isNaN(target) ? "reps" : `${target} reps`} aria-label={`Repeticiones serie ${n}`} disabled={locked} onKeyDown={onKey} />
       <input className="set-input" inputMode="decimal" type="number" min={0} step={0.5} value={w} onChange={(e) => setW(e.target.value)} placeholder={item.weight ? `${item.weight} kg` : "kg"} aria-label={`Peso serie ${n} en kilos`} disabled={locked} onKeyDown={onKey} />
-      <button className={`set-save${saved ? " on" : ""}`} disabled={!ok || log.isPending || locked} aria-label={`Guardar serie ${n}`} onClick={save}><Icon name="check" size={15} stroke={2.2} /></button>
+      <button className={`set-save${saved ? " on" : ""}${hint && !saved ? " hint" : ""}`} disabled={!ok || log.isPending || locked} aria-label={`Guardar serie ${n}`} onClick={save}><Icon name="check" size={15} stroke={2.2} /></button>
     </div>
   );
 }

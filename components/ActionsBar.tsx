@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import "@/app/messages.css";
-import { localDate, useClients, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
+import { localDate, useUnseenActivity, useClients, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
 import { useProfile } from "@/components/Providers";
@@ -20,7 +20,7 @@ function useItems(side: "client" | "coach"): Item[] {
   const unread = useUnread(), today = localDate();
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
   const rep = useTodayReport(cid, today, wantsReport), bookings = useMyBookings(cid);
-  const clients = useClients(), reports = useCoachReports();
+  const clients = useClients(), reports = useCoachReports(), activity = useUnseenActivity();
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
@@ -30,6 +30,8 @@ function useItems(side: "client" | "coach"): Item[] {
   } else {
     const unseen = (reports.data ?? []).filter((r) => !r.seen).length, pending = (clients.data ?? []).filter((c) => c.status === "pending").length;
     if (unseen) items.push({ key: "rep", text: `${unseen} reporte${unseen === 1 ? "" : "s"} por revisar`, href: "/coach/reportes" });
+    const act = activity.data ?? 0;
+    if (act) items.push({ key: "act", text: `${act} avance${act === 1 ? "" : "s"} de clientes (entrenamiento o nutrición)`, href: "/coach" });
     if (pending) items.push({ key: "pend", text: `${pending} cliente${pending === 1 ? "" : "s"} esperando plan`, href: "/coach/clientes" });
   }
   return items;

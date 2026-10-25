@@ -7,7 +7,30 @@ import {} from "@/lib/features";
 import { DAY_LONG, DAY_SHORT, categoryLabel, todayWeekday, weekDates } from "@/lib/week";
 import { gradient, initials } from "@/lib/format";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
+import { BunnyModal } from "@/components/ui/BunnyModal";
+import { MealChecklist } from "./MealChecklist";
+import { Icon } from "@/components/ui/Icon";
 
+const LEVELS = [["beginner", "Principiante"], ["intermediate", "Intermedio"], ["advanced", "Avanzado"]] as const;
+function relReview(d: string) {
+  const days = Math.round((new Date(`${d}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
+  if (days === 0) return "Hoy";
+  if (days === 1) return "Mañana";
+  if (days < 0) return `Hace ${-days} día${days === -1 ? "" : "s"}`;
+  if (days < 14) return `En ${days} días`;
+  return `En ${Math.round(days / 7)} semanas`;
+}
+// Nivel que fijó tu coach y por qué: la barra muestra dónde estás y hacia dónde puedes avanzar.
+function LevelBlock({ level, reason }: { level: (typeof LEVELS)[number][0]; reason: string | null }) {
+  const idx = LEVELS.findIndex(([k]) => k === level);
+  return (
+    <div className="level-block">
+      <div className="level-head"><span className="level-tag">Tu nivel</span><b>{LEVELS[idx][1]}</b></div>
+      <div className="level-steps" role="img" aria-label={`Nivel ${LEVELS[idx][1]}, paso ${idx + 1} de 3`}>{LEVELS.map(([k, l], i) => <span key={k} className={`level-step${i <= idx ? " on" : ""}${i === idx ? " now" : ""}`}><i />{l}</span>)}</div>
+      {reason && <p className="level-reason"><b>Por qué:</b> {reason}</p>}
+    </div>
+  );
+}
 const REST_ICON = "M4 10a6 6 0 0 0 9 5.2A7 7 0 0 1 6.8 4 6 6 0 0 0 4 10z";
 export function MiPlanView() {
   const { profileId, name } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "";
@@ -53,7 +76,10 @@ export function MiPlanView() {
                 <div style={{ marginTop: 14 }}>
                   <div className="plan-meta-row"><span>Inicio</span><span>{new Date(`${plan.startsOn}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}</span></div>
                   <div className="plan-meta-row"><span>Entrenamientos por semana</span><span>{trainDays}</span></div>
+                  {plan.reviewOn && <div className="plan-meta-row"><span>Próxima revisión</span><span>{relReview(plan.reviewOn)}</span></div>}
                 </div>
+                {plan.level && <LevelBlock level={plan.level} reason={plan.levelReason} />}
+                {plan.coachNote && <div className="plan-note">“{plan.coachNote}”</div>}
               </div>
               <WeekCard byDay={byDay} done={new Set((logs.data ?? []).filter((l) => l.completed).map((l) => l.date))} wd={wd} />
             </div>
@@ -65,6 +91,7 @@ export function MiPlanView() {
   );
 }
 function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: number; isToday: boolean; onVideo: (i: PlanItem) => void }) {
+  const [dv, setDv] = useState<"personal" | "yt" | null>(null);
   if (!day) return (
     <div className="card card-day rest-card">
       <div className="rest-icon"><svg viewBox="0 0 20 20"><path d={REST_ICON} /></svg></div>
@@ -78,6 +105,13 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       <div className="card-tag"><span style={{ width: 7, height: 7, borderRadius: "50%", background: isToday ? "var(--accent)" : "#D7DAE3" }} />{DAY_LONG[weekday - 1]}{isToday ? " · Hoy" : ""}</div>
       <div className="card-title">{day.name}</div>
       <div className="card-meta">{meta}</div>
+      {day.hasPersonalVideo || day.videoRef
+        ? <button type="button" className="routine-video" style={{ border: 0, width: "100%", padding: 0, font: "inherit" }} aria-label="Ver vídeo de la rutina" onClick={() => setDv(day.hasPersonalVideo ? "personal" : "yt")}>
+            <div className={`routine-video-tag${day.hasPersonalVideo ? " personal" : ""}`}>{day.hasPersonalVideo ? <><Icon name="check" size={10} stroke={2.4} /> Grabado para ti</> : "Vídeo de rutina"}</div>
+            <div className="routine-video-play"><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></div></button>
+        : <div className="routine-video-empty"><div className="routine-video-empty-icon"><Icon name="video" size={15} /></div><div className="routine-video-empty-text"><b>Vídeo aún no disponible.</b><br />Tu coach puede subirlo antes de tu sesión.</div></div>}
+      {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setDv(null)} />}
+      {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}
       {!day.items.length ? <p className="empty-note" style={{ marginTop: 16 }}>Esta rutina todavía no tiene ejercicios.</p> : (
         <div className="exercise-list">{day.items.map((i, k) => (
           <div key={i.id} className="ex-row" style={{ cursor: "default" }}>
@@ -118,8 +152,8 @@ function NutritionPanel({ clientId }: { clientId: string }) {
         <div className="card-meta">{todays.length} comida{todays.length === 1 ? "" : "s"} el {DAY_LONG[day - 1].toLowerCase()} · Actualizado {new Date(data.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div>
         <div className="day-selector" role="tablist" aria-label="Día" style={{ marginTop: 14 }}>{DAY_SHORT.map((l, i) => (
           <button key={l} role="tab" aria-selected={day === i + 1} className={`day-pill${day === i + 1 ? " active" : ""}`} onClick={() => setDay(i + 1)} style={{ font: "inherit" }}><div className="day-label">{l}</div><div className="day-dot" /></button>))}</div>
-        <div style={{ marginTop: 8 }}>{todays.length ? todays.map((m, i) => (
-          <div key={i} className="meal-block"><div className="meal-label"><span className="meal-dot" />{m.name}</div><div className="meal-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>)) : <p className="empty-note">No hay comidas cargadas para este día.</p>}</div>
+        <div style={{ marginTop: 8 }}>{todays.length && day === todayWeekday() ? <MealChecklist clientId={clientId} meals={todays} /> : todays.length ? <>{<p className="guide-hint">Solo puedes marcar las comidas del día de hoy.</p>}{todays.map((m, i) => (
+          <div key={i} className="meal-block"><div className="meal-label"><span className="meal-dot" />{m.name}</div><div className="meal-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>))}</> : <p className="empty-note">No hay comidas cargadas para este día.</p>}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         {!!macros.length && <div className="card"><div className="card-tag">Tu objetivo diario</div><div style={{ marginTop: 6 }}>{macros.map(([k, v]) => <div key={k} className="nutri-row"><b>{k}</b><span>{v}</span></div>)}</div></div>}

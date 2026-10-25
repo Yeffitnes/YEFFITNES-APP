@@ -8,6 +8,7 @@ import { attention } from "@/lib/attention";
 import { ago, gradient, initials } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
 import { AnnouncementsCard } from "./AnnouncementsCard";
+import { ActivityCard } from "./ActivityCard";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function DashboardView() {
   const { name } = useProfile(), clients = useClients(), logs = useRecentLogs(), plans = useActivePlanClients(), reports = useCoachReports();
@@ -46,6 +47,7 @@ export function DashboardView() {
           {unseenReports > 0 && <Link href="/coach/reportes" className="card" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar →</div></Link>}
           <MessagesCard />
           <AgendaTodayCard />
+          <ActivityCard />
           <AnnouncementsCard />
           <div className="card">
             <div className="card-tag">Reciente</div><div className="card-title" style={{ fontSize: 15 }}>Actividad</div>
