@@ -28,7 +28,7 @@ Fundación, panel del coach y portal del cliente funcionando en el código, con 
 5. **Nutrición con plantillas** (P1; sin mockup completo: diseñarlo con el estilo de Mi plan/catálogo).
 6. **Onboarding** (tour con personaje, medidas iniciales, agendar la llamada) (P1/P2; sin mockup).
 7. Landing pública, avisos/recordatorios, objetivos (P2).
-8. **Pre-lanzamiento:** revocar token, repo privado, Supabase Pro, confirmación de correo, revisión final de RLS, prueba con 2–3 clientes reales, dominio.
+8. **Pre-lanzamiento:** revocar token, quitar la insignia "Powered by Netlify" (Netlify → Project configuration → General → Powered by Netlify badge → apagar; no requiere redeploy), repo privado, Supabase Pro, confirmación de correo, revisión final de RLS, prueba con 2–3 clientes reales, dominio.
 
 ## Bloqueos y dependencias
 - Bunny Stream: Cristian debe crear la cuenta/biblioteca y pasar `BUNNY_API_KEY` y `BUNNY_LIBRARY_ID` como variables de **servidor** (nunca `NEXT_PUBLIC_`).
