@@ -57,3 +57,10 @@ Para cualquier agente (Claude u otro) o persona que continúe. Léelo junto con 
 | Tres archivos truncados al integrar un parche | Regex `re.S` codiciosa | Resolver línea por línea y revisar `--stat` |
 | Código desplegado antes que su SQL | Despliegue automático | Avisar el orden: SQL primero |
 | Mockup copiado solo en estilo | Se ignoró el flujo (filtros instantáneos, modales, pestañas) | Copiar también la interacción |
+
+## Créditos de Netlify (plan gratuito: 300/mes, tope duro)
+- Cada push a `main` = 1 despliegue a producción = **15 créditos** (≈ 20 al mes). Si se acaban, **todos los sitios se pausan** ("Site not available") hasta el siguiente ciclo y el plan gratuito no permite comprar más.
+- Regla: **un solo push a `main` por función terminada y probada** (tsc + lint + run_local.sh). No subir correcciones sueltas; agrúpalas.
+- Commits que no cambian la app (solo `docs/`, `CHANGELOG`, tests): añade `[skip ci]` al mensaje para que Netlify no construya.
+- Antes de empujar, pregunta a Cristian cuántos créditos le quedan si ya se acerca al límite (Netlify → Team → Billing).
+- Antes de tener clientes reales hay que decidir: plan de pago de Netlify o mover el hosting (p. ej. Cloudflare Pages, que permite uso comercial). Ver docs/CONTEXT.md, decisiones pendientes.

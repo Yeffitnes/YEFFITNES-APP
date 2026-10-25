@@ -1,6 +1,9 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Regla de despliegues por créditos de Netlify
+- Netlify avisó "más del 75 % de créditos". Cada despliegue a producción cuesta 15 de 300 créditos/mes (tope duro: al agotarse el sitio se pausa). Se agregó la sección "Créditos de Netlify" al playbook: un push por función, `[skip ci]` en commits de solo documentación. Revertir: borrar esa sección.
+
 ## 2026-10-25 · Anuncios a todos y notas privadas (migración 0014)
 - **Anuncios:** tarjeta "Anuncios" en el Dashboard del coach (nuevo, fijar arriba, fecha de vencimiento opcional, quitar). Los clientes activos con `announcements` en su plan los ven al inicio de "Hoy" (máx. 5, fijados primero). **No había mockup:** se usó el estilo de las tarjetas existentes; confirmar con Jeff.
 - **Notas privadas:** pestaña de la ficha del cliente (copiada de `coach-clientes`): lista, guardar (Ctrl/⌘+Enter), borrar. El cliente no tiene ningún permiso sobre esa tabla.
