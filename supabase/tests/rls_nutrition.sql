@@ -6,7 +6,7 @@ create function pg_temp.fails(q text) returns boolean language plpgsql as $$ beg
 do $$
 declare a uuid:='00000000-0000-0000-0000-00000000000a'; b uuid:='00000000-0000-0000-0000-00000000000b'; c uuid:='00000000-0000-0000-0000-00000000000c';
   jeff uuid:='00000000-0000-0000-0000-0000000000f0'; o uuid:='00000000-0000-0000-0000-0000000000f1';
-  ws uuid; ca uuid; cb uuid; n int; bad text:=''; tpl uuid; pa uuid; pb uuid; meals jsonb:='[{"name":"Desayuno","content":"2 huevos\n1 arepa"},{"name":"Almuerzo","content":"Pollo y arroz"}]';
+  ws uuid; ca uuid; cb uuid; n int; bad text:=''; tpl uuid; pa uuid; pb uuid; meals jsonb:='[{"name":"Desayuno","content":"2 huevos\n1 arepa","weekday":null},{"name":"Almuerzo","content":"Pollo y arroz","weekday":1}]';
 begin
   select id into ws from public.workspaces where slug='yeffitnes';
   select id into ca from public.clients where profile_id=a; select id into cb from public.clients where profile_id=b;
@@ -22,6 +22,8 @@ begin
   select count(*) into n from public.nutrition_meals where plan_id=pa; assert n=1;
   pa := public.assign_nutrition(tpl, ca);
   select count(*) into n from public.nutrition_plans where client_id=ca and active; assert n=1, 'solo un plan activo por cliente';
+  select count(*) into n from public.nutrition_meals where plan_id=pa and weekday=1; assert n=1, 'el día de la comida debe clonarse';
+  if not pg_temp.fails(format('select public.save_nutrition(null,null,%L,1800,1,1,1,null,%L::jsonb)', 'dia9', '[{"name":"x","content":"y","weekday":9}]')) then bad:=bad||' [aceptó un día 9]'; end if;
   perform pg_temp.as_user(a);
   select count(*) into n from public.nutrition_plans; assert n=1, 'A solo ve su plan activo (sin plantillas ni planes antiguos), vio '||n;
   select count(*) into n from public.nutrition_meals; assert n=2;

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useClients, usePlans, useSetPlan } from "@/lib/queries";
+import { useClients, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
 import { initials } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
@@ -44,9 +44,22 @@ export function ClientFicha({ id }: { id: string }) {
               <button className="primary-btn" disabled={setPlan.isPending || chosen === (c.planId ?? "")} onClick={() => setPlan.mutate({ id: c.id, planId: chosen || null }, { onSuccess: () => setSel(null) })}>Guardar</button>
             </div>
           </div>
+          <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} />
           <RecentWorkouts clientId={c.id} />
         </>
       ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
+    </div>
+  );
+}
+
+function ObjectiveCard({ clientId, value, first }: { clientId: string; value: string; first: string }) {
+  const set = useSetObjective(clientId), [t, setT] = useState<string | null>(null), cur = t ?? value;
+  return (
+    <div className="card" style={{ maxWidth: 560, margin: "18px 0" }}>
+      <div className="card-tag">Objetivo actual</div>
+      <p style={{ fontSize: 13, color: "var(--text-dim)", margin: "10px 0" }}>{first} lo ve en su pantalla “Hoy”.</p>
+      <textarea aria-label="Objetivo actual" maxLength={500} value={cur} onChange={(e) => setT(e.target.value)} placeholder="Ej. Bajar grasa corporal manteniendo la fuerza en tren superior." style={{ width: "100%", minHeight: 70, border: "1px solid var(--line)", borderRadius: 12, padding: 12, fontSize: 13.5, resize: "vertical" }} />
+      <div style={{ marginTop: 10 }}><button className="primary-btn" disabled={set.isPending || cur.trim() === value.trim()} onClick={() => set.mutate(cur, { onSuccess: () => setT(null) })}>{set.isPending ? "Guardando…" : "Guardar objetivo"}</button></div>
     </div>
   );
 }

@@ -4,12 +4,12 @@ import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 
 export type Plan = { id: string; name: string; features: string[] };
-export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string };
+export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; items: RoutineItem[] };
 
-type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; plans: unknown; profiles: unknown };
+type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; plans: unknown; profiles: unknown };
 type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
@@ -17,9 +17,9 @@ export const fetchPlans = async (): Promise<Plan[]> => {
   if (error) throw error; return data as Plan[];
 };
 export const fetchClients = async (): Promise<ClientRow[]> => {
-  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
+  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
   if (error) throw error;
-  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at }));
+  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
   const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,template_items(count)").eq("active", true).order("name");
@@ -149,12 +149,12 @@ export function useSetWeight(clientId: string) {
 }
 
 // ---- Portal del cliente ----
-export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean };
+export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean; objective: string | null; objectiveAt: string | null };
 export const fetchMe = async (profileId: string): Promise<Me | null> => {
-  const { data, error } = await db().from("clients").select("id,status,onboarded_at,plans(name,features)").eq("profile_id", profileId).maybeSingle();
+  const { data, error } = await db().from("clients").select("id,status,onboarded_at,objective,objective_at,plans(name,features)").eq("profile_id", profileId).maybeSingle();
   if (error) throw error; if (!data) return null;
   const p = (data as unknown as { plans: { name: string; features: string[] } | null }).plans;
-  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at };
+  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at, objective: (data as unknown as { objective: string | null }).objective, objectiveAt: (data as unknown as { objective_at: string | null }).objective_at };
 };
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
@@ -483,12 +483,12 @@ export async function fetchReportVideoUrl(id: string): Promise<string> {
 }
 
 // ---- Nutrición (plantillas del coach que se clonan por cliente) ----
-export type NutMeal = { name: string; content: string };
+export type NutMeal = { name: string; content: string; weekday: number | null };   // weekday: 1=lunes … 7=domingo; null = todos los días
 export type NutPlan = { id: string; clientId: string | null; name: string; kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; notes: string | null; createdAt: string; meals: NutMeal[] };
-type NutRaw = { id: string; client_id: string | null; name: string; kcal: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null; notes: string | null; created_at: string; nutrition_meals: { position: number; name: string; content: string }[] };
-const NUT_SELECT = "id,client_id,name,kcal,protein_g,carbs_g,fat_g,notes,created_at,nutrition_meals(position,name,content)";
+type NutRaw = { id: string; client_id: string | null; name: string; kcal: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null; notes: string | null; created_at: string; nutrition_meals: { position: number; name: string; content: string; weekday: number | null }[] };
+const NUT_SELECT = "id,client_id,name,kcal,protein_g,carbs_g,fat_g,notes,created_at,nutrition_meals(position,name,content,weekday)";
 const toNut = (p: NutRaw): NutPlan => ({ id: p.id, clientId: p.client_id, name: p.name, kcal: p.kcal, protein: p.protein_g, carbs: p.carbs_g, fat: p.fat_g, notes: p.notes, createdAt: p.created_at,
-  meals: [...(p.nutrition_meals ?? [])].sort((a, b) => a.position - b.position).map((m) => ({ name: m.name, content: m.content })) });
+  meals: [...(p.nutrition_meals ?? [])].sort((a, b) => a.position - b.position).map((m) => ({ name: m.name, content: m.content, weekday: m.weekday })) });
 export const useNutritionTemplates = () => useQuery({ queryKey: ["nutrition-templates"], staleTime: 60_000, queryFn: async (): Promise<NutPlan[]> => {
   const { data, error } = await db().from("nutrition_plans").select(NUT_SELECT).is("client_id", null).order("created_at", { ascending: false }); if (error) throw error; return (data as unknown as NutRaw[]).map(toNut);
 } });
@@ -503,7 +503,7 @@ export function useSaveNutrition() {
   const toast = useToast(), inv = useNutInvalidate();
   return useMutation({
     mutationFn: async (v: NutInput) => {
-      const { error } = await db().rpc("save_nutrition", { p_id: v.id ?? null, p_client: v.clientId ?? null, p_name: v.name.trim(), p_kcal: num(v.kcal), p_protein: num(v.protein), p_carbs: num(v.carbs), p_fat: num(v.fat), p_notes: v.notes, p_meals: v.meals.filter((m) => m.name.trim() || m.content.trim()) });
+      const { error } = await db().rpc("save_nutrition", { p_id: v.id ?? null, p_client: v.clientId ?? null, p_name: v.name.trim(), p_kcal: num(v.kcal), p_protein: num(v.protein), p_carbs: num(v.carbs), p_fat: num(v.fat), p_notes: v.notes, p_meals: v.meals.filter((m) => m.name.trim() || m.content.trim()).map((m) => ({ name: m.name, content: m.content, weekday: m.weekday })) });
       if (error) throw error;
     },
     onSuccess: () => toast("Plan de nutrición guardado"), onError: () => toast("No pudimos guardar el plan. Revisa los valores (calorías 500–10000) e inténtalo de nuevo.", true), onSettled: inv });
@@ -523,4 +523,10 @@ export function useCompleteOnboarding(profileId: string) {
   const qc = useQueryClient();
   return useMutation({ mutationFn: async () => { const { error } = await db().rpc("complete_onboarding"); if (error) throw error; },
     onMutate: () => { qc.setQueryData<Me | null>(["me", profileId], (m) => (m ? { ...m, onboarded: true } : m)); } });   // se cierra al instante; si falla, volverá a mostrarse la próxima vez
+}
+
+export function useSetObjective(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({ mutationFn: async (text: string) => { const t = text.trim(); const { error } = await db().from("clients").update({ objective: t || null, objective_at: t ? new Date().toISOString() : null }).eq("id", clientId); if (error) throw error; },
+    onSuccess: () => toast("Objetivo guardado"), onError: () => toast("No pudimos guardar el objetivo (máx. 500 caracteres).", true), onSettled: () => qc.invalidateQueries({ queryKey: KEYS.clients }) });
 }

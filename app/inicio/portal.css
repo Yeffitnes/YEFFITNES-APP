@@ -860,3 +860,7 @@ html, body{overflow-x:hidden; max-width:100%;}
 .report-btn:hover{transform:translateY(-1px);}
 .report-btn:disabled{opacity:.55; cursor:default; transform:none;}
 .report-btn.ghost{background:var(--paper); color:var(--text); border:1px solid var(--line);}
+
+/* La tarjeta del vídeo de la semana nace con opacity:0 en el diseño (animación por scroll que la app no usa): se deja visible. */
+.featured-video-card{opacity:1; transform:none;}
+.prog-chart{width:100%; height:60px; margin-top:8px;}

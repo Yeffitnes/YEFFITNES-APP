@@ -4,6 +4,7 @@ import { useAssignNutrition, useClientNutrition, useDeleteNutrition, useNutritio
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { NutritionForm } from "./NutritionForm";
 import { macroLine } from "./NutritionView";
+import { DAY_LONG } from "@/lib/week";
 export function NutritionTab({ clientId, clientName, hasFeature }: { clientId: string; clientName: string; hasFeature: boolean }) {
   const cur = useClientNutrition(clientId), tpls = useNutritionTemplates(), assign = useAssignNutrition(), del = useDeleteNutrition();
   const [pick, setPick] = useState(""), [edit, setEdit] = useState<"plan" | "new" | null>(null), [rm, setRm] = useState(false), first = clientName.split(" ")[0] || "el cliente";
@@ -18,7 +19,9 @@ export function NutritionTab({ clientId, clientName, hasFeature }: { clientId: s
         {p && <>
           <div className="card-head" style={{ marginTop: 6 }}><div><div className="card-title" style={{ fontSize: 15 }}>{p.name}</div>{macroLine(p) && <div className="card-meta">{macroLine(p)}</div>}</div>
             <div style={{ display: "flex", gap: 8 }}><button className="ghost-btn" onClick={() => setEdit("plan")}>Editar</button><button className="ghost-btn" onClick={() => setRm(true)}>Quitar</button></div></div>
-          {p.meals.map((m, i) => <div key={i} className="note-item"><div className="note-date">{m.name}</div><div className="note-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>)}
+          {[null, 1, 2, 3, 4, 5, 6, 7].map((wd) => { const ms = p.meals.filter((m) => m.weekday === wd); return ms.length ? (
+            <div key={wd ?? 0} style={{ marginTop: 12 }}><div className="card-tag">{wd === null ? "Todos los días" : DAY_LONG[wd - 1]}</div>
+              {ms.map((m, i) => <div key={i} className="note-item"><div className="note-date">{m.name}</div><div className="note-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>)}</div>) : null; })}
           {p.notes && <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 10, whiteSpace: "pre-wrap" }}>{p.notes}</p>}
         </>}
       </div>

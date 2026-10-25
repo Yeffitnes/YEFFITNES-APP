@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useDeleteNutrition, useNutritionTemplates, type NutPlan } from "@/lib/queries";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { CatalogTop } from "./CatalogTop";
+import { DAY_SHORT } from "@/lib/week";
 import { NutritionForm } from "./NutritionForm";
 export const macroLine = (p: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null }) => [p.kcal && `${p.kcal} kcal`, p.protein != null && `P ${p.protein} g`, p.carbs != null && `C ${p.carbs} g`, p.fat != null && `G ${p.fat} g`].filter(Boolean).join(" · ");
 export function NutritionView() {
@@ -17,7 +18,7 @@ export function NutritionView() {
         <div key={t.id} className="card">
           <div className="card-head"><div><div className="card-tag">{t.meals.length} comida{t.meals.length === 1 ? "" : "s"}</div><div className="card-title" style={{ fontSize: 15 }}>{t.name}</div>{macroLine(t) && <div className="card-meta">{macroLine(t)}</div>}</div>
             <div style={{ display: "flex", gap: 8 }}><button className="ghost-btn" onClick={() => setEdit(t)}>Editar</button><button className="ghost-btn" onClick={() => setRm(t)}>Eliminar</button></div></div>
-          <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 8 }}>{t.meals.map((m) => m.name).join(" · ")}</p>
+          <p style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 8 }}>{Array.from(new Set(t.meals.map((m) => m.weekday))).sort((a, b) => (a ?? 0) - (b ?? 0)).map((wd) => (wd === null ? "Todos los días" : DAY_SHORT[wd - 1])).join(" · ")} — {t.meals.length} comida{t.meals.length === 1 ? "" : "s"}</p>
         </div>))}</div>
       {edit && <NutritionForm plan={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
       {rm && <Modal title="Eliminar plantilla" sub={`“${rm.name}” se elimina. Los planes ya asignados a clientes no cambian.`} onClose={() => setRm(null)}>

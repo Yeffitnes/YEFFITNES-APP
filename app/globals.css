@@ -4,3 +4,17 @@
 body { @apply bg-surface text-[#12141B] antialiased; }
 .btn-primary { @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-neon to-rose px-6 py-3 font-bold text-white disabled:opacity-60; }
 .input { @apply w-full rounded-xl border border-line bg-white px-4 py-3 text-sm outline-none focus:border-neon; }
+
+/* ---- Móvil: pantalla estática y que se amolde a cualquier tamaño ---- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+html, body { max-width: 100%; overflow-x: hidden; }
+body { touch-action: manipulation; overscroll-behavior-x: none; }
+img, svg, video, iframe { max-width: 100%; }
+/* En pantallas táctiles, iOS hace zoom al enfocar un campo con letra menor a 16 px: se fuerza 16 px. */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea { font-size: 16px !important; }
+}
+/* Ventanas: nunca más altas que la pantalla (con barra del navegador móvil) y con scroll interno. */
+.modal-backdrop { padding: 12px; overflow-y: auto; }
+.modal-box { max-height: 92vh; max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 480px) { .modal-box { padding: 20px !important; } }

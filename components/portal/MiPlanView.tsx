@@ -105,20 +105,23 @@ function WeekCard({ byDay, done, wd }: { byDay: Map<number, PlanDay>; done: Set<
 }
 
 function NutritionPanel({ clientId }: { clientId: string }) {
-  const { data, isPending, isError, refetch } = useClientNutrition(clientId);
+  const { data, isPending, isError, refetch } = useClientNutrition(clientId), [day, setDay] = useState(todayWeekday());
   if (isPending) return <div className="sk" style={{ height: 220 }} />;
   if (isError) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu plan de nutrición.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => refetch()}>Reintentar</button></div>;
   if (!data) return <div className="card"><div className="card-tag">Plan nutricional</div><p className="empty-note">Tu coach todavía no publica tu plan de nutrición. Cuando lo haga, aparecerá aquí.</p></div>;
   const macros = [data.kcal != null && ["Calorías", `${data.kcal} kcal`], data.protein != null && ["Proteína", `${data.protein} g`], data.carbs != null && ["Carbohidratos", `${data.carbs} g`], data.fat != null && ["Grasas", `${data.fat} g`]].filter(Boolean) as string[][];
+  const todays = [...data.meals.filter((m) => m.weekday === null), ...data.meals.filter((m) => m.weekday === day)];
   const recs = (data.notes ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
   return (
     <div className="plan-grid">
       <div className="card card-day">
         <div className="card-tag"><span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)" }} />Plan nutricional</div>
         <div className="card-title">{data.name}</div>
-        <div className="card-meta">{data.meals.length} comida{data.meals.length === 1 ? "" : "s"} al día · Actualizado {new Date(data.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div>
-        <div style={{ marginTop: 16 }}>{data.meals.map((m, i) => (
-          <div key={i} className="meal-block"><div className="meal-label"><span className="meal-dot" />{m.name}</div><div className="meal-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>))}</div>
+        <div className="card-meta">{todays.length} comida{todays.length === 1 ? "" : "s"} el {DAY_LONG[day - 1].toLowerCase()} · Actualizado {new Date(data.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div>
+        <div className="day-selector" role="tablist" aria-label="Día" style={{ marginTop: 14 }}>{DAY_SHORT.map((l, i) => (
+          <button key={l} role="tab" aria-selected={day === i + 1} className={`day-pill${day === i + 1 ? " active" : ""}`} onClick={() => setDay(i + 1)} style={{ font: "inherit" }}><div className="day-label">{l}</div><div className="day-dot" /></button>))}</div>
+        <div style={{ marginTop: 8 }}>{todays.length ? todays.map((m, i) => (
+          <div key={i} className="meal-block"><div className="meal-label"><span className="meal-dot" />{m.name}</div><div className="meal-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>)) : <p className="empty-note">No hay comidas cargadas para este día.</p>}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         {!!macros.length && <div className="card"><div className="card-tag">Tu objetivo diario</div><div style={{ marginTop: 6 }}>{macros.map(([k, v]) => <div key={k} className="nutri-row"><b>{k}</b><span>{v}</span></div>)}</div></div>}

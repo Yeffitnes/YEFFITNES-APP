@@ -4,6 +4,7 @@ import { localDate, useFinish, useLogs, useLogSet, useMe, useMyAnnouncements, us
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { ReportCard } from "./ReportCard";
+import { FeaturedVideo, NutritionTodayCard, ObjectiveCard, ProgressCard, SessionCard } from "./HoySide";
 import { CHECK_ICON } from "./icons";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
 import { weekDates } from "@/lib/week";
@@ -42,11 +43,16 @@ export function HoyView() {
         <div className="streak-copy"><div className="streak-num"><span>{n}</span> {n === 1 ? "día" : "días"}</div><div className="streak-label">{n ? "seguidos cumpliendo tu rutina." : "Completa tu primera rutina para empezar tu racha."}</div></div>
         <div className="week-strip">{wk.map((d, i) => <div key={d} className="week-day"><div className={`week-dot${logList.some((l) => l.date === d && l.completed) ? " done" : ""}${d === today ? " today" : ""}`} /><div className="week-day-label">{LBL[i]}</div></div>)}</div>
       </div>
+      <FeaturedVideo />
       <div className="dash-grid">
         {me.data && !me.data.features.includes("training") ? <FeatureGate features={me.data.features} feature="training" name={name}><span /></FeatureGate>
           : !plan ? <div className="card card-routine"><div className="card-tag">Tu rutina</div><p className="empty-note">Todavía no tienes una rutina asignada. Cuando tu coach publique tu plan, aparecerá aquí.</p></div>
           : !day ? <div className="card card-routine"><div className="card-tag">Hoy</div><div className="card-title">Día de descanso</div><p className="empty-note">No tienes rutina hoy. El descanso también es parte del entrenamiento.</p></div>
           : <Routine key={day.id} cid={cid} title={day.name} items={day.items} log={logToday} today={today} />}
+        <SessionCard cid={cid} />
+        <ObjectiveCard />
+        <NutritionTodayCard cid={cid} features={me.data?.features ?? []} name={name} />
+        <ProgressCard cid={cid} features={me.data?.features ?? []} name={name} />
       </div>
     </>
   );
