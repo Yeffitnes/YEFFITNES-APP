@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
-import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetWeight, useTrainingPlans } from "@/lib/queries";
+import { useRef, useState } from "react";
+import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
+import { BunnyModal } from "@/components/ui/BunnyModal";
+import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, UploadError, uploadVideo, videoDuration } from "@/lib/upload-video";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
@@ -39,6 +41,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
           {d ? (
             <>
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>{d.name}</div>
+              <DayVideoBox clientId={clientId} clientName={clientName} day={d} />
               {d.items.map((i) => (
                 <div key={i.id} className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13, flex: 1 }}>{i.name} — {i.sets}×{i.reps}</span>
                   <label style={{ fontSize: 11, color: "var(--text-dim)", display: "flex", alignItems: "center", gap: 6 }}>Peso objetivo
@@ -83,5 +86,34 @@ function AssignModal({ clientId, planId, weekday, dayLabel, replacing, onClose }
       </div>
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={!sel || !days.length || assign.isPending} onClick={() => assign.mutate({ planId, weekdays: days, templateId: sel }, { onSuccess: onClose })}>{assign.isPending ? "Asignando…" : days.length > 1 ? `Asignar a ${days.length} días` : "Asignar"}</button></div>
     </Modal>
+  );
+}
+
+const UP_ERR: Record<string, string> = { too_many: "Subiste muchos vídeos hoy. Inténtalo mañana.", not_configured: "Los vídeos privados aún no están activados (falta configurar Bunny).", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa la conexión y vuelve a intentarlo.", not_allowed: "No se pudo subir el vídeo." };
+// Vídeo de la rutina de este día: el de catálogo (lo ven todos) o uno grabado solo para este cliente (lo reemplaza).
+function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
+  const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [pct, setPct] = useState<number | null>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
+  const pick = async (f: File | null) => {
+    if (!f) return; setErr("");
+    if (!f.type.startsWith("video/")) return setErr("Elige un archivo de vídeo.");
+    if (f.size > MAX_COACH_VIDEO_MB * 1048576) return setErr(`El vídeo pesa demasiado (máx. ${MAX_COACH_VIDEO_MB} MB).`);
+    const dur = await videoDuration(f); if (dur && dur > MAX_COACH_VIDEO_SECONDS + 2) return setErr(`El vídeo dura ${Math.round(dur)} s; el máximo es ${MAX_COACH_VIDEO_SECONDS} s.`);
+    try { setPct(0); const id = await uploadVideo(f, setPct, { purpose: "message", clientId }); set.mutate({ dayId: day.id, videoId: id }); }
+    catch (e) { setErr(e instanceof UploadError ? UP_ERR[e.code] ?? UP_ERR.upload_failed : UP_ERR.upload_failed); } finally { setPct(null); }
+  };
+  return (
+    <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
+      {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir →</a></div>}
+      <div className="info-list-row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span><b>Vídeo personalizado para {clientName.split(" ")[0]}</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Solo {clientName.split(" ")[0]} lo ve — reemplaza al de catálogo en su plan.</span></span>
+        <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input ref={input} type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+          {day.hasPersonalVideo && <><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => set.mutate({ dayId: day.id, videoId: null })}>Quitar</button></>}
+          <button className="primary-btn" style={{ height: 32, fontSize: 11.5 }} disabled={pct !== null || set.isPending} onClick={() => input.current?.click()}>{pct !== null ? `Subiendo… ${pct}%` : day.hasPersonalVideo ? "Reemplazar" : "Subir vídeo"}</button>
+        </span>
+      </div>
+      {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{err}</p>}
+      {play && <BunnyModal param={`day=${day.id}`} title={`Vídeo para ${clientName}`} sub={day.name} onClose={() => setPlay(false)} />}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 // Subida directa del teléfono a Bunny (TUS, reanudable). El servidor firma; la clave de Bunny nunca llega aquí.
 export const MAX_VIDEO_SECONDS = 90;          // PROPUESTA: confirmar con Jeff
 export const MAX_VIDEO_MB = 200;
+export const MAX_COACH_VIDEO_SECONDS = 300, MAX_COACH_VIDEO_MB = 500;   // el coach puede enviar vídeos más largos (explicaciones)
 export class UploadError extends Error { constructor(public code: string) { super(code); } }
 export function videoDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {
@@ -10,8 +11,8 @@ export function videoDuration(file: File): Promise<number | null> {
     setTimeout(() => done(null), 4000);
   });
 }
-export async function uploadVideo(file: File, onProgress: (pct: number) => void): Promise<string> {
-  const r = await fetch("/api/video/upload-url", { method: "POST" });
+export async function uploadVideo(file: File, onProgress: (pct: number) => void, opts: { purpose?: "report" | "message"; clientId?: string } = {}): Promise<string> {
+  const r = await fetch("/api/video/upload-url", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(opts) });
   if (!r.ok) { const j = await r.json().catch(() => ({})) as { error?: string }; throw new UploadError(j.error ?? "failed"); }
   const a = (await r.json()) as { endpoint: string; libraryId: string; videoId: string; expire: number; signature: string };
   const { Upload } = await import("tus-js-client");
@@ -19,7 +20,7 @@ export async function uploadVideo(file: File, onProgress: (pct: number) => void)
     const up = new Upload(file, {
       endpoint: a.endpoint, retryDelays: [0, 3000, 8000, 20000], chunkSize: 5 * 1024 * 1024,
       headers: { AuthorizationSignature: a.signature, AuthorizationExpire: String(a.expire), VideoId: a.videoId, LibraryId: a.libraryId },
-      metadata: { filetype: file.type || "video/mp4", title: `reporte-${a.videoId.slice(0, 8)}` },
+      metadata: { filetype: file.type || "video/mp4", title: `${opts.purpose === "message" ? "mensaje" : "reporte"}-${a.videoId.slice(0, 8)}` },
       onError: () => reject(new UploadError("upload_failed")),
       onProgress: (sent, total) => onProgress(Math.round((sent / total) * 100)),
       onSuccess: () => resolve(),

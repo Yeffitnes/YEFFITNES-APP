@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useClientNutrition, useLogs, useMe, useTrainingPlans, type PlanDay, type PlanItem } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
-import { coachLink } from "@/lib/features";
+import {} from "@/lib/features";
 import { DAY_LONG, DAY_SHORT, categoryLabel, todayWeekday, weekDates } from "@/lib/week";
 import { gradient, initials } from "@/lib/format";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
@@ -21,15 +21,13 @@ export function MiPlanView() {
   const plan = plans.data?.find((p) => p.status === "active");
   const byDay = new Map<number, PlanDay>((plan?.days ?? []).map((d) => [d.weekday, d]));
   const trainDays = plan?.days.length ?? 0;
-  const wa = coachLink(process.env.NEXT_PUBLIC_COACH_WHATSAPP, name);
   const todayDay = byDay.get(wd);
   const sub = !plan ? "Tu coach está preparando tu plan." : `${trainDays} ${trainDays === 1 ? "día" : "días"} de entrenamiento por semana. ${todayDay ? `Hoy toca ${todayDay.name.toLowerCase()}.` : "Hoy es día de descanso."}`;
   return (
     <>
       <div className="topbar">
         <div className="greeting"><div className="greeting-eyebrow">{plan?.name ?? "Tu coach"}</div><h1>Tu plan</h1><p className="greeting-sub">{sub}</p></div>
-        {wa && <div className="topbar-actions"><a className="wa-btn" href={wa} target="_blank" rel="noreferrer"><svg viewBox="0 0 20 20"><path d="M4 16l1.1-3.2A6.6 6.6 0 1 1 8 15.6L4 16z" /></svg>Escribir a tu coach</a></div>}
-      </div>
+              </div>
       <div className="mode-toggle" role="tablist" aria-label="Tipo de plan">
         <button role="tab" aria-selected={mode === "training"} className={`mode-btn${mode === "training" ? " active" : ""}`} onClick={() => setMode("training")}>Entrenamiento</button>
         <button role="tab" aria-selected={mode === "nutrition"} className={`mode-btn${mode === "nutrition" ? " active" : ""}`} onClick={() => setMode("nutrition")}>Nutrición</button>

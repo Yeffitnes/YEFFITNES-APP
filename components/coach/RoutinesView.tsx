@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { youtubeId } from "@/lib/format";
 import Link from "next/link";
 import { useArchive, useExercises, useRoutines, useSaveRoutine, type Routine } from "@/lib/queries";
 import { Modal, Skeleton } from "@/components/ui/Modal";
@@ -28,11 +29,13 @@ function RoutineModal({ r, exercises, noExercises, onClose }: { r: Routine | nul
   const save = useSaveRoutine(), archive = useArchive("routine_templates");
   const [name, setName] = useState(r?.name ?? ""), [cat, setCat] = useState(r?.category ?? ""), [min, setMin] = useState(r?.minutes ? String(r.minutes) : "");
   const [items, setItems] = useState<Item[]>(r?.items.map((i) => ({ exercise_id: i.exerciseId, sets: i.sets, reps: i.reps, rest_seconds: i.rest })) ?? []);
-  const [err, setErr] = useState(""), [confirm, setConfirm] = useState(false);
+  const [err, setErr] = useState(""), [confirm, setConfirm] = useState(false), [video, setVideo] = useState(r?.video ? `https://youtu.be/${r.video}` : "");
   const submit = () => {
     const ok = items.filter((i) => i.exercise_id && i.sets > 0 && i.reps.trim());
     if (!name.trim() || !ok.length) return setErr("Escribe un nombre y agrega al menos un ejercicio completo.");
-    setErr(""); save.mutate({ id: r?.id, name: name.trim(), category: cat.trim(), minutes: Number(min) > 0 ? Number(min) : null, items: ok }, { onSuccess: onClose });
+    const vid = video.trim() ? youtubeId(video) : null;
+    if (video.trim() && !vid) return setErr("Ese enlace de YouTube no es válido.");
+    setErr(""); save.mutate({ id: r?.id, name: name.trim(), category: cat.trim(), minutes: Number(min) > 0 ? Number(min) : null, video: vid, items: ok }, { onSuccess: onClose });
   };
   return (
     <Modal wide title={r ? "Editar rutina" : "Nueva rutina"} sub="Junta ejercicios de tu catálogo con sus series y repeticiones." onClose={onClose}>
@@ -41,6 +44,7 @@ function RoutineModal({ r, exercises, noExercises, onClose }: { r: Routine | nul
           <div className="modal-field"><label>Nombre</label><input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Tren superior completo" /></div>
           <div className="modal-row2"><div className="modal-field"><label>Tipo</label><input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Fuerza, HIIT…" /></div>
             <div className="modal-field"><label>Duración (min)</label><input type="number" min={1} value={min} onChange={(e) => setMin(e.target.value)} /></div></div>
+          <div className="modal-field"><label>Vídeo de la rutina (YouTube, opcional)</label><input value={video} onChange={(e) => setVideo(e.target.value)} placeholder="https://youtu.be/…" /><p className="modal-cap-hint">Lo ven todos los clientes con esta rutina. Para un cliente puedes subir uno propio desde su ficha.</p></div>
           <RoutineForm exercises={exercises} items={items} onChange={setItems} />
           {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}
           <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : "Guardar"}</button></div>

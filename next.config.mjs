@@ -9,7 +9,7 @@ const security = [
 ];
 const nextConfig = {
   poweredByHeader: false,
-  async headers() { return [{ source: "/:path*", headers: security }]; },
+  async headers() { return [{ source: "/:path*", headers: security }, { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] }]; },
 };
 
 export default nextConfig;

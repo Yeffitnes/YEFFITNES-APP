@@ -1,18 +1,18 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useMaterialList, useOpenMaterial, type MaterialItem, type MaterialOpen } from "@/lib/queries";
-import { useProfile } from "@/components/Providers";
 import { Skeleton } from "@/components/ui/Modal";
 import { VideoModal } from "./VideoModal";
 import { upgradeLink } from "@/lib/features";
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function MaterialClientView() {
-  const { name } = useProfile(), { data, isPending, isError, refetch } = useMaterialList(), open = useOpenMaterial(), wa = process.env.NEXT_PUBLIC_COACH_WHATSAPP;
+  const { data, isPending, isError, refetch } = useMaterialList(), open = useOpenMaterial();
   const [q, setQ] = useState(""), [f, setF] = useState<"all" | "article" | "video">("all"), [shown, setShown] = useState<MaterialOpen | null>(null), [locked, setLocked] = useState<MaterialItem | null>(null);
   const all = data ?? [], feat = all.find((m) => m.featured && m.unlocked);
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   const go = (m: MaterialItem) => { if (!m.unlocked) return setLocked(m); open.mutate(m.id, { onSuccess: setShown }); };
-  const lockLink = upgradeLink(wa, name, "education_full");
+  const lockLink = upgradeLink("education_full");
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>Aprende con tu coach</h1><p className="greeting-sub">{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"} para acompañar tu proceso` : "Cargando…"}</p></div></div>
@@ -47,7 +47,7 @@ export function MaterialClientView() {
           <button className="read-modal-close" aria-label="Cerrar" onClick={() => setLocked(null)}><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" /></svg></button>
           <div className="read-modal-cat">🔒 No incluido en tu plan</div><div className="read-modal-title">{locked.title}</div>
           <div className="read-modal-body">Este contenido forma parte de la biblioteca completa. Habla con tu coach para mejorar tu plan.</div>
-          {lockLink && <a className="read-modal-download" href={lockLink} style={{ textDecoration: "none", display: "inline-flex" }}>Hablar con tu coach</a>}</div></div>}
+          <Link className="read-modal-download" href={lockLink} style={{ textDecoration: "none", display: "inline-flex" }}>Hablar con tu coach</Link></div></div>}
     </>
   );
 }
