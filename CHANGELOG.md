@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Recordatorios a horas fijas (migración 0027; rama `bloque-hoy`)
+- Antes: revisión cada 15 min. Ahora: buenos días (7:00), mediodía (12:30), noche (20:00, reporte pendiente) y sesión 1 h antes. `due_reminders(secret, kind, now)`; la ruta `/api/cron/reminders?kind=...` valida el tipo. Un aviso por cliente y tipo al día (`reminder_log`). La revisión de sesiones corre dentro de Supabase y solo llama a la app si hay una reserva en la próxima hora. Textos y horas: PROPUESTA.
+- Pruebas: `rls_reminders.sql` ampliada (mañana, mediodía, tipo desconocido). Sin probar: push real.
+- Revertir: `drop function public.due_reminders(text, text, timestamptz);` y recrear la de 0023; `git revert`.
+
 ## 2026-10-25 · Panel Hoy rediseñado, corrección de "sin sesión reservada", destachar series (migración 0026; rama `bloque-hoy`, sin subir a main)
 - **Error corregido (0026):** la política `slots_client_read` (0012) comparaba contra `bookings.id` en vez de `availability_slots.id`; el cliente nunca podía leer el horario de su reserva y Hoy decía "aún no tienes una sesión". Ahora aparece cualquier sesión futura (una semana, un mes…), con "En N días", "Ver sesión" y "Recordarme". Prueba nueva en `rls_agenda.sql`.
 - **Destachar series (0026):** `unlog_set()`; tocar el check de una serie ya guardada la deshace (si cambias reps/peso, vuelve a guardar).
