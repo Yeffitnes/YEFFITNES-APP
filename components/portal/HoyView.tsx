@@ -11,14 +11,17 @@ import { FeaturedVideo, NutritionTodayCard, ObjectiveCard, ProgressCard, Session
 import { CHECK_ICON } from "./icons";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
 import { DAY_LONG, categoryLabel, weekDates } from "@/lib/week";
+import { Icon } from "@/components/ui/Icon";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
-function dayState(date: string, weekday: number, today: string, planDays: number[], logs: WorkoutLog[]): { cls: string; title: string } {
+// Un día pasado sin registro NO se pinta en rojo: puede ser anterior al plan o un día sin entrenar. Solo se marca lo hecho.
+function dayState(date: string, weekday: number, today: string, planDays: number[], logs: WorkoutLog[], planStart: string): { cls: string; title: string } {
   if (logs.some((l) => l.date === date && l.completed)) return { cls: "done", title: "completado" };
+  if (date === today) return { cls: planDays.includes(weekday) ? "" : "rest", title: planDays.includes(weekday) ? "toca hoy" : "descanso" };
   if (!planDays.includes(weekday)) return { cls: "rest", title: "descanso" };
-  if (date === today) return { cls: "", title: "toca hoy" };
-  return date < today ? { cls: "missed", title: "no lo registraste" } : { cls: "todo", title: "por hacer" };
+  if (date < today) return { cls: "past", title: date < planStart ? "antes de tu plan" : "sin registro" };
+  return { cls: "todo", title: "por hacer" };
 }
 function streak(days: number[], logs: WorkoutLog[]) {
   if (!days.length) return 0;
@@ -47,14 +50,13 @@ export function HoyView() {
       <FromCoach />
       {!!ann.data?.length && <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-tag">Anuncios de tu coach</div>
-        {ann.data.map((a) => <div key={a.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.55 }}>{a.pinned ? "📌 " : ""}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
+        {ann.data.map((a) => <div key={a.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.55 }}>{a.pinned && <Icon name="pin" size={13} style={{ marginRight: 5 }} />}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
       </div>}
       {me.data && (me.data.features.includes("daily_report") ? <ReportCard clientId={cid} /> : <div style={{ marginBottom: 18 }}><FeatureGate features={me.data.features} feature="daily_report" name={name}><span /></FeatureGate></div>)}
       <div className="streak-strip">
         <div className="streak-copy"><div className="streak-num"><span>{n}</span> {n === 1 ? "día" : "días"}</div><div className="streak-label">{n ? "seguidos cumpliendo tu rutina." : "Completa tu primera rutina para empezar tu racha."}</div></div>
         <div>
-        <div className="week-strip">{wk.map((d, i) => { const st = dayState(d, i + 1, today, planWd, logList); return <div key={d} className="week-day"><div className={`week-dot ${st.cls}${d === today ? " today" : ""}`} title={`${DAY_LONG[i]} — ${st.title}`} /><div className="week-day-label">{LBL[i]}</div></div>; })}</div>
-          <div className="week-legend"><span><i style={{ background: "linear-gradient(135deg,var(--neon),var(--rose))", borderColor: "transparent" }} />Hecho</span><span><i style={{ borderColor: "var(--neon)" }} />Por hacer</span><span><i style={{ background: "rgba(247,37,75,.15)", borderColor: "rgba(247,37,75,.45)" }} />Perdido</span><span><i style={{ borderStyle: "dashed" }} />Descanso</span></div>
+        <div className="week-strip">{wk.map((d, i) => { const st = dayState(d, i + 1, today, planWd, logList, plan?.startsOn ?? ""); return <div key={d} className="week-day"><div className={`week-dot ${st.cls}${d === today ? " today" : ""}`} title={`${DAY_LONG[i]} — ${st.title}`}>{st.cls === "done" ? <Icon name="check" size={13} stroke={2.6} /> : d === today ? <span className="week-letter">{LBL[i]}</span> : null}</div>{d !== today && <div className="week-day-label">{LBL[i]}</div>}</div>; })}</div>
         </div>
       </div>
       <FeaturedVideo />
@@ -131,7 +133,7 @@ function SetRow({ cid, item, n, today, saved, locked, onLast }: { cid: string; i
       <label>SERIE {n}</label>
       <input className="set-input" inputMode="numeric" type="number" min={0} value={reps} onChange={(e) => setReps(e.target.value)} placeholder={Number.isNaN(target) ? "reps" : `${target} reps`} aria-label={`Repeticiones serie ${n}`} disabled={locked} onKeyDown={onKey} />
       <input className="set-input" inputMode="decimal" type="number" min={0} step={0.5} value={w} onChange={(e) => setW(e.target.value)} placeholder={item.weight ? `${item.weight} kg` : "kg"} aria-label={`Peso serie ${n} en kilos`} disabled={locked} onKeyDown={onKey} />
-      <button className={`set-save${saved ? " on" : ""}`} disabled={!ok || log.isPending || locked} aria-label={`Guardar serie ${n}`} onClick={save}>✓</button>
+      <button className={`set-save${saved ? " on" : ""}`} disabled={!ok || log.isPending || locked} aria-label={`Guardar serie ${n}`} onClick={save}><Icon name="check" size={15} stroke={2.2} /></button>
     </div>
   );
 }
@@ -144,7 +146,7 @@ function FromCoach() {
   return (
     <Link href="/inicio/mensajes" className="card" style={{ display: "block", marginBottom: 18, textDecoration: "none", color: "inherit" }}>
       <div className="card-tag">De tu coach{!last.readAt ? " · nuevo" : ""}</div>
-      <p style={{ fontSize: 14, lineHeight: 1.55, marginTop: 8 }}>{last.body ?? (last.hasVideo || last.youtubeId ? "📹 Te envió un vídeo" : "📷 Te envió una foto")}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.55, marginTop: 8 }}>{last.body ?? (last.hasVideo || last.youtubeId ? "Te envió un vídeo" : "Te envió una foto")}</p>
       <div style={{ fontSize: 11.5, color: "var(--text-dim)", marginTop: 6 }}>{when} · Responder →</div>
     </Link>
   );

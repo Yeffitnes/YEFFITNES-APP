@@ -1,6 +1,13 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Pulido de diseño: sin emojis, semana coherente y barra inferior (rama `bloque-diseno`, sin subir a main)
+- **Sin emojis del sistema:** nuevo `components/ui/Icon.tsx` (iconos de trazo fino de la marca: check, lock, camera, video, play, pin, download, bell, close, dumbbell, chart, calendar). Sustituye 📷🎥▶✕🔒📌✅🔔⬇️🏋️📈📅 en mensajes (adjuntos, chips, reproducir), reporte diario, agenda, material, anuncios, onboarding, bloqueo de plan y el botón ✓ de las series. Los avisos push ya no llevan emoji.
+- **Hoy · semana:** el día hecho lleva un check SVG de marca sobre degradado; hoy = contorno con su letra; el resto, neutro. Se eliminó el rojo "Perdido" (marcaba lunes/martes/sábado aunque fueran anteriores al plan o días sin registro) y la leyenda. Los días anteriores al inicio del plan no se marcan.
+- **Barra inferior (móvil):** `viewport` propio del portal con `themeColor` blanco (la barra de Safari ya no se tiñe de negro), `padding-bottom` con `safe-area-inset-bottom`, y un relleno blanco bajo la barra por si el navegador deja hueco. No probado en un iPhone real.
+- **Archivos:** `components/ui/Icon.tsx`, `components/portal/HoyView.tsx`, `app/inicio/portal.css`, `app/inicio/layout.tsx`, `app/messages.css` y los componentes citados.
+- **Revertir:** `git revert` del commit; no hay SQL.
+
 ## 2026-10-25 · Clases grupales, "De tu coach", pestañas Mensajes/Agenda en la ficha y landing (migración 0024; en la rama `bloque-grande`)
 - **Clases grupales (0024):** `availability_slots.capacity` (1 = individual). Jeff elige "Cupos" al publicar; en su agenda el hueco muestra "3/4 cupos" con los inscritos (se puede quitar a uno) y en Dashboard "Clase grupal: …". El cliente ve "N cupos" y no puede reservar si está lleno. El límite se valida en la base con el hueco bloqueado (dos reservas a la vez no superan los cupos). Suite `rls_groups.sql`.
 - **Hoy:** tarjeta "De tu coach" con su último mensaje (del blueprint, "De Daniel"). **Ficha del cliente:** pestañas **Mensajes** (escribirle desde ahí) y **Agenda** (sus sesiones). **Landing pública** en `/` (textos PROPUESTA, sin precios: no están definidos).

@@ -1,3 +1,4 @@
+import type { Viewport } from "next";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { Providers } from "@/components/Providers";
@@ -5,6 +6,8 @@ import { PortalBottomNav, PortalSide } from "@/components/portal/PortalNav";
 import { ActionsBar } from "@/components/ActionsBar";
 import { Onboarding } from "@/components/portal/Onboarding";
 import "./portal.css";
+// La barra del navegador (Safari/Chrome) toma este color: igual que la barra de menú del portal, para que no se vea una banda oscura debajo.
+export const viewport: Viewport = { themeColor: "#FFFFFF", viewportFit: "cover", width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false };
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const { supabase, profile } = await requireUser();
   if (profile.role === "coach") redirect("/coach");

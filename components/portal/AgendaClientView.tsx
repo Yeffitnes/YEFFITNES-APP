@@ -6,6 +6,7 @@ import { icsHref } from "@/lib/ics";
 import { KIND_COLOR, KIND_LABEL, useBookSlot, useCancelBooking, useMe, useMyBookings, useOpenSlots, weekBounds, type Slot } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { DAY3, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
+import { Icon } from "@/components/ui/Icon";
 export function AgendaClientView() {
   const { profileId } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "";
   const [off, setOff] = useState(0), [filter, setFilter] = useState("all"), [sel, setSel] = useState<Slot | null>(null), [done, setDone] = useState<Slot | null>(null);
@@ -43,7 +44,7 @@ export function AgendaClientView() {
             {!sel && <div className="summary-empty">Elige un horario disponible en el calendario.</div>}
             {sel && <div><div className="summary-datetime">{when(sel.startsAt)}</div><p style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", margin: "8px 0 0" }}>{KIND_LABEL[sel.kind]} · {sel.duration} min{sel.capacity > 1 ? ` · Clase grupal (quedan ${sel.capacity - sel.booked} de ${sel.capacity} cupos)` : ""}</p>
               <button className="summary-confirm" disabled={book.isPending} onClick={() => book.mutate(sel.id, { onSuccess: () => { setDone(sel); setSel(null); } })}>{book.isPending ? "Reservando…" : "Confirmar reserva"}</button></div>}
-            {done && <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55 }}>✅ Reservaste el {when(done.startsAt)}.<> <a href={icsHref(done)} download="sesion-yeffitnes.ics" style={{ color: "#fff", fontWeight: 700, textDecoration: "underline" }}>Añadir alarma a mi calendario</a></></div>}
+            {done && <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55 }}><Icon name="check" size={15} style={{ marginRight: 6 }} />Reservaste el {when(done.startsAt)}.<> <a href={icsHref(done)} download="sesion-yeffitnes.ics" style={{ color: "#fff", fontWeight: 700, textDecoration: "underline" }}>Añadir alarma a mi calendario</a></></div>}
           </div>
           <div className="card"><div className="card-tag">Tus próximas sesiones</div>
             {mine.isPending && <div className="sk" style={{ height: 56, marginTop: 8 }} />}
@@ -51,7 +52,7 @@ export function AgendaClientView() {
             <div style={{ marginTop: 6 }}>{upcoming.map((b) => { const d = new Date(b.startsAt), late = d.getTime() - Date.now() < 24 * 3600 * 1000;
               return (<div key={b.id} className="sess-row"><div className="sess-date"><div className="dow">{DAY3[(d.getDay() + 6) % 7]}</div><div className="dnum">{d.getDate()}</div></div>
                 <div className="sess-body"><div className="sess-time">{hhmm(d)} — {b.duration} min</div><div className="sess-type">{KIND_LABEL[b.kind]}</div></div><span className="sess-tag">Confirmada</span>
-                <a className="mini-btn ghost" href={icsHref(b)} download="sesion-yeffitnes.ics">🔔 Alarma</a>{late ? <Link className="mini-btn ghost" href={changeSessionLink(when(b.startsAt))}>Pedir cambio</Link> : <button className="mini-btn ghost" disabled={cancel.isPending} onClick={() => cancel.mutate(b.id)}>Cancelar</button>}</div>); })}</div>
+                <a className="mini-btn ghost" href={icsHref(b)} download="sesion-yeffitnes.ics"><Icon name="bell" size={14} /> Alarma</a>{late ? <Link className="mini-btn ghost" href={changeSessionLink(when(b.startsAt))}>Pedir cambio</Link> : <button className="mini-btn ghost" disabled={cancel.isPending} onClick={() => cancel.mutate(b.id)}>Cancelar</button>}</div>); })}</div>
           </div>
         </div>
       </div>

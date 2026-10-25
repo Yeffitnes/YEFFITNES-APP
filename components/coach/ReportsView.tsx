@@ -4,6 +4,7 @@ import Link from "next/link";
 import { fetchReportVideoUrl, useCoachReports, useReviewReport, type CoachReport } from "@/lib/queries";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { ago, gradient, initials } from "@/lib/format";
+import { Icon } from "@/components/ui/Icon";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function ReportsView() {
   const { data, isPending, isError, refetch } = useCoachReports(), review = useReviewReport(), [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean } | null>(null);
@@ -20,7 +21,7 @@ export function ReportsView() {
         <div className="attn-name"><Link href={`/coach/clientes/${r.clientId}`}>{r.clientName}</Link> <span className="note-date">· {cap(ago(r.date))}</span></div>
         {r.comment ? <div className="note-text" style={{ whiteSpace: "pre-wrap" }}>{r.comment}</div> : <div className="note-text" style={{ color: "var(--text-faint)" }}>Sin comentario.</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-          {r.videoState === "uploaded" && <button className="ghost-btn" onClick={() => open(r)}>▶ Ver vídeo</button>}
+          {r.videoState === "uploaded" && <button className="ghost-btn" onClick={() => open(r)}><Icon name="play" size={12} /> Ver vídeo</button>}
           {r.videoState === "deleted" && <span className="note-date">Vídeo borrado automáticamente</span>}
           {!r.seen && <button className="primary-btn" disabled={review.isPending} onClick={() => review.mutate(r.id)}>Marcar visto</button>}
         </div>

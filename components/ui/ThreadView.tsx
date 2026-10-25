@@ -6,6 +6,7 @@ import { BunnyModal } from "@/components/ui/BunnyModal";
 import { useMarkRead, useSendMessage, useSignedImage, useThread, sendErrorText, type Msg } from "@/lib/messages";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { youtubeId } from "@/lib/format";
+import { Icon } from "@/components/ui/Icon";
 
 type Media = { kind: "image"; url: string } | { kind: "yt"; id: string } | { kind: "bunny"; msg: string };
 const dayLabel = (iso: string) => { const d = new Date(iso), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1); const same = (a: Date, b: Date) => a.toDateString() === b.toDateString(); return same(d, t) ? "Hoy" : same(d, y) ? "Ayer" : d.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }); };
@@ -16,8 +17,8 @@ function Bubble({ m, mine, other, open }: { m: Msg; mine: boolean; other: string
   return (
     <div className={`msg ${mine ? "mine" : "theirs"}${m.pending ? " pending" : ""}${m.imagePath || m.youtubeId || m.hasVideo ? " has-media" : ""}`}>
       {m.imagePath && <button type="button" className="msg-media" aria-label="Ver foto" onClick={() => img.data && open({ kind: "image", url: img.data })} style={{ minHeight: img.data ? undefined : 120 }}>{img.data && <img src={img.data} alt="Foto enviada" loading="lazy" decoding="async" />}</button>}
-      {m.youtubeId && <button type="button" className="msg-media" aria-label="Ver vídeo" onClick={() => open({ kind: "yt", id: m.youtubeId! })}><img src={`https://i.ytimg.com/vi/${m.youtubeId}/hqdefault.jpg`} alt="" loading="lazy" /><span className="msg-play"><span>▶</span></span></button>}
-      {m.hasVideo && <button type="button" className="msg-media" aria-label="Ver vídeo" onClick={() => open({ kind: "bunny", msg: m.id })}><span className="msg-video-btn">▶ Ver vídeo</span></button>}
+      {m.youtubeId && <button type="button" className="msg-media" aria-label="Ver vídeo" onClick={() => open({ kind: "yt", id: m.youtubeId! })}><img src={`https://i.ytimg.com/vi/${m.youtubeId}/hqdefault.jpg`} alt="" loading="lazy" /><span className="msg-play"><span><Icon name="play" size={18} /></span></span></button>}
+      {m.hasVideo && <button type="button" className="msg-media" aria-label="Ver vídeo" onClick={() => open({ kind: "bunny", msg: m.id })}><span className="msg-video-btn"><Icon name="play" size={16} />Ver vídeo</span></button>}
       {m.body}
       <div className="msg-meta">{mine ? "Tú" : other} · {hour(m.createdAt)}{mine && !m.pending && m.readAt ? " · Visto" : ""}</div>
     </div>
@@ -78,7 +79,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
         ); })}
       </div>
       <div className="composer">
-        {(image || video || ytId) && <div className="comp-chip">{image ? `📷 ${image.name.slice(0, 24)}` : video ? `🎥 ${video.name.slice(0, 24)}` : "▶ Vídeo de YouTube"}<button type="button" aria-label="Quitar adjunto" onClick={() => { setImage(null); setVideo(null); setYt(""); setShowYt(false); }}>✕</button></div>}
+        {(image || video || ytId) && <div className="comp-chip"><Icon name={image ? "camera" : video ? "video" : "play"} size={14} />{image ? image.name.slice(0, 24) : video ? video.name.slice(0, 24) : "Vídeo de YouTube"}<button type="button" aria-label="Quitar adjunto" onClick={() => { setImage(null); setVideo(null); setYt(""); setShowYt(false); }}><Icon name="close" size={14} /></button></div>}
         {showYt && !ytId && <input aria-label="Enlace de YouTube" placeholder="Pega el enlace de YouTube" value={yt} onChange={(e) => setYt(e.target.value)} style={{ width: "100%", marginBottom: 8, height: 40, border: "1px solid var(--line)", borderRadius: 12, padding: "0 12px", fontSize: 16 }} />}
         {pct !== null && <div className="comp-progress" aria-label={`Subiendo vídeo ${pct}%`}><i style={{ width: `${pct}%` }} /></div>}
         {err && <p role="alert" className="comp-err">{err}</p>}
@@ -86,9 +87,9 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
           {!textOnly && <>
             <input ref={imgIn} type="file" accept="image/*" hidden onChange={(e) => { pickImage(e.target.files?.[0] ?? null); e.target.value = ""; }} />
             <input ref={vidIn} type="file" accept="video/*" hidden onChange={(e) => { void pickVideo(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-            <button type="button" className="comp-btn" aria-label="Adjuntar foto" disabled={send.isPending} onClick={() => imgIn.current?.click()}>📷</button>
-            <button type="button" className="comp-btn" aria-label="Adjuntar vídeo" disabled={send.isPending} onClick={() => vidIn.current?.click()}>🎥</button>
-            {coach && <button type="button" className="comp-btn" aria-label="Enlace de YouTube" disabled={send.isPending} onClick={() => { setShowYt((v) => !v); setImage(null); setVideo(null); }}>▶</button>}
+            <button type="button" className="comp-btn" aria-label="Adjuntar foto" disabled={send.isPending} onClick={() => imgIn.current?.click()}><Icon name="camera" size={19} /></button>
+            <button type="button" className="comp-btn" aria-label="Adjuntar vídeo" disabled={send.isPending} onClick={() => vidIn.current?.click()}><Icon name="video" size={19} /></button>
+            {coach && <button type="button" className="comp-btn" aria-label="Enlace de YouTube" disabled={send.isPending} onClick={() => { setShowYt((v) => !v); setImage(null); setVideo(null); }}><Icon name="play" size={16} /></button>}
           </>}
           <textarea ref={area} rows={1} maxLength={2000} aria-label="Escribe tu mensaje" placeholder="Mensaje…" value={text}
             onChange={(e) => { setText(e.target.value); grow(e.target); }}

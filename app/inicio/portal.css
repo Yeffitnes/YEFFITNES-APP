@@ -865,12 +865,28 @@ html, body{overflow-x:hidden; max-width:100%;}
 .featured-video-card{opacity:1; transform:none;}
 .prog-chart{width:100%; height:60px; margin-top:8px;}
 
-/* Días de la semana en "Hoy": cada estado tiene su color */
-.week-dot.done::before{content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:800; line-height:1;}
-.week-dot.todo{border-color:var(--neon); background:#fff;}
-.week-dot.missed{border-color:rgba(247,37,75,.45); background:rgba(247,37,75,.09);}
-.week-dot.missed::before{content:"–"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:rgba(212,26,64,.7); font-size:13px; font-weight:800;}
+/* Días de la semana en "Hoy": hecho = relleno con check de marca; hoy = contorno con la letra; el resto, neutro (nada en rojo) */
+.week-dot{display:flex; align-items:center; justify-content:center; color:#fff;}
+.week-dot.done{border-color:transparent; background:linear-gradient(135deg,var(--neon),var(--rose));}
+.week-dot.done svg{display:block;}
+.week-dot.todo{border-color:#cfd3df; background:#fff;}
+.week-dot.past{border-color:var(--line); background:var(--surface);}
 .week-dot.rest{border-style:dashed; border-color:#d7dae4; background:transparent; opacity:.7;}
+.week-dot.today{background:#fff;}
+.week-dot.today.done{background:linear-gradient(135deg,var(--neon),var(--rose));}
 .week-dot.today.done::after{display:none;}
-.week-legend{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; width:100%; font-size:10.5px; color:var(--text-dim);}
-.week-legend i{display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:5px; vertical-align:-1px; border:1.5px solid var(--line);}
+.week-letter{font-family:var(--font-mono), monospace; font-size:10.5px; font-weight:700; color:var(--accent); line-height:1;}
+.week-day{min-width:22px;}
+.ob-row{display:flex; gap:10px; align-items:flex-start; margin-bottom:8px;}
+.ob-row svg{margin-top:3px; color:var(--accent);}
+.set-save svg{display:block; margin:auto;}
+.comp-chip svg{color:var(--accent);}
+.comp-btn svg{display:block;}
+.msg-play span svg{margin-left:2px;}
+
+/* Barra inferior: llega hasta el borde real del teléfono (Safari/Chrome móvil y app instalada) */
+@media (max-width:1020px){
+  .bottom-nav{padding-bottom:max(10px, env(safe-area-inset-bottom)); -webkit-transform:translateZ(0); transform:translateZ(0);}
+  .bottom-nav::after{content:""; position:absolute; left:0; right:0; top:100%; height:120px; background:var(--paper);}
+  .main{padding-bottom:calc(100px + env(safe-area-inset-bottom));}
+}

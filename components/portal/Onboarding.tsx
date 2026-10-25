@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompleteOnboarding, useMe, useSaveMeasure } from "@/lib/queries";
 import { useProfile, useWorkspaceId } from "@/components/Providers";
+import { Icon } from "@/components/ui/Icon";
 // Bienvenida de un minuto, solo la primera vez. Textos = PROPUESTA (el contenido y el personaje guía los define Jeff).
 export function Onboarding() {
   const { profileId, name } = useProfile(), ws = useWorkspaceId(), me = useMe(profileId), done = useCompleteOnboarding(profileId), save = useSaveMeasure(me.data?.id ?? "", ws), router = useRouter();
@@ -27,10 +28,10 @@ export function Onboarding() {
           <div className="modal-title">¡Bienvenido{first ? `, ${first}` : ""}!</div>
           <div className="modal-sub">Soy Jeff, tu coach. Así funciona todo en un minuto:</div>
           <div style={{ fontSize: 13.5, lineHeight: 1.7, marginTop: 12 }}>
-            <div>🏋️ <b>Hoy</b>: tu rutina del día. Registra tus series y cómo te sentiste.</div>
-            <div>🎥 <b>Reporte diario</b>: un vídeo corto y un comentario cuando termines.</div>
-            <div>📈 <b>Progreso</b>: tus medidas y fotos para ver tu cambio.</div>
-            <div>📅 <b>Agenda</b>: reserva tu llamada conmigo.</div>
+            <div className="ob-row"><Icon name="dumbbell" size={16} /><span><b>Hoy</b>: tu rutina del día. Registra tus series y cómo te sentiste.</span></div>
+            <div className="ob-row"><Icon name="video" size={16} /><span><b>Reporte diario</b>: un vídeo corto y un comentario cuando termines.</span></div>
+            <div className="ob-row"><Icon name="chart" size={16} /><span><b>Progreso</b>: tus medidas y fotos para ver tu cambio.</span></div>
+            <div className="ob-row"><Icon name="calendar" size={16} /><span><b>Agenda</b>: reserva tu llamada conmigo.</span></div>
           </div>
           <div className="modal-actions"><button className="modal-btn primary" onClick={() => setStep(1)}>Empezar</button></div></>}
         {step === 1 && <>

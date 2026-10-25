@@ -5,6 +5,7 @@ import { useMaterialList, useOpenMaterial, type MaterialItem, type MaterialOpen 
 import { Skeleton } from "@/components/ui/Modal";
 import { VideoModal } from "./VideoModal";
 import { upgradeLink } from "@/lib/features";
+import { Icon } from "@/components/ui/Icon";
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function MaterialClientView() {
   const { data, isPending, isError, refetch } = useMaterialList(), open = useOpenMaterial();
@@ -31,7 +32,7 @@ export function MaterialClientView() {
         <button key={m.id} className="content-card" style={{ textAlign: "left", font: "inherit", padding: 0 }} disabled={open.isPending} onClick={() => go(m)} aria-label={m.unlocked ? m.title : `${m.title} (no incluido en tu plan)`}>
           <div className={`content-thumb ${m.kind === "video" ? "video" : "articulo"}`} style={m.unlocked ? undefined : { filter: "saturate(.4)" }}>
             {m.isNew && m.unlocked && <div className="content-new-tag">Nuevo</div>}
-            {!m.unlocked && <div className="content-new-tag" style={{ background: "var(--text)" }}>🔒 Plan completo</div>}
+            {!m.unlocked && <div className="content-new-tag" style={{ background: "var(--text)" }}><Icon name="lock" size={11} /> Plan completo</div>}
             {m.kind === "video" ? <div className="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div> : <svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z" /></svg>}
           </div>
           <div className="content-body"><div className="content-title">{m.title}</div><div className="content-cat">{m.category}</div><div className="content-date">{fmt(m.date)}</div></div>
@@ -45,7 +46,7 @@ export function MaterialClientView() {
       {locked && <div className="read-modal-backdrop open" onMouseDown={(e) => e.target === e.currentTarget && setLocked(null)}>
         <div className="read-modal" role="dialog" aria-modal="true" aria-label="Contenido no incluido">
           <button className="read-modal-close" aria-label="Cerrar" onClick={() => setLocked(null)}><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" /></svg></button>
-          <div className="read-modal-cat">🔒 No incluido en tu plan</div><div className="read-modal-title">{locked.title}</div>
+          <div className="read-modal-cat"><Icon name="lock" size={12} /> No incluido en tu plan</div><div className="read-modal-title">{locked.title}</div>
           <div className="read-modal-body">Este contenido forma parte de la biblioteca completa. Habla con tu coach para mejorar tu plan.</div>
           <Link className="read-modal-download" href={lockLink} style={{ textDecoration: "none", display: "inline-flex" }}>Hablar con tu coach</Link></div></div>}
     </>

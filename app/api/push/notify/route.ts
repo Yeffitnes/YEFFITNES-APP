@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const { data: targets } = await supabase.rpc("push_targets", { p_message: messageId });
   if (!targets?.length) return NextResponse.json({ ok: true, sent: 0 });
   const { data: me } = await supabase.from("profiles").select("full_name").eq("id", auth.user.id).maybeSingle();
-  const preview = m.body ? (m.body.length > 110 ? m.body.slice(0, 107) + "…" : m.body) : m.video_id || m.youtube_id ? "📹 Te envió un vídeo" : "📷 Te envió una foto";
+  const preview = m.body ? (m.body.length > 110 ? m.body.slice(0, 107) + "…" : m.body) : m.video_id || m.youtube_id ? "Te envió un vídeo" : "Te envió una foto";
   const fromCoach = m.sender === "coach";
   const dead = await sendPush(targets as Target[], {
     title: fromCoach ? "Mensaje de tu coach" : `${me?.full_name || "Un cliente"} te escribió`, body: preview,

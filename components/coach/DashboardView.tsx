@@ -68,7 +68,7 @@ function MessagesCard() {
   return (
     <div className="card">
       <div className="card-head"><div><div className="card-tag">Mensajes</div><div className="card-title" style={{ fontSize: 15 }}>{total} sin leer</div></div><Link href="/coach/mensajes" className="card-link">Abrir →</Link></div>
-      {unread.map((x) => <Link key={x.clientId} href={`/coach/mensajes?c=${x.clientId}`} className="activity-row"><div className="activity-icon"><svg viewBox="0 0 20 20"><path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z" /></svg></div><div><div className="activity-text"><b>{x.name}</b>{x.unread > 1 ? ` (${x.unread})` : ""}: {x.lastBody ?? (x.lastKind === "video" ? "📹 Vídeo" : "📷 Foto")}</div></div></Link>)}
+      {unread.map((x) => <Link key={x.clientId} href={`/coach/mensajes?c=${x.clientId}`} className="activity-row"><div className="activity-icon"><svg viewBox="0 0 20 20"><path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z" /></svg></div><div><div className="activity-text"><b>{x.name}</b>{x.unread > 1 ? ` (${x.unread})` : ""}: {x.lastBody ?? (x.lastKind === "video" ? "Vídeo" : "Foto")}</div></div></Link>)}
     </div>
   );
 }

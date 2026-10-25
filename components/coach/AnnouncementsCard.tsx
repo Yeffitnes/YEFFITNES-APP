@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useCoachAnnouncements, useDeleteAnnouncement, useSaveAnnouncement } from "@/lib/queries";
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal } from "@/components/ui/Modal";
+import { Icon } from "@/components/ui/Icon";
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("es", { day: "numeric", month: "short" });
 export function AnnouncementsCard() {
   const { data, isPending, isError, refetch } = useCoachAnnouncements(), del = useDeleteAnnouncement(), [open, setOpen] = useState(false);
@@ -15,7 +16,7 @@ export function AnnouncementsCard() {
       {data && !data.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>Publica un aviso (horarios, feriados, novedades) y aparecerá en “Hoy” de todos tus clientes.</p>}
       <div style={{ marginTop: 6 }}>{data?.map((a) => (
         <div key={a.id} className="note-item">
-          <div className="note-date">{a.pinned ? "📌 Fijado · " : ""}{fmt(a.createdAt)}{a.expiresOn ? (a.expiresOn < today ? " · vencido" : ` · hasta ${fmt(a.expiresOn + "T00:00:00")}`) : ""} · <button style={{ background: "none", border: 0, color: "var(--text-faint)", textDecoration: "underline", cursor: "pointer", font: "inherit" }} onClick={() => del.mutate(a.id)}>Quitar</button></div>
+          <div className="note-date">{a.pinned ? <><Icon name="pin" size={12} /> Fijado · </> : ""}{fmt(a.createdAt)}{a.expiresOn ? (a.expiresOn < today ? " · vencido" : ` · hasta ${fmt(a.expiresOn + "T00:00:00")}`) : ""} · <button style={{ background: "none", border: 0, color: "var(--text-faint)", textDecoration: "underline", cursor: "pointer", font: "inherit" }} onClick={() => del.mutate(a.id)}>Quitar</button></div>
           <div className="note-text">{a.title && <b>{a.title} — </b>}{a.body}</div></div>))}</div>
       {open && <AnnouncementForm onClose={() => setOpen(false)} />}
     </div>

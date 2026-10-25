@@ -10,6 +10,7 @@ import { disablePush, enablePush, pushState, resyncPush, type PushState } from "
 import { QuickSearch } from "@/components/coach/QuickSearch";
 import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
+import { Icon } from "@/components/ui/Icon";
 
 type Item = { key: string; text: string; href: string };
 const PUSH_TXT: Record<PushState, string> = { unsupported: "Tu navegador no permite avisos. Instala la app en la pantalla de inicio e inténtalo de nuevo.", not_configured: "Los avisos aún no están configurados.", denied: "Bloqueaste los avisos. Actívalos en los ajustes del navegador o del teléfono.", off: "Activar avisos en este teléfono", on: "Avisos activados en este teléfono" };
@@ -64,7 +65,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
         <div className="act-pop-title">Avisos</div>
         {!items.length && <p className="act-empty">Todo al día. No tienes pendientes.</p>}
         {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={() => setOpen(false)}>{i.text}<span aria-hidden>›</span></Link>)}
-        {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><span aria-hidden style={{ fontSize: 16 }}>⬇️</span>Instalar la app en este teléfono</button>}
+        {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
         <button type="button" className="act-push" onClick={togglePush} disabled={busy || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>
           <span className={`act-switch${ps === "on" ? " on" : ""}`} aria-hidden />{PUSH_TXT[ps]}
