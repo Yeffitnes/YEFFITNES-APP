@@ -7,8 +7,9 @@ psql -d prueba -v ON_ERROR_STOP=1 -f supabase/tests/stub_auth.sql      # simula 
 psql -d prueba -c "alter default privileges in schema public grant all on tables to authenticated" -c "alter default privileges in schema public grant execute on functions to authenticated"
 for f in supabase/migrations/0001*.sql; do psql -d prueba -v ON_ERROR_STOP=1 -f $f; done
 psql -d prueba -c "insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','573000000000')"
-for f in supabase/migrations/000[2-9]*.sql; do psql -d prueba -v ON_ERROR_STOP=1 -f $f; done
-psql -d prueba -f supabase/tests/rls.sql
+for f in $(ls supabase/migrations/*.sql | sed 1d); do psql -d prueba -v ON_ERROR_STOP=1 -f $f; done
+psql -d prueba -f supabase/tests/rls.sql            # entrenamientos, revisión, aislamiento
+psql -d prueba -f supabase/tests/rls_progress.sql   # mediciones y fotos (ejecutar DESPUÉS de rls.sql)
 ```
-Salida esperada: todas las líneas `OK` y `RESULTADO ATAQUES: ninguno`. Si aparece `FALLO` o un ataque, hay un agujero: no desplegar.
+Salida esperada: todas las líneas `OK`, `RESULTADO ATAQUES: ninguno` y `RESULTADO ATAQUES PROGRESO: ninguno`. `stub_auth.sql` simula también el almacenamiento de Supabase (`storage`). Si aparece `FALLO` o un ataque, hay un agujero: no desplegar.
 Al agregar una tabla con datos del cliente, añade su caso a `rls.sql`.

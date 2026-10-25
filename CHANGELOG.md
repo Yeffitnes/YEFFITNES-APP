@@ -8,6 +8,13 @@ Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir
 - SQL: `0008_progress.sql` (`measurements`, `progress_photos`, `client_has_consent`, `give_image_consent`, bucket `progress-photos` y sus políticas; el plan debe incluir `progress`).
 - Código: `components/portal/ProgressPanels.tsx`, `ProgressView.tsx`, `lib/image.ts`, `lib/queries.ts`, `PortalNav.tsx`, `ClientFicha.tsx`.
 - Revertir código: `git revert`. Revertir SQL: `drop table progress_photos, measurements; drop function give_image_consent, client_has_consent;` y borrar las políticas `fotos: …` de `storage.objects` y el bucket (esto borra mediciones y fotos).
+## 2026-10-24 · Integración del parche "Mi plan" + endurecimiento de Progreso (0011)
+- Se integró el parche de otra sesión de Claude (Mi plan, endurecimiento RLS, metadatos de día, logo). Choque de numeración: su `0008`/`0009` pasaron a **`0009_harden_client_writes`** y **`0010_plan_day_meta`** porque `0008` ya era Progreso.
+- Se **ejecutaron** las pruebas de ataque en un Postgres 16 desechable con las 11 migraciones desde cero: `RESULTADO ATAQUES: ninguno`. Sin la 0009 la prueba falla (detecta el hueco).
+- Hallazgo propio: las políticas de mi `0008_progress` tenían los mismos huecos (medición o foto con el espacio de OTRO coach, moverla de espacio, foto apuntando a la carpeta de otro cliente). Corregido en **`0011_harden_progress.sql`**; nuevas pruebas `supabase/tests/rls_progress.sql`; `stub_auth.sql` ahora simula `storage`.
+- Orden de SQL en Supabase: `0009`, `0010`, `0011`. **El código nuevo pide columnas de 0010: ejecutar el SQL antes de probar.**
+- Revertir: `git revert` de los commits; SQL 0011: restaurar las políticas `me_client_ins`, `me_client_upd`, `ph_client_ins` de 0008 (reabre los huecos).
+
 ## 2026-10-24 · Mi plan (portal), endurecimiento de seguridad y logo
 - **Seguridad (0009):** las políticas de escritura del cliente permitían, vía API pública, registrar series en planes/clientes ajenos o sin plan de entrenamiento. Ahora exigen `client_id = my_client_id()`, feature `training`, mismo workspace y pertenencia de `plan_day`/`workout_log`/`plan_item`. Pruebas de ataque reproducibles en `supabase/tests/` (resultado esperado: "ninguno").
 - **Mi plan** en `/inicio/plan` según `design/mockups/portal-mi-plan.html`: semana LUN–DOM, detalle del día, pestaña Nutrición bloqueable, estados carga/vacío/error. Omitido por no tener datos aún: vídeo de rutina, próxima revisión, nivel, nota del coach.
