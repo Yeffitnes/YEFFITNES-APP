@@ -84,8 +84,9 @@ function Routine({ cid, title, items, log, today }: { cid: string; title: string
   );
 }
 function SetRow({ cid, item, n, today, saved, locked, onLast }: { cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onLast: () => void }) {
-  const log = useLogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : ""), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : "");
   const target = parseInt(item.reps, 10);
+  // Las casillas ya traen lo planeado (editable y visible): "✓" guarda exactamente lo que se ve, nunca algo oculto.
+  const log = useLogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
   // Un toque en ✓ basta: si no escribió nada, se guarda lo planeado (reps objetivo y peso objetivo).
   const repsVal = reps !== "" ? Number(reps) : Number.isNaN(target) ? NaN : target, wVal = w !== "" ? Number(w) : item.weight;
   const ok = repsVal >= 0 && (wVal == null || wVal >= 0) && !Number.isNaN(repsVal);

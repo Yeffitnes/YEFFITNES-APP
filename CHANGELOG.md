@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-24 · Revisión del parche "Auditoría 2": ajustes al integrarlo
+- Se integró tal cual el parche de velocidad y flujo, con tres ajustes: (1) el "✓ de un toque" ya no guarda en silencio lo planeado: las casillas de repeticiones y peso **muestran** los valores planeados (editables) y se guarda lo que se ve, porque Jeff revisa datos "reales"; (2) borrar una foto elimina **primero el archivo** y luego la fila (antes podía quedar un archivo huérfano al que el coach aún tendría acceso); (3) asignar una rutina a varios días refresca la pantalla aunque falle uno (puede haber quedado guardado en otros).
+- **Aviso para la fase de vídeo:** `next.config.mjs` fija `Permissions-Policy: microphone=()`; al construir el reporte diario con vídeo hay que cambiarlo a `microphone=(self)` o la grabación saldrá sin sonido.
+- Sin SQL nuevo (siguen 0001–0012). Revertir: `git revert`.
+
 ## 2026-10-24 · Auditoría 2: velocidad y flujo (sin SQL nuevo)
 - **Auditoría de seguridad:** las 11 migraciones + `rls.sql` + `rls_progress.sql` pasan en una base limpia ("ataques: ninguno"). No se encontraron agujeros nuevos.
 - **Velocidad (portal):** el layout ya lee al cliente y su plan en el servidor y los pasa a la caché: "Hoy" ya no espera ese viaje y plan+registros cargan en paralelo. Se precargan Mi plan y Progreso mientras se ve Hoy. En el coach se precargan también revisiones recientes y clientes con plan (el dashboard abre sin esperas).

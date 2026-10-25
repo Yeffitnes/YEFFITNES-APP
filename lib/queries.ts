@@ -126,7 +126,8 @@ export function useAssignDay(clientId: string) {
       const bad = res.find((r) => r.error); if (bad?.error) throw bad.error;
     },
     onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
-    onError: () => toast("No pudimos asignar la rutina. Inténtalo de nuevo.", true),
+    onError: () => toast("No pudimos asignar la rutina a todos los días. Revisa cuáles quedaron e inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }), // si falló uno, otros días pudieron guardarse
   });
 }
 export function useClearDay(clientId: string) {
@@ -275,8 +276,8 @@ export function useDeletePhoto(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["photos", clientId];
   return useMutation({
     mutationFn: async (p: { id: string; path: string }) => {
+      const rm = await db().storage.from("progress-photos").remove([p.path]); if (rm.error) throw rm.error; // primero el archivo: así no queda ninguno huérfano al que el coach aún pueda acceder
       const { error } = await db().from("progress_photos").delete().eq("id", p.id); if (error) throw error;
-      await db().storage.from("progress-photos").remove([p.path]); // si falla, el archivo queda huérfano pero ya nadie lo ve
     },
     onMutate: async (p) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<Photo[]>(key); qc.setQueryData<Photo[]>(key, (l) => l?.filter((x) => x.id !== p.id)); return { prev }; },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos borrar la foto. Inténtalo de nuevo.", true); },
