@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useThread } from "@/lib/messages";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { localDate, useFinish, useLogs, useLogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
+import { localDate, useFinish, useLogs, useLogSet, useUnlogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { ReportCard } from "./ReportCard";
@@ -14,6 +14,8 @@ import { CHECK_ICON } from "./icons";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
 import { DAY_LONG, categoryLabel, weekDates } from "@/lib/week";
 import { Icon } from "@/components/ui/Icon";
+import { QuickRow } from "./QuickRow";
+import { RoutineVideo } from "./RoutineVideo";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
@@ -49,17 +51,18 @@ export function HoyView() {
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">{cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))}</div><h1>Hola, {first}</h1><p className="greeting-sub">{sub}</p></div></div>
-      <FromCoach />
-      {!!ann.data?.length && <div className="card" style={{ marginBottom: 18 }}>
-        <div className="card-tag">Anuncios de tu coach</div>
-        {ann.data.map((a) => <div key={a.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.55 }}>{a.pinned && <Icon name="pin" size={13} style={{ marginRight: 5 }} />}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
-      </div>}
-      {me.data && (me.data.features.includes("daily_report") ? <ReportCard clientId={cid} /> : <div style={{ marginBottom: 18 }}><FeatureGate features={me.data.features} feature="daily_report" name={name}><span /></FeatureGate></div>)}
       <div className="streak-strip">
         <div className="streak-copy"><div className="streak-num"><span>{n}</span> {n === 1 ? "día" : "días"}</div><div className="streak-label">{n ? "seguidos cumpliendo tu rutina." : "Completa tu primera rutina para empezar tu racha."}</div></div>
         <div>
         <div className="week-strip">{wk.map((d, i) => { const st = dayState(d, i + 1, today, planWd, logList, plan?.startsOn ?? ""); return <div key={d} className="week-day"><div className={`week-dot ${st.cls}${d === today ? " today" : ""}`} title={`${DAY_LONG[i]} — ${st.title}`}>{st.cls === "done" ? <Icon name="check" size={13} stroke={2.6} /> : d === today ? <span className="week-letter">{LBL[i]}</span> : null}</div>{d !== today && <div className="week-day-label">{LBL[i]}</div>}</div>; })}</div>
         </div>
+      </div>
+      <div className="qrows">
+      <FromCoach />
+      {!!ann.data?.length && <QuickRow icon="megaphone" tone="idle" title={ann.data.length === 1 ? "Anuncio de tu coach" : `${ann.data.length} anuncios de tu coach`} sub={ann.data[0].title || ann.data[0].body.slice(0, 60)}>
+        {ann.data.map((a) => <div key={a.id} style={{ marginTop: 8, fontSize: 14, lineHeight: 1.55 }}>{a.pinned && <Icon name="pin" size={13} style={{ marginRight: 5 }} />}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
+      </QuickRow>}
+      {me.data && (me.data.features.includes("daily_report") ? <ReportCard clientId={cid} /> : <div style={{ marginBottom: 12 }}><FeatureGate features={me.data.features} feature="daily_report" name={name}><span /></FeatureGate></div>)}
       </div>
       <DayDone cid={cid} features={me.data?.features ?? []} trainingToday={!!day} trainingDone={!!logToday?.completed} />
       <FeaturedVideo />
@@ -86,14 +89,10 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
   const anySet = (log?.sets.length ?? 0) > 0, closed = !!log?.completed && !editing;
   return (
     <div className="card card-routine">
-      <div className="card-tag"><span className="week-dot today" style={{ width: 7, height: 7, borderRadius: "50%", border: "none", background: "var(--accent)" }} />Rutina de hoy</div>
+      <div className="card-tag"><span className="live-dot" />Rutina de hoy</div>
       <div className="card-title">{title}</div>
       <div className="card-meta">{[`${items.length} ejercicios`, day.minutes ? `${day.minutes} min aprox.` : null, categoryLabel(day.category) ?? day.category].filter(Boolean).join(" · ")}</div>
-      {(day.hasPersonalVideo || day.videoRef) && <div className="video-teaser" role="button" tabIndex={0} onClick={() => setTeaser(day.hasPersonalVideo ? "personal" : "yt")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setTeaser(day.hasPersonalVideo ? "personal" : "yt"); } }}>
-        <div className="video-teaser-thumb"><div className="play"><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></div></div>
-        <div className="video-teaser-body"><div className="video-teaser-title">Ver vídeo de la rutina</div>{day.hasPersonalVideo && <span className="video-teaser-tag">Grabado para ti</span>}</div>
-        <svg className="video-teaser-chev" viewBox="0 0 10 8" fill="none"><path d="M1 4h8M6 1l3 3-3 3" strokeLinecap="round" /></svg>
-      </div>}
+      {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} onOpen={() => setTeaser(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
       {teaser === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setTeaser(null)} />}
       {teaser === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setTeaser(null)} />}
       {guide && !closed && <TrainingGuide />}
@@ -102,7 +101,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
       <div className="exercise-list">{items.map((i, idx) => (
         <div key={i.id}>
           <div className={`ex-row${saved(i.id).length >= i.sets ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(open === i.id ? null : i.id); } }}>
-            <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><div className="ex-name">{i.name}</div><div className="ex-meta">{i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
+            <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><div className="ex-name">{i.name}</div><div className="ex-meta">{saved(i.id).length}/{i.sets} · {i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
           {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}</div>}
         </div>))}</div>
@@ -126,10 +125,12 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
 function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onLast: () => void }) {
   const target = parseInt(item.reps, 10);
   // Las casillas ya traen lo planeado (editable y visible): "✓" guarda exactamente lo que se ve, nunca algo oculto.
-  const log = useLogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
+  const log = useLogSet(cid), unlog = useUnlogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
   // Un toque en ✓ basta: si no escribió nada, se guarda lo planeado (reps objetivo y peso objetivo).
   const repsVal = reps !== "" ? Number(reps) : Number.isNaN(target) ? NaN : target, wVal = w !== "" ? Number(w) : item.weight;
   const ok = repsVal >= 0 && (wVal == null || wVal >= 0) && !Number.isNaN(repsVal);
+  const dirty = !!saved && ((saved.reps ?? null) !== (repsVal ?? null) || (saved.weight ?? null) !== (wVal ?? null));
+  const toggle = () => { if (saved && !dirty) { if (!locked && !unlog.isPending) unlog.mutate({ date: today, itemId: item.id, setNumber: n }); return; } save(); };
   const save = () => { if (!ok || locked || log.isPending) return; log.mutate({ date: today, itemId: item.id, setNumber: n, reps: repsVal, weight: wVal ?? null }, { onSuccess: () => { if (n === item.sets) onLast(); } }); };
   const onKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") { e.preventDefault(); save(); } };
   return (
@@ -137,21 +138,21 @@ function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: b
       <label>SERIE {n}</label>
       <input className="set-input" inputMode="numeric" type="number" min={0} value={reps} onChange={(e) => setReps(e.target.value)} placeholder={Number.isNaN(target) ? "reps" : `${target} reps`} aria-label={`Repeticiones serie ${n}`} disabled={locked} onKeyDown={onKey} />
       <input className="set-input" inputMode="decimal" type="number" min={0} step={0.5} value={w} onChange={(e) => setW(e.target.value)} placeholder={item.weight ? `${item.weight} kg` : "kg"} aria-label={`Peso serie ${n} en kilos`} disabled={locked} onKeyDown={onKey} />
-      <button className={`set-save${saved ? " on" : ""}${hint && !saved ? " hint" : ""}`} disabled={!ok || log.isPending || locked} aria-label={`Guardar serie ${n}`} onClick={save}><Icon name="check" size={15} stroke={2.2} /></button>
+      <button className={`set-save${saved ? " on" : ""}${hint && !saved ? " hint" : ""}`} disabled={(!ok && !saved) || log.isPending || unlog.isPending || locked} aria-label={saved && !dirty ? `Deshacer serie ${n}` : `Guardar serie ${n}`} title={saved && !dirty ? "Toca para deshacer" : "Guardar serie"} onClick={toggle}><Icon name="check" size={15} stroke={2.2} /></button>
     </div>
   );
 }
 
-// Último mensaje de tu coach ("De Jeff"), para que lo vea sin entrar a Mensajes.
+// Último mensaje de tu coach: una fila compacta que se abre. Nuevo = resaltada; ya leído = discreta.
 function FromCoach() {
   const t = useThread(), last = [...(t.data ?? [])].reverse().find((m) => m.sender === "coach");
   if (!last) return null;
-  const when = new Date(last.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" });
+  const when = new Date(last.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" }), fresh = !last.readAt;
+  const text = last.body ?? (last.hasVideo || last.youtubeId ? "Te envió un vídeo" : "Te envió una foto");
   return (
-    <Link href="/inicio/mensajes" className="card" style={{ display: "block", marginBottom: 18, textDecoration: "none", color: "inherit" }}>
-      <div className="card-tag">De tu coach{!last.readAt ? " · nuevo" : ""}</div>
-      <p style={{ fontSize: 14, lineHeight: 1.55, marginTop: 8 }}>{last.body ?? (last.hasVideo || last.youtubeId ? "Te envió un vídeo" : "Te envió una foto")}</p>
-      <div style={{ fontSize: 11.5, color: "var(--text-dim)", marginTop: 6 }}>{when} · Responder →</div>
-    </Link>
+    <QuickRow icon="message" tone={fresh ? "new" : "idle"} title="Mensaje de tu coach" sub={`${when} · ${text.slice(0, 48)}${text.length > 48 ? "…" : ""}`} chip={fresh ? "Nuevo" : undefined} defaultOpen={fresh}>
+      <p className="qrow-quote" style={{ fontStyle: "normal", color: "var(--text)" }}>{text}</p>
+      <Link href="/inicio/mensajes" className="mini-btn primary" style={{ textDecoration: "none", display: "inline-flex", marginTop: 12 }}>Responder</Link>
+    </QuickRow>
   );
 }

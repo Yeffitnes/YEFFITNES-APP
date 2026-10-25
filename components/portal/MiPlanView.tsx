@@ -9,7 +9,7 @@ import { gradient, initials } from "@/lib/format";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
-import { Icon } from "@/components/ui/Icon";
+import { RoutineVideo } from "./RoutineVideo";
 
 const LEVELS = [["beginner", "Principiante"], ["intermediate", "Intermedio"], ["advanced", "Avanzado"]] as const;
 function relReview(d: string) {
@@ -105,11 +105,7 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       <div className="card-tag"><span style={{ width: 7, height: 7, borderRadius: "50%", background: isToday ? "var(--accent)" : "#D7DAE3" }} />{DAY_LONG[weekday - 1]}{isToday ? " · Hoy" : ""}</div>
       <div className="card-title">{day.name}</div>
       <div className="card-meta">{meta}</div>
-      {day.hasPersonalVideo || day.videoRef
-        ? <button type="button" className="routine-video" style={{ border: 0, width: "100%", padding: 0, font: "inherit" }} aria-label="Ver vídeo de la rutina" onClick={() => setDv(day.hasPersonalVideo ? "personal" : "yt")}>
-            <div className={`routine-video-tag${day.hasPersonalVideo ? " personal" : ""}`}>{day.hasPersonalVideo ? <><Icon name="check" size={10} stroke={2.4} /> Grabado para ti</> : "Vídeo de rutina"}</div>
-            <div className="routine-video-play"><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></div></button>
-        : <div className="routine-video-empty"><div className="routine-video-empty-icon"><Icon name="video" size={15} /></div><div className="routine-video-empty-text"><b>Vídeo aún no disponible.</b><br />Tu coach puede subirlo antes de tu sesión.</div></div>}
+      {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
       {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setDv(null)} />}
       {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}
       {!day.items.length ? <p className="empty-note" style={{ marginTop: 16 }}>Esta rutina todavía no tiene ejercicios.</p> : (

@@ -199,6 +199,18 @@ export function useLogSet(clientId: string) {
     onSuccess: () => { if (qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
   });
 }
+export function useUnlogSet(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
+  return useMutation({
+    mutationFn: async (v: { date: string; itemId: string; setNumber: number }) => { const { error } = await db().rpc("unlog_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber }); if (error) throw error; },
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
+      qc.setQueryData<WorkoutLog[]>(key, (l = []) => l.map((x) => (x.date === v.date ? { ...x, sets: x.sets.filter((y) => !(y.itemId === v.itemId && y.setNumber === v.setNumber)) } : x)));
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos deshacer la serie. Inténtalo de nuevo.", true); },
+  });
+}
 export function useFinish(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({

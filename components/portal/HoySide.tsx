@@ -13,15 +13,15 @@ import { Icon } from "@/components/ui/Icon";
 import { icsHref } from "@/lib/ics";
 const ARROW = <svg viewBox="0 0 10 10"><path d="M2 5h6M5 2l3 3-3 3" /></svg>;
 // Tarjetas laterales de "Hoy" (diseño portal-hoy): próxima sesión, objetivo, nutrición de hoy y progreso reciente.
+const rel = (iso: string) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d1 = new Date(iso); d1.setHours(0, 0, 0, 0); const n = Math.round((d1.getTime() - d0.getTime()) / 86400000); return n <= 0 ? "Hoy" : n === 1 ? "Mañana" : n < 14 ? `En ${n} días` : n < 60 ? `En ${Math.round(n / 7)} semanas` : `En ${Math.round(n / 30)} meses`; };
 export function SessionCard({ cid }: { cid: string }) {
-  const { data } = useMyBookings(cid), b = data?.[0];
+  const { data, isPending } = useMyBookings(cid), b = data?.[0], more = (data?.length ?? 0) - 1;
   return (
-    <div className="card card-session"><div className="card-tag">Próxima sesión</div>
-      {!b ? <><p className="empty-note" style={{ marginTop: 10 }}>Aún no tienes una sesión reservada. Elige un horario para tu llamada con tu coach.</p><div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none" }}>Reservar</Link></div></>
-        : <><div className="card-title" style={{ fontSize: 15 }}>Reservada</div>
-          <div className="session-block"><div className="session-date">{DAY3[(new Date(b.startsAt).getDay() + 6) % 7]}<span>{new Date(b.startsAt).getDate()}</span></div>
-            <div><div className="session-name">{hhmm(b.startsAt)} — {b.duration} min</div><div className="session-type">{KIND_LABEL[b.kind]}</div></div></div>
-          <div className="session-actions"><a className="mini-btn primary" href={icsHref(b)} download="sesion-yeffitnes.ics" style={{ textDecoration: "none", textAlign: "center" }}><Icon name="bell" size={14} /> Recordarme</a><Link href="/inicio/agenda" className="mini-btn ghost" style={{ textDecoration: "none", textAlign: "center" }}>Ver o cambiar</Link></div></>}
+    <div className="card card-session"><div className="card-tag"><span className="live-dot" />Próxima sesión</div>
+      {isPending ? <div className="sk" style={{ height: 70 }} /> : !b ? <><p className="empty-note" style={{ marginTop: 10 }}>Aún no tienes una sesión reservada. Elige un horario para tu llamada con tu coach.</p><div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none" }}>Reservar</Link></div></>
+        : <><div className="session-block"><div className="session-date">{DAY3[(new Date(b.startsAt).getDay() + 6) % 7]}<span>{new Date(b.startsAt).getDate()}</span></div>
+            <div><div className="session-name">{rel(b.startsAt)} · {hhmm(b.startsAt)}</div><div className="session-type">{KIND_LABEL[b.kind]} · {b.duration} min{more > 0 ? ` · +${more} más` : ""}</div></div></div>
+          <div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none", textAlign: "center" }}>Ver sesión</Link><a className="mini-btn ghost" href={icsHref(b)} download="sesion-yeffitnes.ics" style={{ textDecoration: "none", textAlign: "center" }}><Icon name="bell" size={14} /> Recordarme</a></div></>}
     </div>
   );
 }
@@ -29,8 +29,8 @@ export function ObjectiveCard() {
   const { profileId } = useProfile(), me = useMe(profileId).data;
   const days = me?.objectiveAt ? Math.floor((Date.now() - new Date(me.objectiveAt).getTime()) / 86400000) : null;
   return (
-    <div className="card card-objective"><div className="card-tag">Objetivo actual</div><div className="card-title" style={{ fontSize: 15 }}>Definido por tu coach</div>
-      {me?.objective ? <><p className="objective-text">{me.objective}</p><div className="objective-meta">{days === null ? "" : days <= 0 ? "Actualizado hoy" : `Actualizado hace ${days} día${days === 1 ? "" : "s"}`}</div></>
+    <div className="card card-objective"><div className="card-tag"><span className="live-dot" />Objetivo actual</div>
+      {me?.objective ? <><p className="objective-text">{me.objective}</p><div className="objective-meta"><span className={`live-dot sm${days !== null && days > 30 ? " old" : ""}`} />{days === null ? "Definido por tu coach" : days <= 0 ? "Actualizado hoy" : `Actualizado hace ${days} día${days === 1 ? "" : "s"}`}</div></>
         : <p className="empty-note" style={{ marginTop: 10 }}>Tu coach aún no define tu objetivo. Aparecerá aquí.</p>}
     </div>
   );

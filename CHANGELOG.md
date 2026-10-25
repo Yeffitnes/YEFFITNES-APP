@@ -1,6 +1,19 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Panel Hoy rediseñado, corrección de "sin sesión reservada", destachar series (migración 0026; rama `bloque-hoy`, sin subir a main)
+- **Error corregido (0026):** la política `slots_client_read` (0012) comparaba contra `bookings.id` en vez de `availability_slots.id`; el cliente nunca podía leer el horario de su reserva y Hoy decía "aún no tienes una sesión". Ahora aparece cualquier sesión futura (una semana, un mes…), con "En N días", "Ver sesión" y "Recordarme". Prueba nueva en `rls_agenda.sql`.
+- **Destachar series (0026):** `unlog_set()`; tocar el check de una serie ya guardada la deshace (si cambias reps/peso, vuelve a guardar).
+- **Orden de Hoy:** saludo + semana (bloque oscuro de marca) primero; luego filas compactas y plegables (mensaje del coach, anuncios, reporte); después la rutina y las tarjetas. Mensaje nuevo = fila resaltada y abierta; ya leído = una línea. Reporte enviado = una línea con check.
+- **Reporte:** el vídeo (cuando Bunny está activo) y el comentario son obligatorios; el vídeo dura máximo 30 s (`MAX_VIDEO_SECONDS`). La obligatoriedad del comentario está solo en la interfaz (no en la base de datos).
+- **Rutina de hoy:** vídeo grande al estilo DaniFit; si aún no hay vídeo se ve igual, con candado y "Disponible pronto" (en Hoy y en Mi plan). Cada ejercicio muestra series hechas (2/3). El vídeo "no aparecía" porque aún no existe ninguno: sin Bunny el coach no puede subirlo.
+- **Bolita viva** (`live-dot`) en Rutina de hoy, Próxima sesión y Objetivo (Objetivo: "Actualizado hace N días"; pasa a dorado si pasan 30 días).
+- **Nutrición:** cada comida se pliega (solo el nombre); tocarla muestra qué toca; el círculo marca y desmarca.
+- **Color:** tarjeta de nivel, sesión y semana en tonos oscuros con degradado; barra lateral del coach con degradado rojo/dorado y marca activa más visible.
+- **Archivos:** `0026_fix_client_slot_read.sql`, `lib/queries.ts`, `lib/upload-video.ts`, `components/portal/{QuickRow,RoutineVideo,HoyView,HoySide,ReportCard,MealChecklist,MiPlanView}.tsx`, `components/ui/Icon.tsx`, `app/inicio/portal.css`, `app/coach/coach.css`.
+- **Sin probar:** flujo autenticado completo y teléfono real (solo maqueta renderizada y pruebas de base de datos).
+- **Revertir:** `git revert`; SQL: `drop function public.unlog_set(date, uuid, int);` y recrear la política anterior (no recomendado).
+
 ## 2026-10-25 · Landing de venta separada (carpeta `landing/`) y nueva entrada de la app (rama `bloque-landing`, sin subir a main)
 - **Landing de venta:** `landing/index.html`, sitio estático basado en la landing v3 de DaniFit pero con marca de Jeff (rojo/negro/dorado), sin emojis y con pantallas de ejemplo de la app real (Hoy, Mi plan con nutrición por comidas, Agenda, Progreso). **No enlaza a la app ni al login**: todos los botones van al WhatsApp de Jeff. Se quitaron contadores y testimonios inventados y los precios; los planes Esencial/Completo son PROPUESTA.
 - **WhatsApp:** número placeholder `57XXXXXXXXXX` (constante `COACH_PHONE` en `landing/index.html`). Falta el real y la foto `landing/assets/jeff.jpg`.

@@ -15,6 +15,10 @@ const PATHS = {
   chart: <path d="M4.5 15.5v-4.5M10 15.5V5.5M15.5 15.5V8.5" />,
   calendar: <><rect x="3.2" y="4.2" width="13.6" height="12.3" rx="2.5" /><path d="M3.2 8h13.6M6.8 2.8v3M13.2 2.8v3" /></>,
   image: <><rect x="3.2" y="4.2" width="13.6" height="11.6" rx="2.2" /><circle cx="7.6" cy="8.4" r="1.4" /><path d="M3.6 14l4-3.8 3 2.8 2.2-2 3.6 3.2" /></>,
+  message: <path d="M4.2 5h11.6a1.2 1.2 0 0 1 1.2 1.2v6.1a1.2 1.2 0 0 1-1.2 1.2H9.6L6.2 16.4v-2.9H4.2A1.2 1.2 0 0 1 3 12.3V6.2A1.2 1.2 0 0 1 4.2 5z" />,
+  chevron: <path d="M7.6 5l5 5-5 5" />,
+  target: <><circle cx="10" cy="10" r="6.6" /><circle cx="10" cy="10" r="3.2" /><circle cx="10" cy="10" r=".6" fill="currentColor" /></>,
+  megaphone: <><path d="M4 8.5v3l8 3.5V5L4 8.5z" /><path d="M6 11.7l.8 3.3h2" /><path d="M15 8.2a2.4 2.4 0 0 1 0 3.6" /></>,
 } as const;
 export type IconName = keyof typeof PATHS;
 export function Icon({ name, size = 16, stroke = 1.7, className, style }: { name: IconName; size?: number; stroke?: number; className?: string; style?: React.CSSProperties }) {

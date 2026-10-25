@@ -1,5 +1,5 @@
 // Subida directa del teléfono a Bunny (TUS, reanudable). El servidor firma; la clave de Bunny nunca llega aquí.
-export const MAX_VIDEO_SECONDS = 90;          // PROPUESTA: confirmar con Jeff
+export const MAX_VIDEO_SECONDS = 30;          // Pedido por Jeff: máximo 30 s
 export const MAX_VIDEO_MB = 200;
 export const MAX_COACH_VIDEO_SECONDS = 300, MAX_COACH_VIDEO_MB = 500;   // el coach puede enviar vídeos más largos (explicaciones)
 export class UploadError extends Error { constructor(public code: string) { super(code); } }

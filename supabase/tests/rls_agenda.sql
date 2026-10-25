@@ -49,6 +49,9 @@ begin
   if not pg_temp.fails(format('select public.coach_book_slot(%L,%L)', sfar, ca)) then bad:=bad||' [otro coach agendó en el espacio de Jeff]'; end if;
   perform pg_temp.as_user(a);
   if not pg_temp.fails(format('select public.coach_book_slot(%L,%L)', sfar, ca)) then bad:=bad||' [un cliente usó la función del coach]'; end if;
+  perform pg_temp.as_user(a);
+  select count(*) into n from public.availability_slots s where exists (select 1 from public.bookings b where b.slot_id = s.id);
+  if n = 0 then bad:=bad||' [el cliente no puede leer el hueco de su propia reserva: Hoy diria que no tiene sesion]'; end if;
   raise notice 'RESULTADO ATAQUES AGENDA: %', coalesce(nullif(bad,''),'ninguno');
   perform pg_temp.reset();
 end $$;
