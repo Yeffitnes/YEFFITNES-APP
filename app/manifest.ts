@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 // App instalable (Android: "Instalar app"; iPhone: Compartir → Añadir a pantalla de inicio).
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: "/", name: "YEFFITNES TRAINING", short_name: "YEFFITNES", description: "Tu coaching online con Jeff González: rutina, nutrición, agenda y mensajes.",
+    id: "/", name: "YEFFITNES TRAINING", short_name: process.env.NEXT_PUBLIC_APP_NAME || "YEFFITNES", description: "Tu coaching online con Jeff González: rutina, nutrición, agenda y mensajes.",
     start_url: "/inicio", scope: "/", display: "standalone", orientation: "portrait", lang: "es", dir: "ltr",
     background_color: "#0A0910", theme_color: "#0A0910", categories: ["fitness", "health", "lifestyle"],
     icons: [

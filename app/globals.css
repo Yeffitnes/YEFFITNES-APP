@@ -37,3 +37,11 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 @keyframes blPulse { 0%, 100% { opacity: .62; transform: scale(.985); } 50% { opacity: 1; transform: scale(1); } }
 @keyframes blShine { to { transform: translateX(120%); } }
 @keyframes blBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(290%); } }
+
+/* Bloqueo de uso en navegador (InstallGate) */
+.ig{min-height:100dvh;background:radial-gradient(120% 80% at 50% 0%,#2a0d12 0%,#0A0910 60%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px 24px;text-align:center}
+.ig-logo{margin-bottom:10px}
+.ig h1{font-family:var(--font-display);font-size:24px;line-height:1.15;margin:0}
+.ig-sub{font-size:14px;line-height:1.5;color:rgba(255,255,255,.7);max-width:320px;margin:0}
+.ig-steps{text-align:left;font-size:14px;line-height:1.55;color:rgba(255,255,255,.85);max-width:320px;padding-left:20px;margin:6px 0 0;display:grid;gap:8px}
+.ig-btn{background:linear-gradient(135deg,#7a0f1c,#2a0a10);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 28px;font-weight:600;font-size:15px;margin-top:6px}

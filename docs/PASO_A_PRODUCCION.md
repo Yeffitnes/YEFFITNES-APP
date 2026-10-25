@@ -16,6 +16,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
 - [ ] `BUNNY_API_KEY`, `BUNNY_LIBRARY_ID` (y `BUNNY_TOKEN_KEY` si se usa) — pendiente de crear la cuenta
 - [ ] `NEXT_PUBLIC_SITE_URL` solo con dominio propio (en Netlify, si no existe, se usa `URL`, que Netlify define sola; ver `app/layout.tsx`)
+- [ ] `NEXT_PUBLIC_REQUIRE_INSTALL=1` para obligar a usar la app instalada en celulares (apagada si está vacía). `NEXT_PUBLIC_APP_NAME=YEFFITNES Test` solo en Vercel.
 - [ ] Tras cambiar variables `NEXT_PUBLIC_*`, volver a desplegar (se incrustan al construir).
 
 ## 2. Supabase
