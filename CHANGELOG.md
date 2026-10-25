@@ -8,6 +8,14 @@ Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir
 - SQL: `0008_progress.sql` (`measurements`, `progress_photos`, `client_has_consent`, `give_image_consent`, bucket `progress-photos` y sus políticas; el plan debe incluir `progress`).
 - Código: `components/portal/ProgressPanels.tsx`, `ProgressView.tsx`, `lib/image.ts`, `lib/queries.ts`, `PortalNav.tsx`, `ClientFicha.tsx`.
 - Revertir código: `git revert`. Revertir SQL: `drop table progress_photos, measurements; drop function give_image_consent, client_has_consent;` y borrar las políticas `fotos: …` de `storage.objects` y el bucket (esto borra mediciones y fotos).
+## 2026-10-24 · Agenda: Jeff publica horarios, el cliente reserva
+- Coach `/coach/agenda` (mockup `coach-agenda`): semana LUN–DOM, huecos libres y sesiones confirmadas, publicar disponibilidad en bloques (desde–hasta con duración de 30/45/60 min), agendar a un cliente, cancelar una sesión y quitar un hueco. Cliente `/inicio/agenda` (mockup `portal-agenda`): calendario semanal, filtro por tipo, "Tu selección", "Tus próximas sesiones", cancelar y aviso opcional por WhatsApp.
+- **Reglas en la base de datos (no en la pantalla):** un hueco confirmado solo admite una reserva aunque dos personas pulsen a la vez; el cliente no ve datos de otros clientes; sin escritura directa del cliente (solo funciones).
+- **Reglas PROPUESTAS, no definidas por Jeff (confirmar con él):** una reserva futura por cliente a la vez; el cliente cancela hasta 24 h antes (el coach siempre); tipos de hueco "Llamada inicial" y "Seguimiento"; sesiones individuales (sin clases grupales ni presenciales). Cambiarlas = editar las funciones `book_slot` y `cancel_booking`.
+- SQL: `0012_agenda.sql` (`availability_slots`, `bookings`, `list_open_slots`, `book_slot`, `coach_book_slot`, `cancel_booking`, trigger que impide cancelar un hueco con reserva). Pruebas: `supabase/tests/rls_agenda.sql` (resultado: ninguno). Omitido por no tener datos: "agenda del día" en el dashboard y recordatorios.
+- Zona horaria: se asume un solo huso (el de Jeff y sus clientes); los horarios se guardan en UTC y se muestran en la hora del dispositivo.
+- Revertir código: `git revert`. Revertir SQL: `drop table bookings, availability_slots cascade; drop function list_open_slots, book_slot, coach_book_slot, cancel_booking, slot_cancel_guard;` (borra reservas).
+
 ## 2026-10-24 · Integración del parche "Mi plan" + endurecimiento de Progreso (0011)
 - Se integró el parche de otra sesión de Claude (Mi plan, endurecimiento RLS, metadatos de día, logo). Choque de numeración: su `0008`/`0009` pasaron a **`0009_harden_client_writes`** y **`0010_plan_day_meta`** porque `0008` ya era Progreso.
 - Se **ejecutaron** las pruebas de ataque en un Postgres 16 desechable con las 11 migraciones desde cero: `RESULTADO ATAQUES: ninguno`. Sin la 0009 la prueba falla (detecta el hueco).

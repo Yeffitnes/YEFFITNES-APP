@@ -13,7 +13,7 @@ type Item = { href?: string; label: string; icon: keyof typeof I; sub?: boolean;
 const GROUPS: { label?: string; items: Item[] }[] = [
   { items: [{ href: "/coach", label: "Dashboard", icon: "dash", exact: true }, { href: "/coach/clientes", label: "Clientes", icon: "cli" }] },
   { label: "Catálogo", items: [{ href: "/coach/catalogo/ejercicios", label: "Ejercicios", icon: "ex", sub: true }, { href: "/coach/catalogo/rutinas", label: "Rutinas", icon: "rut", sub: true }] },
-  { label: "Operación", items: [{ label: "Agenda", icon: "ag" }, { label: "Material educativo", icon: "mat" }] },
+  { label: "Operación", items: [{ href: "/coach/agenda", label: "Agenda", icon: "ag" }, { label: "Material educativo", icon: "mat" }] },
 ];
 export function SideNav({ clientCount }: { clientCount: number }) {
   const path = usePathname();
@@ -37,6 +37,6 @@ export function SideNav({ clientCount }: { clientCount: number }) {
 }
 export function MobileNav() {
   const path = usePathname();
-  const L = [["/coach", "Dashboard"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"]];
+  const L = [["/coach", "Dashboard"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"], ["/coach/agenda", "Agenda"]];
   return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}</Link>)}</nav>;
 }

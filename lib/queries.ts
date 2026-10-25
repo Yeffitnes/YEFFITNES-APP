@@ -269,3 +269,65 @@ export function useGiveConsent(profileId: string) {
 export const useConsent = (profileId: string) => useQuery({ queryKey: ["consent", profileId], staleTime: 300_000, enabled: !!profileId, queryFn: async () => {
   const { data, error } = await db().from("clients").select("image_consent_at").eq("profile_id", profileId).maybeSingle(); if (error) throw error; return !!data?.image_consent_at;
 } });
+
+// ---- Agenda ----
+export const KIND_LABEL: Record<string, string> = { initial: "Llamada inicial", followup: "Seguimiento" };
+export const KIND_COLOR: Record<string, string> = { initial: "#F7254B", followup: "#B08A3E" };
+const AG_ERR: Record<string, string> = {
+  slot_taken: "Ese horario acaba de ser reservado por otra persona. Elige otro.", slot_unavailable: "Ese horario ya no está disponible. Elige otro.",
+  already_has_booking: "Ya tienes una sesión reservada. Cancélala (hasta 24 h antes) si quieres cambiarla.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
+  not_active: "Tu cuenta aún no está activa.", has_booking: "Ese hueco tiene una reserva: primero cancela la reserva.",
+};
+export const agendaError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(AG_ERR).find((x) => m.includes(x)); return k ? AG_ERR[k] : "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo."; };
+export function weekBounds(offset: number) {
+  const t = new Date(); t.setHours(0, 0, 0, 0); const mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7) + offset * 7);
+  const next = new Date(mon); next.setDate(mon.getDate() + 7); return { from: mon, to: next };
+}
+export type Slot = { id: string; startsAt: string; duration: number; kind: string; taken: boolean; mine: boolean };
+export const useOpenSlots = (offset: number) => useQuery({ queryKey: ["open-slots", offset], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<Slot[]> => {
+  const { from, to } = weekBounds(offset);
+  const { data, error } = await db().rpc("list_open_slots", { p_from: from.toISOString(), p_to: to.toISOString() }); if (error) throw error;
+  return (data as { id: string; starts_at: string; duration_min: number; kind: string; taken: boolean; mine: boolean }[]).map((s) => ({ id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, taken: s.taken, mine: s.mine }));
+} });
+export type MyBooking = { id: string; startsAt: string; duration: number; kind: string };
+export const useMyBookings = (clientId: string) => useQuery({ queryKey: ["my-bookings", clientId], staleTime: 20_000, enabled: !!clientId, queryFn: async (): Promise<MyBooking[]> => {
+  const { data, error } = await db().from("bookings").select("id,availability_slots(starts_at,duration_min,kind)").eq("client_id", clientId).eq("status", "confirmed"); if (error) throw error;
+  return (data as unknown as { id: string; availability_slots: { starts_at: string; duration_min: number; kind: string } | null }[])
+    .filter((b) => b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind }))
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+} });
+function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
+export function useBookSlot() {
+  const toast = useToast(), inv = useAgendaInvalidate();
+  return useMutation({ mutationFn: async (slotId: string) => { const { error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; },
+    onSuccess: () => toast("¡Sesión reservada!"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
+}
+export function useCancelBooking() {
+  const toast = useToast(), inv = useAgendaInvalidate();
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("cancel_booking", { p_booking: id }); if (error) throw error; },
+    onSuccess: () => toast("Sesión cancelada"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
+}
+export type CoachSlot = { id: string; startsAt: string; duration: number; kind: string; booking: { id: string; clientName: string; by: string } | null };
+export const useCoachSlots = (offset: number) => useQuery({ queryKey: ["coach-slots", offset], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<CoachSlot[]> => {
+  const { from, to } = weekBounds(offset);
+  const { data, error } = await db().from("availability_slots").select("id,starts_at,duration_min,kind,bookings(id,status,booked_by,clients(profiles(full_name)))").eq("status", "open").gte("starts_at", from.toISOString()).lt("starts_at", to.toISOString()).order("starts_at"); if (error) throw error;
+  type Raw = { id: string; starts_at: string; duration_min: number; kind: string; bookings: { id: string; status: string; booked_by: string; clients: { profiles: { full_name: string } | null } | null }[] };
+  return (data as unknown as Raw[]).map((s) => { const b = s.bookings.find((x) => x.status === "confirmed");
+    return { id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, booking: b ? { id: b.id, clientName: b.clients?.profiles?.full_name || "Cliente", by: b.booked_by } : null }; });
+} });
+export function usePublishSlots(workspaceId: string) {
+  const toast = useToast(), inv = useAgendaInvalidate();
+  return useMutation({ mutationFn: async (v: { starts: string[]; duration: number; kind: string }) => {
+      const { error } = await db().from("availability_slots").upsert(v.starts.map((s) => ({ workspace_id: workspaceId, starts_at: s, duration_min: v.duration, kind: v.kind })), { onConflict: "workspace_id,starts_at", ignoreDuplicates: true }); if (error) throw error; },
+    onSuccess: () => toast("Disponibilidad publicada"), onError: () => toast("No pudimos publicar los horarios. Revisa los datos e inténtalo de nuevo.", true), onSettled: inv });
+}
+export function useRemoveSlot() {
+  const toast = useToast(), inv = useAgendaInvalidate();
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("availability_slots").update({ status: "cancelled" }).eq("id", id); if (error) throw error; },
+    onSuccess: () => toast("Horario quitado"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
+}
+export function useCoachBook() {
+  const toast = useToast(), inv = useAgendaInvalidate();
+  return useMutation({ mutationFn: async (v: { slotId: string; clientId: string }) => { const { error } = await db().rpc("coach_book_slot", { p_slot: v.slotId, p_client: v.clientId }); if (error) throw error; },
+    onSuccess: () => toast("Cliente agendado"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
+}
