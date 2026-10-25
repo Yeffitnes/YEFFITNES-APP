@@ -1,6 +1,10 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Lista de paso de pruebas (Vercel) a producción (Netlify)
+- Nuevo `docs/PASO_A_PRODUCCION.md` con todo lo que hay que cambiar antes de entregar (variables, Supabase, cron, push, Bunny, dominio, landing, limpieza de datos, repo privado). Enlazado desde `AGENTS.md` y `docs/CONTEXT.md`.
+- Revertir: borrar el archivo y las dos líneas añadidas.
+
 ## 2026-10-25 · Recordatorios a horas fijas (migración 0027; rama `bloque-hoy`)
 - Antes: revisión cada 15 min. Ahora: buenos días (7:00), mediodía (12:30), noche (20:00, reporte pendiente) y sesión 1 h antes. `due_reminders(secret, kind, now)`; la ruta `/api/cron/reminders?kind=...` valida el tipo. Un aviso por cliente y tipo al día (`reminder_log`). La revisión de sesiones corre dentro de Supabase y solo llama a la app si hay una reserva en la próxima hora. Textos y horas: PROPUESTA.
 - Pruebas: `rls_reminders.sql` ampliada (mañana, mediodía, tipo desconocido). Sin probar: push real.
