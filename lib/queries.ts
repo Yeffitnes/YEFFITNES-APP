@@ -315,11 +315,11 @@ export function weekBounds(offset: number) {
   const t = new Date(); t.setHours(0, 0, 0, 0); const mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7) + offset * 7);
   const next = new Date(mon); next.setDate(mon.getDate() + 7); return { from: mon, to: next };
 }
-export type Slot = { id: string; startsAt: string; duration: number; kind: string; taken: boolean; mine: boolean };
+export type Slot = { id: string; startsAt: string; duration: number; kind: string; taken: boolean; mine: boolean; capacity: number; booked: number };
 export const useOpenSlots = (offset: number) => useQuery({ queryKey: ["open-slots", offset], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<Slot[]> => {
   const { from, to } = weekBounds(offset);
   const { data, error } = await db().rpc("list_open_slots", { p_from: from.toISOString(), p_to: to.toISOString() }); if (error) throw error;
-  return (data as { id: string; starts_at: string; duration_min: number; kind: string; taken: boolean; mine: boolean }[]).map((s) => ({ id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, taken: s.taken, mine: s.mine }));
+  return (data as { id: string; starts_at: string; duration_min: number; kind: string; taken: boolean; mine: boolean; capacity: number; booked: number }[]).map((s) => ({ id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, taken: s.taken, mine: s.mine, capacity: s.capacity, booked: s.booked }));
 } });
 export type MyBooking = { id: string; startsAt: string; duration: number; kind: string };
 export const useMyBookings = (clientId: string) => useQuery({ queryKey: ["my-bookings", clientId], staleTime: 20_000, enabled: !!clientId, queryFn: async (): Promise<MyBooking[]> => {
@@ -339,18 +339,25 @@ export function useCancelBooking() {
   return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("cancel_booking", { p_booking: id }); if (error) throw error; },
     onSuccess: () => toast("Sesión cancelada"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
-export type CoachSlot = { id: string; startsAt: string; duration: number; kind: string; booking: { id: string; clientName: string; by: string } | null };
+export type ClientBookingRow = { id: string; startsAt: string; duration: number; kind: string; status: string; capacity: number };
+export const useClientBookings = (clientId: string) => useQuery({ queryKey: ["client-bookings", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<ClientBookingRow[]> => {
+  const { data, error } = await db().from("bookings").select("id,status,availability_slots(starts_at,duration_min,kind,capacity)").eq("client_id", clientId); if (error) throw error;
+  return (data as unknown as { id: string; status: string; availability_slots: { starts_at: string; duration_min: number; kind: string; capacity: number } | null }[]).filter((b) => b.availability_slots)
+    .map((b) => ({ id: b.id, status: b.status, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, capacity: b.availability_slots!.capacity })).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+} });
+export type CoachBooking = { id: string; clientName: string; by: string };
+export type CoachSlot = { id: string; startsAt: string; duration: number; kind: string; capacity: number; bookings: CoachBooking[]; booking: CoachBooking | null };
 export const useCoachSlots = (offset: number) => useQuery({ queryKey: ["coach-slots", offset], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<CoachSlot[]> => {
   const { from, to } = weekBounds(offset);
-  const { data, error } = await db().from("availability_slots").select("id,starts_at,duration_min,kind,bookings(id,status,booked_by,clients(profiles(full_name)))").eq("status", "open").gte("starts_at", from.toISOString()).lt("starts_at", to.toISOString()).order("starts_at"); if (error) throw error;
-  type Raw = { id: string; starts_at: string; duration_min: number; kind: string; bookings: { id: string; status: string; booked_by: string; clients: { profiles: { full_name: string } | null } | null }[] };
-  return (data as unknown as Raw[]).map((s) => { const b = s.bookings.find((x) => x.status === "confirmed");
-    return { id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, booking: b ? { id: b.id, clientName: b.clients?.profiles?.full_name || "Cliente", by: b.booked_by } : null }; });
+  const { data, error } = await db().from("availability_slots").select("id,starts_at,duration_min,kind,capacity,bookings(id,status,booked_by,clients(profiles(full_name)))").eq("status", "open").gte("starts_at", from.toISOString()).lt("starts_at", to.toISOString()).order("starts_at"); if (error) throw error;
+  type Raw = { id: string; starts_at: string; duration_min: number; kind: string; capacity: number; bookings: { id: string; status: string; booked_by: string; clients: { profiles: { full_name: string } | null } | null }[] };
+  return (data as unknown as Raw[]).map((s) => { const bs = s.bookings.filter((x) => x.status === "confirmed").map((b) => ({ id: b.id, clientName: b.clients?.profiles?.full_name || "Cliente", by: b.booked_by }));
+    return { id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, capacity: s.capacity, bookings: bs, booking: bs[0] ?? null }; });
 } });
 export function usePublishSlots(workspaceId: string) {
   const toast = useToast(), inv = useAgendaInvalidate();
-  return useMutation({ mutationFn: async (v: { starts: string[]; duration: number; kind: string }) => {
-      const { error } = await db().from("availability_slots").upsert(v.starts.map((s) => ({ workspace_id: workspaceId, starts_at: s, duration_min: v.duration, kind: v.kind })), { onConflict: "workspace_id,starts_at", ignoreDuplicates: true }); if (error) throw error; },
+  return useMutation({ mutationFn: async (v: { starts: string[]; duration: number; kind: string; capacity: number }) => {
+      const { error } = await db().from("availability_slots").upsert(v.starts.map((s) => ({ workspace_id: workspaceId, starts_at: s, duration_min: v.duration, kind: v.kind, capacity: v.capacity })), { onConflict: "workspace_id,starts_at", ignoreDuplicates: true }); if (error) throw error; },
     onSuccess: () => toast("Disponibilidad publicada"), onError: () => toast("No pudimos publicar los horarios. Revisa los datos e inténtalo de nuevo.", true), onSettled: inv });
 }
 export function useRemoveSlot() {

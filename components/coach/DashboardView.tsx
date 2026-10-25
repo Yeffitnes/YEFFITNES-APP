@@ -82,7 +82,7 @@ function AgendaTodayCard() {
       <div className="card-head"><div><div className="card-tag">Agenda</div><div className="card-title" style={{ fontSize: 15 }}>Sesiones de hoy</div></div><Link href="/coach/agenda" className="card-link">Ver agenda →</Link></div>
       {wk.isPending && <div className="sk" style={{ height: 48 }} />}
       {wk.data && !todays.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>No tienes sesiones reservadas hoy.</p>}
-      {todays.map((s) => <div key={s.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{hhmm(s.startsAt)}</span><span>{s.booking!.clientName}</span></div>)}
+      {todays.map((s) => <div key={s.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{hhmm(s.startsAt)}</span><span>{s.capacity > 1 ? `Clase grupal: ${s.bookings.map((b) => b.clientName).join(", ")}` : s.booking!.clientName}</span></div>)}
       {nudge && <Link href="/coach/agenda" className="attn-row" style={{ marginTop: 10 }}><div className="attn-body"><div className="attn-name">Publica tus horarios de la próxima semana</div><div className="attn-reason urgent">Aún no hay horarios disponibles para tus clientes.</div></div></Link>}
     </div>
   );

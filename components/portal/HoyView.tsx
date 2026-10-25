@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useThread } from "@/lib/messages";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { localDate, useFinish, useLogs, useLogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
@@ -43,6 +44,7 @@ export function HoyView() {
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">{cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))}</div><h1>Hola, {first}</h1><p className="greeting-sub">{sub}</p></div></div>
+      <FromCoach />
       {!!ann.data?.length && <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-tag">Anuncios de tu coach</div>
         {ann.data.map((a) => <div key={a.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.55 }}>{a.pinned ? "📌 " : ""}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
@@ -131,5 +133,19 @@ function SetRow({ cid, item, n, today, saved, locked, onLast }: { cid: string; i
       <input className="set-input" inputMode="decimal" type="number" min={0} step={0.5} value={w} onChange={(e) => setW(e.target.value)} placeholder={item.weight ? `${item.weight} kg` : "kg"} aria-label={`Peso serie ${n} en kilos`} disabled={locked} onKeyDown={onKey} />
       <button className={`set-save${saved ? " on" : ""}`} disabled={!ok || log.isPending || locked} aria-label={`Guardar serie ${n}`} onClick={save}>✓</button>
     </div>
+  );
+}
+
+// Último mensaje de tu coach ("De Jeff"), para que lo vea sin entrar a Mensajes.
+function FromCoach() {
+  const t = useThread(), last = [...(t.data ?? [])].reverse().find((m) => m.sender === "coach");
+  if (!last) return null;
+  const when = new Date(last.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" });
+  return (
+    <Link href="/inicio/mensajes" className="card" style={{ display: "block", marginBottom: 18, textDecoration: "none", color: "inherit" }}>
+      <div className="card-tag">De tu coach{!last.readAt ? " · nuevo" : ""}</div>
+      <p style={{ fontSize: 14, lineHeight: 1.55, marginTop: 8 }}>{last.body ?? (last.hasVideo || last.youtubeId ? "📹 Te envió un vídeo" : "📷 Te envió una foto")}</p>
+      <div style={{ fontSize: 11.5, color: "var(--text-dim)", marginTop: 6 }}>{when} · Responder →</div>
+    </Link>
   );
 }

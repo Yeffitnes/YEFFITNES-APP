@@ -9,7 +9,7 @@ export function AgendaView() {
   const [off, setOff] = useState(0), [sel, setSel] = useState(dayIdx(new Date())), [pub, setPub] = useState<string | null>(null), [assign, setAssign] = useState(false), [cancel, setCancel] = useState<CoachSlot | null>(null);
   const { data, isPending, isError, refetch } = useCoachSlots(off), remove = useRemoveSlot();
   const { from } = weekBounds(off), days = weekDays(from), now = new Date();
-  const slots = data ?? [], conf = slots.filter((s) => s.booking).length, free = slots.filter((s) => !s.booking && new Date(s.startsAt) > now).length;
+  const slots = data ?? [], conf = slots.reduce((a, s) => a + s.bookings.length, 0), free = slots.filter((s) => s.bookings.length < s.capacity && new Date(s.startsAt) > now).length;
   return (
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} sesión${conf === 1 ? "" : "es"} confirmada${conf === 1 ? "" : "s"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
@@ -27,7 +27,13 @@ export function AgendaView() {
               <div key={i} className={`day-col${sameDay(d, now) ? " today" : ""}${sel === i ? " active" : ""}`} data-day={i}>
                 <div className="day-col-head"><div><div className="day-col-name">{DAYLONG[i]}</div><div className="day-col-num">{d.getDate()}</div></div></div>
                 <div className="day-col-body">
-                  {ds.map((s) => s.booking
+                  {ds.map((s) => s.capacity > 1
+                    ? <div key={s.id} className="slot-card confirmed"><div className="slot-time">{hhmm(s.startsAt)} · {s.bookings.length}/{s.capacity} cupos</div>
+                        {s.bookings.map((b) => <div key={b.id} className="slot-client" style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>{b.clientName}<button title="Quitar de la clase" aria-label={`Quitar a ${b.clientName} de la clase`} style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => setCancel({ ...s, booking: b })}>×</button></div>)}
+                        {!s.bookings.length && <div className="slot-client" style={{ opacity: 0.6 }}>Sin inscritos</div>}
+                        <div className="slot-type">Clase grupal · {KIND_LABEL[s.kind]} · {s.duration} min</div>
+                        {!s.bookings.length && <div className="slot-actions"><button aria-label="Quitar horario" disabled={remove.isPending} onClick={() => remove.mutate(s.id)}>×</button></div>}</div>
+                    : s.booking
                     ? <div key={s.id} className="slot-card confirmed"><div className="slot-time">{hhmm(s.startsAt)}</div><div className="slot-client">{s.booking.clientName}</div><div className="slot-type">{KIND_LABEL[s.kind]} · {s.duration} min</div>
                         <div className="slot-actions"><button title="Cancelar sesión" aria-label={`Cancelar sesión de ${s.booking.clientName}`} onClick={() => setCancel(s)}>×</button></div></div>
                     : <div key={s.id} className="slot-available">{hhmm(s.startsAt)} · Disponible <button aria-label="Quitar horario" disabled={remove.isPending} onClick={() => remove.mutate(s.id)}>×</button></div>)}
@@ -37,19 +43,19 @@ export function AgendaView() {
           })}</div>
         </div>)}
       {pub && <PublishModal date={pub} onClose={() => setPub(null)} />}
-      {assign && <AssignModal slots={slots.filter((s) => !s.booking && new Date(s.startsAt) > now)} onClose={() => setAssign(false)} />}
+      {assign && <AssignModal slots={slots.filter((s) => s.bookings.length < s.capacity && new Date(s.startsAt) > now)} onClose={() => setAssign(false)} />}
       {cancel && <CancelModal s={cancel} onClose={() => setCancel(null)} />}
     </div>
   );
 }
 function PublishModal({ date, onClose }: { date: string; onClose: () => void }) {
-  const pub = usePublishSlots(useWorkspaceId()), [d, setD] = useState(date), [a, setA] = useState("08:00"), [b, setB] = useState("10:00"), [dur, setDur] = useState(30), [kind, setKind] = useState("initial"), [err, setErr] = useState("");
+  const pub = usePublishSlots(useWorkspaceId()), [d, setD] = useState(date), [a, setA] = useState("08:00"), [b, setB] = useState("10:00"), [dur, setDur] = useState(30), [kind, setKind] = useState("initial"), [cap, setCap] = useState(1), [err, setErr] = useState("");
   const starts: string[] = []; const s0 = new Date(`${d}T${a}`), e0 = new Date(`${d}T${b}`);
   if (!isNaN(+s0) && !isNaN(+e0)) for (let t = +s0; t + dur * 60000 <= +e0 && starts.length < 30; t += dur * 60000) starts.push(new Date(t).toISOString());
   const go = () => {
     if (!d || isNaN(+s0) || isNaN(+e0) || +e0 <= +s0) return setErr("Revisa la fecha y que la hora final sea posterior a la inicial.");
     const fut = starts.filter((x) => new Date(x) > new Date()); if (!fut.length) return setErr("Esos horarios ya pasaron. Elige una fecha y hora futuras.");
-    setErr(""); pub.mutate({ starts: fut, duration: dur, kind }, { onSuccess: onClose });
+    setErr(""); pub.mutate({ starts: fut, duration: dur, kind, capacity: cap }, { onSuccess: onClose });
   };
   return (
     <Modal title="Publicar disponibilidad" sub="Estos huecos quedarán visibles para que tus clientes activos los reserven." onClose={onClose}>
@@ -57,7 +63,8 @@ function PublishModal({ date, onClose }: { date: string; onClose: () => void }) 
       <div className="modal-row2"><div className="modal-field"><label>Desde</label><input type="time" value={a} onChange={(e) => setA(e.target.value)} /></div><div className="modal-field"><label>Hasta</label><input type="time" value={b} onChange={(e) => setB(e.target.value)} /></div></div>
       <div className="modal-row2"><div className="modal-field"><label>Duración de cada hueco</label><select value={dur} onChange={(e) => setDur(Number(e.target.value))}><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
         <div className="modal-field"><label>Tipo</label><select value={kind} onChange={(e) => setKind(e.target.value)}><option value="initial">Llamada inicial</option><option value="followup">Seguimiento</option></select></div></div>
-      <div className="modal-cap-hint">Se crearán {starts.length} hueco{starts.length === 1 ? "" : "s"} individuales. Los horarios que ya existan se respetan.</div>
+      <div className="modal-field"><label>Cupos por hueco (1 = sesión individual; más de 1 = clase grupal)</label><input type="number" min={1} max={30} value={cap} onChange={(e) => setCap(Math.min(30, Math.max(1, Number(e.target.value) || 1)))} /></div>
+      <div className="modal-cap-hint">Se crearán {starts.length} hueco{starts.length === 1 ? "" : "s"} {cap > 1 ? `de clase grupal (${cap} cupos cada uno)` : "individuales"}. Los horarios que ya existan se respetan.</div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={pub.isPending} onClick={go}>{pub.isPending ? "Publicando…" : "Publicar"}</button></div>
     </Modal>

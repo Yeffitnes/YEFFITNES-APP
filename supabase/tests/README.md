@@ -22,6 +22,7 @@ psql -d prueba -f supabase/tests/rls_objective.sql  # objetivo (DESPUÉS de rls_
 psql -d prueba -f supabase/tests/rls_messages.sql   # mensajes y push (DESPUÉS de rls_objective)
 psql -d prueba -f supabase/tests/rls_dayvideo.sql   # vídeo de rutina (DESPUÉS de rls_messages)
 psql -d prueba -f supabase/tests/rls_reminders.sql  # recordatorios (DESPUÉS de rls_dayvideo)
+psql -d prueba -f supabase/tests/rls_groups.sql     # clases grupales (DESPUÉS de rls_reminders)
 ```
 Salida esperada: todas las líneas `OK`, `RESULTADO ATAQUES: ninguno` y `RESULTADO ATAQUES PROGRESO: ninguno` y `RESULTADO ATAQUES AGENDA: ninguno`. `stub_auth.sql` simula también el almacenamiento de Supabase (`storage`). Si aparece `FALLO` o un ataque, hay un agujero: no desplegar.
 Al agregar una tabla con datos del cliente, añade su caso a `rls.sql`.

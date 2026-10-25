@@ -34,14 +34,14 @@ export function AgendaClientView() {
                 {!ds.length && <div className="cal-empty-day">—</div>}
                 {ds.map((s) => { const st = s.mine ? "confirmed" : s.taken ? "booked" : sel?.id === s.id ? "selected" : "available";
                   return <button key={s.id} className={`slot ${st}`} disabled={st === "booked" || st === "confirmed"} aria-label={`${hhmm(s.startsAt)} ${st === "booked" ? "ocupado" : st === "confirmed" ? "tuya" : "disponible"}`} onClick={() => { setSel(s); setDone(null); }}>
-                    {(st === "available" || st === "selected") && <span className="sdot" style={{ background: st === "selected" ? "#fff" : KIND_COLOR[s.kind] }} />}{hhmm(s.startsAt)}</button>; })}
+                    {(st === "available" || st === "selected") && <span className="sdot" style={{ background: st === "selected" ? "#fff" : KIND_COLOR[s.kind] }} />}{hhmm(s.startsAt)}{s.capacity > 1 && <span style={{ fontSize: 10, opacity: 0.75, marginLeft: 5 }}>{s.capacity - s.booked}/{s.capacity} cupos</span>}</button>; })}
               </div>);
           })}</div>}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="card summary-card"><div className="summary-label">Tu selección</div>
             {!sel && <div className="summary-empty">Elige un horario disponible en el calendario.</div>}
-            {sel && <div><div className="summary-datetime">{when(sel.startsAt)}</div><p style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", margin: "8px 0 0" }}>{KIND_LABEL[sel.kind]} · {sel.duration} min</p>
+            {sel && <div><div className="summary-datetime">{when(sel.startsAt)}</div><p style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", margin: "8px 0 0" }}>{KIND_LABEL[sel.kind]} · {sel.duration} min{sel.capacity > 1 ? ` · Clase grupal (quedan ${sel.capacity - sel.booked} de ${sel.capacity} cupos)` : ""}</p>
               <button className="summary-confirm" disabled={book.isPending} onClick={() => book.mutate(sel.id, { onSuccess: () => { setDone(sel); setSel(null); } })}>{book.isPending ? "Reservando…" : "Confirmar reserva"}</button></div>}
             {done && <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55 }}>✅ Reservaste el {when(done.startsAt)}.<> <a href={icsHref(done)} download="sesion-yeffitnes.ics" style={{ color: "#fff", fontWeight: 700, textDecoration: "underline" }}>Añadir alarma a mi calendario</a></></div>}
           </div>

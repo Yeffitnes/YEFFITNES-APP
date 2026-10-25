@@ -1,15 +1,17 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useClients, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
+import { useClientBookings, useClients, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
 import { initials } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
 import { RecentWorkouts } from "./RecentWorkouts";
 import { NotesTab } from "./NotesTab";
 import { NutritionTab } from "./NutritionTab";
+import { ThreadView } from "@/components/ui/ThreadView";
+import { hhmm } from "@/lib/dates";
 import { ProgressPanels } from "@/components/portal/ProgressPanels";
-const TABS = ["Resumen", "Entrenamiento", "Nutrición", "Progreso", "Notas privadas"];
+const TABS = ["Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
 const SOON: Record<string, string> = {};
 export function ClientFicha({ id }: { id: string }) {
   const { data, isPending } = useClients(), { data: plans } = usePlans(), setPlan = useSetPlan();
@@ -47,7 +49,7 @@ export function ClientFicha({ id }: { id: string }) {
           <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} />
           <RecentWorkouts clientId={c.id} />
         </>
-      ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
+      ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Mensajes" ? <ThreadView clientId={c.id} otherName={c.name.split(" ")[0]} coach /> : tab === "Agenda" ? <AgendaTab clientId={c.id} first={c.name.split(" ")[0]} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
     </div>
   );
 }
@@ -60,6 +62,20 @@ function ObjectiveCard({ clientId, value, first }: { clientId: string; value: st
       <p style={{ fontSize: 13, color: "var(--text-dim)", margin: "10px 0" }}>{first} lo ve en su pantalla “Hoy”.</p>
       <textarea aria-label="Objetivo actual" maxLength={500} value={cur} onChange={(e) => setT(e.target.value)} placeholder="Ej. Bajar grasa corporal manteniendo la fuerza en tren superior." style={{ width: "100%", minHeight: 70, border: "1px solid var(--line)", borderRadius: 12, padding: 12, fontSize: 13.5, resize: "vertical" }} />
       <div style={{ marginTop: 10 }}><button className="primary-btn" disabled={set.isPending || cur.trim() === value.trim()} onClick={() => set.mutate(cur, { onSuccess: () => setT(null) })}>{set.isPending ? "Guardando…" : "Guardar objetivo"}</button></div>
+    </div>
+  );
+}
+
+const BK: Record<string, string> = { confirmed: "Confirmada", cancelled: "Cancelada", completed: "Realizada", no_show: "No asistió" };
+function AgendaTab({ clientId, first }: { clientId: string; first: string }) {
+  const { data, isPending, isError, refetch } = useClientBookings(clientId);
+  if (isPending) return <Skeleton rows={2} />;
+  if (isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>;
+  return (
+    <div className="card" style={{ maxWidth: 620 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div className="card-tag" style={{ marginBottom: 0 }}>Sesiones de {first}</div><Link href="/coach/agenda" className="card-link">Ir a la agenda →</Link></div>
+      {!data.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 12 }}>{first} aún no tiene sesiones.</p>}
+      {data.map((b) => <div key={b.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{new Date(b.startsAt).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })} · {hhmm(b.startsAt)}</span><span style={{ color: "var(--text-dim)" }}>{b.capacity > 1 ? "Clase grupal" : ""} {b.duration} min</span><span style={{ color: b.status === "confirmed" ? "#1C9A5B" : "var(--text-faint)", fontWeight: 700, fontSize: 12 }}>{BK[b.status] ?? b.status}</span></div>)}
     </div>
   );
 }

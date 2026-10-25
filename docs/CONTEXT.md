@@ -34,7 +34,7 @@ Costos estimados al lanzar (oct-2026): Supabase Pro ~US$25/mes + Bunny ~US$1–3
 ## 5. Estado funcional (qué existe)
 - **Coach:** Dashboard con cola de revisión · Clientes (lista, ficha con Resumen/Entrenamiento/Progreso; asignar plan) · Catálogo (ejercicios, rutinas en modal) · Entrenamiento por días (crear plan, asignar rutina a uno o varios días, peso objetivo) · Revisar entrenamientos y comentar · Agenda (publicar, agendar, cancelar) · Reportes diarios (cola de revisión con vídeo y "marcar visto") · Nutrición (plantillas en Catálogo; calorías y macros fijos + comidas por día o "todos los días", con "copiar día a…"; asignar/editar por cliente en su ficha) · Objetivo actual por cliente (Resumen de la ficha) · Anuncios a todos (tarjeta en el Dashboard; fijar, vencimiento) · Notas privadas por cliente (pestaña de la ficha) · Material educativo (artículos y vídeos de YouTube, borrador/publicado, plan básico o completo, "vídeo de la semana", conteo de vistas).
 - **Cliente:** Hoy (rutina del día, series con repeticiones y peso, esfuerzo, comentario del coach, racha) · Mi plan (semana y técnica en vídeo) · Progreso (mediciones, gráfica, fotos antes/después, borrar fotos) · Agenda (reservar/cancelar) · Reporte diario en Hoy (vídeo corto + comentario; sin Bunny configurado se envía solo el comentario) · Nutrición en Mi plan (con selector de día) · "Hoy" completo según el diseño: vídeo de la semana, próxima sesión, objetivo, nutrición de hoy y progreso reciente · Bienvenida de 3 pasos la primera vez (medidas iniciales, agendar llamada) · Anuncios del coach en Hoy · Material (artículos y vídeos; lo del plan completo sale bloqueado con enlace a WhatsApp) · pantallas bloqueadas por plan.
-- **Aún no existe:** documentos PDF dentro del material (pendiente de almacenamiento),  personaje guía y contenido definitivo del onboarding, landing pública, modo sin conexión, grupos/cupos en la agenda, documentos PDF.
+- **Aún no existe:** documentos PDF dentro del material (pendiente de almacenamiento),  personaje guía y contenido definitivo del onboarding, modo sin conexión, documentos PDF.
 - **Vídeo (Bunny):** el código existe y se probó la lógica y que sin sesión se rechaza, pero **nunca se ha subido un vídeo real**: faltan las variables `BUNNY_API_KEY`, `BUNNY_LIBRARY_ID` (y `BUNNY_TOKEN_KEY` si la biblioteca tiene "token authentication") en Netlify. Sin ellas el reporte diario se envía solo con comentario. Reglas PROPUESTA (confirmar con Jeff): vídeo ≤ 90 s y ≤ 200 MB, borrado 24 h después de verlo y máx. 7 días, 5 subidas/día por cliente. El borrado en Bunny se ejecuta cuando el coach abre "Reportes diarios" (no requiere cron).
 - **Lo que NADIE ha probado de punta a punta contra el Supabase real** (a 24-oct): el flujo completo coach→cliente→revisión, subir foto desde celular, agenda con dos usuarios. Se verificó por tipos, lint y pruebas de ataque en Postgres de prueba.
 
@@ -53,7 +53,7 @@ Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/i
 
 ## 9. Puesta en marcha desde cero
 1. Supabase: crear proyecto (región us-east-1); Auth → desactivar "Confirm email" (solo pruebas).
-2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0023`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
+2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0024`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
 3. Netlify: importar el repo, cargar las 3 variables, desplegar.
 4. Registrar el correo de Jeff y: `update public.profiles set role='coach' where id=(select id from auth.users where email='…');`
 5. Probar con otro correo (cliente) en una ventana de incógnito: queda pendiente → Jeff le asigna plan → ve su contenido.
@@ -83,6 +83,7 @@ Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/i
 | 0020 | mensajes cliente↔coach: `messages`, `send_message`, `list_threads`, `unread_messages`, `mark_thread_read`, `register_message_video`, bucket `message-images`, Realtime |
 | 0021 | avisos push: `push_subscriptions`, `save_push_subscription`, `push_targets`, `prune_push` |
 | 0022 | vídeo de rutina: `routine_templates.video_ref`, `plan_days.video_ref/video_id`, `save_routine(…, p_video)`, `assign_day` copia el vídeo, `set_day_video` |
+| 0024 | clases grupales: `availability_slots.capacity`, reservas con cupos |
 | 0023 | recordatorios: `app_secrets`, `reminder_log`, `due_reminders(secret, now)` |
 
 ## 11. Decisiones pendientes con Jeff (no inventar)
