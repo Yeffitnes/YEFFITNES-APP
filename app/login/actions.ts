@@ -4,7 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 export async function signIn(_: string | null, form: FormData) {
   const supabase = createClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email: String(form.get("email")), password: String(form.get("password")) });
-  if (error || !data.user) return "Correo o contraseña incorrectos.";
+  if (error || !data.user) {
+    // Distingue la causa real (antes todo decía "incorrectos" y ocultaba fallos de configuración).
+    const code = (error as { code?: string } | null)?.code ?? "", msg = error?.message ?? "";
+    if (code === "email_not_confirmed" || /not confirmed/i.test(msg)) return "Tu correo aún no está confirmado. Revisa tu bandeja de entrada.";
+    if (/api key|jwt|apikey/i.test(msg) || error?.status === 401 && code !== "invalid_credentials") return "Error de configuración del servidor (clave de Supabase). Avisa a soporte.";
+    if (error && code !== "invalid_credentials" && !/invalid login/i.test(msg)) return `No pudimos iniciar sesión (${code || error.status || "error"}). Inténtalo de nuevo.`;
+    return "Correo o contraseña incorrectos.";
+  }
   // Directo a su panel (evita un salto extra por /inicio → /coach).
   const { data: p } = await supabase.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
   redirect(p?.role === "coach" ? "/coach" : "/inicio");
