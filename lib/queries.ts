@@ -408,3 +408,43 @@ export function useOpenMaterial() {
     onError: (e) => toast((e as { message?: string })?.message?.includes("locked") ? "Este contenido no está incluido en tu plan." : "No pudimos abrir el contenido. Inténtalo de nuevo.", true),
   });
 }
+
+// ---- Anuncios a todos y notas privadas ----
+export type Announcement = { id: string; title: string | null; body: string; pinned: boolean; createdAt: string; expiresOn?: string | null };
+export const useCoachAnnouncements = () => useQuery({ queryKey: ["coach-announcements"], staleTime: 30_000, queryFn: async (): Promise<Announcement[]> => {
+  const { data, error } = await db().from("announcements").select("id,title,body,pinned,created_at,expires_on").order("pinned", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
+  return (data as { id: string; title: string | null; body: string; pinned: boolean; created_at: string; expires_on: string | null }[]).map((a) => ({ id: a.id, title: a.title, body: a.body, pinned: a.pinned, createdAt: a.created_at, expiresOn: a.expires_on }));
+} });
+export function useSaveAnnouncement(workspaceId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { title: string; body: string; pinned: boolean; expiresOn: string }) => {
+      const { error } = await db().from("announcements").insert({ workspace_id: workspaceId, title: v.title.trim() || null, body: v.body.trim(), pinned: v.pinned, expires_on: v.expiresOn || null }); if (error) throw error; },
+    onSuccess: () => toast("Anuncio publicado"), onError: () => toast("No pudimos publicar el anuncio. Revisa el texto (máx. 1000 caracteres).", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["coach-announcements"] }) });
+}
+export function useDeleteAnnouncement() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("announcements").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => toast("Anuncio eliminado"), onError: () => toast("No pudimos eliminarlo. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["coach-announcements"] }) });
+}
+export const useMyAnnouncements = (enabled: boolean) => useQuery({ queryKey: ["announcements"], staleTime: 60_000, enabled, queryFn: async (): Promise<Announcement[]> => {
+  const { data, error } = await db().rpc("list_announcements"); if (error) throw error;
+  return (data as { id: string; title: string | null; body: string; pinned: boolean; created_at: string }[]).map((a) => ({ id: a.id, title: a.title, body: a.body, pinned: a.pinned, createdAt: a.created_at }));
+} });
+export type Note = { id: string; body: string; createdAt: string };
+export const useNotes = (clientId: string) => useQuery({ queryKey: ["notes", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<Note[]> => {
+  const { data, error } = await db().from("client_notes").select("id,body,created_at").eq("client_id", clientId).order("created_at", { ascending: false }); if (error) throw error;
+  return (data as { id: string; body: string; created_at: string }[]).map((n) => ({ id: n.id, body: n.body, createdAt: n.created_at }));
+} });
+export function useAddNote(clientId: string, workspaceId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({ mutationFn: async (body: string) => { const { error } = await db().from("client_notes").insert({ workspace_id: workspaceId, client_id: clientId, body: body.trim() }); if (error) throw error; },
+    onSuccess: () => toast("Nota guardada"), onError: () => toast("No pudimos guardar la nota. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["notes", clientId] }) });
+}
+export function useDeleteNote(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["notes", clientId];
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("client_notes").delete().eq("id", id); if (error) throw error; },
+    onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<Note[]>(key); qc.setQueryData<Note[]>(key, (l) => l?.filter((n) => n.id !== id)); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos borrar la nota.", true); }, onSettled: () => qc.invalidateQueries({ queryKey: key }) });
+}

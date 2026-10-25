@@ -1,6 +1,14 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Anuncios a todos y notas privadas (migración 0014)
+- **Anuncios:** tarjeta "Anuncios" en el Dashboard del coach (nuevo, fijar arriba, fecha de vencimiento opcional, quitar). Los clientes activos con `announcements` en su plan los ven al inicio de "Hoy" (máx. 5, fijados primero). **No había mockup:** se usó el estilo de las tarjetas existentes; confirmar con Jeff.
+- **Notas privadas:** pestaña de la ficha del cliente (copiada de `coach-clientes`): lista, guardar (Ctrl/⌘+Enter), borrar. El cliente no tiene ningún permiso sobre esa tabla.
+- Seguridad: el cliente lee anuncios solo por `list_announcements()` (cuenta activa + plan + vigencia + su espacio); la nota debe apuntar a un cliente del mismo espacio. Suite `rls_notes.sql`: ninguno.
+- **Reproductor de vídeo:** enlace "¿No carga? Ábrelo en YouTube" y aviso al coach: los vídeos con música con derechos (p. ej. UMPG) bloquean la inserción; no es un fallo de la app. Usar vídeos propios o que permitan insertar.
+- Archivos: `0014_announcements_notes.sql`, `rls_notes.sql`, `run_local.sh`, `lib/queries.ts`, `components/coach/{NotesTab,AnnouncementsCard,ClientFicha,DashboardView}.tsx`, `components/portal/{HoyView,VideoModal}.tsx`.
+- **Revertir:** `git revert` del commit y en Supabase: `drop function if exists public.list_announcements; drop table if exists public.announcements, public.client_notes;` (borra anuncios y notas).
+
 ## 2026-10-25 · Arreglo: logo invisible en el panel del coach y lista de clientes que no se refrescaba
 - **Causa del logo:** al integrar Progreso se copió a `app/coach/coach.css` el CSS completo de un mockup del *portal* (sección `/* progreso */`), con reglas de barra lateral clara que pisaron la oscura del coach; el logo es blanco y quedó invisible. Se quitaron 33 reglas de estructura duplicadas de esa sección (`.sidebar`, `.side-*`, `.main`, `.topbar`, `.card`, `.fab-wa`…). Los estilos propios del tab de progreso del coach se conservan.
 - **Prevención:** `design/port_css.py` ya no añade reglas de estructura (`.shell`, `.sidebar`, `.side-*`, `.main`, `.topbar`, `.card`…) si el destino ya las tiene. Regla nueva: nunca portar un mockup del portal al CSS del coach ni al revés sin revisar.

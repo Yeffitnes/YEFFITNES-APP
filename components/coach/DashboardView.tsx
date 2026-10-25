@@ -5,6 +5,7 @@ import { useProfile } from "@/components/Providers";
 import { attention } from "@/lib/attention";
 import { ago, gradient, initials } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
+import { AnnouncementsCard } from "./AnnouncementsCard";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function DashboardView() {
   const { name } = useProfile(), clients = useClients(), logs = useRecentLogs(), plans = useActivePlanClients();
@@ -39,6 +40,7 @@ export function DashboardView() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <AnnouncementsCard />
           <div className="card">
             <div className="card-tag">Reciente</div><div className="card-title" style={{ fontSize: 15 }}>Actividad</div>
             {!recent.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>Cuando tus clientes terminen entrenamientos aparecerán aquí.</p>}

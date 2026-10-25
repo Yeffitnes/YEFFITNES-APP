@@ -13,7 +13,7 @@ export function MaterialView() {
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <div>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"}` : "Material educativo"}</h1><p className="greeting-sub">Lo ven tus clientes activos según su plan. Los vídeos son enlaces de YouTube (puedes dejarlos “no listados”).</p></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"}` : "Material educativo"}</h1><p className="greeting-sub">Lo ven tus clientes activos según su plan. Los vídeos son enlaces de YouTube: deben ser tuyos o permitir “insertar”; los que tienen música con derechos suelen bloquearse (se ve “Vídeo no disponible”).</p></div>
         <button className="primary-btn" onClick={() => setEdit("new")}>Nuevo contenido</button></div>
       {featured && <div className="featured-banner"><svg viewBox="0 0 20 20"><path d={STAR} /></svg><span>Vídeo de la semana: <b>{featured.title}</b> — se muestra en “Hoy” a todos tus clientes.</span></div>}
       <div className="filter-row">

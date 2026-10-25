@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { localDate, useFinish, useLogs, useLogSet, useMe, useTrainingPlans, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
+import { localDate, useFinish, useLogs, useLogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { CHECK_ICON } from "./icons";
@@ -19,7 +19,7 @@ function streak(days: number[], logs: WorkoutLog[]) {
   return n;
 }
 export function HoyView() {
-  const { profileId, name } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "";
+  const { profileId, name } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "", ann = useMyAnnouncements(!!me.data?.features.includes("announcements"));
   const plans = useTrainingPlans(cid), logs = useLogs(cid);
   if (me.isPending || (cid && (plans.isPending || logs.isPending))) return <div aria-busy="true"><div className="sk" style={{ height: 30, width: 200, marginBottom: 22 }} /><div className="sk" style={{ height: 80, marginBottom: 18 }} /><div className="sk" style={{ height: 260 }} /></div>;
   if (me.isError || plans.isError || logs.isError) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu día. Revisa tu conexión e inténtalo de nuevo.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => { me.refetch(); plans.refetch(); logs.refetch(); }}>Reintentar</button></div>;
@@ -32,6 +32,10 @@ export function HoyView() {
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">{cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))}</div><h1>Hola, {first}</h1><p className="greeting-sub">{sub}</p></div></div>
+      {!!ann.data?.length && <div className="card" style={{ marginBottom: 18 }}>
+        <div className="card-tag">Anuncios de tu coach</div>
+        {ann.data.map((a) => <div key={a.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.55 }}>{a.pinned ? "📌 " : ""}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
+      </div>}
       <div className="streak-strip">
         <div className="streak-copy"><div className="streak-num"><span>{n}</span> {n === 1 ? "día" : "días"}</div><div className="streak-label">{n ? "seguidos cumpliendo tu rutina." : "Completa tu primera rutina para empezar tu racha."}</div></div>
         <div className="week-strip">{wk.map((d, i) => <div key={d} className="week-day"><div className={`week-dot${logList.some((l) => l.date === d && l.completed) ? " done" : ""}${d === today ? " today" : ""}`} /><div className="week-day-label">{LBL[i]}</div></div>)}</div>

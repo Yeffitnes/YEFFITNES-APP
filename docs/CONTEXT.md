@@ -32,9 +32,9 @@ Ver `ARCHITECTURE.md`. Supabase en **us-east-1**; Netlify (Ohio por defecto). Va
 Costos estimados al lanzar (oct-2026): Supabase Pro ~US$25/mes + Bunny ~US$1–3/mes + dominio ≈ US$26–30/mes. Bunny aún no está integrado.
 
 ## 5. Estado funcional (qué existe)
-- **Coach:** Dashboard con cola de revisión · Clientes (lista, ficha con Resumen/Entrenamiento/Progreso; asignar plan) · Catálogo (ejercicios, rutinas en modal) · Entrenamiento por días (crear plan, asignar rutina a uno o varios días, peso objetivo) · Revisar entrenamientos y comentar · Agenda (publicar, agendar, cancelar) · Material educativo (artículos y vídeos de YouTube, borrador/publicado, plan básico o completo, "vídeo de la semana", conteo de vistas).
-- **Cliente:** Hoy (rutina del día, series con repeticiones y peso, esfuerzo, comentario del coach, racha) · Mi plan (semana y técnica en vídeo) · Progreso (mediciones, gráfica, fotos antes/después, borrar fotos) · Agenda (reservar/cancelar) · Material (artículos y vídeos; lo del plan completo sale bloqueado con enlace a WhatsApp) · pantallas bloqueadas por plan.
-- **Aún no existe:** reporte diario con vídeo, nutrición, documentos PDF dentro del material (pendiente de almacenamiento), mostrar el "vídeo de la semana" en Hoy, anuncios a todos, notas privadas del coach, onboarding/tour, objetivos, landing pública, avisos/recordatorios, modo sin conexión.
+- **Coach:** Dashboard con cola de revisión · Clientes (lista, ficha con Resumen/Entrenamiento/Progreso; asignar plan) · Catálogo (ejercicios, rutinas en modal) · Entrenamiento por días (crear plan, asignar rutina a uno o varios días, peso objetivo) · Revisar entrenamientos y comentar · Agenda (publicar, agendar, cancelar) · Anuncios a todos (tarjeta en el Dashboard; fijar, vencimiento) · Notas privadas por cliente (pestaña de la ficha) · Material educativo (artículos y vídeos de YouTube, borrador/publicado, plan básico o completo, "vídeo de la semana", conteo de vistas).
+- **Cliente:** Hoy (rutina del día, series con repeticiones y peso, esfuerzo, comentario del coach, racha) · Mi plan (semana y técnica en vídeo) · Progreso (mediciones, gráfica, fotos antes/después, borrar fotos) · Agenda (reservar/cancelar) · Anuncios del coach en Hoy · Material (artículos y vídeos; lo del plan completo sale bloqueado con enlace a WhatsApp) · pantallas bloqueadas por plan.
+- **Aún no existe:** reporte diario con vídeo, nutrición, documentos PDF dentro del material (pendiente de almacenamiento), mostrar el "vídeo de la semana" en Hoy, onboarding/tour, objetivos, landing pública, avisos/recordatorios, modo sin conexión.
 - **Lo que NADIE ha probado de punta a punta contra el Supabase real** (a 24-oct): el flujo completo coach→cliente→revisión, subir foto desde celular, agenda con dos usuarios. Se verificó por tipos, lint y pruebas de ataque en Postgres de prueba.
 
 ## 6. Checklist para agregar una tabla o pantalla
@@ -49,7 +49,7 @@ Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/i
 
 ## 9. Puesta en marcha desde cero
 1. Supabase: crear proyecto (región us-east-1); Auth → desactivar "Confirm email" (solo pruebas).
-2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0013`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
+2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0014`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
 3. Netlify: importar el repo, cargar las 3 variables, desplegar.
 4. Registrar el correo de Jeff y: `update public.profiles set role='coach' where id=(select id from auth.users where email='…');`
 5. Probar con otro correo (cliente) en una ventana de incógnito: queda pendiente → Jeff le asigna plan → ve su contenido.
@@ -70,6 +70,7 @@ Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/i
 | 0011 | endurecimiento de Progreso |
 | 0012 | agenda: huecos, reservas y sus funciones |
 | 0013 | material educativo: `materials`, `material_views`, `list_materials`, `open_material`, `set_featured_material` |
+| 0014 | anuncios a todos (`announcements`, `list_announcements`) y notas privadas (`client_notes`) |
 
 ## 11. Decisiones pendientes con Jeff (no inventar)
 Planes: nombres, precios y qué incluye cada uno (hoy PROPUESTA Esencial/Completo) · reglas de agenda (hoy PROPUESTA: 1 reserva futura, cancelar hasta 24 h antes, tipos "Llamada inicial"/"Seguimiento") · duración y obligatoriedad del vídeo diario y plazo de borrado · qué partes del registro de series son obligatorias · contenido del onboarding y estilo del personaje · plantillas de rutina y nutrición de Jeff · nombre público (la marca dibujada en el logo es YEFFITNES TRAINING; Cristian lo llama "Jeff Fitness") · dominio propio · inversión/costos con Jeff · propiedad intelectual de lo heredado de DaniFit.
