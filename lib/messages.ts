@@ -36,7 +36,7 @@ export const useSignedImage = (path: string | null) => useQuery({
 
 export function useMarkRead(clientId?: string) {
   const qc = useQueryClient();
-  return async () => { await db().rpc("mark_thread_read", { p_client: clientId ?? null }); void qc.invalidateQueries({ queryKey: ["unread"] }); void qc.invalidateQueries({ queryKey: ["threads"] }); };
+  return async () => { await db().rpc("mark_thread_read", { p_client: clientId ?? null }); void qc.invalidateQueries({ queryKey: ["unread"] }); void qc.invalidateQueries({ queryKey: ["threads"] }); void qc.invalidateQueries({ queryKey: threadKey(clientId) }); };
 }
 
 export type SendInput = { body: string; image?: File | null; video?: File | null; youtube?: string | null; onProgress?: (pct: number) => void };
@@ -86,7 +86,7 @@ export function useMessagesRealtime(side: "client" | "coach") {
         void qc.invalidateQueries({ queryKey: side === "coach" ? threadKey(m.client_id) : threadKey() });
         if (m.sender !== side && !location.pathname.endsWith("/mensajes")) toast(side === "coach" ? "Nuevo mensaje de un cliente" : "Tu coach te escribió");
       })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => { void qc.invalidateQueries({ queryKey: ["unread"] }); void qc.invalidateQueries({ queryKey: ["threads"] }); })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, () => { void qc.invalidateQueries({ queryKey: ["unread"] }); void qc.invalidateQueries({ queryKey: ["threads"] }); void qc.invalidateQueries({ queryKey: ["thread"] }); })   // "Visto" se actualiza al instante
       .subscribe();
     return () => { void c.removeChannel(ch); };
   }, [qc, toast, side]);

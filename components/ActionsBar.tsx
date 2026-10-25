@@ -3,9 +3,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import "@/app/messages.css";
 import { localDate, useClients, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
-import { useMessagesRealtime, useUnread } from "@/lib/messages";
+import { useQueryClient } from "@tanstack/react-query";
+import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
 import { useProfile } from "@/components/Providers";
 import { disablePush, enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
+import { QuickSearch } from "@/components/coach/QuickSearch";
 import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
 
@@ -34,6 +36,8 @@ function useItems(side: "client" | "coach"): Item[] {
 
 export function ActionsBar({ side }: { side: "client" | "coach" }) {
   useMessagesRealtime(side);
+  const qc = useQueryClient();
+  useEffect(() => { if (side === "client") void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side]);   // "Mensajes" abre al instante
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);
   useEffect(() => { void pushState().then(setPs); void resyncPush(); }, []);
   useEffect(() => { const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; try { void (unread > 0 ? nav.setAppBadge?.(unread) : nav.clearAppBadge?.()); } catch { /* sin soporte */ } }, [unread]);
@@ -47,6 +51,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
   const msgHref = side === "coach" ? "/coach/mensajes" : "/inicio/mensajes";
   return (
     <div className="actions-bar" ref={box}>
+      {side === "coach" && <QuickSearch />}
       <Link href={msgHref} className="act-btn" aria-label={`Mensajes${unread ? `, ${unread} sin leer` : ""}`}>
         <svg viewBox="0 0 20 20"><path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z" /></svg>
         <span className="act-label">Mensajes</span>{unread > 0 && <span className="act-dot">{unread > 9 ? "9+" : unread}</span>}

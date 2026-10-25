@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useActivePlanClients, useClients, useCoachReports, useRecentLogs, localDate } from "@/lib/queries";
+import { useActivePlanClients, useClients, useCoachReports, useCoachSlots, useRecentLogs, localDate } from "@/lib/queries";
+import { useThreads } from "@/lib/messages";
+import { hhmm, sameDay } from "@/lib/dates";
 import { useProfile } from "@/components/Providers";
 import { attention } from "@/lib/attention";
 import { ago, gradient, initials } from "@/lib/format";
@@ -42,6 +44,8 @@ export function DashboardView() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {unseenReports > 0 && <Link href="/coach/reportes" className="card" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar →</div></Link>}
+          <MessagesCard />
+          <AgendaTodayCard />
           <AnnouncementsCard />
           <div className="card">
             <div className="card-tag">Reciente</div><div className="card-title" style={{ fontSize: 15 }}>Actividad</div>
@@ -54,6 +58,32 @@ export function DashboardView() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MessagesCard() {
+  const t = useThreads(), unread = (t.data ?? []).filter((x) => x.unread > 0).slice(0, 4), total = (t.data ?? []).reduce((a, x) => a + x.unread, 0);
+  if (!total) return null;
+  return (
+    <div className="card">
+      <div className="card-head"><div><div className="card-tag">Mensajes</div><div className="card-title" style={{ fontSize: 15 }}>{total} sin leer</div></div><Link href="/coach/mensajes" className="card-link">Abrir →</Link></div>
+      {unread.map((x) => <Link key={x.clientId} href={`/coach/mensajes?c=${x.clientId}`} className="activity-row"><div className="activity-icon"><svg viewBox="0 0 20 20"><path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z" /></svg></div><div><div className="activity-text"><b>{x.name}</b>{x.unread > 1 ? ` (${x.unread})` : ""}: {x.lastBody ?? (x.lastKind === "video" ? "📹 Vídeo" : "📷 Foto")}</div></div></Link>)}
+    </div>
+  );
+}
+// Sesiones reservadas de hoy y aviso si aún no hay horarios publicados para la próxima semana.
+function AgendaTodayCard() {
+  const wk = useCoachSlots(0), nx = useCoachSlots(1), now = new Date();
+  const todays = (wk.data ?? []).filter((s) => s.booking && sameDay(new Date(s.startsAt), now)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const nudge = nx.data && !nx.data.length && (now.getDay() === 0 || now.getDay() >= 4);
+  return (
+    <div className="card">
+      <div className="card-head"><div><div className="card-tag">Agenda</div><div className="card-title" style={{ fontSize: 15 }}>Sesiones de hoy</div></div><Link href="/coach/agenda" className="card-link">Ver agenda →</Link></div>
+      {wk.isPending && <div className="sk" style={{ height: 48 }} />}
+      {wk.data && !todays.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>No tienes sesiones reservadas hoy.</p>}
+      {todays.map((s) => <div key={s.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{hhmm(s.startsAt)}</span><span>{s.booking!.clientName}</span></div>)}
+      {nudge && <Link href="/coach/agenda" className="attn-row" style={{ marginTop: 10 }}><div className="attn-body"><div className="attn-name">Publica tus horarios de la próxima semana</div><div className="attn-reason urgent">Aún no hay horarios disponibles para tus clientes.</div></div></Link>}
     </div>
   );
 }

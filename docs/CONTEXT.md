@@ -14,7 +14,7 @@ Inicio 21-oct-2026. Plazo: **2 meses, ampliable a 3** (P0 y P1 primero; P2 puede
 6. **Honestidad:** decir qué se verificó y qué no.
 
 ## 3. Requisitos del coach (nivel 1, dichos por Cristian/Jeff)
-- Sin pagos en la app: la venta se cierra por WhatsApp desde una landing; el cliente instala la PWA y se registra solo. Queda **pendiente**: todo bloqueado y borroso con botón a WhatsApp. Jeff lo activa y le asigna el plan (el plan decide qué ve).
+- Sin pagos en la app: la venta se cierra fuera de la app (Jeff habla con el cliente); el cliente instala la PWA y se registra solo. **WhatsApp ya no existe dentro de la app**: todo contacto es por Mensajes. Jeff lo activa y le asigna el plan (el plan decide qué ve).
 - Onboarding interactivo con personaje guía (P2): tour, peso, medidas, fotos con consentimiento y agendar llamada de sábado o domingo con Jeff.
 - Jeff arma nutrición y rutina **dentro de la app** (sin PDFs), desde plantillas que clona y ajusta por cliente.
 - Rutina por días con enfoque, ejercicios, vídeo/imágenes, peso e intensidad.
@@ -28,13 +28,13 @@ Inicio 21-oct-2026. Plazo: **2 meses, ampliable a 3** (P0 y P1 primero; P2 puede
 - Base **multi-coach** (cada coach con su entorno, logo y colores); cobro a coaches, dominios propios, etc. = P3.
 
 ## 4. Stack e infraestructura
-Ver `ARCHITECTURE.md`. Supabase en **us-east-1**; Netlify (Ohio por defecto). Variables de entorno (Netlify y `.env.local`, jamás en el repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_COACH_WHATSAPP` (solo dígitos con código de país, sin `+`).
+Ver `ARCHITECTURE.md`. Supabase en **us-east-1**; Netlify (Ohio por defecto). Variables de entorno (Netlify y `.env.local`, jamás en el repo): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `BUNNY_API_KEY`/`BUNNY_LIBRARY_ID`/`BUNNY_TOKEN_KEY` (vídeo), `NEXT_PUBLIC_VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` (avisos push; generar con `npx web-push generate-vapid-keys`; la pública se incrusta al construir), opcional `NEXT_PUBLIC_SITE_URL` (dominio propio para el enlace con imagen).
 Costos estimados al lanzar (oct-2026): Supabase Pro ~US$25/mes + Bunny ~US$1–3/mes + dominio ≈ US$26–30/mes. Bunny aún no está integrado.
 
 ## 5. Estado funcional (qué existe)
 - **Coach:** Dashboard con cola de revisión · Clientes (lista, ficha con Resumen/Entrenamiento/Progreso; asignar plan) · Catálogo (ejercicios, rutinas en modal) · Entrenamiento por días (crear plan, asignar rutina a uno o varios días, peso objetivo) · Revisar entrenamientos y comentar · Agenda (publicar, agendar, cancelar) · Reportes diarios (cola de revisión con vídeo y "marcar visto") · Nutrición (plantillas en Catálogo; calorías y macros fijos + comidas por día o "todos los días", con "copiar día a…"; asignar/editar por cliente en su ficha) · Objetivo actual por cliente (Resumen de la ficha) · Anuncios a todos (tarjeta en el Dashboard; fijar, vencimiento) · Notas privadas por cliente (pestaña de la ficha) · Material educativo (artículos y vídeos de YouTube, borrador/publicado, plan básico o completo, "vídeo de la semana", conteo de vistas).
 - **Cliente:** Hoy (rutina del día, series con repeticiones y peso, esfuerzo, comentario del coach, racha) · Mi plan (semana y técnica en vídeo) · Progreso (mediciones, gráfica, fotos antes/después, borrar fotos) · Agenda (reservar/cancelar) · Reporte diario en Hoy (vídeo corto + comentario; sin Bunny configurado se envía solo el comentario) · Nutrición en Mi plan (con selector de día) · "Hoy" completo según el diseño: vídeo de la semana, próxima sesión, objetivo, nutrición de hoy y progreso reciente · Bienvenida de 3 pasos la primera vez (medidas iniciales, agendar llamada) · Anuncios del coach en Hoy · Material (artículos y vídeos; lo del plan completo sale bloqueado con enlace a WhatsApp) · pantallas bloqueadas por plan.
-- **Aún no existe:** documentos PDF dentro del material (pendiente de almacenamiento),  personaje guía y contenido definitivo del onboarding, objetivos, landing pública, avisos/recordatorios, modo sin conexión.
+- **Aún no existe:** documentos PDF dentro del material (pendiente de almacenamiento),  personaje guía y contenido definitivo del onboarding, landing pública, modo sin conexión, grupos/cupos en la agenda, documentos PDF.
 - **Vídeo (Bunny):** el código existe y se probó la lógica y que sin sesión se rechaza, pero **nunca se ha subido un vídeo real**: faltan las variables `BUNNY_API_KEY`, `BUNNY_LIBRARY_ID` (y `BUNNY_TOKEN_KEY` si la biblioteca tiene "token authentication") en Netlify. Sin ellas el reporte diario se envía solo con comentario. Reglas PROPUESTA (confirmar con Jeff): vídeo ≤ 90 s y ≤ 200 MB, borrado 24 h después de verlo y máx. 7 días, 5 subidas/día por cliente. El borrado en Bunny se ejecuta cuando el coach abre "Reportes diarios" (no requiere cron).
 - **Lo que NADIE ha probado de punta a punta contra el Supabase real** (a 24-oct): el flujo completo coach→cliente→revisión, subir foto desde celular, agenda con dos usuarios. Se verificó por tipos, lint y pruebas de ataque en Postgres de prueba.
 
@@ -53,7 +53,7 @@ Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/i
 
 ## 9. Puesta en marcha desde cero
 1. Supabase: crear proyecto (región us-east-1); Auth → desactivar "Confirm email" (solo pruebas).
-2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0019`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
+2. SQL Editor: ejecutar **en orden** `supabase/migrations/0001…0023`. Después de 0001, crear el espacio: `insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','57…');` y recién entonces `0002` (planes). **El espacio debe existir antes del primer registro.**
 3. Netlify: importar el repo, cargar las 3 variables, desplegar.
 4. Registrar el correo de Jeff y: `update public.profiles set role='coach' where id=(select id from auth.users where email='…');`
 5. Probar con otro correo (cliente) en una ventana de incógnito: queda pendiente → Jeff le asigna plan → ve su contenido.
@@ -80,9 +80,19 @@ Tokens en `tailwind.config.ts` y los CSS por zona (`app/coach/coach.css`, `app/i
 | 0017 | onboarding: `clients.onboarded_at`, `complete_onboarding` |
 | 0018 | nutrición por días: `nutrition_meals.weekday` (nulo = todos los días); `save_nutrition`/`assign_nutrition` actualizadas |
 | 0019 | objetivo actual del cliente: `clients.objective`, `objective_at` (lo escribe el coach) |
+| 0020 | mensajes cliente↔coach: `messages`, `send_message`, `list_threads`, `unread_messages`, `mark_thread_read`, `register_message_video`, bucket `message-images`, Realtime |
+| 0021 | avisos push: `push_subscriptions`, `save_push_subscription`, `push_targets`, `prune_push` |
+| 0022 | vídeo de rutina: `routine_templates.video_ref`, `plan_days.video_ref/video_id`, `save_routine(…, p_video)`, `assign_day` copia el vídeo, `set_day_video` |
+| 0023 | recordatorios: `app_secrets`, `reminder_log`, `due_reminders(secret, now)` |
 
 ## 11. Decisiones pendientes con Jeff (no inventar)
 Planes: nombres, precios y qué incluye cada uno (hoy PROPUESTA Esencial/Completo) · reglas de agenda (hoy PROPUESTA: 1 reserva futura, cancelar hasta 24 h antes, tipos "Llamada inicial"/"Seguimiento") · duración y obligatoriedad del vídeo diario y plazo de borrado · qué partes del registro de series son obligatorias · contenido del onboarding y estilo del personaje · plantillas de rutina y nutrición de Jeff · nombre público (la marca dibujada en el logo es YEFFITNES TRAINING; Cristian lo llama "Jeff Fitness") · dominio propio · inversión/costos con Jeff · propiedad intelectual de lo heredado de DaniFit.
 
 ## 12. Deuda técnica conocida
 Textos "Jeff" fijos y `handle_new_user` asigna siempre el primer espacio (solo sirve con un coach) · zona horaria asumida única (Bogotá) · `ex_client_read` expone el catálogo completo de ejercicios al cliente con plan · menú con ítems sin pantalla (apagados) · los modales no atrapan el foco del teclado · PWA sin modo sin conexión · tablas de la cola de revisión calculadas en el navegador (suficiente hasta ~50 clientes; luego, una vista SQL).
+
+
+## 13. Activar los recordatorios automáticos y los avisos push (pendiente del lado de Cristian)
+1. Generar claves: `npx web-push generate-vapid-keys`. En Netlify → Environment variables: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (pública), `VAPID_PRIVATE_KEY` (privada, sin NEXT_PUBLIC_), `VAPID_SUBJECT=mailto:tu-correo`. Volver a desplegar (la pública se incrusta al construir).
+2. Recordatorios automáticos: en Supabase → Database → Extensions activar `pg_cron` y `pg_net`; en SQL Editor: `insert into public.app_secrets values ('cron','UNA-CLAVE-LARGA');` y `select cron.schedule('yeffitnes-recordatorios','*/15 * * * *', $$ select net.http_post(url:='https://TU-SITIO/api/cron/reminders', headers:=jsonb_build_object('x-cron-secret','UNA-CLAVE-LARGA')) $$);`. Para detenerlos: `select cron.unschedule('yeffitnes-recordatorios');`.
+3. iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4+).

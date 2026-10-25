@@ -1,5 +1,5 @@
 # PROJECT_STATE — YEFFITNES TRAINING
-Foto del estado al **24-oct-2026**. El historial detallado está en `CHANGELOG.md` (no se duplica aquí). Contexto: `CONTEXT.md`. Forma de trabajar: `AGENT_PLAYBOOK.md`.
+Foto del estado al **25-oct-2026** (rama local `bloque-grande`, **aún sin subir a main**; main está en d334597). El historial detallado está en `CHANGELOG.md` (no se duplica aquí). Contexto: `CONTEXT.md`. Forma de trabajar: `AGENT_PLAYBOOK.md`.
 
 ## Resumen
 Fundación, panel del coach y portal del cliente funcionando en el código, con 12 migraciones y 3 suites de pruebas de ataque en verde (Postgres de prueba). **Falta la validación de punta a punta con el Supabase real y con un celular** (ver "Sin verificar").
@@ -27,7 +27,8 @@ Fundación, panel del coach y portal del cliente funcionando en el código, con 
 4. ~~Reporte diario con vídeo~~ **construido** (0015; falta crear la cuenta de Bunny y las variables en Netlify, y probar una subida real desde un celular. Se usa la cámara nativa del teléfono, así que NO hace falta cambiar `Permissions-Policy`).
 5. ~~Nutrición con plantillas~~ **hecho** (0016; la vista del cliente sigue el mockup de Mi plan; la del coach se diseñó con el estilo del catálogo).
 6. ~~Onboarding~~ **versión básica hecha** (0017: 3 pasos; falta el personaje guía y el contenido que defina Jeff).
-7. Landing pública, avisos/recordatorios, objetivos (P2).
+7. ~~Mensajes dentro de la app (sin WhatsApp), avisos push, recordatorios, vídeo de rutina, PWA/enlace con imagen, buscador y agenda en el panel, Objetivos~~ **construido** en la rama `bloque-grande` (0020–0023). Falta: claves VAPID en Netlify, activar el cron de recordatorios (CONTEXT §13), cuenta de Bunny, probar con un teléfono real.
+8. Pendiente (P2): landing pública, cupos/grupos en la agenda, documentos PDF, modo sin conexión, panel "Tiempo real" del Dashboard, validación de horarios de recordatorios con Jeff.
 8. **Pre-lanzamiento:** revocar token, quitar la insignia "Powered by Netlify" (Netlify → Project configuration → General → Powered by Netlify badge → apagar; no requiere redeploy), repo privado, Supabase Pro, confirmación de correo, revisión final de RLS, prueba con 2–3 clientes reales, dominio.
 
 ## Bloqueos y dependencias
