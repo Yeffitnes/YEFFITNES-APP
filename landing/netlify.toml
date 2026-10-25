@@ -1,0 +1,3 @@
+[build]
+  publish = "."
+  # Sin comando de build: es HTML estático.
