@@ -9,6 +9,8 @@ const security = [
 ];
 const nextConfig = {
   poweredByHeader: false,
+  // Landing de venta (archivos estáticos en public/landing). Vive aquí de forma temporal; luego irá en su propia dirección.
+  async rewrites() { return [{ source: "/landing", destination: "/landing/index.html" }]; },
   async headers() { return [{ source: "/:path*", headers: security }, { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] }]; },
 };
 

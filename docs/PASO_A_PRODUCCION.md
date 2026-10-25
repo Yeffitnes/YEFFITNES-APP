@@ -40,10 +40,12 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Configurarlo en Netlify, poner `NEXT_PUBLIC_SITE_URL`, actualizar Supabase (punto 2) y las tareas programadas, y volver a desplegar.
 - [ ] Reinstalar la app en los teléfonos (cambia la dirección).
 
-## 6. Landing de venta (`landing/`)
-- [ ] WhatsApp real de Jeff (`COACH_PHONE` y los `wa.me/57XXXXXXXXXX` en `landing/index.html`) y su foto `landing/assets/jeff.jpg`.
+## 6. Landing de venta (`public/landing/`, ruta `/landing`)
+- [ ] **Hoy vive dentro del sitio de la app, en `/landing`** (temporal). Se publica con cada deploy a Netlify. Cualquiera que escriba `/login` puede ver el acceso; es aceptado de forma temporal.
+- [ ] **Pendiente a futuro:** moverla a su propia dirección (pasos en `public/landing/README.md`).
+- [ ] WhatsApp real de Jeff (`COACH_PHONE` y los `wa.me/57XXXXXXXXXX` en `public/landing/index.html`) y su foto `public/landing/assets/jeff.jpg`.
 - [ ] Confirmar planes y precios con Jeff (hoy son propuesta, sin precios).
-- [ ] Publicarla en un hosting estático aparte (no enlaza a la app ni al login). El sitio de landing en Netlify se borró.
+- [ ] La imagen para compartir (`og:image`) usa ruta relativa; al tener dirección definitiva, poner la URL completa.
 
 ## 7. Limpieza antes de entregar
 - [ ] Borrar clientes, mensajes, reportes, actividad, suscripciones push y reservas **de prueba**.

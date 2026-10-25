@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Landing dentro del sitio de la app, en `/landing` (temporal)
+- La carpeta `landing/` pasó a `public/landing/` y se sirve en `/landing` (regla en `next.config.mjs`; excluida del `middleware`). Rutas de imágenes ahora absolutas (`/landing/assets/…`). Se quitó el `netlify.toml` de la landing y la regla `ignore` del `netlify.toml` raíz (ya es parte del sitio). Probado en local: `/landing` 200, imágenes 200, `/login` 200, `/inicio` sigue protegido. Sin probar en Netlify/Vercel.
+- Pendiente a futuro: moverla a su propia dirección (ver `public/landing/README.md`).
+- Revertir: `git mv public/landing landing`, y deshacer los cambios en `next.config.mjs`, `middleware.ts`, `netlify.toml` e `index.html`.
+
 ## 2026-10-25 · Producción en Netlify (plan de pago) y pruebas en Vercel
 - Decisión: Netlify Personal es la producción (`main`); Vercel Hobby solo prueba (`bloque-hoy`). Nuevo `docs/PASO_A_PRODUCCION.md` con variables, Supabase (Site URL = Netlify), tareas programadas apuntando a Netlify, notificaciones, Bunny, dominio, landing y limpieza. Enlazado desde `AGENTS.md` y `docs/CONTEXT.md`.
 - Revertir: borrar el archivo y las dos líneas añadidas.
