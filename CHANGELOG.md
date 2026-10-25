@@ -1,6 +1,15 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Material educativo (migración 0013)
+- **Coach `/coach/material`** (copiado de `coach-material.html`): rejilla de contenidos, búsqueda y filtros, crear/editar/eliminar, borrador o publicado, "quién lo ve" (todos los planes con material o solo plan completo), estrella de **vídeo de la semana** (solo uno; debe ser vídeo publicado de acceso básico) y "Visto por N".
+- **Cliente `/inicio/material`** (copiado de `portal-material.html`): vídeo de la semana, búsqueda, filtros, etiqueta "Nuevo" (14 días sin abrir), lectura de artículos y reproductor de vídeo. Lo que el plan no incluye se ve **bloqueado con título** y lleva a WhatsApp; su contenido nunca sale de la base (se abre solo con `open_material`).
+- Seguridad: el cliente NO tiene permisos sobre las tablas; lista y abre solo por funciones que validan cuenta activa, espacio y plan. Suite `rls_material.sql` (otro coach, lectura directa, contenido premium con plan Esencial, cliente pendiente, destacado, vistas): ninguno.
+- **Pendiente:** documentos PDF (necesitan almacenamiento) y mostrar el vídeo de la semana en "Hoy".
+- Archivos: `supabase/migrations/0013_material.sql`, `supabase/tests/rls_material.sql`, `run_local.sh`, `lib/queries.ts`, `components/coach/MaterialView.tsx`, `components/portal/MaterialClientView.tsx`, rutas `app/coach/material` y `app/inicio/material`, menús, CSS.
+- **Cómo revertir:** `git revert` del commit y en Supabase: `drop function if exists public.set_featured_material, public.open_material, public.list_materials, public.material_unlocked; drop table if exists public.material_views, public.materials;` (borra el contenido publicado).
+- Sin ver renderizado: probar en el navegador tras el deploy.
+
 ## 2026-10-24 · Documentación para continuidad y herramientas de agente
 - Reescritos `docs/CONTEXT.md`, `docs/ARCHITECTURE.md` (v3) y `docs/PROJECT_STATE.md` como foto actual (el historial vive aquí). Nuevo `docs/AGENT_PLAYBOOK.md` (cómo trabajar, verificar, entregar, integrar parches, errores ya cometidos). `AGENTS.md` y READMEs actualizados.
 - Nuevas herramientas: `supabase/tests/run_local.sh` (todas las migraciones + suites de ataque; devuelve error si algo falla) y `design/port_css.py` (portar CSS de un mockup sin duplicar). Ambas probadas: `TODO OK`; el portador no añade reglas al repetirse.

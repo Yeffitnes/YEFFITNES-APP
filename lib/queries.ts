@@ -354,3 +354,57 @@ export function useCoachBook() {
   return useMutation({ mutationFn: async (v: { slotId: string; clientId: string }) => { const { error } = await db().rpc("coach_book_slot", { p_slot: v.slotId, p_client: v.clientId }); if (error) throw error; },
     onSuccess: () => toast("Cliente agendado"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
+
+// ---- Material educativo ----
+export const MAT_CATS = ["Técnica", "Nutrición", "Movilidad", "Recuperación", "Motivación"];
+export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; tier: "basic" | "full"; featured: boolean; published: boolean; date: string; views: number };
+export const useCoachMaterials = () => useQuery({ queryKey: ["coach-materials"], staleTime: 30_000, queryFn: async (): Promise<CoachMaterial[]> => {
+  const { data, error } = await db().from("materials").select("id,kind,title,category,body,video_ref,tier,is_featured,published,published_on,material_views(count)").order("published_on", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
+  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; tier: "basic" | "full"; is_featured: boolean; published: boolean; published_on: string; material_views: { count: number }[] };
+  return (data as unknown as Raw[]).map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, tier: m.tier, featured: m.is_featured, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0 }));
+} });
+export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean };
+export function useSaveMaterial(workspaceId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: MaterialInput) => {
+      const row = { title: v.title.trim(), kind: v.kind, category: v.category, tier: v.tier, published: v.published, body: v.kind === "article" ? v.body.trim() : null, video_ref: v.kind === "video" ? v.videoRef : null };
+      const { error } = v.id ? await db().from("materials").update(row).eq("id", v.id) : await db().from("materials").insert({ ...row, workspace_id: workspaceId });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => toast(v.id ? "Contenido actualizado" : "Contenido publicado"),
+    onError: () => toast("No pudimos guardar el contenido. Revisa los datos e inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }),
+  });
+}
+export function useDeleteMaterial() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("materials").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => toast("Contenido eliminado"), onError: () => toast("No pudimos eliminarlo. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
+}
+export function useFeatureMaterial() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({ mutationFn: async (v: { id: string; on: boolean }) => { const { error } = await db().rpc("set_featured_material", { p_id: v.id, p_on: v.on }); if (error) throw error; },
+    onSuccess: (_d, v) => toast(v.on ? "Vídeo de la semana actualizado" : "Ya no hay vídeo destacado"),
+    onError: (e) => toast((e as { message?: string })?.message?.includes("not_featurable") ? "Solo un vídeo publicado y de acceso para todos los planes puede ser el vídeo de la semana." : "No pudimos destacarlo. Inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
+}
+export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; unlocked: boolean; isNew: boolean };
+export const useMaterialList = () => useQuery({ queryKey: ["materials"], staleTime: 60_000, queryFn: async (): Promise<MaterialItem[]> => {
+  const { data, error } = await db().rpc("list_materials"); if (error) throw error;
+  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean }[])
+    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, unlocked: m.unlocked, isNew: m.is_new }));
+} });
+export type MaterialOpen = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; date: string };
+export function useOpenMaterial() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (id: string): Promise<MaterialOpen> => {
+      const { data, error } = await db().rpc("open_material", { p_id: id }); if (error) throw error;
+      const m = (data as { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; published_on: string }[])[0];
+      return { id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, date: m.published_on };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["materials"] }),
+    onError: (e) => toast((e as { message?: string })?.message?.includes("locked") ? "Este contenido no está incluido en tu plan." : "No pudimos abrir el contenido. Inténtalo de nuevo.", true),
+  });
+}

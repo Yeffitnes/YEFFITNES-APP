@@ -22,7 +22,7 @@ Fundación, panel del coach y portal del cliente funcionando en el código, con 
 
 ## Siguiente (orden propuesto)
 1. **Probar lo existente** (Cristian) y corregir lo que falle.
-2. **Material educativo** (P1; hay mockups `coach-material` y `portal-material`; YouTube embebido; funciones `education_basic`/`education_full`).
+2. ~~Material educativo~~ **hecho** (0013; falta: documentos PDF y mostrar el vídeo de la semana en Hoy).
 3. **Anuncios a todos** y **notas privadas del coach** (P1; requisito explícito, aún sin construir).
 4. **Reporte diario con vídeo** (P0; requiere cuenta de Bunny, endpoint de servidor que firma la subida, borrado automático y cambiar `Permissions-Policy` a `microphone=(self)`).
 5. **Nutrición con plantillas** (P1; sin mockup completo: diseñarlo con el estilo de Mi plan/catálogo).
