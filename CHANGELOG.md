@@ -1,6 +1,19 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-24 · Auditoría 2: velocidad y flujo (sin SQL nuevo)
+- **Auditoría de seguridad:** las 11 migraciones + `rls.sql` + `rls_progress.sql` pasan en una base limpia ("ataques: ninguno"). No se encontraron agujeros nuevos.
+- **Velocidad (portal):** el layout ya lee al cliente y su plan en el servidor y los pasa a la caché: "Hoy" ya no espera ese viaje y plan+registros cargan en paralelo. Se precargan Mi plan y Progreso mientras se ve Hoy. En el coach se precargan también revisiones recientes y clientes con plan (el dashboard abre sin esperas).
+- **Velocidad (series):** guardar una serie ya no vuelve a leer 90 días de registros; es instantáneo (optimista) y solo se relee si falla.
+- **Flujo del cliente:** Hoy abre solo el primer ejercicio pendiente; ✓ guarda lo planeado (reps y peso objetivo) sin escribir nada; Enter guarda; al terminar las series de un ejercicio pasa al siguiente; Espacio abre/cierra un ejercicio.
+- **Flujo del coach:** asignar una rutina a VARIOS días a la vez (semana fija en un paso).
+- **Progreso:** se puede eliminar una foto (el texto de consentimiento lo prometía y no había botón); puntos de la gráfica ya no se deforman; aviso si la imagen no se puede procesar.
+- **Acceso:** el login lleva directo al panel según rol; si el registro exige confirmar correo, se avisa en vez de rebotar al login. El aviso (toast) ya no se corta antes de tiempo.
+- **Seguridad web:** cabeceras (nosniff, no-iframe, HSTS, referrer, permisos: solo cámara propia) en `next.config.mjs`.
+- Código: `lib/queries.ts` (fetchers exportados), `components/Providers.tsx`, `app/inicio/layout.tsx`, `HoyView`, `TrainingTab`, `ProgressPanels`, `app/login/*`, `next.config.mjs`.
+- Revertir: `git revert` del commit (no hay SQL).
+- Sin verificar en pantalla: el entorno de pruebas no puede compilar con las fuentes de Google; se comprobó con `tsc` y lint. Probar en el celular tras el deploy.
+
 ## 2026-10-24 · 4348e14 · Progreso: mediciones y fotos privadas
 - Portal `/inicio/progreso` copiado de `design/mockups/portal-progreso.html`: resumen por métrica con variación, gráfica con líneas activables, historial (Tú / Coach), comparador Antes/Después y galería. Registro de medición en modal (peso, cintura, caderas, pecho, brazo, pierna; si ya registraste hoy, se actualiza).
 - Fotos: se comprimen en el teléfono (máx. 1600 px), se guardan en un bucket **privado** y se muestran con enlaces que vencen. Antes de la primera foto el cliente acepta un consentimiento (`clients.image_consent_at`).

@@ -17,7 +17,7 @@ export default function Login() {
         {mode === "up" && <input name="name" required placeholder="Tu nombre" className="input" />}
         <input name="email" type="email" required placeholder="Correo" className="input" autoComplete="email" />
         <input name="password" type="password" required minLength={8} placeholder="Contraseña (mínimo 8)" className="input" autoComplete={mode === "in" ? "current-password" : "new-password"} />
-        {err && <p role="alert" className="text-sm text-rose">{err}</p>}
+        {err && <p role="alert" className={`text-sm ${err.startsWith("Te enviamos") ? "text-white/80" : "text-rose"}`}>{err}</p>}
         <Submit label={mode === "in" ? "Entrar" : "Registrarme"} />
         <button type="button" onClick={() => setMode(mode === "in" ? "up" : "in")} className="w-full text-sm text-white/60">
           {mode === "in" ? "¿Aún no tienes cuenta? Regístrate" : "¿Ya tienes cuenta? Entra"}

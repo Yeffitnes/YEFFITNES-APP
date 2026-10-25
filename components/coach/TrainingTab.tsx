@@ -69,14 +69,19 @@ function NewPlan({ clientId, hasActive, onClose }: { clientId: string; hasActive
   );
 }
 function AssignModal({ clientId, planId, weekday, dayLabel, replacing, onClose }: { clientId: string; planId: string; weekday: number; dayLabel: string; replacing: boolean; onClose: () => void }) {
-  const { data } = useRoutines(), assign = useAssignDay(clientId), [sel, setSel] = useState("");
+  const { data } = useRoutines(), assign = useAssignDay(clientId), [sel, setSel] = useState(""), [days, setDays] = useState<number[]>([weekday]);
+  const toggle = (w: number) => setDays((l) => (l.includes(w) ? l.filter((x) => x !== w) : [...l, w].sort()));
   return (
-    <Modal title={`Rutina para ${dayLabel}`} sub={replacing ? "Reemplazará la rutina actual de este día. Se copia la plantilla: los cambios aquí no afectan al catálogo." : "Se copia la plantilla: los cambios aquí no afectan al catálogo."} onClose={onClose}>
+    <Modal title={`Rutina para ${dayLabel}`} sub={replacing ? "Reemplazará la rutina que ya tenga cada día elegido. Se copia la plantilla: los cambios aquí no afectan al catálogo." : "Se copia la plantilla: los cambios aquí no afectan al catálogo."} onClose={onClose}>
       {!data ? <Skeleton rows={2} /> : !data.length ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Aún no tienes rutinas. Créalas en Catálogo → Rutinas.</p> : (
         <div style={{ marginTop: 14, maxHeight: 300, overflowY: "auto" }}>{data.map((r) => (
           <label key={r.id} className="info-list-row" style={{ cursor: "pointer", gap: 10, justifyContent: "flex-start" }}>
             <input type="radio" name="tpl" checked={sel === r.id} onChange={() => setSel(r.id)} /><span style={{ fontWeight: 700 }}>{r.name}</span><span style={{ color: "var(--text-faint)", fontSize: 12 }}>{r.items.length} ejercicios</span></label>))}</div>)}
-      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={!sel || assign.isPending} onClick={() => assign.mutate({ planId, weekday, templateId: sel }, { onSuccess: onClose })}>{assign.isPending ? "Asignando…" : "Asignar"}</button></div>
+      <div style={{ marginTop: 16 }}>
+        <div className="card-tag">Aplicar a estos días (puedes marcar varios)</div>
+        <div className="day-pill-row" style={{ marginTop: 8 }}>{DAYS.map((t, i) => <button key={t} type="button" aria-pressed={days.includes(i + 1)} className={`day-pill${days.includes(i + 1) ? " active" : ""}`} onClick={() => toggle(i + 1)}>{t}</button>)}</div>
+      </div>
+      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={!sel || !days.length || assign.isPending} onClick={() => assign.mutate({ planId, weekdays: days, templateId: sel }, { onSuccess: onClose })}>{assign.isPending ? "Asignando…" : days.length > 1 ? `Asignar a ${days.length} días` : "Asignar"}</button></div>
     </Modal>
   );
 }

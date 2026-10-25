@@ -57,3 +57,5 @@ Crear proyecto Supabase, ejecutar la migración, configurar .env y probar el flu
 ## Actualización 24-oct-2026 (4)
 - Agenda hecha (migración 0012; pruebas rls_agenda). Migraciones vigentes: 0001–0012. Reglas de reserva PROPUESTAS pendientes de confirmar con Jeff (ver CHANGELOG).
 - Siguiente: onboarding del cliente (tour con personaje, medidas iniciales, agendar la llamada) → nutrición con plantillas → material educativo (YouTube) → reporte diario con vídeo (Bunny) → confirmación de correo, Supabase Pro, repo privado.
+- Auditoría 2: sin agujeros RLS nuevos; velocidad (datos del servidor + precarga), flujo de series (un toque), asignar rutina a varios días, borrar fotos, cabeceras de seguridad. Sin migraciones nuevas (siguen 0001–0011).
+- Deuda conocida: textos "Jeff" fijos y `handle_new_user` toma el primer workspace (multi-coach), zona horaria asumida Bogotá, `ex_client_read` expone el catálogo completo al cliente, ítems del menú sin pantalla (Agenda/Objetivos/Material) visibles apagados, sin trampa de foco en modales, sin service worker (PWA sin offline).

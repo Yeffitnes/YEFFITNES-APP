@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
-import { useConsent, useGiveConsent, useMeasures, usePhotos, useSaveMeasure, useUploadPhoto, type Measure, type MeasureInput } from "@/lib/queries";
-import { useProfile, useWorkspaceId } from "@/components/Providers";
+import { useConsent, useGiveConsent, useMeasures, useDeletePhoto, usePhotos, useSaveMeasure, useUploadPhoto, type Measure, type MeasureInput } from "@/lib/queries";
+import { useProfile, useToast, useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { compressImage } from "@/lib/image";
 type K = keyof MeasureInput;
@@ -36,7 +36,7 @@ export function ProgressPanels({ clientId, mode }: { clientId: string; mode: "cl
                   {mine && <button className="add-btn" onClick={() => setModal(true)}>Registrar medición</button>}</div>
                 <div className="chip-row">{M.filter((m) => series(m.k).length).map((m) => <button key={m.id} className={`metric-chip${on.includes(m.id) ? " active" : " off"}`} aria-pressed={on.includes(m.id)} onClick={() => setOn(on.includes(m.id) ? on.filter((x) => x !== m.id) : [...on, m.id])}><span className="dot" style={{ background: m.color }} />{m.label}</button>)}</div>
                 <div className="chart-svg-wrap"><svg className="chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Gráfica de evolución">
-                  {M.filter((m) => on.includes(m.id)).map((m) => { const p = pt(m.k); return <g key={m.id} className="metric-series"><polyline points={p.map((q) => `${q.x},${q.y}`).join(" ")} stroke={m.color} fill="none" strokeWidth={2.4} />{p.map((q, i) => <circle key={i} cx={q.x} cy={q.y} r={3.5} fill={m.color} />)}</g>; })}</svg>
+                  {M.filter((m) => on.includes(m.id)).map((m) => { const p = pt(m.k); return <g key={m.id} className="metric-series"><polyline points={p.map((q) => `${q.x},${q.y}`).join(" ")} stroke={m.color} fill="none" strokeWidth={2.4} vectorEffect="non-scaling-stroke" />{p.map((q, i) => <line key={i} x1={q.x} y1={q.y} x2={q.x + 0.01} y2={q.y} stroke={m.color} strokeWidth={8} strokeLinecap="round" vectorEffect="non-scaling-stroke" />)}</g>; })}</svg>
                   <div className="chart-x-axis">{dates.map((d) => <span key={d}>{day(d)}</span>)}</div></div>
               </div>
               <div className="card"><div className="card-tag">Historial</div><div className="card-title" style={{ fontSize: 16 }}>Mediciones registradas</div>
@@ -67,10 +67,10 @@ function MeasureModal({ clientId, onClose }: { clientId: string; onClose: () => 
   );
 }
 function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; photos: ReturnType<typeof usePhotos> }) {
-  const { profileId } = useProfile(), ws = useWorkspaceId(), consent = useConsent(mine ? profileId : ""), give = useGiveConsent(profileId), up = useUploadPhoto(clientId, ws);
+  const { profileId } = useProfile(), ws = useWorkspaceId(), consent = useConsent(mine ? profileId : ""), give = useGiveConsent(profileId), up = useUploadPhoto(clientId, ws), del = useDeletePhoto(clientId), toast = useToast(), [rm, setRm] = useState<{ id: string; path: string; date: string } | null>(null);
   const [a, setA] = useState<string>(""), [b, setB] = useState<string>(""), [ask, setAsk] = useState(false), file = useRef<HTMLInputElement>(null);
   const ph = photos.data ?? [], before = ph.find((p) => p.id === (a || ph[0]?.id)), after = ph.find((p) => p.id === (b || ph[ph.length - 1]?.id));
-  const pick = async (f?: File) => { if (!f) return; try { up.mutate(await compressImage(f)); } catch { up.reset(); } if (file.current) file.current.value = ""; };
+  const pick = async (f?: File) => { if (!f) return; try { up.mutate(await compressImage(f)); } catch { toast("No pudimos procesar esa imagen. Prueba con otra foto.", true); } if (file.current) file.current.value = ""; };
   const frame = (p?: typeof ph[number]) => <div className="photo-frame">{p?.url ? <img src={p.url} alt={`Foto del ${day(p.date)}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 12, color: "var(--text-faint)" }}>Sin foto</span>}{p && <div className="photo-frame-tag">{day(p.date)}</div>}</div>;
   return (
     <div className="card">
@@ -82,11 +82,14 @@ function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; p
               <div className="photo-slot"><div className="photo-slot-label">Antes</div><select aria-label="Foto de antes" value={before?.id} onChange={(e) => setA(e.target.value)}>{ph.map((p) => <option key={p.id} value={p.id}>{day(p.date, true)}</option>)}</select>{frame(before)}</div>
               <div className="photo-slot"><div className="photo-slot-label">Después</div><select aria-label="Foto de después" value={after?.id} onChange={(e) => setB(e.target.value)}>{ph.map((p) => <option key={p.id} value={p.id}>{day(p.date, true)}</option>)}</select>{frame(after)}</div>
             </div>
+            {mine && after && <button className="filter-chip" style={{ marginTop: 10 }} onClick={() => setRm(after)}>Eliminar la foto “Después” ({day(after.date)})</button>}
             <div className="photo-gallery">{ph.map((p) => <button key={p.id} className={`photo-thumb${after?.id === p.id ? " selected" : ""}`} onClick={() => setB(p.id)} aria-label={`Usar foto del ${day(p.date)}`}>{p.url && <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}<div className="photo-thumb-date">{day(p.date)}</div></button>)}</div>
           </>)}
       {mine && <><input ref={file} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
         <button className="upload-btn" disabled={up.isPending || consent.isPending} onClick={() => (consent.data ? file.current?.click() : setAsk(true))}>{up.isPending ? "Subiendo…" : "Subir foto de hoy"}</button></>}
       <div className="photo-privacy-note">Solo {mine ? "tú y tu coach" : "el cliente y tú"} pueden ver estas fotos.</div>
+      {rm && <Modal title="¿Eliminar esta foto?" sub={`Foto del ${day(rm.date, true)}. Se borra para siempre y tu coach ya no podrá verla.`} onClose={() => setRm(null)}>
+        <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setRm(null)}>Conservar</button><button className="modal-btn danger" disabled={del.isPending} onClick={() => { del.mutate({ id: rm.id, path: rm.path }); setRm(null); setB(""); }}>Sí, eliminar</button></div></Modal>}
       {ask && <Modal title="Antes de subir tu primera foto" sub="Tus fotos son privadas: solo tú y tu coach las ven, y puedes borrarlas cuando quieras." onClose={() => setAsk(false)}>
         <p style={{ fontSize: 13.5, lineHeight: 1.6, marginTop: 14 }}>Al continuar, aceptas que tu coach vea tus fotos de progreso para dar seguimiento a tu proceso.</p>
         <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setAsk(false)}>Ahora no</button><button className="modal-btn primary" disabled={give.isPending} onClick={() => give.mutate(undefined, { onSuccess: () => { setAsk(false); setTimeout(() => file.current?.click(), 50); } })}>Acepto y continuar</button></div></Modal>}

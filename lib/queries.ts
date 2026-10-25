@@ -121,8 +121,11 @@ export function useCreatePlan(clientId: string) {
 export function useAssignDay(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { planId: string; weekday: number; templateId: string }) => { const { error } = await db().rpc("assign_day", { p_plan: v.planId, p_weekday: v.weekday, p_template: v.templateId }); if (error) throw error; },
-    onSuccess: () => { toast("Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
+    mutationFn: async (v: { planId: string; weekdays: number[]; templateId: string }) => {
+      const res = await Promise.all(v.weekdays.map((w) => db().rpc("assign_day", { p_plan: v.planId, p_weekday: w, p_template: v.templateId })));
+      const bad = res.find((r) => r.error); if (bad?.error) throw bad.error;
+    },
+    onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
     onError: () => toast("No pudimos asignar la rutina. Inténtalo de nuevo.", true),
   });
 }
@@ -146,22 +149,24 @@ export function useSetWeight(clientId: string) {
 
 // ---- Portal del cliente ----
 export type Me = { id: string; status: string; planName: string | null; features: string[] };
-export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 300_000, queryFn: async (): Promise<Me | null> => {
+export const fetchMe = async (profileId: string): Promise<Me | null> => {
   const { data, error } = await db().from("clients").select("id,status,plans(name,features)").eq("profile_id", profileId).maybeSingle();
   if (error) throw error; if (!data) return null;
   const p = (data as unknown as { plans: { name: string; features: string[] } | null }).plans;
   return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [] };
-} });
+};
+export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
 export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; sets: SetLog[] };
 type LogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_comment: string | null; set_logs: { plan_item_id: string | null; set_number: number; reps: number | null; weight: number | null }[] };
 export const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<WorkoutLog[]> => {
+export const fetchLogs = async (clientId: string): Promise<WorkoutLog[]> => {
   const since = new Date(); since.setDate(since.getDate() - 90);
   const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_comment,set_logs(plan_item_id,set_number,reps,weight)").eq("client_id", clientId).gte("log_date", localDate(since)).order("log_date", { ascending: false });
   if (error) throw error;
   return (data as unknown as LogRaw[]).map((l) => ({ id: l.id, date: l.log_date, effort: l.effort, note: l.note, completed: !!l.completed_at, coachComment: l.coach_comment, sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, setNumber: s.set_number, reps: s.reps, weight: s.weight })) }));
-} });
+};
+export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId) });
 export function useLogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
   return useMutation({
@@ -179,7 +184,8 @@ export function useLogSet(clientId: string) {
       return { prev };
     },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar la serie. Revisa tu conexión e inténtalo de nuevo.", true); },
-    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+    // Sin releer todo tras cada serie (más rápido). Solo se vuelve a leer si falló o si el registro aún es provisional.
+    onSuccess: () => { if (qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
   });
 }
 export function useFinish(clientId: string) {
@@ -194,15 +200,17 @@ export function useFinish(clientId: string) {
 // ---- Revisión del coach (dashboard y ficha) ----
 export type RecentLog = { id: string; clientId: string; clientName: string; date: string; routine: string | null; effort: number | null; completed: boolean; completedAt: string | null; seen: boolean };
 type RecentRaw = { id: string; client_id: string; log_date: string; effort: number | null; completed_at: string | null; coach_seen_at: string | null; plan_days: { name: string } | null; clients: { profiles: { full_name: string } | null } | null };
-export const useRecentLogs = () => useQuery({ queryKey: ["recent-logs"], staleTime: 30_000, queryFn: async (): Promise<RecentLog[]> => {
+export const fetchRecentLogs = async (): Promise<RecentLog[]> => {
   const since = new Date(); since.setDate(since.getDate() - 21);
   const { data, error } = await db().from("workout_logs").select("id,client_id,log_date,effort,completed_at,coach_seen_at,plan_days(name),clients(profiles(full_name))").gte("log_date", localDate(since)).order("log_date", { ascending: false }).limit(300);
   if (error) throw error;
   return (data as unknown as RecentRaw[]).map((l) => ({ id: l.id, clientId: l.client_id, clientName: l.clients?.profiles?.full_name || "Cliente", date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, completed: !!l.completed_at, completedAt: l.completed_at, seen: !!l.coach_seen_at }));
-} });
-export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: async (): Promise<string[]> => {
+};
+export const useRecentLogs = () => useQuery({ queryKey: ["recent-logs"], staleTime: 30_000, queryFn: fetchRecentLogs });
+export const fetchActivePlanClients = async (): Promise<string[]> => {
   const { data, error } = await db().from("training_plans").select("client_id").eq("status", "active"); if (error) throw error; return (data as unknown as { client_id: string }[]).map((r) => r.client_id);
-} });
+};
+export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: fetchActivePlanClients });
 export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; sets: { exercise: string; n: number; reps: number | null; weight: number | null }[] };
 type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null }[] };
 export const useClientLogs = (clientId: string) => useQuery({ queryKey: ["client-logs", clientId], staleTime: 30_000, queryFn: async (): Promise<ClientLog[]> => {
@@ -222,11 +230,12 @@ export function useReviewWorkout(clientId: string) {
 // ---- Progreso (mediciones y fotos) ----
 export type Measure = { id: string; date: string; weight: number | null; waist: number | null; hip: number | null; chest: number | null; arm: number | null; thigh: number | null; by: "client" | "coach" };
 type MeasureRaw = { id: string; measured_on: string; weight_kg: number | null; waist_cm: number | null; hip_cm: number | null; chest_cm: number | null; arm_cm: number | null; thigh_cm: number | null; recorded_by: "client" | "coach" };
-export const useMeasures = (clientId: string) => useQuery({ queryKey: ["measures", clientId], staleTime: 60_000, enabled: !!clientId, queryFn: async (): Promise<Measure[]> => {
+export const fetchMeasures = async (clientId: string): Promise<Measure[]> => {
   const { data, error } = await db().from("measurements").select("id,measured_on,weight_kg,waist_cm,hip_cm,chest_cm,arm_cm,thigh_cm,recorded_by").eq("client_id", clientId).order("measured_on", { ascending: true });
   if (error) throw error;
   return (data as unknown as MeasureRaw[]).map((m) => ({ id: m.id, date: m.measured_on, weight: m.weight_kg, waist: m.waist_cm, hip: m.hip_cm, chest: m.chest_cm, arm: m.arm_cm, thigh: m.thigh_cm, by: m.recorded_by }));
-} });
+};
+export const useMeasures = (clientId: string) => useQuery({ queryKey: ["measures", clientId], staleTime: 60_000, enabled: !!clientId, queryFn: () => fetchMeasures(clientId) });
 export type MeasureInput = Partial<Record<"weight" | "waist" | "hip" | "chest" | "arm" | "thigh", number>>;
 export function useSaveMeasure(clientId: string, workspaceId: string) {
   const qc = useQueryClient(), toast = useToast();
@@ -241,13 +250,13 @@ export function useSaveMeasure(clientId: string, workspaceId: string) {
     onError: () => toast("No pudimos guardar la medición. Revisa los valores e inténtalo de nuevo.", true),
   });
 }
-export type Photo = { id: string; date: string; url: string | null };
+export type Photo = { id: string; date: string; url: string | null; path: string };
 export const usePhotos = (clientId: string) => useQuery({ queryKey: ["photos", clientId], staleTime: 30 * 60_000, enabled: !!clientId, queryFn: async (): Promise<Photo[]> => {
   const { data, error } = await db().from("progress_photos").select("id,taken_on,storage_path").eq("client_id", clientId).order("taken_on", { ascending: true }); if (error) throw error;
   const rows = data as unknown as { id: string; taken_on: string; storage_path: string }[];
   if (!rows.length) return [];
   const { data: urls } = await db().storage.from("progress-photos").createSignedUrls(rows.map((r) => r.storage_path), 3600);
-  return rows.map((r) => ({ id: r.id, date: r.taken_on, url: (urls as { path: string | null; signedUrl: string }[] | null)?.find((u) => u.path === r.storage_path)?.signedUrl ?? null }));
+  return rows.map((r) => ({ id: r.id, date: r.taken_on, url: (urls as { path: string | null; signedUrl: string }[] | null)?.find((u) => u.path === r.storage_path)?.signedUrl ?? null, path: r.storage_path }));
 } });
 export function useUploadPhoto(clientId: string, workspaceId: string) {
   const qc = useQueryClient(), toast = useToast();
@@ -260,6 +269,19 @@ export function useUploadPhoto(clientId: string, workspaceId: string) {
     },
     onSuccess: () => { toast("Foto guardada"); qc.invalidateQueries({ queryKey: ["photos", clientId] }); },
     onError: () => toast("No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true),
+  });
+}
+export function useDeletePhoto(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["photos", clientId];
+  return useMutation({
+    mutationFn: async (p: { id: string; path: string }) => {
+      const { error } = await db().from("progress_photos").delete().eq("id", p.id); if (error) throw error;
+      await db().storage.from("progress-photos").remove([p.path]); // si falla, el archivo queda huérfano pero ya nadie lo ve
+    },
+    onMutate: async (p) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<Photo[]>(key); qc.setQueryData<Photo[]>(key, (l) => l?.filter((x) => x.id !== p.id)); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos borrar la foto. Inténtalo de nuevo.", true); },
+    onSuccess: () => toast("Foto eliminada"),
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 }
 export function useGiveConsent(profileId: string) {
