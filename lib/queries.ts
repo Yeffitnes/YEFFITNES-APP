@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 
-export type Plan = { id: string; name: string };
+export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
@@ -13,8 +13,8 @@ type ClientRaw = { id: string; status: string; plan_id: string | null; created_a
 type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
-  const { data, error } = await db().from("plans").select("id,name").eq("active", true).order("name");
-  if (error) throw error; return data;
+  const { data, error } = await db().from("plans").select("id,name,features").eq("active", true).order("name");
+  if (error) throw error; return data as Plan[];
 };
 export const fetchClients = async (): Promise<ClientRow[]> => {
   const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
@@ -149,12 +149,12 @@ export function useSetWeight(clientId: string) {
 }
 
 // ---- Portal del cliente ----
-export type Me = { id: string; status: string; planName: string | null; features: string[] };
+export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean };
 export const fetchMe = async (profileId: string): Promise<Me | null> => {
-  const { data, error } = await db().from("clients").select("id,status,plans(name,features)").eq("profile_id", profileId).maybeSingle();
+  const { data, error } = await db().from("clients").select("id,status,onboarded_at,plans(name,features)").eq("profile_id", profileId).maybeSingle();
   if (error) throw error; if (!data) return null;
   const p = (data as unknown as { plans: { name: string; features: string[] } | null }).plans;
-  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [] };
+  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at };
 };
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
@@ -447,4 +447,80 @@ export function useDeleteNote(clientId: string) {
   return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("client_notes").delete().eq("id", id); if (error) throw error; },
     onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<Note[]>(key); qc.setQueryData<Note[]>(key, (l) => l?.filter((n) => n.id !== id)); return { prev }; },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos borrar la nota.", true); }, onSettled: () => qc.invalidateQueries({ queryKey: key }) });
+}
+
+// ---- Reporte diario ----
+export const useVideoEnabled = () => useQuery({ queryKey: ["video-enabled"], staleTime: 600_000, queryFn: async (): Promise<boolean> => {
+  const r = await fetch("/api/video/config"); if (!r.ok) return false; return !!((await r.json()) as { enabled?: boolean }).enabled;
+} });
+export type MyReport = { id: string; date: string; comment: string | null; hasVideo: boolean; seen: boolean };
+export const useTodayReport = (clientId: string, date: string, enabled = true) => useQuery({ queryKey: ["report", clientId, date], staleTime: 30_000, enabled: !!clientId && enabled, queryFn: async (): Promise<MyReport | null> => {
+  const { data, error } = await db().from("daily_reports").select("id,report_date,comment,video_state,coach_seen_at").eq("client_id", clientId).eq("report_date", date).maybeSingle(); if (error) throw error;
+  return data ? { id: data.id, date: data.report_date, comment: data.comment, hasVideo: data.video_state !== "none", seen: !!data.coach_seen_at } : null;
+} });
+const REPORT_ERR: Record<string, string> = { already_reviewed: "Tu coach ya revisó este reporte; no se puede cambiar.", bad_date: "La fecha del reporte no es válida.", not_allowed: "Tu plan no incluye el reporte diario." };
+export const reportError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(REPORT_ERR).find((x) => m.includes(x)); return k ? REPORT_ERR[k] : "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."; };
+export function useSubmitReport(clientId: string, date: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({ mutationFn: async (v: { comment: string; videoId: string | null }) => { const { error } = await db().rpc("submit_report", { p_date: date, p_comment: v.comment, p_video_id: v.videoId }); if (error) throw error; },
+    onSuccess: () => toast("¡Reporte enviado!"), onError: (e) => toast(reportError(e), true), onSettled: () => qc.invalidateQueries({ queryKey: ["report", clientId, date] }) });
+}
+export type CoachReport = { id: string; clientId: string; clientName: string; date: string; comment: string | null; videoState: "none" | "uploaded" | "deleted"; seen: boolean; sentAt: string };
+export const useCoachReports = () => useQuery({ queryKey: ["coach-reports"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<CoachReport[]> => {
+  const since = new Date(); since.setDate(since.getDate() - 14);
+  const { data, error } = await db().from("daily_reports").select("id,client_id,report_date,comment,video_state,coach_seen_at,created_at,clients(profiles(full_name))").gte("report_date", localDate(since)).order("report_date", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
+  type Raw = { id: string; client_id: string; report_date: string; comment: string | null; video_state: "none" | "uploaded" | "deleted"; coach_seen_at: string | null; created_at: string; clients: { profiles: { full_name: string } | null } | null };
+  return (data as unknown as Raw[]).map((r) => ({ id: r.id, clientId: r.client_id, clientName: r.clients?.profiles?.full_name || "Cliente", date: r.report_date, comment: r.comment, videoState: r.video_state, seen: !!r.coach_seen_at, sentAt: r.created_at }));
+} });
+export function useReviewReport() {
+  const qc = useQueryClient(), toast = useToast(), key = ["coach-reports"];
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("review_report", { p_id: id }); if (error) throw error; },
+    onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<CoachReport[]>(key); qc.setQueryData<CoachReport[]>(key, (l) => l?.map((r) => (r.id === id ? { ...r, seen: true } : r))); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos marcarlo como visto.", true); }, onSettled: () => qc.invalidateQueries({ queryKey: key }) });
+}
+export async function fetchReportVideoUrl(id: string): Promise<string> {
+  const r = await fetch(`/api/video/play?report=${id}`); if (!r.ok) throw new Error("no_video"); return ((await r.json()) as { url: string }).url;
+}
+
+// ---- Nutrición (plantillas del coach que se clonan por cliente) ----
+export type NutMeal = { name: string; content: string };
+export type NutPlan = { id: string; clientId: string | null; name: string; kcal: number | null; protein: number | null; carbs: number | null; fat: number | null; notes: string | null; createdAt: string; meals: NutMeal[] };
+type NutRaw = { id: string; client_id: string | null; name: string; kcal: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null; notes: string | null; created_at: string; nutrition_meals: { position: number; name: string; content: string }[] };
+const NUT_SELECT = "id,client_id,name,kcal,protein_g,carbs_g,fat_g,notes,created_at,nutrition_meals(position,name,content)";
+const toNut = (p: NutRaw): NutPlan => ({ id: p.id, clientId: p.client_id, name: p.name, kcal: p.kcal, protein: p.protein_g, carbs: p.carbs_g, fat: p.fat_g, notes: p.notes, createdAt: p.created_at,
+  meals: [...(p.nutrition_meals ?? [])].sort((a, b) => a.position - b.position).map((m) => ({ name: m.name, content: m.content })) });
+export const useNutritionTemplates = () => useQuery({ queryKey: ["nutrition-templates"], staleTime: 60_000, queryFn: async (): Promise<NutPlan[]> => {
+  const { data, error } = await db().from("nutrition_plans").select(NUT_SELECT).is("client_id", null).order("created_at", { ascending: false }); if (error) throw error; return (data as unknown as NutRaw[]).map(toNut);
+} });
+// Plan activo de un cliente (el cliente solo puede leer el suyo, y solo si su plan incluye nutrición: lo garantiza la base de datos).
+export const useClientNutrition = (clientId: string) => useQuery({ queryKey: ["nutrition", clientId], staleTime: 60_000, enabled: !!clientId, queryFn: async (): Promise<NutPlan | null> => {
+  const { data, error } = await db().from("nutrition_plans").select(NUT_SELECT).eq("client_id", clientId).eq("active", true).maybeSingle(); if (error) throw error; return data ? toNut(data as unknown as NutRaw) : null;
+} });
+export type NutInput = { id?: string; clientId?: string | null; name: string; kcal: string; protein: string; carbs: string; fat: string; notes: string; meals: NutMeal[] };
+const num = (s: string) => (s.trim() === "" ? null : Math.round(Number(s)));
+function useNutInvalidate() { const qc = useQueryClient(); return () => ["nutrition-templates", "nutrition"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
+export function useSaveNutrition() {
+  const toast = useToast(), inv = useNutInvalidate();
+  return useMutation({
+    mutationFn: async (v: NutInput) => {
+      const { error } = await db().rpc("save_nutrition", { p_id: v.id ?? null, p_client: v.clientId ?? null, p_name: v.name.trim(), p_kcal: num(v.kcal), p_protein: num(v.protein), p_carbs: num(v.carbs), p_fat: num(v.fat), p_notes: v.notes, p_meals: v.meals.filter((m) => m.name.trim() || m.content.trim()) });
+      if (error) throw error;
+    },
+    onSuccess: () => toast("Plan de nutrición guardado"), onError: () => toast("No pudimos guardar el plan. Revisa los valores (calorías 500–10000) e inténtalo de nuevo.", true), onSettled: inv });
+}
+export function useAssignNutrition() {
+  const toast = useToast(), inv = useNutInvalidate();
+  return useMutation({ mutationFn: async (v: { templateId: string; clientId: string }) => { const { error } = await db().rpc("assign_nutrition", { p_template: v.templateId, p_client: v.clientId }); if (error) throw error; },
+    onSuccess: () => toast("Plan de nutrición asignado"), onError: () => toast("No pudimos asignar el plan. Inténtalo de nuevo.", true), onSettled: inv });
+}
+export function useDeleteNutrition() {
+  const toast = useToast(), inv = useNutInvalidate();
+  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("nutrition_plans").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => toast("Plan eliminado"), onError: () => toast("No pudimos eliminarlo. Inténtalo de nuevo.", true), onSettled: inv });
+}
+
+export function useCompleteOnboarding(profileId: string) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: async () => { const { error } = await db().rpc("complete_onboarding"); if (error) throw error; },
+    onMutate: () => { qc.setQueryData<Me | null>(["me", profileId], (m) => (m ? { ...m, onboarded: true } : m)); } });   // se cierra al instante; si falla, volverá a mostrarse la próxima vez
 }

@@ -24,9 +24,9 @@ Fundación, panel del coach y portal del cliente funcionando en el código, con 
 1. **Probar lo existente** (Cristian) y corregir lo que falle.
 2. ~~Material educativo~~ **hecho** (0013; falta: documentos PDF y mostrar el vídeo de la semana en Hoy).
 3. ~~Anuncios a todos y notas privadas~~ **hecho** (0014; los anuncios no tenían mockup: se hicieron con el estilo de las tarjetas existentes; pendiente que Jeff los valide).
-4. **Reporte diario con vídeo** (P0; requiere cuenta de Bunny, endpoint de servidor que firma la subida, borrado automático y cambiar `Permissions-Policy` a `microphone=(self)`).
-5. **Nutrición con plantillas** (P1; sin mockup completo: diseñarlo con el estilo de Mi plan/catálogo).
-6. **Onboarding** (tour con personaje, medidas iniciales, agendar la llamada) (P1/P2; sin mockup).
+4. ~~Reporte diario con vídeo~~ **construido** (0015; falta crear la cuenta de Bunny y las variables en Netlify, y probar una subida real desde un celular. Se usa la cámara nativa del teléfono, así que NO hace falta cambiar `Permissions-Policy`).
+5. ~~Nutrición con plantillas~~ **hecho** (0016; la vista del cliente sigue el mockup de Mi plan; la del coach se diseñó con el estilo del catálogo).
+6. ~~Onboarding~~ **versión básica hecha** (0017: 3 pasos; falta el personaje guía y el contenido que defina Jeff).
 7. Landing pública, avisos/recordatorios, objetivos (P2).
 8. **Pre-lanzamiento:** revocar token, quitar la insignia "Powered by Netlify" (Netlify → Project configuration → General → Powered by Netlify badge → apagar; no requiere redeploy), repo privado, Supabase Pro, confirmación de correo, revisión final de RLS, prueba con 2–3 clientes reales, dominio.
 

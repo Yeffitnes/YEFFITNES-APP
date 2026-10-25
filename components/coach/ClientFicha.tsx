@@ -7,9 +7,10 @@ import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
 import { RecentWorkouts } from "./RecentWorkouts";
 import { NotesTab } from "./NotesTab";
+import { NutritionTab } from "./NutritionTab";
 import { ProgressPanels } from "@/components/portal/ProgressPanels";
 const TABS = ["Resumen", "Entrenamiento", "Nutrición", "Progreso", "Notas privadas"];
-const SOON: Record<string, string> = { "Nutrición": "Aquí se armará el plan de nutrición del cliente a partir de plantillas." };
+const SOON: Record<string, string> = {};
 export function ClientFicha({ id }: { id: string }) {
   const { data, isPending } = useClients(), { data: plans } = usePlans(), setPlan = useSetPlan();
   const [tab, setTab] = useState("Resumen");
@@ -45,7 +46,7 @@ export function ClientFicha({ id }: { id: string }) {
           </div>
           <RecentWorkouts clientId={c.id} />
         </>
-      ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
+      ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
     </div>
   );
 }

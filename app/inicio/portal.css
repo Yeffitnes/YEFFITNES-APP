@@ -854,3 +854,9 @@ html, body{overflow-x:hidden; max-width:100%;}
   }
 @media (max-width:640px){ .content-grid{grid-template-columns:1fr 1fr;} }
 @media (max-width:520px){ .greeting h1{font-size:21px;} .content-grid{grid-template-columns:1fr;} }
+
+/* reporte diario (sin mockup: estilo de las tarjetas existentes) */
+.report-btn{height:42px; padding:0 20px; border-radius:11px; border:none; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:linear-gradient(135deg,var(--neon),var(--rose)); color:#fff; transition:transform .15s ease, opacity .15s ease;}
+.report-btn:hover{transform:translateY(-1px);}
+.report-btn:disabled{opacity:.55; cursor:default; transform:none;}
+.report-btn.ghost{background:var(--paper); color:var(--text); border:1px solid var(--line);}

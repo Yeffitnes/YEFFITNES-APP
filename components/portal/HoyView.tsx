@@ -3,6 +3,7 @@ import { useState } from "react";
 import { localDate, useFinish, useLogs, useLogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
+import { ReportCard } from "./ReportCard";
 import { CHECK_ICON } from "./icons";
 import { VideoModal, PLAY_PATH } from "./VideoModal";
 import { weekDates } from "@/lib/week";
@@ -36,6 +37,7 @@ export function HoyView() {
         <div className="card-tag">Anuncios de tu coach</div>
         {ann.data.map((a) => <div key={a.id} style={{ marginTop: 10, fontSize: 14, lineHeight: 1.55 }}>{a.pinned ? "📌 " : ""}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
       </div>}
+      {me.data && (me.data.features.includes("daily_report") ? <ReportCard clientId={cid} /> : <div style={{ marginBottom: 18 }}><FeatureGate features={me.data.features} feature="daily_report" name={name}><span /></FeatureGate></div>)}
       <div className="streak-strip">
         <div className="streak-copy"><div className="streak-num"><span>{n}</span> {n === 1 ? "día" : "días"}</div><div className="streak-label">{n ? "seguidos cumpliendo tu rutina." : "Completa tu primera rutina para empezar tu racha."}</div></div>
         <div className="week-strip">{wk.map((d, i) => <div key={d} className="week-day"><div className={`week-dot${logList.some((l) => l.date === d && l.completed) ? " done" : ""}${d === today ? " today" : ""}`} /><div className="week-day-label">{LBL[i]}</div></div>)}</div>

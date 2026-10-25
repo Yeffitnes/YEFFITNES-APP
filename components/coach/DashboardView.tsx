@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useActivePlanClients, useClients, useRecentLogs, localDate } from "@/lib/queries";
+import { useActivePlanClients, useClients, useCoachReports, useRecentLogs, localDate } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { attention } from "@/lib/attention";
 import { ago, gradient, initials } from "@/lib/format";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/Modal";
 import { AnnouncementsCard } from "./AnnouncementsCard";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function DashboardView() {
-  const { name } = useProfile(), clients = useClients(), logs = useRecentLogs(), plans = useActivePlanClients();
+  const { name } = useProfile(), clients = useClients(), logs = useRecentLogs(), plans = useActivePlanClients(), reports = useCoachReports();
   if (clients.isPending || logs.isPending || plans.isPending) return <div><div className="sk" style={{ height: 30, width: 220, marginBottom: 22 }} /><div className="sk" style={{ height: 90, marginBottom: 18 }} /><Skeleton rows={3} /></div>;
   if (clients.isError || logs.isError || plans.isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el panel. <button className="filter-chip" onClick={() => { clients.refetch(); logs.refetch(); plans.refetch(); }}>Reintentar</button></p></div>;
   const cl = clients.data, lg = logs.data, active = cl.filter((c) => c.status === "active"), pending = cl.filter((c) => c.status === "pending").length;
@@ -16,7 +16,8 @@ export function DashboardView() {
   const trainedToday = new Set(lg.filter((l) => l.completed && l.date === today).map((l) => l.clientId)).size;
   const unreviewed = lg.filter((l) => l.completed && !l.seen).length;
   const recent = lg.filter((l) => l.completed && l.completedAt).sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")).slice(0, 6);
-  const sub = unreviewed ? `Tienes ${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""} esperando revisión.` : "No tienes revisiones pendientes.";
+  const unseenReports = (reports.data ?? []).filter((r) => !r.seen).length;
+  const sub = unseenReports ? `Tienes ${unseenReports} reporte${unseenReports > 1 ? "s" : ""} diario${unseenReports > 1 ? "s" : ""} por revisar.` : unreviewed ? `Tienes ${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""} esperando revisión.` : "No tienes revisiones pendientes.";
   return (
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Panel — {new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}</div><h1>Hola, {name.split(" ")[0] || "Coach"}</h1>
@@ -40,6 +41,7 @@ export function DashboardView() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {unseenReports > 0 && <Link href="/coach/reportes" className="card" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar →</div></Link>}
           <AnnouncementsCard />
           <div className="card">
             <div className="card-tag">Reciente</div><div className="card-title" style={{ fontSize: 15 }}>Actividad</div>

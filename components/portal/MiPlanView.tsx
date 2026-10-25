@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useLogs, useMe, useTrainingPlans, type PlanDay, type PlanItem } from "@/lib/queries";
+import { useClientNutrition, useLogs, useMe, useTrainingPlans, type PlanDay, type PlanItem } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { coachLink } from "@/lib/features";
@@ -35,7 +35,7 @@ export function MiPlanView() {
         <button role="tab" aria-selected={mode === "nutrition"} className={`mode-btn${mode === "nutrition" ? " active" : ""}`} onClick={() => setMode("nutrition")}>Nutrición</button>
       </div>
       {mode === "nutrition" ? (
-        <FeatureGate features={features} feature="nutrition" name={name}><div className="card"><div className="card-tag">Plan nutricional</div><p className="empty-note">Tu coach todavía no publica tu plan de nutrición. Cuando lo haga, aparecerá aquí.</p></div></FeatureGate>
+        <FeatureGate features={features} feature="nutrition" name={name}><NutritionPanel clientId={cid} /></FeatureGate>
       ) : !features.includes("training") ? <FeatureGate features={features} feature="training" name={name}><span /></FeatureGate>
       : !plan ? <div className="card"><div className="card-tag">Tu rutina</div><p className="empty-note">Todavía no tienes una rutina asignada. Cuando tu coach publique tu plan, aparecerá aquí.</p></div>
       : (
@@ -100,6 +100,30 @@ function WeekCard({ byDay, done, wd }: { byDay: Map<number, PlanDay>; done: Set<
       <div style={{ marginTop: 6 }}>{DAY_SHORT.map((l, i) => { const d = byDay.get(i + 1), trained = done.has(dates[i]);
         return <div key={l} className="week-ov-row"><span className={`week-ov-dot${trained ? " trained" : ""}${i + 1 === wd && !trained ? " today" : ""}`} /><span className="week-ov-day">{l}</span>
           <span className={`week-ov-name${d ? "" : " rest"}`}>{d ? `${d.name}${i + 1 === wd ? " · hoy" : ""}` : "Descanso"}</span></div>; })}</div>
+    </div>
+  );
+}
+
+function NutritionPanel({ clientId }: { clientId: string }) {
+  const { data, isPending, isError, refetch } = useClientNutrition(clientId);
+  if (isPending) return <div className="sk" style={{ height: 220 }} />;
+  if (isError) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu plan de nutrición.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => refetch()}>Reintentar</button></div>;
+  if (!data) return <div className="card"><div className="card-tag">Plan nutricional</div><p className="empty-note">Tu coach todavía no publica tu plan de nutrición. Cuando lo haga, aparecerá aquí.</p></div>;
+  const macros = [data.kcal != null && ["Calorías", `${data.kcal} kcal`], data.protein != null && ["Proteína", `${data.protein} g`], data.carbs != null && ["Carbohidratos", `${data.carbs} g`], data.fat != null && ["Grasas", `${data.fat} g`]].filter(Boolean) as string[][];
+  const recs = (data.notes ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  return (
+    <div className="plan-grid">
+      <div className="card card-day">
+        <div className="card-tag"><span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)" }} />Plan nutricional</div>
+        <div className="card-title">{data.name}</div>
+        <div className="card-meta">{data.meals.length} comida{data.meals.length === 1 ? "" : "s"} al día · Actualizado {new Date(data.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div>
+        <div style={{ marginTop: 16 }}>{data.meals.map((m, i) => (
+          <div key={i} className="meal-block"><div className="meal-label"><span className="meal-dot" />{m.name}</div><div className="meal-text" style={{ whiteSpace: "pre-wrap" }}>{m.content}</div></div>))}</div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        {!!macros.length && <div className="card"><div className="card-tag">Tu objetivo diario</div><div style={{ marginTop: 6 }}>{macros.map(([k, v]) => <div key={k} className="nutri-row"><b>{k}</b><span>{v}</span></div>)}</div></div>}
+        {!!recs.length && <div className="card"><div className="card-tag">Recomendaciones</div><div style={{ marginTop: 4 }}>{recs.map((r, i) => <div key={i} className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13 }}>{r}</span></div>)}</div></div>}
+      </div>
     </div>
   );
 }
