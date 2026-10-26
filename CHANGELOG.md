@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Menú del cliente otra vez oscuro; "Día completado" sobrio
+- Se revierte el menú claro: vuelve el oscuro de marca (fijo a la ventana, con sus detalles). El logo vuelve a `/brand/logo.svg`.
+- El aviso "Día completado" (y "Nutrición del día completada") era lo que saturaba el panel Hoy: el bloque negro pasó a una tarjeta blanca con borde fino, icono verde discreto y texto pequeño. Solo CSS al final de `portal.css`.
+- Revertir: `git revert` del commit.
+
 ## 2026-10-26 · Audios del coach (migración 0029), menú y paneles más sobrios, vídeos pesados
 - **Audio (migración 0029, HAY QUE CORRERLA ANTES DE USAR ESTA VERSIÓN):** el coach graba un audio (hasta 2 min) desde Mensajes; el cliente lo escucha en su tarjeta. Columna `messages.audio_path`, bucket privado `message-audio` (solo el coach sube; cada cliente oye los de su hilo), función `send_audio_message` (solo coach), limpieza a las 24 h de leído (como el resto), el tipo "audio" en la bandeja y en el aviso push. Hallazgo: la cabecera `Permissions-Policy` tenía `microphone=()`; ahora `microphone=(self)` (`next.config.mjs`). Pruebas: `rls_audio.sql` (cliente no envía ni sube audio, rutas ajenas, otro coach, Storage por cliente, basura y bandeja) y suite completa "TODO OK". Grabación probada en Chromium con micrófono simulado (3 s, 17 KB); no probada en Safari/iPhone real. El formato es mp4 donde el navegador lo permite, si no webm.
 - **Menú lateral del cliente** más claro (fondo rosado muy suave, texto oscuro, fichas de icono, activo rojo) y logo oscuro; **paneles del cliente** con detalles más sutiles (fondo casi plano, pestaña roja pequeña, etiquetas tenues, sin degradado en títulos).
