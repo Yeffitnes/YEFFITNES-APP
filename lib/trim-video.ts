@@ -1,6 +1,6 @@
 // Recorta (y ajusta de tamaño) un vídeo en el propio teléfono, sin librerías pesadas: se reproduce el tramo elegido
 // sobre un lienzo y se graba con MediaRecorder. Tarda lo que dura el tramo (≤ 30 s) y deja un archivo liviano (≤ 720p).
-export class TrimError extends Error { constructor(public code: "unsupported" | "failed" | "cancelled") { super(code); } }
+export class TrimError extends Error { constructor(public code: "unsupported" | "failed" | "cancelled", public reason = "") { super(code); } }
 const MIMES = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
 export const trimSupported = () => typeof MediaRecorder !== "undefined" && typeof HTMLCanvasElement !== "undefined" && "captureStream" in HTMLCanvasElement.prototype;
 const pickMime = () => MIMES.find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch { return false; } }) ?? "";
@@ -11,7 +11,7 @@ export async function trimVideo(file: File, start: number, end: number, onProgre
   let ac: AudioContext | null = null, rec: MediaRecorder | null = null, stopped = false, raf = 0, timer = 0;
   const cleanup = () => { stopped = true; cancelAnimationFrame(raf); clearInterval(timer); try { v.pause(); } catch { /* */ } try { void ac?.close(); } catch { /* */ } URL.revokeObjectURL(url); };
   try {
-    await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new TrimError("failed")); setTimeout(() => rej(new TrimError("failed")), 15000); });
+    await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new TrimError("failed", "no se pudo leer el vídeo")); setTimeout(() => rej(new TrimError("failed", "tardó demasiado en abrir")), 15000); });
     const k = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight), 720 / Math.min(v.videoWidth, v.videoHeight));
     const w = Math.max(2, Math.round((v.videoWidth * k) / 2) * 2), h = Math.max(2, Math.round((v.videoHeight * k) / 2) * 2);
     const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
@@ -40,13 +40,15 @@ export async function trimVideo(file: File, start: number, end: number, onProgre
     };
     // Si la pestaña se oculta, requestAnimationFrame se detiene: un temporizador de respaldo sigue pintando.
     timer = window.setInterval(() => { if (document.hidden && !stopped) { ctx.drawImage(v, 0, 0, w, h); if (v.currentTime >= end - 0.02 || v.ended) finish(); } }, 100);
-    rec.start(500); await v.play(); raf = requestAnimationFrame(tick);
+    rec.start(500);
+    try { await v.play(); } catch { v.muted = true; await v.play(); }   // Safari puede negar el sonido sin un toque reciente: se graba igual, sin audio
+    raf = requestAnimationFrame(tick);
     const blob = await done;
     if (signal?.aborted) throw new TrimError("cancelled");
     if (!blob.size) throw new TrimError("failed");
     const ext = blob.type.includes("mp4") ? "mp4" : "webm";
     onProgress(100);
     return new File([blob], `video-${Date.now()}.${ext}`, { type: blob.type || `video/${ext}` });
-  } catch (e) { if (e instanceof TrimError) throw e; throw new TrimError("failed"); }
+  } catch (e) { if (e instanceof TrimError) throw e; console.error("trimVideo", e); throw new TrimError("failed", e instanceof Error ? `${e.name}` : "error"); }
   finally { cleanup(); }
 }

@@ -1,6 +1,13 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Cortador de vídeo en un portal, escritorio del cliente con más detalle
+- Error: el cortador se dibujaba dentro de la tarjeta del reporte; al estar la tarjeta recortada/animada, en el celular quedaba fuera del recuadro y en escritorio no se veía (parecía que no dejaba subir). Ahora se dibuja directamente en `document.body` (`useVideoPick`). Probado con un contenedor recortado a propósito; sin probar en Safari de escritorio ni en teléfono real.
+- Los dos botones del reporte ("Elegir de la galería" / "Grabar ahora") ahora caben en pantallas angostas (cuadrícula de 2 columnas, texto recortado con puntos suspensivos).
+- Recorte más robusto: si el navegador niega la reproducción con sonido (Safari) se graba sin audio en vez de fallar; si falla, el mensaje incluye la causa. Se aceptan vídeos sin tipo MIME si la extensión es de vídeo (mp4, mov, m4v, webm…).
+- Portal del cliente (solo escritorio, ≥ 861 px; el celular no cambia): fondo con degradados suaves de marca, línea de acento bajo el título, títulos con degradado, pestañas de color en las tarjetas, etiquetas de sección como píldoras, filas rápidas con borde de color por estado y sombras más definidas. Solo CSS (final de `portal.css`).
+- Revertir: `git revert` del commit.
+
 ## 2026-10-26 · Reporte diario: elegir vídeo de la galería y subida en segundo plano
 - El selector del reporte forzaba la cámara (`capture`), por eso no dejaba elegir de la galería. Ahora hay dos botones: "Elegir de la galería" y "Grabar ahora". Si el vídeo se pasa de 30 s se abre el cortador.
 - El vídeo empieza a subirse apenas queda listo (ya recortado), mientras el cliente escribe el comentario; "Enviar" solo espera si aún no terminó. Cambiar de vídeo reinicia la subida (el límite de 5 vídeos al día sigue vigente). Sin probar en teléfono real.

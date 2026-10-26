@@ -38,7 +38,7 @@ export function VideoTrimmer({ file, duration, maxSeconds, onDone, onCancel }: {
     if (busy) return; setErr(""); vid.current?.pause(); setPlaying(false); setBusy(true); setPct(0);
     abort.current = new AbortController();
     try { onDone(await trimVideo(file, s, e, setPct, abort.current.signal)); }
-    catch (x) { if (x instanceof TrimError && x.code === "cancelled") return; setErr(x instanceof TrimError && x.code === "unsupported" ? "Este navegador no puede recortar el vídeo. Recórtalo en tu galería y vuelve a elegirlo." : "No pudimos recortar el vídeo. Inténtalo de nuevo o elige otro."); setBusy(false); }
+    catch (x) { if (x instanceof TrimError && x.code === "cancelled") return; setErr(x instanceof TrimError && x.code === "unsupported" ? "Este navegador no puede recortar el vídeo. Recórtalo en tu galería y vuelve a elegirlo." : `No pudimos recortar el vídeo${x instanceof TrimError && x.reason ? ` (${x.reason})` : ""}. Inténtalo de nuevo o elige otro.`); setBusy(false); }
   };
   const L = (s / duration) * 100, R = (e / duration) * 100, P = Math.min(100, Math.max(0, (now / duration) * 100)), len = e - s;
   return (

@@ -49,7 +49,7 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 /* Cortador de vídeo */
 .vt{position:fixed;inset:0;z-index:80;background:rgba(5,4,9,.82);backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;padding:0}
 @media(min-width:700px){.vt{align-items:center;padding:24px}}
-.vt-box{width:100%;max-width:460px;max-height:100dvh;overflow:auto;background:linear-gradient(180deg,#14090e,#0A0910);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));animation:vtup .22s ease-out}
+.vt-box{width:100%;max-width:460px;max-height:100dvh;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;background:linear-gradient(180deg,#14090e,#0A0910);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));animation:vtup .22s ease-out}
 @media(min-width:700px){.vt-box{border-radius:22px}}
 @keyframes vtup{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 .vt-head{display:flex;align-items:center;justify-content:space-between;font-family:var(--font-display),sans-serif;font-size:17px}

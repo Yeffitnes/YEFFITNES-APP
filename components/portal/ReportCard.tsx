@@ -43,9 +43,9 @@ export function ReportCard({ clientId }: { clientId: string }) {
       {needVideo && <>
         <input ref={gallery} type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
         <input ref={cam} type="file" accept="video/*" capture="user" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <button type="button" className="report-btn ghost" style={{ flex: 1, margin: 0 }} onClick={() => gallery.current?.click()} disabled={busy}><Icon name="video" size={16} /> {file ? "Cambiar vídeo" : "Elegir de la galería"}</button>
-          <button type="button" className="report-btn ghost" style={{ flex: 1, margin: 0 }} onClick={() => cam.current?.click()} disabled={busy}>Grabar ahora</button>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
+          <button type="button" className="report-btn ghost" style={{ margin: 0, width: "100%" }} onClick={() => gallery.current?.click()} disabled={busy}><Icon name="video" size={16} /> {file ? "Cambiar vídeo" : "Elegir de la galería"}</button>
+          <button type="button" className="report-btn ghost" style={{ margin: 0, width: "100%" }} onClick={() => cam.current?.click()} disabled={busy}>Grabar ahora</button>
         </div>
         {file && <p style={{ fontSize: 12, marginTop: 6, color: "var(--text-dim)" }}>Vídeo listo: {file.name.slice(0, 30)}{pct !== null ? " · subiendo…" : videoId ? " · subido" : ""}</p>}
         <p style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 6 }}>Máximo {MAX_VIDEO_SECONDS} segundos: si el vídeo es más largo, lo recortas aquí mismo. Muestra que entrenaste. Se borra solo después de que tu coach lo vea.</p>
