@@ -1,6 +1,12 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Menú lateral del cliente: fijo de verdad y con más vida
+- Causa probable de que el menú se moviera: `app/globals.css` tenía `html, body {overflow-x:hidden}` (hace del body un contenedor de scroll y rompe `position:sticky`); el arreglo anterior dependía del orden de los CSS. Ahora la regla global usa `body{overflow-x:clip}` y, además, el menú del cliente en escritorio (> 1020 px) es `position:fixed` (no depende de ningún contenedor) con `.main{grid-column:2}`.
+- Más vida: línea de color en el borde, separador bajo el logo, etiqueta "Tu espacio", iconos en fichas con el activo en degradado rojo, desplazamiento al pasar el cursor y anillo en el avatar. Solo CSS al final de `portal.css`.
+- Probado con una página simulada (scroll de 1200 px: el menú queda en top 0 y el contenido a 236 px); sin probar en el portal real ni en Safari.
+- Revertir: `git revert` del commit.
+
 ## 2026-10-26 · Cortador de vídeo en un portal, escritorio del cliente con más detalle
 - Error: el cortador se dibujaba dentro de la tarjeta del reporte; al estar la tarjeta recortada/animada, en el celular quedaba fuera del recuadro y en escritorio no se veía (parecía que no dejaba subir). Ahora se dibuja directamente en `document.body` (`useVideoPick`). Probado con un contenedor recortado a propósito; sin probar en Safari de escritorio ni en teléfono real.
 - Los dos botones del reporte ("Elegir de la galería" / "Grabar ahora") ahora caben en pantallas angostas (cuadrícula de 2 columnas, texto recortado con puntos suspensivos).

@@ -7,7 +7,9 @@ body { @apply bg-surface text-[#12141B] antialiased; }
 
 /* ---- Móvil: pantalla estática y que se amolde a cualquier tamaño ---- */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
-html, body { max-width: 100%; overflow-x: hidden; }
+html { max-width: 100%; overflow-x: hidden; }
+/* body con clip (no hidden): hidden lo vuelve contenedor de scroll y rompe los menús laterales fijos (position: sticky) */
+body { max-width: 100%; overflow-x: clip; }
 body { touch-action: manipulation; overscroll-behavior-x: none; }
 img, svg, video, iframe { max-width: 100%; }
 /* En pantallas táctiles, iOS hace zoom al enfocar un campo con letra menor a 16 px: se fuerza 16 px. */
