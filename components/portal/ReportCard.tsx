@@ -10,11 +10,11 @@ export function ReportCard({ clientId }: { clientId: string }) {
   const today = localDate(), rep = useTodayReport(clientId, today), enabled = useVideoEnabled(), submit = useSubmitReport(clientId, today);
   const [file, setFile] = useState<File | null>(null), [comment, setComment] = useState(""), [pct, setPct] = useState<number | null>(null), [err, setErr] = useState(""), [videoId, setVideoId] = useState<string | null>(null), [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_VIDEO_SECONDS, maxMB: MAX_VIDEO_MB, onFile: (f) => { setVideoId(null); setFile(f); }, onError: setErr });
   if (rep.isPending || enabled.isPending) return <div className="sk" style={{ height: 58, marginBottom: 12 }} />;
   if (rep.data) return (
     <QuickRow icon="check" tone="ok" title="Reporte enviado" sub={rep.data.seen ? "Tu coach ya lo vio" : "Tu coach lo verá pronto"}>{rep.data.comment ? <p className="qrow-quote">“{rep.data.comment}”</p> : null}</QuickRow>);
   const needVideo = enabled.data === true;
-  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_VIDEO_SECONDS, maxMB: MAX_VIDEO_MB, onFile: (f) => { setVideoId(null); setFile(f); }, onError: setErr });
   const send = async () => {
     if (busy) return; setErr("");
     if (needVideo && !file && !videoId) return setErr("El vídeo es obligatorio: grábalo antes de enviar.");
