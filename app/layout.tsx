@@ -7,7 +7,8 @@ const display = Instrument_Sans({ subsets: ["latin"], variable: "--font-display"
 const body = Manrope({ subsets: ["latin"], variable: "--font-body" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500"] });
 // Dirección pública: en Netlify la da la variable URL; en otro lugar se define NEXT_PUBLIC_SITE_URL (dominio propio).
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || "http://localhost:3000";
+const VERCEL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL; // Vercel (pruebas) no define URL: sin esto la imagen al compartir apuntaba a localhost
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || (VERCEL ? `https://${VERCEL}` : "http://localhost:3000");
 // Nombre de la app instalada. En el sitio de pruebas (Vercel) se pone NEXT_PUBLIC_APP_NAME="YEFFITNES Test" para distinguirla.
 const SHORT = process.env.NEXT_PUBLIC_APP_NAME || "YEFFITNES";
 const DESC = "Tu coaching online, hecho a tu medida. Entrenamiento, nutrición y seguimiento con Jeff González.";
