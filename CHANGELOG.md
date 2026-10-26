@@ -1,6 +1,9 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Hoy: el audio del coach se escucha en la fila del mensaje
+- La fila "Mensaje de tu coach" de Hoy decía "Te envió una foto" para los audios. Ahora dice "Te envió un audio" y trae el reproductor dentro de la fila (más el texto, si lo hay). Revertir: `git revert`.
+
 ## 2026-10-26 · Menú del cliente otra vez oscuro; "Día completado" sobrio
 - Se revierte el menú claro: vuelve el oscuro de marca (fijo a la ventana, con sus detalles). El logo vuelve a `/brand/logo.svg`.
 - El aviso "Día completado" (y "Nutrición del día completada") era lo que saturaba el panel Hoy: el bloque negro pasó a una tarjeta blanca con borde fino, icono verde discreto y texto pequeño. Solo CSS al final de `portal.css`.

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useThread } from "@/lib/messages";
+import { useSignedAudio, useThread } from "@/lib/messages";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { localDate, useFinish, useLogs, useLogSet, useUnlogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
@@ -145,13 +145,14 @@ function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: b
 
 // Último mensaje de tu coach: una fila compacta que se abre. Nuevo = resaltada; ya leído = discreta.
 function FromCoach() {
-  const t = useThread(), last = [...(t.data ?? [])].reverse().find((m) => m.sender === "coach");
+  const t = useThread(), last = [...(t.data ?? [])].reverse().find((m) => m.sender === "coach"), audio = useSignedAudio(last?.audioPath ?? null);
   if (!last) return null;
   const when = new Date(last.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" }), fresh = !last.readAt;
-  const text = last.body ?? (last.hasVideo || last.youtubeId ? "Te envió un vídeo" : "Te envió una foto");
+  const text = last.body ?? (last.audioPath ? "Te envió un audio" : last.hasVideo || last.youtubeId ? "Te envió un vídeo" : "Te envió una foto");
   return (
     <QuickRow icon="message" tone={fresh ? "new" : "idle"} title="Mensaje de tu coach" sub={`${when} · ${text.slice(0, 48)}${text.length > 48 ? "…" : ""}`} chip={fresh ? "Nuevo" : undefined} defaultOpen={fresh}>
-      <p className="qrow-quote" style={{ fontStyle: "normal", color: "var(--text)" }}>{text}</p>
+      {last.audioPath && (audio.data ? <audio controls preload="metadata" src={audio.data} style={{ width: "100%", height: 38, marginBottom: last.body ? 10 : 0 }} /> : <p className="qrow-quote" style={{ fontStyle: "normal" }}>Cargando audio…</p>)}
+      {(last.body || !last.audioPath) && <p className="qrow-quote" style={{ fontStyle: "normal", color: "var(--text)" }}>{text}</p>}
       <Link href="/inicio/mensajes" className="mini-btn primary" style={{ textDecoration: "none", display: "inline-flex", marginTop: 12 }}>Responder</Link>
     </QuickRow>
   );
