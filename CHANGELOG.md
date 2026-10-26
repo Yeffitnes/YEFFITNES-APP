@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Reporte diario: elegir vídeo de la galería y subida en segundo plano
+- El selector del reporte forzaba la cámara (`capture`), por eso no dejaba elegir de la galería. Ahora hay dos botones: "Elegir de la galería" y "Grabar ahora". Si el vídeo se pasa de 30 s se abre el cortador.
+- El vídeo empieza a subirse apenas queda listo (ya recortado), mientras el cliente escribe el comentario; "Enviar" solo espera si aún no terminó. Cambiar de vídeo reinicia la subida (el límite de 5 vídeos al día sigue vigente). Sin probar en teléfono real.
+- Revertir: `git revert` del commit.
+
 ## 2026-10-26 · Recortar vídeos al subirlos (cliente y coach) y Bunny conectado en Vercel
 - Si el vídeo se pasa del máximo (30 s cliente / 5 min coach) ya no se rechaza: se abre un cortador dentro de la app (vista previa, dos manijas y arrastre del tramo, máximo respetado) y el tramo se prepara en el teléfono (`lib/trim-video.ts`, canvas + MediaRecorder, sin librerías pesadas; deja ≤ 720p y ~2,5 Mbps, así que también sube más rápido). Pantalla de carga con el logo mientras se prepara. Usado en reporte diario, mensajes y vídeo de rutina del coach (`useVideoPick`, `VideoTrimmer`).
 - Probado en Chromium (simulando celular): vídeo de 45 s recortado a 8 s y a 22 s, con audio, de 1080x1920 a 720x1280, de 5,7 MB a 1-3 MB; la interfaz carga y recorta. NO probado en iPhone/Safari ni en Android real (MediaRecorder y mp4 varían por teléfono; si el navegador no puede recortar, se avisa que se recorte en la galería). El recorte tarda lo que dura el tramo (se graba en tiempo real) y la pantalla debe quedarse abierta.
