@@ -5,7 +5,7 @@
     --accent:#D41A40; --garnet:#9C1535; --line:#E1E3EC; --ok:#3EEB8C; --danger:#E8536B;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  html, body{overflow-x:hidden; max-width:100%;}
+  html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
   body{font-family:var(--font-body), sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
   a{color:inherit; text-decoration:none;}
   button{font:inherit;}
@@ -13,7 +13,7 @@
 
   /* ================= SHELL (igual al dashboard) ================= */
   .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
-  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; color:#fff;}
+  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; align-self:start; height:100vh; height:100dvh; overflow-y:auto; color:#fff;}
   .side-logo{display:flex; align-items:center; gap:9px; padding:6px 8px 24px; font-family:var(--font-display), sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
   .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
   .side-logo span.faint{color:rgba(255,255,255,0.4); font-weight:400;}
@@ -200,14 +200,14 @@
     --accent:#D41A40; --garnet:#9C1535; --line:#E1E3EC; --ok:#3EEB8C; --danger:#E8536B;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  html, body{overflow-x:hidden; max-width:100%;}
+  html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
   body{font-family:var(--font-body), sans-serif; -webkit-font-smoothing:antialiased; background:var(--surface); color:var(--text);}
   a{color:inherit; text-decoration:none;}
   button{font:inherit;}
 
   /* ================= SHELL ================= */
   .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh;}
-  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; height:100vh; color:#fff;}
+  .sidebar{background:var(--ink); padding:24px 16px; display:flex; flex-direction:column; position:sticky; top:0; align-self:start; height:100vh; height:100dvh; overflow-y:auto; color:#fff;}
   .side-logo{display:flex; align-items:center; gap:9px; padding:6px 8px 24px; font-family:var(--font-display), sans-serif; font-weight:700; font-size:15.5px; letter-spacing:-0.02em;}
   .side-logo .dot{width:7px; height:7px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px 1px var(--neon);}
   .side-logo span.faint{color:rgba(255,255,255,0.4); font-weight:400;}

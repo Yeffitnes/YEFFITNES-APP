@@ -38,7 +38,8 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
             <div className="card-tag" style={{ marginBottom: 0 }}>Días del plan activo</div>
-            <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setAssign(true)}>{d ? "Cambiar rutina de este día" : "Asignar rutina a este día"}</button>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setAssign(true)}>{d ? "Cambiar rutina de este día" : "Asignar rutina a este día"}</button>
+            {d && <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setConfirm(true)}>Dejar como día de descanso</button>}</div>
           </div>
           <div className="day-pill-row" style={{ marginTop: 14 }}>{DAYS.map((t, i) => <button key={t} className={`day-pill${day === i + 1 ? " active" : ""}`} onClick={() => { setDay(i + 1); setConfirm(false); }}>{t}{active.days.some((x) => x.weekday === i + 1) ? " ●" : ""}</button>)}</div>
           {d ? (
@@ -54,7 +55,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
                   </label></div>))}
               {confirm
                 ? <div className="modal-actions" style={{ maxWidth: 360 }}><button className="modal-btn ghost" onClick={() => setConfirm(false)}>Conservar</button><button className="modal-btn danger" disabled={clear.isPending} onClick={() => clear.mutate(d.id, { onSuccess: () => setConfirm(false) })}>Sí, quitar</button></div>
-                : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Quitar la rutina de este día</button>}
+                : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Dejar este día libre (descanso)</button>}
             </>
           ) : <p style={{ fontSize: 13.5, color: "var(--text-dim)", margin: "6px 0 2px" }}>Este día aún no tiene rutina. Si lo dejas libre, {clientName} lo verá como día de descanso.</p>}
         </div>)}

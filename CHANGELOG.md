@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Día de descanso en el plan y menú lateral fijo del coach
+- Entrenamiento: botón visible "Dejar como día de descanso" junto a "Cambiar rutina de este día" (antes solo había un enlace pequeño abajo). El día se libera al instante; si la base no borra nada, se avisa y se restaura (`useClearDay` ahora comprueba la fila borrada). En la base de pruebas el borrado como coach funcionaba, así que lo anterior podía ser el enlace poco visible o un fallo silencioso; sin comprobar en el sitio real.
+- Menú lateral del coach: `html, body{overflow-x:hidden}` convertía el body en contenedor de scroll y rompía `position:sticky`; ahora `body{overflow-x:clip}`, el menú tiene `align-self:start`, `100dvh` y scroll propio. Probado con una página simulada (queda en top 0 tras el scroll). Sin probar en el coach real.
+- Revertir: `git revert` del commit.
+
 ## 2026-10-25 · Imagen al compartir en Vercel, con etiqueta TEST
 - La dirección base ahora usa las variables de Vercel (antes apuntaba a localhost y la imagen no salía). Con `NEXT_PUBLIC_APP_NAME` definida se usa `public/og-test.png` (la misma con la etiqueta TEST); en Netlify sigue `og.png`. Revertir: `git revert`.
 

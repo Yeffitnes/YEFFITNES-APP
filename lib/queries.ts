@@ -141,11 +141,19 @@ export function useAssignDay(clientId: string) {
   });
 }
 export function useClearDay(clientId: string) {
-  const qc = useQueryClient(), toast = useToast();
+  const qc = useQueryClient(), toast = useToast(), key = ["plans-of", clientId];
   return useMutation({
-    mutationFn: async (dayId: string) => { const { error } = await db().from("plan_days").delete().eq("id", dayId); if (error) throw error; },
-    onSuccess: () => { toast("Día liberado"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
-    onError: () => toast("No pudimos quitar la rutina. Inténtalo de nuevo.", true),
+    // Se pide la fila borrada de vuelta: si no vuelve ninguna, la base no borró nada (sin error visible) y se avisa.
+    mutationFn: async (dayId: string) => { const { data, error } = await db().from("plan_days").delete().eq("id", dayId).select("id"); if (error) throw error; if (!data?.length) throw new Error("no_delete"); },
+    onMutate: async (dayId: string) => { // el día se libera al instante
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<TrainingPlan[]>(key);
+      if (prev) qc.setQueryData<TrainingPlan[]>(key, prev.map((pl) => ({ ...pl, days: pl.days.filter((x) => x.id !== dayId) })));
+      return { prev };
+    },
+    onSuccess: () => toast("Día libre: queda como descanso"),
+    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast("No pudimos dejar el día libre. Inténtalo de nuevo.", true); },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 }
 export function useSetWeight(clientId: string) {
