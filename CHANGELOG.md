@@ -1,6 +1,12 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Recortar vídeos al subirlos (cliente y coach) y Bunny conectado en Vercel
+- Si el vídeo se pasa del máximo (30 s cliente / 5 min coach) ya no se rechaza: se abre un cortador dentro de la app (vista previa, dos manijas y arrastre del tramo, máximo respetado) y el tramo se prepara en el teléfono (`lib/trim-video.ts`, canvas + MediaRecorder, sin librerías pesadas; deja ≤ 720p y ~2,5 Mbps, así que también sube más rápido). Pantalla de carga con el logo mientras se prepara. Usado en reporte diario, mensajes y vídeo de rutina del coach (`useVideoPick`, `VideoTrimmer`).
+- Probado en Chromium (simulando celular): vídeo de 45 s recortado a 8 s y a 22 s, con audio, de 1080x1920 a 720x1280, de 5,7 MB a 1-3 MB; la interfaz carga y recorta. NO probado en iPhone/Safari ni en Android real (MediaRecorder y mp4 varían por teléfono; si el navegador no puede recortar, se avisa que se recorte en la galería). El recorte tarda lo que dura el tramo (se graba en tiempo real) y la pantalla debe quedarse abierta.
+- Bunny: `BUNNY_LIBRARY_ID` y `BUNNY_API_KEY` puestos en Vercel; `/api/video/config` responde `enabled: true`. Netlify pendiente de redesplegar con las variables. El borrado automático de vídeos de reportes ya existe (`/api/video/purge`, al abrir Reportes); el doc de producción lo decía pendiente.
+- Revertir: `git revert` del commit (no hay SQL).
+
 ## 2026-10-25 · Menú lateral del cliente: oscuro y fijo (escritorio)
 - Mismo arreglo de desplazamiento que en el coach (`body{overflow-x:clip}`, `align-self:start`, `100dvh`) y mismo fondo oscuro con degradado de marca; el logo pasó a `/brand/logo.svg` (letras claras). Los enlaces, el estado activo y la tarjeta del cliente usan los colores del menú del coach. Solo escritorio (en celular el menú no se muestra). Probado con una página simulada; sin probar en el portal real.
 - Revertir: `git revert` del commit (o quitar el bloque "Menú lateral del cliente" al final de `portal.css` y devolver `logo-claro.svg` en `PortalNav.tsx`).

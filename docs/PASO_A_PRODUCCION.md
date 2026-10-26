@@ -35,7 +35,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
 - [ ] Si se activa protección por dominio o token en Bunny, **añadir la dirección de Netlify** (y la de Vercel si se prueba allí).
-- [ ] Probar: vídeo de rutina (coach sube, cliente ve) y vídeo del reporte (máx. 30 s). Borrado automático: pendiente de implementar.
+- [ ] Probar: vídeo de rutina (coach sube, cliente ve) y vídeo del reporte (máx. 30 s). Borrado automático de reportes: ya implementado (se ejecuta al abrir Reportes). Probar también el cortador con un vídeo de más de 30 s.
 
 ## 5. Dominio propio (opcional)
 - [ ] Configurarlo en Netlify, poner `NEXT_PUBLIC_SITE_URL`, actualizar Supabase (punto 2) y las tareas programadas, y volver a desplegar.

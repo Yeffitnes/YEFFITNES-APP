@@ -1,9 +1,10 @@
 "use client";
+import { useVideoPick } from "@/components/ui/useVideoPick";
 import { Icon } from "@/components/ui/Icon";
 import { useRef, useState } from "react";
 import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, UploadError, uploadVideo, videoDuration } from "@/lib/upload-video";
+import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, UploadError, uploadVideo } from "@/lib/upload-video";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
@@ -97,20 +98,18 @@ const UP_ERR: Record<string, string> = { too_many: "Subiste muchos vídeos hoy. 
 // Vídeo de la rutina de este día: el de catálogo (lo ven todos) o uno grabado solo para este cliente (lo reemplaza).
 function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
   const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [pct, setPct] = useState<number | null>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
-  const pick = async (f: File | null) => {
-    if (!f) return; setErr("");
-    if (!f.type.startsWith("video/")) return setErr("Elige un archivo de vídeo.");
-    if (f.size > MAX_COACH_VIDEO_MB * 1048576) return setErr(`El vídeo pesa demasiado (máx. ${MAX_COACH_VIDEO_MB} MB).`);
-    const dur = await videoDuration(f); if (dur && dur > MAX_COACH_VIDEO_SECONDS + 2) return setErr(`El vídeo dura ${Math.round(dur)} s; el máximo es ${MAX_COACH_VIDEO_SECONDS} s.`);
+  const upload = async (f: File) => {
     try { setPct(0); const id = await uploadVideo(f, setPct, { purpose: "message", clientId }); set.mutate({ dayId: day.id, videoId: id }); }
     catch (e) { setErr(e instanceof UploadError ? UP_ERR[e.code] ?? UP_ERR.upload_failed : UP_ERR.upload_failed); } finally { setPct(null); }
   };
+  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: (f) => void upload(f), onError: setErr });
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a></div>}
       <div className="info-list-row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <span><b>Vídeo personalizado para {clientName.split(" ")[0]}</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Solo {clientName.split(" ")[0]} lo ve — reemplaza al de catálogo en su plan.</span></span>
         <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {trimmer}
           <input ref={input} type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           {day.hasPersonalVideo && <><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => set.mutate({ dayId: day.id, videoId: null })}>Quitar</button></>}
           <button className="primary-btn" style={{ height: 32, fontSize: 11.5 }} disabled={pct !== null || set.isPending} onClick={() => input.current?.click()}>{pct !== null ? `Subiendo… ${pct}%` : day.hasPersonalVideo ? "Reemplazar" : "Subir vídeo"}</button>

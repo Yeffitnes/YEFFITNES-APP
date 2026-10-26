@@ -4,7 +4,8 @@ import "@/app/messages.css";
 import { Modal } from "@/components/ui/Modal";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { useMarkRead, useSendMessage, useSignedImage, useThread, sendErrorText, type Msg } from "@/lib/messages";
-import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
+import { useVideoPick } from "@/components/ui/useVideoPick";
+import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS } from "@/lib/upload-video";
 import { youtubeId } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
 
@@ -54,13 +55,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   useEffect(() => { if (unreadFromOther > 0 && document.visibilityState === "visible") void markRead(); }, [unreadFromOther]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!justSent) return; const t = setTimeout(() => setJustSent(false), 6000); return () => clearTimeout(t); }, [justSent]);
   const maxS = coach ? MAX_COACH_VIDEO_SECONDS : MAX_VIDEO_SECONDS, maxMB = coach ? MAX_COACH_VIDEO_MB : MAX_VIDEO_MB;
-  const pickVideo = async (f: File | null) => {
-    setErr(""); if (!f) return;
-    if (!f.type.startsWith("video/")) return setErr("Elige un vídeo.");
-    if (f.size > maxMB * 1048576) return setErr(`El vídeo pesa demasiado (máx. ${maxMB} MB).`);
-    const d = await videoDuration(f); if (d && d > maxS + 2) return setErr(`El vídeo dura ${Math.round(d)} s; el máximo es ${maxS} s.`);
-    setVideo(f); setImage(null); setYt(""); setShowYt(false);
-  };
+  const { pick: pickVideo, trimmer } = useVideoPick({ maxSeconds: maxS, maxMB, onFile: (f) => { setVideo(f); setImage(null); setYt(""); setShowYt(false); }, onError: setErr });
   const pickImage = (f: File | null) => { setErr(""); if (!f) return; if (!f.type.startsWith("image/")) return setErr("Elige una foto."); setImage(f); setVideo(null); setYt(""); setShowYt(false); };
   const ytId = yt.trim() ? youtubeId(yt) : null;
   const canSend = !send.isPending && !blocked && (text.trim() || image || video || ytId);
@@ -86,6 +81,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
           <div className="mb-tools">
             {!textOnly && <>
               <input ref={imgIn} type="file" accept="image/*" hidden onChange={(e) => { pickImage(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+              {trimmer}
               <input ref={vidIn} type="file" accept="video/*" hidden onChange={(e) => { void pickVideo(e.target.files?.[0] ?? null); e.target.value = ""; }} />
               <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => imgIn.current?.click()}><Icon name="camera" size={16} />Foto</button>
               <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => vidIn.current?.click()}><Icon name="video" size={16} />Vídeo</button>
