@@ -1,6 +1,10 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Menú lateral del cliente: oscuro y fijo (escritorio)
+- Mismo arreglo de desplazamiento que en el coach (`body{overflow-x:clip}`, `align-self:start`, `100dvh`) y mismo fondo oscuro con degradado de marca; el logo pasó a `/brand/logo.svg` (letras claras). Los enlaces, el estado activo y la tarjeta del cliente usan los colores del menú del coach. Solo escritorio (en celular el menú no se muestra). Probado con una página simulada; sin probar en el portal real.
+- Revertir: `git revert` del commit (o quitar el bloque "Menú lateral del cliente" al final de `portal.css` y devolver `logo-claro.svg` en `PortalNav.tsx`).
+
 ## 2026-10-25 · Día de descanso en el plan y menú lateral fijo del coach
 - Entrenamiento: botón visible "Dejar como día de descanso" junto a "Cambiar rutina de este día" (antes solo había un enlace pequeño abajo). El día se libera al instante; si la base no borra nada, se avisa y se restaura (`useClearDay` ahora comprueba la fila borrada). En la base de pruebas el borrado como coach funcionaba, así que lo anterior podía ser el enlace poco visible o un fallo silencioso; sin comprobar en el sitio real.
 - Menú lateral del coach: `html, body{overflow-x:hidden}` convertía el body en contenedor de scroll y rompía `position:sticky`; ahora `body{overflow-x:clip}`, el menú tiene `align-self:start`, `100dvh` y scroll propio. Probado con una página simulada (queda en top 0 tras el scroll). Sin probar en el coach real.

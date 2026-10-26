@@ -14,7 +14,7 @@ export function PortalSide() {
   const path = usePathname(), { profileId, name } = useProfile(), me = useMe(profileId), unread = useUnread().data ?? 0;
   return (
     <aside className="sidebar">
-      <div className="side-logo"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /></div>
+      <div className="side-logo"><img src="/brand/logo.svg" alt="YEFFITNES TRAINING" height={29} /></div>
       <nav className="side-nav">{SIDE.map(([t, h], i) => h
         ? <Link key={t} href={h} prefetch className={`side-link${path === h ? " active" : ""}`}><span dangerouslySetInnerHTML={{ __html: t === "Mensajes" ? MSG_ICON : SIDE_ICONS[i > 5 ? 5 : i] }} style={{ display: "contents" }} />{t}{t === "Mensajes" && unread > 0 && <span className="badge">{unread}</span>}</Link>
         : <span key={t} className="side-link" style={{ opacity: 0.35, cursor: "default" }}><span dangerouslySetInnerHTML={{ __html: SIDE_ICONS[i] }} style={{ display: "contents" }} />{t}</span>)}</nav>
