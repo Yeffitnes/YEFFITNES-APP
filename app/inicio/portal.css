@@ -1021,54 +1021,37 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .set-save.on:hover{background:var(--garnet);border-color:var(--garnet);}
 .effort-btn.on{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.6),transparent 62%),var(--ink);border-color:var(--ink);}
 
-/* ===== Menú lateral del cliente (escritorio): oscuro, como el del coach ===== */
-.sidebar{color:#fff;background:radial-gradient(120% 55% at 0% 0%,rgba(247,37,75,.30),transparent 62%),radial-gradient(100% 45% at 100% 100%,rgba(205,177,112,.16),transparent 65%),linear-gradient(180deg,#14090e 0%,#0A0910 55%,#0d0a12 100%);border-right:1px solid rgba(255,255,255,.06);}
-.sidebar .side-link{color:rgba(255,255,255,.62);}
-.sidebar .side-link:hover{background:rgba(255,255,255,.07);color:#fff;}
-.sidebar .side-link.active{color:#fff;background:linear-gradient(90deg,rgba(247,37,75,.22),rgba(255,255,255,.06));box-shadow:inset 0 0 0 1px rgba(247,37,75,.22);}
-.sidebar .side-link.active::before{left:-18px;}
-.sidebar .side-client{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);}
-.sidebar .side-client-name{color:#fff;}
-.sidebar .side-client-plan{color:rgba(255,255,255,.45);}
-
 /* ===== Reporte: botones que caben en pantallas angostas ===== */
 .qrow-body{min-width:0;}
 .qrow-body .report-btn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 12px;}
 
-/* ===== Escritorio del cliente: más color y detalle (el celular no cambia) ===== */
-@media (min-width:861px){
-  body{background:radial-gradient(900px 340px at 90% -70px,rgba(247,37,75,.10),transparent 70%),radial-gradient(760px 320px at 0% 0%,rgba(205,177,112,.12),transparent 70%),var(--surface);background-attachment:fixed;}
-  .topbar{position:relative;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:24px;}
-  .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:84px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--neon),var(--rose));}
-  .greeting h1{background:linear-gradient(95deg,#14090e 30%,#7a1228);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .card{position:relative;box-shadow:0 1px 2px rgba(20,10,40,.04),0 14px 30px -22px rgba(42,10,22,.28);background:linear-gradient(180deg,#fff 0%,#fff 70%,#fcf8f9 100%);}
-  .card::before{content:"";position:absolute;left:24px;top:-1px;width:54px;height:3px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,var(--neon),var(--rose));}
-  .card:hover{box-shadow:0 18px 38px -20px rgba(42,10,22,.30);border-color:rgba(247,37,75,.22);}
-  .card-tag{align-self:flex-start;display:inline-flex;background:rgba(247,37,75,.08);padding:4px 11px 4px 9px;border-radius:20px;margin-bottom:12px;}
-  .card-title{letter-spacing:-.01em;}
-  .qrow{box-shadow:0 1px 2px rgba(20,10,40,.04),0 10px 22px -18px rgba(42,10,22,.25);border-left:3px solid rgba(247,37,75,.0);}
-  .qrow.todo{border-left-color:#CDB170;}.qrow.ok{border-left-color:#1C9A5B;}.qrow.new{border-left-color:var(--neon);}
-  .qrow:hover{border-color:rgba(247,37,75,.28);}
+/* ===== Escritorio del cliente: detalles sutiles (el celular no cambia) ===== */
+@media (min-width:1021px){
+  body{background:radial-gradient(900px 300px at 92% -80px,rgba(247,37,75,.05),transparent 70%),var(--surface);}
+  .topbar{position:relative;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:24px;}
+  .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:56px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--neon),var(--rose));}
+  .card{position:relative;box-shadow:0 1px 2px rgba(20,10,40,.04),0 10px 24px -20px rgba(42,10,22,.22);}
+  .card::before{content:"";position:absolute;left:24px;top:-1px;width:34px;height:2px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,var(--neon),var(--rose));opacity:.85;}
+  .card-tag{align-self:flex-start;display:inline-flex;background:rgba(247,37,75,.05);padding:3px 10px 3px 8px;border-radius:20px;margin-bottom:12px;}
+  .qrow{box-shadow:0 1px 2px rgba(20,10,40,.04);}
   .qrow-icon{width:36px;height:36px;border-radius:11px;}
-  .ex-row,.info-list-row{border-radius:10px;}
-  .ex-row:hover{background:linear-gradient(90deg,rgba(247,37,75,.05),transparent 70%);}
-  .main{padding-top:34px;}
 }
 
-/* ===== Menú lateral del cliente (escritorio): fijo a la ventana, con más vida ===== */
+/* ===== Menú lateral del cliente (escritorio): claro, con un toque rojizo, fijo a la ventana ===== */
 @media (min-width:1021px){
-  .sidebar{position:fixed;left:0;top:0;width:236px;height:100vh;height:100dvh;z-index:5;overflow-y:auto;overflow-x:hidden;}
+  .sidebar{position:fixed;left:0;top:0;width:236px;height:100vh;height:100dvh;z-index:5;overflow-y:auto;overflow-x:hidden;color:var(--text);
+    background:radial-gradient(130% 38% at 0% 0%,rgba(247,37,75,.13),transparent 68%),linear-gradient(180deg,#fff6f7 0%,#f6e9ec 62%,#f1e1e6 100%);border-right:1px solid #e9d6dc;}
   .main{grid-column:2;}
-  .sidebar::after{content:"";position:absolute;top:0;right:0;bottom:0;width:1px;background:linear-gradient(180deg,rgba(247,37,75,.65),rgba(205,177,112,.25) 45%,transparent 85%);pointer-events:none;}
-  .sidebar .side-logo{border-bottom:1px solid rgba(255,255,255,.08);margin:0 -4px 16px;padding:4px 10px 20px;}
-  .sidebar .side-nav::before{content:"Tu espacio";display:block;font-family:var(--font-mono),monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(205,177,112,.6);padding:2px 12px 10px;}
-  .sidebar .side-link{gap:11px;padding:7px 10px;transition:background .18s ease,color .18s ease,transform .18s ease;}
-  .sidebar .side-link svg{box-sizing:content-box;width:17px;height:17px;padding:7px;border-radius:10px;background:rgba(255,255,255,.07);transition:background .18s ease,box-shadow .18s ease;}
-  .sidebar .side-link:hover{transform:translateX(2px);}
-  .sidebar .side-link:hover svg{background:rgba(255,255,255,.13);}
-  .sidebar .side-link.active svg{background:linear-gradient(135deg,var(--neon),#b8142f);box-shadow:0 6px 14px -6px rgba(247,37,75,.8);}
-  .sidebar .side-link.active{background:linear-gradient(90deg,rgba(247,37,75,.20),rgba(255,255,255,.04));}
-  .sidebar .side-client{position:relative;margin-top:14px;padding:12px;}
-  .sidebar .side-avatar{box-shadow:0 0 0 2px rgba(10,9,16,1),0 0 0 4px rgba(247,37,75,.55);}
+  .sidebar::after{content:"";position:absolute;top:0;right:0;bottom:0;width:1px;background:linear-gradient(180deg,rgba(247,37,75,.45),rgba(205,177,112,.18) 45%,transparent 85%);pointer-events:none;}
+  .sidebar .side-logo{border-bottom:1px solid #ecdadf;margin:0 -4px 16px;padding:4px 10px 20px;}
+  .sidebar .side-nav::before{content:"Tu espacio";display:block;font-family:var(--font-mono),monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#a9803a;padding:2px 12px 10px;}
+  .sidebar .side-link{gap:11px;padding:7px 10px;color:#5a454c;transition:background .18s ease,color .18s ease,transform .18s ease;}
+  .sidebar .side-link svg{box-sizing:content-box;width:17px;height:17px;padding:7px;border-radius:10px;background:rgba(122,15,35,.07);transition:background .18s ease,box-shadow .18s ease;}
+  .sidebar .side-link:hover{background:rgba(247,37,75,.07);color:#2a0a10;transform:translateX(2px);}
+  .sidebar .side-link:hover svg{background:rgba(247,37,75,.13);}
+  .sidebar .side-link.active{color:#7a0f23;background:linear-gradient(90deg,rgba(247,37,75,.15),rgba(247,37,75,.04));box-shadow:inset 0 0 0 1px rgba(247,37,75,.16);}
+  .sidebar .side-link.active svg{background:linear-gradient(135deg,var(--neon),#b8142f);color:#fff;box-shadow:0 6px 14px -7px rgba(247,37,75,.75);}
+  .sidebar .side-client{margin-top:14px;padding:12px;background:#fff;border:1px solid #ecdadf;}
+  .sidebar .side-avatar{box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(247,37,75,.4);}
   .sidebar .side-spacer{min-height:16px;}
 }

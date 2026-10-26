@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
   const supabase = createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const { data: m } = await supabase.from("messages").select("sender,body,image_path,video_id,youtube_id,client_id").eq("id", messageId).maybeSingle();
+  const { data: m } = await supabase.from("messages").select("sender,body,image_path,audio_path,video_id,youtube_id,client_id").eq("id", messageId).maybeSingle();
   if (!m) return NextResponse.json({ ok: true, sent: 0 });
   const { data: targets } = await supabase.rpc("push_targets", { p_message: messageId });
   if (!targets?.length) return NextResponse.json({ ok: true, sent: 0 });
   const { data: me } = await supabase.from("profiles").select("full_name").eq("id", auth.user.id).maybeSingle();
-  const preview = m.body ? (m.body.length > 110 ? m.body.slice(0, 107) + "…" : m.body) : m.video_id || m.youtube_id ? "Te envió un vídeo" : "Te envió una foto";
+  const preview = m.body ? (m.body.length > 110 ? m.body.slice(0, 107) + "…" : m.body) : m.audio_path ? "Te envió un audio" : m.video_id || m.youtube_id ? "Te envió un vídeo" : "Te envió una foto";
   const fromCoach = m.sender === "coach";
   const dead = await sendPush(targets as Target[], {
     title: fromCoach ? "Mensaje de tu coach" : `${me?.full_name || "Un cliente"} te escribió`, body: preview,

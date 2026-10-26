@@ -24,7 +24,7 @@ export async function trimVideo(file: File, start: number, end: number, onProgre
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
     } catch { /* sin sonido si el navegador no deja */ }
     const mime = pickMime(), chunks: BlobPart[] = [];
-    rec = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: 2_500_000, audioBitsPerSecond: 128_000 });
+    rec = new MediaRecorder(stream, { ...(mime ? { mimeType: mime } : {}), videoBitsPerSecond: 2_000_000, audioBitsPerSecond: 128_000 });
     rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
     v.currentTime = start;
     await new Promise<void>((res) => { v.onseeked = () => res(); setTimeout(res, 3000); });

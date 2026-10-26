@@ -5,7 +5,7 @@ const security = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   // La cámara se usa para las fotos de progreso; el resto de sensores no.
-  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(), payment=()" },
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(), payment=()" },
 ];
 const nextConfig = {
   poweredByHeader: false,

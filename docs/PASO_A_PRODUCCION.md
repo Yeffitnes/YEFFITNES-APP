@@ -32,6 +32,9 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Mantener las **mismas claves VAPID** en los dos sitios; si se cambian, todos deben reactivar avisos.
 - [ ] iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o superior).
 
+## 3b. Migraciones pendientes antes de fusionar a `main`
+- [ ] `0028_messages_board.sql` y `0029_audio_messages.sql` en el SQL editor de Supabase (la 0029 es necesaria para el código de `bloque-hoy`: lee `audio_path`).
+
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
 - [ ] Si se activa protección por dominio o token en Bunny, **añadir la dirección de Netlify** (y la de Vercel si se prueba allí).

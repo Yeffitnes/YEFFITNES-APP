@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import { useVideoPick } from "@/components/ui/useVideoPick";
+import { useAudioRecorder } from "@/components/ui/useAudioRecorder";
 export default function T() {
   const [info, setInfo] = useState(""), [err, setErr] = useState("");
-  const { pick, trimmer } = useVideoPick({ maxSeconds: 30, maxMB: 200, onFile: (f) => setInfo(`${f.name} ${f.size}`), onError: setErr });
-  return <div style={{ padding: 20 }}><div style={{ overflow: "hidden", transform: "translateZ(0)", height: 90, border: "1px solid #ccc", borderRadius: 14 }}><input id="f" type="file" accept="video/*" onChange={(e) => void pick(e.target.files?.[0] ?? null)} />{trimmer}</div><p id="info">{info}</p><p id="err">{err}</p></div>;
+  const r = useAudioRecorder((b, s) => setInfo(`${b.type} ${b.size} ${s}`), setErr);
+  return <div style={{ padding: 20 }}><button id="s" onClick={() => void r.start()}>start</button><button id="e" onClick={() => r.stop()}>stop</button><p id="rec">{String(r.recording)} {r.secs}</p><p id="info">{info}</p><p id="err">{err}</p></div>;
 }

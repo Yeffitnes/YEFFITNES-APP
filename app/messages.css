@@ -113,3 +113,19 @@
 .mb-empty{padding:26px 8px; text-align:center; color:var(--text-dim); font-size:14px; line-height:1.6;}
 @media (max-width:860px){ .mb-send{flex:1 1 100%; order:5;} .mb-count{order:4;} }
 .mb .mb-send{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.55),transparent 58%),radial-gradient(90% 200% at 100% 100%,rgba(205,177,112,.22),transparent 60%),#0A0910; color:#fff; border:1px solid rgba(255,255,255,.08); box-shadow:0 8px 18px -10px rgba(10,9,16,.7);}
+
+/* Audio (el coach graba; el cliente escucha) */
+.mb-audio{display:flex;align-items:center;gap:10px;margin:10px 0 2px;}
+.mb-audio-ic{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);color:#fff;}
+.mb-card.mine .mb-audio-ic{background:rgba(247,37,75,.1);color:#d41a40;}
+.mb-audio audio{flex:1;min-width:0;height:36px;max-width:100%;}
+.mb-audio-wait{font-size:12.5px;opacity:.7;}
+.mb-attach-audio{gap:10px;}
+.mb-attach-audio audio{flex:1;min-width:0;height:34px;}
+.mb-rec{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:12px;background:linear-gradient(135deg,#2a0a10,#14090e);color:#fff;font-size:13px;}
+.mb-rec i{width:9px;height:9px;border-radius:50%;background:#ff3b5c;box-shadow:0 0 0 0 rgba(255,59,92,.7);animation:mbrec 1.2s infinite;}
+@keyframes mbrec{70%{box-shadow:0 0 0 8px rgba(255,59,92,0)}100%{box-shadow:0 0 0 0 rgba(255,59,92,0)}}
+.mb-rec span{font-family:var(--font-mono),monospace;font-size:12px;opacity:.8;margin-right:auto;}
+.mb-rec button{border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;border-radius:9px;height:30px;padding:0 12px;font-size:12px;display:inline-flex;align-items:center;gap:6px;}
+.mb-rec button.go{background:#d41a40;border-color:transparent;font-weight:700;}
+@media (prefers-reduced-motion:reduce){.mb-rec i{animation:none}}

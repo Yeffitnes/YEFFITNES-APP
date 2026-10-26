@@ -17,6 +17,8 @@ const PATHS = {
   image: <><rect x="3.2" y="4.2" width="13.6" height="11.6" rx="2.2" /><circle cx="7.6" cy="8.4" r="1.4" /><path d="M3.6 14l4-3.8 3 2.8 2.2-2 3.6 3.2" /></>,
   message: <path d="M4.2 5h11.6a1.2 1.2 0 0 1 1.2 1.2v6.1a1.2 1.2 0 0 1-1.2 1.2H9.6L6.2 16.4v-2.9H4.2A1.2 1.2 0 0 1 3 12.3V6.2A1.2 1.2 0 0 1 4.2 5z" />,
   chevron: <path d="M7.6 5l5 5-5 5" />,
+  mic: <path d="M10 3.2a2.6 2.6 0 00-2.6 2.6v3.4a2.6 2.6 0 005.2 0V5.8A2.6 2.6 0 0010 3.2zM5.2 9.2a4.8 4.8 0 009.6 0M10 14v2.8M7.4 16.8h5.2" />,
+  stop: <rect x="5.5" y="5.5" width="9" height="9" rx="1.8" fill="currentColor" />,
   chevronLeft: <path d="M12.4 5l-5 5 5 5" />,
   arrow: <path d="M4 10h12M11.2 5.2L16 10l-4.8 4.8" />,
   back: <path d="M16 10H4M8.8 5.2L4 10l4.8 4.8" />,

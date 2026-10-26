@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "@/app/messages.css";
 import { Modal } from "@/components/ui/Modal";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { useMarkRead, useSendMessage, useSignedImage, useThread, sendErrorText, type Msg } from "@/lib/messages";
+import { useMarkRead, useSendMessage, useSignedAudio, useSignedImage, useThread, sendErrorText, type Msg } from "@/lib/messages";
+import { MAX_AUDIO_SECONDS, audioSupported, useAudioRecorder } from "@/components/ui/useAudioRecorder";
 import { useVideoPick } from "@/components/ui/useVideoPick";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS } from "@/lib/upload-video";
 import { youtubeId } from "@/lib/format";
@@ -16,7 +17,7 @@ const when = (iso: string) => { const d = new Date(iso), t = new Date(), y = new
 const goesIn = (readAt: string) => { const h = Math.ceil((new Date(readAt).getTime() + 86400000 - Date.now()) / 3600000); return h <= 1 ? "se borra en menos de 1 h" : h < 24 ? `se borra en ${h} h` : "se borra mañana"; };
 
 function MsgCard({ m, mine, other, open }: { m: Msg; mine: boolean; other: string; open: (x: Media) => void }) {
-  const img = useSignedImage(m.imagePath), fresh = !mine && !m.readAt;
+  const img = useSignedImage(m.imagePath), aud = useSignedAudio(m.audioPath), fresh = !mine && !m.readAt;
   const status = m.pending ? "Enviando…" : mine ? (m.readAt ? `Visto · ${goesIn(m.readAt)}` : "Enviado · aún sin ver") : m.readAt ? `Leído · ${goesIn(m.readAt)}` : "Nuevo";
   return (
     <article className={`mb-card ${mine ? "mine" : "theirs"}${fresh ? " fresh" : ""}${m.pending ? " pending" : ""}`}>
@@ -24,6 +25,7 @@ function MsgCard({ m, mine, other, open }: { m: Msg; mine: boolean; other: strin
       {m.imagePath && <button type="button" className="mb-media" aria-label="Ver foto" onClick={() => img.data && open({ kind: "image", url: img.data })}>{img.data ? <img src={img.data} alt="Foto enviada" loading="lazy" decoding="async" /> : <span className="mb-media-wait"><Icon name="image" size={20} /></span>}</button>}
       {m.youtubeId && <button type="button" className="mb-media" aria-label="Ver vídeo" onClick={() => open({ kind: "yt", id: m.youtubeId! })}><img src={`https://i.ytimg.com/vi/${m.youtubeId}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" /><span className="mb-play"><Icon name="play" size={18} /></span></button>}
       {m.hasVideo && <button type="button" className="mb-media video" aria-label="Ver vídeo" onClick={() => open({ kind: "bunny", msg: m.id })}><span className="mb-play"><Icon name="play" size={18} /></span><span className="mb-video-label">Ver vídeo</span></button>}
+      {m.audioPath && <div className="mb-audio"><span className="mb-audio-ic"><Icon name="mic" size={16} /></span>{aud.data ? <audio controls preload="metadata" src={aud.data} /> : <span className="mb-audio-wait">Cargando audio…</span>}</div>}
       {m.body && <p className="mb-body">{m.body}</p>}
     </article>
   );
@@ -45,6 +47,10 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   const { data, isPending, isError, refetch } = useThread(clientId), send = useSendMessage(clientId, ownClientId), markRead = useMarkRead(clientId);
   const [text, setText] = useState(initialText), [image, setImage] = useState<File | null>(null), [video, setVideo] = useState<File | null>(null), [yt, setYt] = useState(""), [showYt, setShowYt] = useState(false);
   const [pct, setPct] = useState<number | null>(null), [err, setErr] = useState(""), [media, setMedia] = useState<Media | null>(null), [justSent, setJustSent] = useState(false);
+  const [audio, setAudio] = useState<{ blob: Blob; secs: number } | null>(null);
+  const audioUrl = useMemo(() => (audio ? URL.createObjectURL(audio.blob) : null), [audio]);
+  useEffect(() => () => { if (audioUrl) URL.revokeObjectURL(audioUrl); }, [audioUrl]);
+  const rec = useAudioRecorder((blob, secs) => { setAudio({ blob, secs }); setImage(null); setVideo(null); setYt(""); setShowYt(false); }, setErr);
   const imgIn = useRef<HTMLInputElement>(null), vidIn = useRef<HTMLInputElement>(null);
   const msgs = useMemo(() => [...(data ?? [])].reverse(), [data]);       // lo más nuevo primero
   const me = coach ? "coach" : "client", maxChars = coach ? MAX_COACH_CHARS : MAX_CLIENT_CHARS;
@@ -55,25 +61,27 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   useEffect(() => { if (unreadFromOther > 0 && document.visibilityState === "visible") void markRead(); }, [unreadFromOther]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!justSent) return; const t = setTimeout(() => setJustSent(false), 6000); return () => clearTimeout(t); }, [justSent]);
   const maxS = coach ? MAX_COACH_VIDEO_SECONDS : MAX_VIDEO_SECONDS, maxMB = coach ? MAX_COACH_VIDEO_MB : MAX_VIDEO_MB;
-  const { pick: pickVideo, trimmer } = useVideoPick({ maxSeconds: maxS, maxMB, onFile: (f) => { setVideo(f); setImage(null); setYt(""); setShowYt(false); }, onError: setErr });
-  const pickImage = (f: File | null) => { setErr(""); if (!f) return; if (!f.type.startsWith("image/")) return setErr("Elige una foto."); setImage(f); setVideo(null); setYt(""); setShowYt(false); };
+  const { pick: pickVideo, trimmer } = useVideoPick({ maxSeconds: maxS, maxMB, onFile: (f) => { setVideo(f); setImage(null); setAudio(null); setYt(""); setShowYt(false); }, onError: setErr });
+  const pickImage = (f: File | null) => { setErr(""); if (!f) return; if (!f.type.startsWith("image/")) return setErr("Elige una foto."); setImage(f); setVideo(null); setAudio(null); setYt(""); setShowYt(false); };
   const ytId = yt.trim() ? youtubeId(yt) : null;
-  const canSend = !send.isPending && !blocked && (text.trim() || image || video || ytId);
+  const canSend = !send.isPending && !blocked && !rec.recording && (text.trim() || image || video || ytId || audio);
   const submit = async () => {
     if (!canSend) return; setErr("");
     if (yt.trim() && !ytId) return setErr("Ese enlace de YouTube no es válido.");
     try {
       setPct(video ? 0 : null);
-      await send.mutateAsync({ body: text, image, video, youtube: ytId, onProgress: setPct });
-      setText(""); setImage(null); setVideo(null); setYt(""); setShowYt(false); setJustSent(true);
+      await send.mutateAsync({ body: text, audio: audio?.blob ?? null, image, video, youtube: ytId, onProgress: setPct });
+      setText(""); setAudio(null); setImage(null); setVideo(null); setYt(""); setShowYt(false); setJustSent(true);
     } catch (e) { setErr(sendErrorText(e)); } finally { setPct(null); }
   };
-  const label = send.isPending ? (video ? `Subiendo ${pct ?? 0}%` : image ? "Subiendo foto…" : "Enviando…") : coach ? "Enviar" : "Enviar a tu coach";
+  const label = send.isPending ? (audio ? "Enviando audio…" : video ? `Subiendo ${pct ?? 0}%` : image ? "Subiendo foto…" : "Enviando…") : coach ? "Enviar" : "Enviar a tu coach";
   return (
     <div className="mb">
       <section className="mb-compose" aria-label={coach ? `Escribir a ${otherName}` : "Escribir a tu coach"}>
         {blocked ? <div className="mb-wait"><Icon name="clock" size={18} /><div><b>Tu coach aún no ha visto tus últimos mensajes.</b><span>Apenas los vea podrás escribirle de nuevo. Te avisamos cuando responda.</span></div></div> : <>
           <textarea rows={3} maxLength={maxChars} aria-label="Escribe tu mensaje" placeholder={coach ? `Responder a ${otherName}…` : "Cuéntale a tu coach: una duda, cómo te sientes, algo que notaste…"} value={text} onChange={(e) => setText(e.target.value)} />
+          {rec.recording && <div className="mb-rec" role="status"><i aria-hidden /><b>Grabando</b><span>{Math.floor(rec.secs / 60)}:{String(rec.secs % 60).padStart(2, "0")} / {Math.floor(MAX_AUDIO_SECONDS / 60)}:00</span><button type="button" onClick={() => rec.stop(true)}>Cancelar</button><button type="button" className="go" onClick={() => rec.stop()}><Icon name="stop" size={13} /> Terminar</button></div>}
+          {audio && audioUrl && !rec.recording && <div className="mb-attach mb-attach-audio"><Icon name="mic" size={14} /><audio controls src={audioUrl} /><button type="button" aria-label="Quitar audio" onClick={() => setAudio(null)}><Icon name="close" size={14} /></button></div>}
           {(preview || video || ytId) && <div className="mb-attach">{preview && <img src={preview} alt="Vista previa" />}<span><Icon name={image ? "camera" : video ? "video" : "play"} size={14} />{image ? "Foto lista para enviar" : video ? video.name.slice(0, 26) : "Vídeo de YouTube"}</span><button type="button" aria-label="Quitar adjunto" onClick={() => { setImage(null); setVideo(null); setYt(""); setShowYt(false); }}><Icon name="close" size={14} /></button></div>}
           {showYt && !ytId && <input className="mb-yt" aria-label="Enlace de YouTube" placeholder="Pega el enlace de YouTube" value={yt} onChange={(e) => setYt(e.target.value)} />}
           {pct !== null && <div className="comp-progress" aria-label={`Subiendo vídeo ${pct}%`}><i style={{ width: `${pct}%` }} /></div>}
@@ -85,6 +93,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
               <input ref={vidIn} type="file" accept="video/*" hidden onChange={(e) => { void pickVideo(e.target.files?.[0] ?? null); e.target.value = ""; }} />
               <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => imgIn.current?.click()}><Icon name="camera" size={16} />Foto</button>
               <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => vidIn.current?.click()}><Icon name="video" size={16} />Vídeo</button>
+              {coach && audioSupported() && <button type="button" className="mb-tool" disabled={send.isPending || rec.recording} onClick={() => void rec.start()}><Icon name="mic" size={16} />Audio</button>}
               {coach && <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => { setShowYt((v) => !v); setImage(null); setVideo(null); }}><Icon name="play" size={14} />YouTube</button>}
             </>}
             <span className="mb-count">{text.length}/{maxChars}</span>

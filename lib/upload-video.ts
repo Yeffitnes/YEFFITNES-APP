@@ -7,8 +7,8 @@ export function videoDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {
     const v = document.createElement("video"), url = URL.createObjectURL(file);
     const done = (d: number | null) => { URL.revokeObjectURL(url); resolve(d); };
-    v.preload = "metadata"; v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? v.duration : null); v.onerror = () => done(null); v.src = url;
-    setTimeout(() => done(null), 4000);
+    v.preload = "metadata"; v.muted = true; v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? v.duration : null); v.onerror = () => done(null); v.src = url;
+    setTimeout(() => done(null), 8000);
   });
 }
 export async function uploadVideo(file: File, onProgress: (pct: number) => void, opts: { purpose?: "report" | "message"; clientId?: string } = {}): Promise<string> {

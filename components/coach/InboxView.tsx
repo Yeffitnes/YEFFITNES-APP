@@ -33,7 +33,7 @@ function Inbox() {
               <span className="side-avatar" style={{ background: gradient(i), color: "#fff", flex: "none" }}>{initials(t.name)}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span className="inbox-name">{t.name}</span>
-                <span className="inbox-last" style={{ display: "block" }}>{t.lastAt ? `${t.lastSender === "coach" ? "Tú: " : ""}${t.lastBody ?? (t.lastKind === "video" ? "Vídeo" : "Foto")}` : "Sin mensajes"}</span>
+                <span className="inbox-last" style={{ display: "block" }}>{t.lastAt ? `${t.lastSender === "coach" ? "Tú: " : ""}${t.lastBody ?? (t.lastKind === "video" ? "Vídeo" : t.lastKind === "audio" ? "Audio" : "Foto")}` : "Sin mensajes"}</span>
               </span>
               <span style={{ textAlign: "right", flex: "none" }}>{t.unread > 0 && <span className="inbox-badge">{t.unread}</span>}{t.lastAt && <span style={{ display: "block", fontSize: 10.5, color: "var(--text-dim)", marginTop: 4 }}>{ago(t.lastAt)}</span>}</span>
             </button>
