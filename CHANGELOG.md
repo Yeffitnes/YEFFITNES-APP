@@ -1,6 +1,9 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-25 · Imagen al compartir en Vercel, con etiqueta TEST
+- La dirección base ahora usa las variables de Vercel (antes apuntaba a localhost y la imagen no salía). Con `NEXT_PUBLIC_APP_NAME` definida se usa `public/og-test.png` (la misma con la etiqueta TEST); en Netlify sigue `og.png`. Revertir: `git revert`.
+
 ## 2026-10-25 · Obligar a usar la app instalada (rama `bloque-hoy`)
 - `components/InstallGate.tsx`: si `NEXT_PUBLIC_REQUIRE_INSTALL=1`, en celulares y tablets que NO la tengan abierta como app instalada se muestra una pantalla de la marca con los pasos (iPhone, Android con botón de instalar, navegadores internos de Instagram/WhatsApp). Computador no se bloquea (coach). Es un bloqueo suave, no de seguridad. Apagado por defecto. `NEXT_PUBLIC_APP_NAME` cambia el nombre de la app instalada (para Vercel: "YEFFITNES Test").
 - Sin probar en dispositivos reales. Revertir: quitar la variable (basta, no hace falta redesplegar código) y volver a desplegar; o `git revert`.

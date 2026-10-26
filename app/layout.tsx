@@ -11,14 +11,15 @@ const VERCEL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_U
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || (VERCEL ? `https://${VERCEL}` : "http://localhost:3000");
 // Nombre de la app instalada. En el sitio de pruebas (Vercel) se pone NEXT_PUBLIC_APP_NAME="YEFFITNES Test" para distinguirla.
 const SHORT = process.env.NEXT_PUBLIC_APP_NAME || "YEFFITNES";
+const OG = process.env.NEXT_PUBLIC_APP_NAME ? "/og-test.png" : "/og.png"; // en pruebas la imagen lleva la etiqueta TEST
 const DESC = "Tu coaching online, hecho a tu medida. Entrenamiento, nutrición y seguimiento con Jeff González.";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: { default: "YEFFITNES TRAINING", template: "%s · YEFFITNES TRAINING" },
   description: DESC, applicationName: "YEFFITNES TRAINING",
   // Al compartir el enlace (WhatsApp, Instagram, iMessage…) sale esta imagen con la marca.
-  openGraph: { type: "website", locale: "es_CO", siteName: "YEFFITNES TRAINING", title: "YEFFITNES TRAINING", description: DESC, url: "/", images: [{ url: "/og.png", width: 1200, height: 630, alt: "YEFFITNES TRAINING" }] },
-  twitter: { card: "summary_large_image", title: "YEFFITNES TRAINING", description: DESC, images: ["/og.png"] },
+  openGraph: { type: "website", locale: "es_CO", siteName: "YEFFITNES TRAINING", title: "YEFFITNES TRAINING", description: DESC, url: "/", images: [{ url: OG, width: 1200, height: 630, alt: "YEFFITNES TRAINING" }] },
+  twitter: { card: "summary_large_image", title: "YEFFITNES TRAINING", description: DESC, images: [OG] },
   icons: { icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icon-512.png", sizes: "512x512", type: "image/png" }], apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: SHORT, statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },
