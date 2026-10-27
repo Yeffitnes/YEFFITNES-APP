@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-26 - Cruce del blueprint con la app
+- Nuevo `docs/BLUEPRINT_GAPS.md`: tabla de qué pide el Product Blueprint v1, qué existe en `bloque-hoy`, qué cambió por decisiones posteriores y qué falta. Solo documentación; se verificó leyendo código y migraciones, sin abrir la app con datos reales.
+- Revertir: borrar `docs/BLUEPRINT_GAPS.md`.
+
 ## 2026-10-26 - HANDOFF: inventario de lo construido y lo que falta
 - `docs/HANDOFF.md` gana la sección 9b (construido, faltante, decisiones de Jeff, deuda técnica y pre-lanzamiento), tomada de `CONTEXT.md` y `PROJECT_STATE.md`. No es una auditoría contra el blueprint. Solo documentación. Revertir: borrar esa sección.
 
