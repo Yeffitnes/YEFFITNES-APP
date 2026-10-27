@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-26 - Documento de traspaso
+- Nuevo `docs/HANDOFF.md` (estado, reglas fijas, entornos Netlify/Vercel/Supabase, vídeos, trampas, pendientes y cómo arrancar un chat nuevo) y `CLAUDE.md` que lo apunta; `AGENTS.md` lo pone primero. Solo documentación.
+- Revertir: borrar `docs/HANDOFF.md` y `CLAUDE.md`, y la primera frase añadida en `AGENTS.md`.
+
 ## 2026-10-26 - Portal del cliente: sin verde y sin desbordes
 - Cliente y coach en celular: ningún elemento puede ensanchar su columna (`:where(.main *){min-width:0}`), que era lo que sacaba las tarjetas de Plan, Nutrición y Agenda por la derecha. No pude abrir esas pantallas con datos reales; solo reproduje el mecanismo en una página de prueba.
 - Portal: se quitó el verde. "Reporte enviado" y "Día completado" llevan chip rojo con chulo blanco; "Completado", "Plan activo", sesión confirmada y "Enviado" van en negro/rojo.
