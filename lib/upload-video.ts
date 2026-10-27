@@ -2,7 +2,7 @@
 export const MAX_VIDEO_SECONDS = 20;          // Lo que se envía: máx. 20 s (era 30; más corto = sube y se recorta más rápido)
 export const MAX_SOURCE_SECONDS = 60;         // Lo que se puede elegir de la galería: más de 1 min se rechaza (el recorte es en tiempo real)
 export const MAX_VIDEO_MB = 200;
-export const MAX_COACH_VIDEO_SECONDS = 300, MAX_COACH_VIDEO_MB = 500;   // el coach puede enviar vídeos más largos (explicaciones)
+export const MAX_COACH_VIDEO_SECONDS = 900, MAX_COACH_VIDEO_MB = 1500;   // el coach puede enviar vídeos más largos (explicaciones)
 export class UploadError extends Error { constructor(public code: string) { super(code); } }
 export function videoDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {

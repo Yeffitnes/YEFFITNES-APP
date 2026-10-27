@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-10-26 - Vídeos largos del coach sin recortar
+- Coach: hasta 15 min y 1,5 GB, se sube tal cual (sin recorte ni recompresión; Bunny los procesa). Si pasa de 15 min se rechaza con mensaje, ya no abre el recortador (que tarda lo que dura el tramo).
+- Archivos: `lib/upload-video.ts`, `TrainingTab`, `ThreadView`.
+- Revertir: `MAX_COACH_VIDEO_SECONDS = 300`, `MAX_COACH_VIDEO_MB = 500` y quitar `maxSourceSeconds` en TrainingTab.
+
 ## 2026-10-26 - Vídeos del cliente más cortos
 - Reporte y mensaje del cliente: máximo 20 s al enviar (antes 30). Se pueden elegir vídeos de hasta 60 s para recortarlos; uno más largo se rechaza al elegirlo, con un mensaje claro. El coach no cambia (hasta 300 s).
 - Archivos: `lib/upload-video.ts` (`MAX_VIDEO_SECONDS`, `MAX_SOURCE_SECONDS`), `components/ui/useVideoPick.tsx` (`maxSourceSeconds`), `ReportCard`, `ThreadView`.

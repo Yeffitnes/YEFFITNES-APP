@@ -102,7 +102,7 @@ function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientNa
     try { setPct(0); const id = await uploadVideo(f, setPct, { purpose: "message", clientId }); set.mutate({ dayId: day.id, videoId: id }); }
     catch (e) { setErr(e instanceof UploadError ? UP_ERR[e.code] ?? UP_ERR.upload_failed : UP_ERR.upload_failed); } finally { setPct(null); }
   };
-  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: (f) => void upload(f), onError: setErr });
+  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxSourceSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: (f) => void upload(f), onError: setErr });
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a></div>}

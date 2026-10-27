@@ -61,7 +61,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   useEffect(() => { if (unreadFromOther > 0 && document.visibilityState === "visible") void markRead(); }, [unreadFromOther]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (!justSent) return; const t = setTimeout(() => setJustSent(false), 6000); return () => clearTimeout(t); }, [justSent]);
   const maxS = coach ? MAX_COACH_VIDEO_SECONDS : MAX_VIDEO_SECONDS, maxMB = coach ? MAX_COACH_VIDEO_MB : MAX_VIDEO_MB;
-  const { pick: pickVideo, trimmer } = useVideoPick({ maxSeconds: maxS, maxSourceSeconds: coach ? undefined : MAX_SOURCE_SECONDS, maxMB, onFile: (f) => { setVideo(f); setImage(null); setAudio(null); setYt(""); setShowYt(false); }, onError: setErr });
+  const { pick: pickVideo, trimmer } = useVideoPick({ maxSeconds: maxS, maxSourceSeconds: coach ? MAX_COACH_VIDEO_SECONDS : MAX_SOURCE_SECONDS, maxMB, onFile: (f) => { setVideo(f); setImage(null); setAudio(null); setYt(""); setShowYt(false); }, onError: setErr });
   const pickImage = (f: File | null) => { setErr(""); if (!f) return; if (!f.type.startsWith("image/")) return setErr("Elige una foto."); setImage(f); setVideo(null); setAudio(null); setYt(""); setShowYt(false); };
   const ytId = yt.trim() ? youtubeId(yt) : null;
   const canSend = !send.isPending && !blocked && !rec.recording && (text.trim() || image || video || ytId || audio);
