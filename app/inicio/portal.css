@@ -1079,3 +1079,18 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
   .main > .m-logo{display:block;margin:0 0 16px}
 }
 @media (min-width:1021px){.main > .m-logo{display:none}}
+
+/* Sin verde: lo completado va en la marca (negro y rojo) */
+.pill-done{background:var(--ink);color:#fff}
+.history-source.client{background:rgba(10,9,16,.08);color:var(--ink)}
+.plan-status{color:var(--accent)}
+.plan-status .pulse{background:var(--neon);box-shadow:0 0 6px 1px var(--neon)}
+.dot-confirmed{background:var(--ink)}
+.slot.confirmed{background:var(--ink);border-color:var(--ink);color:#fff}
+.qrow.ok .qrow-icon,.day-complete-icon{background:linear-gradient(135deg,var(--neon),var(--rose));color:#fff}
+@media (max-width:1020px){
+  /* Ninguna tarjeta puede ensanchar la columna y salirse a la derecha (plan, nutrición, agenda...) */
+  :where(.main *){min-width:0}
+  .main{max-width:100%}
+}
+.sess-tag{background:var(--ink);color:#fff}

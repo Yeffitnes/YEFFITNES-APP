@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-10-26 - Portal del cliente: sin verde y sin desbordes
+- Cliente y coach en celular: ningún elemento puede ensanchar su columna (`:where(.main *){min-width:0}`), que era lo que sacaba las tarjetas de Plan, Nutrición y Agenda por la derecha. No pude abrir esas pantallas con datos reales; solo reproduje el mecanismo en una página de prueba.
+- Portal: se quitó el verde. "Reporte enviado" y "Día completado" llevan chip rojo con chulo blanco; "Completado", "Plan activo", sesión confirmada y "Enviado" van en negro/rojo.
+- Revertir: borrar el bloque "Sin verde" al final de `portal.css`, la regla `:where(.main *)` de `coach.css`, y volver el color de `.mb-sent` en `messages.css` a `#1C9A5B`.
+
 ## 2026-10-26 - Dashboard: tarjetas fuera de pantalla en celular
 - Causa: los filtros con desplazamiento de "Seguimiento de hoy" ensanchaban la columna de la cuadrícula. Ahora la cuadrícula usa `minmax(0, ...)` y las tarjetas no pueden ser más anchas que la columna.
 - Revertir: borrar el bloque "Dashboard: ninguna tarjeta puede ensanchar la columna" al final de `coach.css`.

@@ -806,3 +806,4 @@ html{scroll-behavior:smooth;}
 .dash-grid > *{min-width:0}
 .dash-grid .card,.fu-chips{min-width:0;max-width:100%}
 @media (max-width:1080px){.dash-grid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:1080px){ :where(.main *){min-width:0} }
