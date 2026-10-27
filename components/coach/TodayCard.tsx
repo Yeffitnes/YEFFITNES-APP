@@ -7,7 +7,7 @@ import { fetchReportVideoUrl, localDate, useClientLogs, useClientNutrition, useC
 import { useThread, type Msg } from "@/lib/messages";
 import { ago } from "@/lib/format";
 import { hhmm } from "@/lib/dates";
-import { Detail } from "./RecentWorkouts";
+import { Detail, RecentWorkouts } from "./RecentWorkouts";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const isoDow = (d: Date) => (d.getDay() === 0 ? 7 : d.getDay());
@@ -83,6 +83,8 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
             {(m.hasVideo || m.imagePath || m.audioPath) && <button className="ghost-btn" style={{ height: 32, fontSize: 11.5, marginTop: 8 }} onClick={() => (m.hasVideo ? setMsgVideo(m.id) : onGo("Mensajes"))}>{m.hasVideo ? "Ver vídeo" : m.audioPath ? "Escuchar en Mensajes" : "Ver foto en Mensajes"}</button>}
           </div>))}
       </div>
+
+      <RecentWorkouts clientId={clientId} title="Entrenamientos anteriores" skipDate={today} collapsible />
 
       {msgVideo && <BunnyModal param={`message=${msgVideo}`} title={`Vídeo de ${first}`} onClose={() => setMsgVideo(null)} />}
       {play && <Modal title={`Reporte de ${first}`} sub={play.r.comment ?? "Vídeo de verificación"} onClose={() => setPlay(null)} wide>

@@ -8,12 +8,13 @@ import { uploadCoachAudio, useSignedAudio } from "@/lib/messages";
 import { useClientLogs, useReviewWorkout, type ClientLog } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 const when = (iso: string) => { const d = Math.round((new Date(new Date().toDateString()).getTime() - new Date(iso + "T00:00:00").getTime()) / 86400000); return d <= 0 ? "Hoy" : d === 1 ? "Ayer" : new Date(iso + "T00:00:00").toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" }); };
-export function RecentWorkouts({ clientId }: { clientId: string }) {
-  const { data, isPending, isError, refetch } = useClientLogs(clientId);
-  const [open, setOpen] = useState<string | null>(null);
+export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", skipDate, collapsible }: { clientId: string; title?: string; skipDate?: string; collapsible?: boolean }) {
+  const all = useClientLogs(clientId), { isPending, isError, refetch } = all, data = all.data?.filter((l) => l.date !== skipDate);
+  const [open, setOpen] = useState<string | null>(null), [shown, setShown] = useState(true), pend = data?.filter((l) => l.completed && !l.seen).length ?? 0;
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <div className="card-tag">Entrenamientos recientes</div>
+      {collapsible ? <button type="button" className="rw-head" aria-expanded={shown} onClick={() => setShown(!shown)}><span className="card-tag" style={{ marginBottom: 0 }}>{title}</span>{pend > 0 && <span className="today-count">{pend} sin revisar</span>}<span className="rw-chev" aria-hidden>{shown ? "Ocultar" : "Ver"}</span></button> : <div className="card-tag">{title}</div>}
+      {shown && <>
       {isPending && <Skeleton rows={2} />}
       {isError && <p role="alert" style={{ fontSize: 14 }}>No pudimos cargar los entrenamientos. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p>}
       {data && !data.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 8 }}>Aún no hay entrenamientos registrados. Aparecerán aquí cuando el cliente complete su primera rutina.</p>}
@@ -26,6 +27,7 @@ export function RecentWorkouts({ clientId }: { clientId: string }) {
           </button>
           {open === l.id && <Detail l={l} clientId={clientId} />}
         </div>))}
+      </>}
     </div>
   );
 }

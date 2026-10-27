@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-26 - Hoy: "Entrenamientos anteriores" desplegable al final
+- Al final de la pestaña "Hoy": lista desplegable de los entrenamientos anteriores (sin el de hoy), con cuántos están sin revisar; cada uno se abre para ver el detalle y revisarlo. `RecentWorkouts` gana las opciones `title`, `skipDate` y `collapsible`.
+- Revertir: quitar la línea `<RecentWorkouts ... collapsible />` de `TodayCard.tsx`.
+
 ## 2026-10-26 - Hoy: pendientes de días anteriores y entrenamiento revisado
 - La pestaña "Hoy" ahora muestra arriba "Por revisar de días anteriores" (entrenamientos completados sin revisar que no son de hoy), cada uno con su detalle, comentario y audio. Antes solo se veía el de hoy y desde el dashboard no se encontraba el de hace 2 días.
 - Al guardar la revisión, el entrenamiento se pliega en una línea ("Ya lo revisaste..."), con botón "Ver o editar".
