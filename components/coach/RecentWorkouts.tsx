@@ -24,7 +24,7 @@ export function RecentWorkouts({ clientId }: { clientId: string }) {
     </div>
   );
 }
-function Detail({ l, clientId }: { l: ClientLog; clientId: string }) {
+export function Detail({ l, clientId }: { l: ClientLog; clientId: string }) {
   const review = useReviewWorkout(clientId), [c, setC] = useState(l.comment ?? "");
   const byEx = new Map<string, ClientLog["sets"]>(); l.sets.forEach((s) => byEx.set(s.exercise, [...(byEx.get(s.exercise) ?? []), s]));
   return (

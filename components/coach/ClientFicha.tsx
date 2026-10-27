@@ -11,6 +11,7 @@ import { NotesTab } from "./NotesTab";
 import { NutritionTab } from "./NutritionTab";
 import { ThreadView } from "@/components/ui/ThreadView";
 import { hhmm } from "@/lib/dates";
+import { TodayCard } from "./TodayCard";
 import { ProgressPanels } from "@/components/portal/ProgressPanels";
 const TABS = ["Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
 const SOON: Record<string, string> = {};
@@ -32,6 +33,7 @@ export function ClientFicha({ id }: { id: string }) {
       <div className="tab-row">{TABS.map((t) => <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>{t}</button>)}</div>
       {tab === "Resumen" ? (
         <>
+          <TodayCard clientId={c.id} first={c.name.split(" ")[0]} onGo={setTab} />
           <div className="mini-kpi-strip">
             <div className="mini-kpi"><div className="mini-kpi-label">Estado</div><div className="mini-kpi-val">{status}</div></div>
             <div className="mini-kpi"><div className="mini-kpi-label">Plan</div><div className="mini-kpi-val">{c.plan ?? "—"}</div></div>
