@@ -4,6 +4,7 @@ import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/Providers";
 import { ActionsBar } from "@/components/ActionsBar";
 import { SideNav, MobileNav } from "@/components/coach/CoachNav";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { initials } from "@/lib/format";
 import "./coach.css";
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +24,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
           <form action={signOut}><button style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Salir</button></form>
         </div>
       </aside>
-      <main className="main"><MobileNav /><ActionsBar side="coach" />{children}</main>
+      <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Coach" /></div></div><MobileNav /><ActionsBar side="coach" />{children}</main>
     </div>
     </Providers>
   );
