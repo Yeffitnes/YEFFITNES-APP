@@ -16,11 +16,13 @@ const msgKind = (m: Msg) => (m.hasVideo || m.youtubeId ? "Vídeo" : m.audioPath 
 // Lo primero que Jeff necesita al abrir un cliente: qué hizo hoy (entreno, nutrición, reporte, mensajes y vídeos).
 export function TodayCard({ clientId, first, onGo }: { clientId: string; first: string; onGo: (tab: string) => void }) {
   const today = localDate(), logs = useClientLogs(clientId), nut = useClientNutrition(clientId), meals = useMealLogs(clientId, today), reports = useCoachReports(), thread = useThread(clientId), review = useReviewReport();
-  const [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean } | null>(null), [msgVideo, setMsgVideo] = useState<string | null>(null);
+  const [openLog, setOpenLog] = useState<boolean | null>(null), [openOld, setOpenOld] = useState<string | null>(null), [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean } | null>(null), [msgVideo, setMsgVideo] = useState<string | null>(null);
   const log = (logs.data ?? []).find((l) => l.date === today), lastLog = (logs.data ?? []).find((l) => l.completed);
   const dow = isoDow(new Date()), todays = (nut.data?.meals ?? []).filter((m) => m.weekday === null || m.weekday === dow), done = todays.filter((m) => m.id && (meals.data ?? []).includes(m.id)).length;
   const report = (reports.data ?? []).find((r) => r.clientId === clientId && r.date === today);
   const msgs = (thread.data ?? []).filter((m) => m.sender === "client" && localDate(new Date(m.createdAt)) === today);
+  const oldPending = (logs.data ?? []).filter((l) => l.completed && !l.seen && l.date !== today);
+  const logOpen = openLog ?? (!!log && !log.seen);
   const trained = !!log?.completed, nutOk = todays.length > 0 && done >= todays.length;
   const openVideo = async (r: CoachReport) => { setPlay({ r, url: null, err: false }); try { setPlay({ r, url: await fetchReportVideoUrl(r.id), err: false }); } catch { setPlay({ r, url: null, err: true }); } };
   const Chip = ({ ok, label, val }: { ok: boolean; label: string; val: string }) => <div className={`today-chip${ok ? " ok" : ""}`}><span className="today-dot">{ok && <Icon name="check" size={11} stroke={2.6} />}</span><div><b>{label}</b><span>{val}</span></div></div>;
@@ -37,13 +39,25 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
         </div>
       </div>
 
+      {oldPending.length > 0 && <div className="card today-sec today-pending">
+        <div className="today-head"><span className="today-ico"><Icon name="clock" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Por revisar de días anteriores</div><span className="today-count">{oldPending.length}</span></div>
+        {oldPending.map((l) => (
+          <div key={l.id} className="today-old">
+            <button type="button" className="today-old-btn" aria-expanded={(openOld ?? oldPending[0].id) === l.id} onClick={() => setOpenOld((openOld ?? oldPending[0].id) === l.id ? "" : l.id)}>
+              <span><b>{cap(ago(l.date))}</b> · {l.routine ?? "Entrenamiento"}</span><span className="today-sub" style={{ margin: 0 }}>{l.sets.length} series{l.effort ? ` · esfuerzo ${l.effort}/10` : ""}</span>
+            </button>
+            {(openOld ?? oldPending[0].id) === l.id && <Detail l={l} clientId={clientId} onSaved={() => setOpenOld("")} />}
+          </div>))}
+      </div>}
+
       <div className="card today-sec">
         <div className="today-head"><span className="today-ico"><Icon name="dumbbell" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Entrenamiento de hoy</div></div>
         {logs.isPending && <div className="sk" style={{ height: 48, marginTop: 10 }} />}
         {logs.data && !log && <p className="today-empty">{first} aún no ha registrado su entrenamiento de hoy.{lastLog ? ` Último: ${ago(lastLog.date)}.` : ""}</p>}
         {log && <div style={{ marginTop: 8 }}><div className="today-line"><b>{log.routine ?? "Entrenamiento"}</b><span className={`client-status ${log.completed && !log.seen ? "review" : "ok"}`}>{!log.completed ? "En curso" : log.seen ? "Revisado" : "Sin revisar"}</span></div>
           <div className="today-sub">{log.sets.length} series{log.effort ? ` · esfuerzo ${log.effort}/10` : ""}{log.note ? ` · “${log.note}”` : ""}</div>
-          <Detail l={log} clientId={clientId} /></div>}
+          {log.completed && log.seen && <div className="today-done"><Icon name="check" size={13} stroke={2.4} /><span>Ya lo revisaste{log.comment || log.commentAudio ? " y le dejaste tu comentario" : ""}.</span><button type="button" onClick={() => setOpenLog(!logOpen)}>{logOpen ? "Ocultar" : "Ver o editar"}</button></div>}
+          {logOpen && <Detail l={log} clientId={clientId} onSaved={() => setOpenLog(null)} />}</div>}
       </div>
 
       <div className={`card today-sec${report ? " card-dark today-dark" : ""}`}>

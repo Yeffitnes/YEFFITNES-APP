@@ -774,3 +774,13 @@ html{scroll-behavior:smooth;}
 .today-seen{background:linear-gradient(90deg,var(--neon),var(--rose));color:#fff}
 .today-viewed{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:default}
 .today-kind{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:#fff;border-radius:20px;padding:3px 9px}
+
+/* Hoy: pendientes de días anteriores, entrenamiento ya revisado, y chip del icono sobre tarjeta oscura */
+.today-dark .today-ico{background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.today-count{margin-left:auto;font-family:var(--font-mono),monospace;font-size:11px;font-weight:700;color:#fff;background:var(--ink);border-radius:20px;padding:3px 10px}
+.today-old{border-top:1px solid var(--line);margin-top:12px;padding-top:6px}
+.today-old-btn{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;font-size:13.5px}
+.today-done{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--surface);font-size:13px;color:var(--text-dim)}
+.today-done svg{stroke:var(--accent);flex:none}
+.today-done span{flex:1;min-width:140px}
+.today-done button{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);padding:6px 12px;border-radius:20px;background:#fff;border:1px solid var(--line)}

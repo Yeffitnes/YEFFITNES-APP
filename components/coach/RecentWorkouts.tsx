@@ -29,14 +29,14 @@ export function RecentWorkouts({ clientId }: { clientId: string }) {
     </div>
   );
 }
-export function Detail({ l, clientId }: { l: ClientLog; clientId: string }) {
+export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: string; onSaved?: () => void }) {
   const review = useReviewWorkout(clientId), ws = useWorkspaceId(), [c, setC] = useState(l.comment ?? "");
   const [audio, setAudio] = useState<{ blob: Blob; secs: number } | null>(null), [keep, setKeep] = useState(!!l.commentAudio), [aErr, setAErr] = useState(""), [saving, setSaving] = useState(false), [url, setUrl] = useState<string | null>(null);
   const rec = useAudioRecorder((blob, secs) => setAudio({ blob, secs }), setAErr), saved = useSignedAudio(keep ? l.commentAudio : null);
   useEffect(() => { if (!audio) { setUrl(null); return; } const u = URL.createObjectURL(audio.blob); setUrl(u); return () => URL.revokeObjectURL(u); }, [audio]);
   const save = async () => {
     setAErr(""); setSaving(true);
-    try { const path = audio ? await uploadCoachAudio(ws, clientId, audio.blob) : keep ? l.commentAudio : null; review.mutate({ id: l.id, comment: c, audio: path }, { onSuccess: () => setAudio(null) }); }
+    try { const path = audio ? await uploadCoachAudio(ws, clientId, audio.blob) : keep ? l.commentAudio : null; review.mutate({ id: l.id, comment: c, audio: path }, { onSuccess: () => { setAudio(null); onSaved?.(); } }); }
     catch { setAErr("No pudimos subir el audio. Inténtalo de nuevo."); } finally { setSaving(false); }
   };
   const byEx = new Map<string, ClientLog["sets"]>(); l.sets.forEach((s) => byEx.set(s.exercise, [...(byEx.get(s.exercise) ?? []), s]));

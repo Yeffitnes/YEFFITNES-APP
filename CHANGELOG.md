@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-10-26 - Hoy: pendientes de días anteriores y entrenamiento revisado
+- La pestaña "Hoy" ahora muestra arriba "Por revisar de días anteriores" (entrenamientos completados sin revisar que no son de hoy), cada uno con su detalle, comentario y audio. Antes solo se veía el de hoy y desde el dashboard no se encontraba el de hace 2 días.
+- Al guardar la revisión, el entrenamiento se pliega en una línea ("Ya lo revisaste..."), con botón "Ver o editar".
+- El icono del reporte sobre la tarjeta oscura es ahora un chip claro (antes oscuro sobre oscuro).
+- Revertir: quitar el bloque `oldPending`/`logOpen` de `TodayCard.tsx` y las reglas "Hoy: pendientes..." de `coach.css`.
+
 ## 2026-10-26 - Audio en el comentario del entrenamiento + más acentos oscuros
 - Jeff puede dejar un audio (hasta 2 min) junto al comentario de un entrenamiento; el cliente lo oye en su pantalla "Hoy". El audio reemplazado o quitado se borra del almacenamiento con la limpieza de mensajes.
 - **Migración `0031_workout_comment_audio.sql` (hay que correrla en Supabase ANTES de que funcione esta versión).** Añade `workout_logs.coach_comment_audio`, amplía `protect_coach_columns` (un cliente no puede escribirla) y recrea `review_workout(p_log, p_comment, p_audio)`. Prueba nueva: `supabase/tests/rls_commentaudio.sql` (encontró y cerró que el cliente podía escribir la columna).
