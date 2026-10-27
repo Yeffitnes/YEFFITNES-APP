@@ -2,7 +2,7 @@
 ## 2026-10-26 - Cancelar subidas y Salir en celular
 - Botón "Cancelar" en: lectura del vídeo, subida del reporte, subida de vídeo en mensajes y subida en segundo plano (coach). Cancelar corta la subida y borra el vídeo parcial en Bunny. Código `cancelled` en `lib/upload-video.ts` (`signal`).
 - Cerrar sesión en celular: el círculo con las iniciales (junto al logo, cliente y coach) abre un menú con "Cerrar sesión" (`components/ProfileMenu.tsx`).
-- Corrección iPhone instalado: el contenido quedaba bajo la barra de estado translúcida. La cabecera (logo y perfil) pasa a ser un bloque oscuro que ocupa también la zona de la barra de estado, sin franja aparte; el coach gana chips de sección con degradado rojo.
+- Corrección iPhone instalado: el contenido quedaba bajo la barra de estado translúcida. La cabecera (logo y perfil) es un bloque oscuro que ocupa también la zona de la barra de estado y se desvanece hacia el color del panel (sin línea ni corte); el coach gana chips de sección con degradado rojo.
 - Revertir: quitar el `signal` de `uploadVideo` y los botones; quitar `ProfileMenu` de `app/inicio/layout.tsx` y `app/coach/layout.tsx`; para la cabecera oscura, borrar el bloque "Cabecera oscura en celular" al final de `coach.css` y `portal.css`.
 
 ## 2026-10-26 - Subida de vídeo en segundo plano (coach)

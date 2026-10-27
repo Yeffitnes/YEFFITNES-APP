@@ -1075,9 +1075,8 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 
 /* Cabecera oscura en celular: ocupa también la zona de la barra de estado del iPhone (sin franja cortada) */
 @media (max-width:1020px){
-  .main > .m-logo{display:block;margin:-22px -20px 18px;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;position:relative;
-    background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.32),transparent 60%),radial-gradient(90% 120% at 100% 100%,rgba(205,177,112,.16),transparent 65%),linear-gradient(180deg,#14090e,#0A0910);}
-  .main > .m-logo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--neon),var(--rose),transparent)}
+  .main > .m-logo{display:block;margin:-22px -20px 6px;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 46px;position:relative;
+    background:radial-gradient(120% 110% at 0% 0%,rgba(247,37,75,.26),transparent 60%),linear-gradient(180deg,#0A0910 0%,#0A0910 38%,rgba(10,9,16,.72) 62%,rgba(245,246,250,0) 100%);}
   .main > .m-logo .pm-btn{box-shadow:0 0 0 2px rgba(255,255,255,.14)}
 }
 @media (min-width:1021px){.main > .m-logo{display:none}}
