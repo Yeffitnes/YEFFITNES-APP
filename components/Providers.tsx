@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { UploadProvider } from "@/lib/upload-manager";
 import { fetchActivePlanClients, fetchClients, fetchExercises, fetchMeasures, fetchPlans, fetchRecentLogs, fetchRoutines, fetchTrainingPlans, fetchLogs, KEYS, type Me } from "@/lib/queries";
 const Toast = createContext<(msg: string, err?: boolean) => void>(() => {});
 export const useToast = () => useContext(Toast);
@@ -29,8 +30,8 @@ export function Providers({ workspaceId, profileId = "", name = "", prefetch = t
     void qc.prefetchQuery({ queryKey: ["logs", id], queryFn: () => fetchLogs(id) });
     void qc.prefetchQuery({ queryKey: ["measures", id], queryFn: () => fetchMeasures(id) }); }, [qc, me?.id]);
   return (
-    <QueryClientProvider client={qc}><Ws.Provider value={workspaceId}><Prof.Provider value={{ profileId, name }}><Toast.Provider value={show}>
-      {children}{toast && <div role="status" className={`toast${toast.err ? " err" : ""}`}>{toast.msg}</div>}
+    <QueryClientProvider client={qc}><Ws.Provider value={workspaceId}><Prof.Provider value={{ profileId, name }}><Toast.Provider value={show}><UploadProvider toast={show}>
+      {children}</UploadProvider>{toast && <div role="status" className={`toast${toast.err ? " err" : ""}`}>{toast.msg}</div>}
     </Toast.Provider></Prof.Provider></Ws.Provider></QueryClientProvider>
   );
 }

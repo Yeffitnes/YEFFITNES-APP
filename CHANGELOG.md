@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-10-26 - Subida de vídeo en segundo plano (coach)
+- El vídeo personalizado de un día se sube desde la raíz de la app (`lib/upload-manager.tsx`, montado en `Providers`): el coach puede cambiar de sección mientras sube. Un indicador fijo muestra el porcentaje, errores y "Listo". Al terminar asigna el vídeo solo.
+- Mientras sube: pantalla encendida (Wake Lock, si el navegador lo soporta) y aviso al intentar cerrar la pestaña. No sobrevive a cerrar la app.
+- No incluye aún el vídeo adjunto a mensajes (sigue ligado al envío).
+- Revertir: en `TrainingTab` volver a `uploadVideo` local con estado `pct` (commit anterior `6719fe3`) y quitar `UploadProvider` de `Providers`.
+
 ## 2026-10-26 - Vídeos largos del coach sin recortar
 - Coach: hasta 15 min y 1,5 GB, se sube tal cual (sin recorte ni recompresión; Bunny los procesa). Si pasa de 15 min se rechaza con mensaje, ya no abre el recortador (que tarda lo que dura el tramo).
 - Archivos: `lib/upload-video.ts`, `TrainingTab`, `ThreadView`.

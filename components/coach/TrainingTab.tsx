@@ -2,9 +2,10 @@
 import { useVideoPick } from "@/components/ui/useVideoPick";
 import { Icon } from "@/components/ui/Icon";
 import { useRef, useState } from "react";
-import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
+import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, assignDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, UploadError, uploadVideo } from "@/lib/upload-video";
+import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS } from "@/lib/upload-video";
+import { useBackgroundUpload } from "@/lib/upload-manager";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
@@ -94,15 +95,12 @@ function AssignModal({ clientId, planId, weekday, dayLabel, replacing, onClose }
   );
 }
 
-const UP_ERR: Record<string, string> = { too_many: "Subiste muchos vídeos hoy. Inténtalo mañana.", not_configured: "Los vídeos privados aún no están activados (falta configurar Bunny).", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa la conexión y vuelve a intentarlo.", not_allowed: "No se pudo subir el vídeo." };
 // Vídeo de la rutina de este día: el de catálogo (lo ven todos) o uno grabado solo para este cliente (lo reemplaza).
 function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
-  const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [pct, setPct] = useState<number | null>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
-  const upload = async (f: File) => {
-    try { setPct(0); const id = await uploadVideo(f, setPct, { purpose: "message", clientId }); set.mutate({ dayId: day.id, videoId: id }); }
-    catch (e) { setErr(e instanceof UploadError ? UP_ERR[e.code] ?? UP_ERR.upload_failed : UP_ERR.upload_failed); } finally { setPct(null); }
-  };
-  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxSourceSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: (f) => void upload(f), onError: setErr });
+  const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
+  const bg = useBackgroundUpload();
+  const upload = (f: File) => { setErr(""); bg({ file: f, label: `Vídeo para ${clientName.split(" ")[0]}`, opts: { purpose: "message", clientId }, finish: (id, qc) => assignDayVideo(qc, clientId, day.id, id) }); };
+  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxSourceSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: upload, onError: setErr });
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a></div>}
@@ -112,7 +110,7 @@ function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientNa
           {trimmer}
           <input ref={input} type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           {day.hasPersonalVideo && <><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => set.mutate({ dayId: day.id, videoId: null })}>Quitar</button></>}
-          <button className="primary-btn" style={{ height: 32, fontSize: 11.5 }} disabled={pct !== null || set.isPending} onClick={() => input.current?.click()}>{pct !== null ? `Subiendo… ${pct}%` : day.hasPersonalVideo ? "Reemplazar" : "Subir vídeo"}</button>
+          <button className="primary-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => input.current?.click()}>{day.hasPersonalVideo ? "Reemplazar" : "Subir vídeo"}</button>
         </span>
       </div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{err}</p>}
