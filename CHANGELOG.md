@@ -1,9 +1,9 @@
 # CHANGELOG
-## 2026-10-26 - Ficha del cliente: "Hoy con ..." arriba
-- Al abrir un cliente, lo primero es lo de hoy: entrenamiento (con detalle y revisión), nutrición (comidas marcadas), reporte diario (comentario, vídeo, marcar visto) y mensajes de hoy (con vídeo). Cuatro indicadores arriba para ver de un vistazo qué falta.
-- Pestañas (Resumen, Entrenamiento...) en celular: ya no se mueven hacia arriba y abajo; estilo píldora con acento negro. Avatar y primer indicador con acentos negros.
+## 2026-10-26 - Ficha del cliente: pestaña "Hoy"
+- Nueva primera pestaña "Hoy" (abre por defecto) con lo del día: entrenamiento (con detalle y revisión), nutrición (comidas marcadas), reporte diario (comentario, vídeo, marcar visto) y mensajes de hoy (con vídeo). Cuatro indicadores arriba; lo hecho va marcado en rojo, sin verde. "Resumen" queda como antes, sin mezclar.
+- Pestañas en celular: ya no se mueven arriba y abajo; estilo píldora con acento negro. Avatar y primer indicador con acentos negros.
 - `components/coach/TodayCard.tsx` (nuevo; sin migración). `RecentWorkouts` exporta `Detail`.
-- Revertir: quitar `<TodayCard>` de `ClientFicha.tsx` y las reglas "Ficha del cliente" al final de `coach.css`.
+- Revertir: quitar "Hoy" de `TABS` y la rama `tab === "Hoy"` en `ClientFicha.tsx`, y las reglas "Ficha del cliente" al final de `coach.css`.
 
 ## 2026-10-26 - Dashboard del coach interactivo
 - Las tarjetas de arriba ahora se abren: Clientes activos, Entrenaron hoy (quiénes ya entrenaron y quiénes aún no), Nutrición hoy (quiénes completaron las comidas y a quién le falta), Revisiones pendientes (reportes diarios, mensajes sin leer y entrenamientos sin revisar juntos) y Clientes por revisar. Cada fila lleva a la ficha y tiene botón "Escribir" que abre el chat con ese cliente.

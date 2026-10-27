@@ -13,11 +13,11 @@ import { ThreadView } from "@/components/ui/ThreadView";
 import { hhmm } from "@/lib/dates";
 import { TodayCard } from "./TodayCard";
 import { ProgressPanels } from "@/components/portal/ProgressPanels";
-const TABS = ["Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
+const TABS = ["Hoy", "Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
 const SOON: Record<string, string> = {};
 export function ClientFicha({ id }: { id: string }) {
   const { data, isPending } = useClients(), { data: plans } = usePlans(), setPlan = useSetPlan();
-  const [tab, setTab] = useState("Resumen");
+  const [tab, setTab] = useState("Hoy");
   const c = data?.find((x) => x.id === id);
   const [sel, setSel] = useState<string | null>(null);
   if (isPending) return <Skeleton rows={3} />;
@@ -31,9 +31,8 @@ export function ClientFicha({ id }: { id: string }) {
       <div className="ficha-header"><div className="ficha-avatar">{initials(c.name)}</div>
         <div><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {c.plan ? `Plan ${c.plan}` : "Sin plan"}</div></div></div>
       <div className="tab-row">{TABS.map((t) => <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>{t}</button>)}</div>
-      {tab === "Resumen" ? (
+      {tab === "Hoy" ? <TodayCard clientId={c.id} first={c.name.split(" ")[0]} onGo={setTab} /> : tab === "Resumen" ? (
         <>
-          <TodayCard clientId={c.id} first={c.name.split(" ")[0]} onGo={setTab} />
           <div className="mini-kpi-strip">
             <div className="mini-kpi"><div className="mini-kpi-label">Estado</div><div className="mini-kpi-val">{status}</div></div>
             <div className="mini-kpi"><div className="mini-kpi-label">Plan</div><div className="mini-kpi-val">{c.plan ?? "—"}</div></div>
