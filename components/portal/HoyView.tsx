@@ -105,7 +105,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
           </div>
           {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}</div>}
         </div>))}</div>
-      {log?.coachComment && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}</div>}
+      {(log?.coachComment || log?.coachCommentAudio) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
       <Link href="/inicio/plan" className="tech-link" style={{ marginTop: 14, display: "inline-flex" }}>Ver rutina completa <Icon name="arrow" size={13} /></Link>
       <div style={{ marginTop: 18 }}>
@@ -156,4 +156,9 @@ function FromCoach() {
       <Link href="/inicio/mensajes" className="mini-btn primary" style={{ textDecoration: "none", display: "inline-flex", marginTop: 12 }}>Responder</Link>
     </QuickRow>
   );
+}
+
+function CoachAudio({ path }: { path: string }) {
+  const a = useSignedAudio(path);
+  return a.data ? <audio controls src={a.data} style={{ width: "100%", marginTop: 8 }} /> : <div className="sk" style={{ height: 40, marginTop: 8 }} />;
 }

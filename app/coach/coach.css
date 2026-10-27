@@ -755,3 +755,22 @@ html{scroll-behavior:smooth;}
   .mini-kpi:first-child{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.3),transparent 60%),var(--ink);border-color:var(--ink)}
   .mini-kpi:first-child .mini-kpi-label{color:rgba(255,255,255,.7)}.mini-kpi:first-child .mini-kpi-val{color:#fff}
 }
+
+/* Acentos negros en clientes, agenda y estados (sin verde) */
+.attn-avatar,.client-avatar,.inbox-row .side-avatar{background:var(--ink) !important;color:#fff;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(247,37,75,.5)}
+.client-status.ok{background:var(--ink);color:#fff}
+.session-status.confirmed{background:var(--ink);color:#fff}
+.history-source.client{background:rgba(10,9,16,.08);color:var(--ink)}
+.live-dot,.live-dot::after{background:var(--neon)}
+.slot-card.confirmed{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.42),transparent 60%),var(--ink);border:1px solid var(--ink);color:#fff}
+.slot-card.confirmed .slot-client{color:#fff}.slot-card.confirmed .slot-type,.slot-card.confirmed .slot-time{color:rgba(255,255,255,.72)}
+.mb-sent{color:var(--ink)}
+.today-head{display:flex;align-items:center;gap:10px}
+.today-ico{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:#fff;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.6),transparent 62%),var(--ink)}
+.today-dark .today-empty,.today-dark .today-quote{color:rgba(255,255,255,.9)}
+.today-dark .note-date{color:rgba(255,255,255,.6)}
+.today-play,.today-seen,.today-viewed{height:36px;display:inline-flex;align-items:center;gap:7px;padding:0 15px;border-radius:11px;font-weight:700;font-size:12.5px;border:0;cursor:pointer}
+.today-play{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.today-seen{background:linear-gradient(90deg,var(--neon),var(--rose));color:#fff}
+.today-viewed{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);cursor:default}
+.today-kind{display:inline-flex;align-items:center;gap:5px;background:var(--ink);color:#fff;border-radius:20px;padding:3px 9px}

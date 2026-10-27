@@ -1,5 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import "@/app/messages.css";
+import { Icon } from "@/components/ui/Icon";
+import { useWorkspaceId } from "@/components/Providers";
+import { MAX_AUDIO_SECONDS, audioSupported, useAudioRecorder } from "@/components/ui/useAudioRecorder";
+import { uploadCoachAudio, useSignedAudio } from "@/lib/messages";
 import { useClientLogs, useReviewWorkout, type ClientLog } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 const when = (iso: string) => { const d = Math.round((new Date(new Date().toDateString()).getTime() - new Date(iso + "T00:00:00").getTime()) / 86400000); return d <= 0 ? "Hoy" : d === 1 ? "Ayer" : new Date(iso + "T00:00:00").toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" }); };
@@ -25,7 +30,15 @@ export function RecentWorkouts({ clientId }: { clientId: string }) {
   );
 }
 export function Detail({ l, clientId }: { l: ClientLog; clientId: string }) {
-  const review = useReviewWorkout(clientId), [c, setC] = useState(l.comment ?? "");
+  const review = useReviewWorkout(clientId), ws = useWorkspaceId(), [c, setC] = useState(l.comment ?? "");
+  const [audio, setAudio] = useState<{ blob: Blob; secs: number } | null>(null), [keep, setKeep] = useState(!!l.commentAudio), [aErr, setAErr] = useState(""), [saving, setSaving] = useState(false), [url, setUrl] = useState<string | null>(null);
+  const rec = useAudioRecorder((blob, secs) => setAudio({ blob, secs }), setAErr), saved = useSignedAudio(keep ? l.commentAudio : null);
+  useEffect(() => { if (!audio) { setUrl(null); return; } const u = URL.createObjectURL(audio.blob); setUrl(u); return () => URL.revokeObjectURL(u); }, [audio]);
+  const save = async () => {
+    setAErr(""); setSaving(true);
+    try { const path = audio ? await uploadCoachAudio(ws, clientId, audio.blob) : keep ? l.commentAudio : null; review.mutate({ id: l.id, comment: c, audio: path }, { onSuccess: () => setAudio(null) }); }
+    catch { setAErr("No pudimos subir el audio. Inténtalo de nuevo."); } finally { setSaving(false); }
+  };
   const byEx = new Map<string, ClientLog["sets"]>(); l.sets.forEach((s) => byEx.set(s.exercise, [...(byEx.get(s.exercise) ?? []), s]));
   return (
     <div style={{ marginTop: 10 }}>
@@ -37,7 +50,13 @@ export function Detail({ l, clientId }: { l: ClientLog; clientId: string }) {
       {l.completed && (
         <div className="modal-field"><label>Tu comentario para el cliente</label>
           <textarea value={c} onChange={(e) => setC(e.target.value)} placeholder="Ej. Muy bien. Sube 2,5 kg en press banca la próxima semana." />
-          <div className="modal-actions" style={{ maxWidth: 320 }}><button className="modal-btn primary" disabled={review.isPending} onClick={() => review.mutate({ id: l.id, comment: c })}>{review.isPending ? "Guardando…" : l.seen ? "Actualizar" : "Guardar y marcar revisado"}</button></div></div>)}
+          {rec.recording && <div className="mb-rec" role="status"><i aria-hidden /><b>Grabando</b><span>{Math.floor(rec.secs / 60)}:{String(rec.secs % 60).padStart(2, "0")} / {Math.floor(MAX_AUDIO_SECONDS / 60)}:00</span><button type="button" onClick={() => rec.stop(true)}>Cancelar</button><button type="button" className="go" onClick={() => rec.stop()}><Icon name="stop" size={13} /> Terminar</button></div>}
+          {!rec.recording && audio && url && <div className="mb-attach mb-attach-audio"><Icon name="mic" size={14} /><audio controls src={url} /><button type="button" aria-label="Quitar audio" onClick={() => setAudio(null)}><Icon name="close" size={14} /></button></div>}
+          {!rec.recording && !audio && keep && saved.data && <div className="mb-attach mb-attach-audio"><Icon name="mic" size={14} /><audio controls src={saved.data} /><button type="button" aria-label="Quitar audio" onClick={() => setKeep(false)}><Icon name="close" size={14} /></button></div>}
+          {aErr && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{aErr}</p>}
+          <div className="modal-actions" style={{ gap: 8, flexWrap: "wrap" }}>
+            {audioSupported() && <button type="button" className="modal-btn ghost" disabled={rec.recording || saving} onClick={() => { setKeep(false); void rec.start(); }}><Icon name="mic" size={14} /> {audio || keep ? "Grabar otro audio" : "Dejar un audio"}</button>}
+            <button className="modal-btn primary" disabled={review.isPending || saving || rec.recording} onClick={() => void save()}>{review.isPending || saving ? "Guardando…" : l.seen ? "Actualizar" : "Guardar y marcar revisado"}</button></div></div>)}
     </div>
   );
 }

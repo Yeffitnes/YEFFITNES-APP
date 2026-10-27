@@ -33,7 +33,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o superior).
 
 ## 3b. Migraciones pendientes antes de fusionar a `main`
-- [ ] `0028_messages_board.sql`, `0029_audio_messages.sql` y `0030_discard_videos.sql` en el SQL editor de Supabase (la 0029 es necesaria para el código de `bloque-hoy`: lee `audio_path`).
+- [ ] `0028_messages_board.sql`, `0029_audio_messages.sql` y `0030_discard_videos.sql` y `0031_workout_comment_audio.sql` en el SQL editor de Supabase (la 0029 es necesaria para el código de `bloque-hoy`: lee `audio_path`; la 0031, porque ese código lee `coach_comment_audio` y sin ella las pantallas de entrenamiento fallan).
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).

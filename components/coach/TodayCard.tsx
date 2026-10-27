@@ -38,7 +38,7 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
       </div>
 
       <div className="card today-sec">
-        <div className="card-tag">Entrenamiento de hoy</div>
+        <div className="today-head"><span className="today-ico"><Icon name="dumbbell" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Entrenamiento de hoy</div></div>
         {logs.isPending && <div className="sk" style={{ height: 48, marginTop: 10 }} />}
         {logs.data && !log && <p className="today-empty">{first} aún no ha registrado su entrenamiento de hoy.{lastLog ? ` Último: ${ago(lastLog.date)}.` : ""}</p>}
         {log && <div style={{ marginTop: 8 }}><div className="today-line"><b>{log.routine ?? "Entrenamiento"}</b><span className={`client-status ${log.completed && !log.seen ? "review" : "ok"}`}>{!log.completed ? "En curso" : log.seen ? "Revisado" : "Sin revisar"}</span></div>
@@ -46,25 +46,25 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
           <Detail l={log} clientId={clientId} /></div>}
       </div>
 
-      <div className="card today-sec">
-        <div className="card-tag">Reporte diario</div>
+      <div className={`card today-sec${report ? " card-dark today-dark" : ""}`}>
+        <div className="today-head"><span className="today-ico"><Icon name="video" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Reporte diario</div></div>
         {!report && <p className="today-empty">{first} aún no ha enviado el reporte de hoy.</p>}
         {report && <div style={{ marginTop: 8 }}>
           {report.comment ? <p className="today-quote">“{report.comment}”</p> : <p className="today-empty">Sin comentario.</p>}
           <div className="today-actions">
-            {report.videoState === "uploaded" && <button className="ghost-btn" onClick={() => void openVideo(report)}><Icon name="play" size={12} /> Ver vídeo</button>}
-            {report.videoState === "deleted" && <span className="note-date">Vídeo borrado automáticamente</span>}
-            {!report.seen ? <button className="primary-btn" disabled={review.isPending} onClick={() => review.mutate(report.id)}>Marcar visto</button> : <span className="note-date">Ya lo viste</span>}
+            {report.videoState === "uploaded" && <button className="today-play" onClick={() => void openVideo(report)}><Icon name="play" size={12} /> Ver vídeo</button>}
+            {report.videoState === "deleted" && <span className="today-viewed">Vídeo borrado automáticamente</span>}
+            {!report.seen ? <button className="today-seen" disabled={review.isPending} onClick={() => review.mutate(report.id)}>Marcar visto</button> : <span className="today-viewed">Ya lo viste</span>}
           </div></div>}
       </div>
 
       <div className="card today-sec">
-        <div className="today-line" style={{ alignItems: "center" }}><div className="card-tag" style={{ marginBottom: 0 }}>Mensajes de hoy</div><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => onGo("Mensajes")}>Responder</button></div>
+        <div className="today-line" style={{ alignItems: "center" }}><div className="today-head"><span className="today-ico"><Icon name="message" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Mensajes de hoy</div></div><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => onGo("Mensajes")}>Responder</button></div>
         {thread.isPending && <div className="sk" style={{ height: 48, marginTop: 10 }} />}
         {thread.data && !msgs.length && <p className="today-empty">{first} no te ha enviado mensajes hoy.</p>}
         {msgs.map((m) => (
           <div key={m.id} className="today-msg">
-            <div className="today-msg-top"><span className="today-kind">{msgKind(m)}</span><span className="note-date">{hhmm(m.createdAt)}{m.readAt ? "" : " · sin leer"}</span></div>
+            <div className="today-msg-top"><span className="today-kind">{m.hasVideo || m.youtubeId ? <Icon name="video" size={11} /> : m.audioPath ? <Icon name="mic" size={11} /> : m.imagePath ? <Icon name="camera" size={11} /> : <Icon name="message" size={11} />} {msgKind(m)}</span><span className="note-date">{hhmm(m.createdAt)}{m.readAt ? "" : " · sin leer"}</span></div>
             {m.body && <p className="today-quote" style={{ margin: "4px 0 0" }}>{m.body}</p>}
             {(m.hasVideo || m.imagePath || m.audioPath) && <button className="ghost-btn" style={{ height: 32, fontSize: 11.5, marginTop: 8 }} onClick={() => (m.hasVideo ? setMsgVideo(m.id) : onGo("Mensajes"))}>{m.hasVideo ? "Ver vídeo" : m.audioPath ? "Escuchar en Mensajes" : "Ver foto en Mensajes"}</button>}
           </div>))}

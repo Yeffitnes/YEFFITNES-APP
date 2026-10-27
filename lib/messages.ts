@@ -130,3 +130,11 @@ export function usePurgeMessages() {
     return () => { off = true; };
   }, [qc]);
 }
+
+// Audio suelto del coach (comentario de un entrenamiento): sube a la carpeta del cliente y devuelve la ruta.
+export async function uploadCoachAudio(ws: string, clientId: string, blob: Blob): Promise<string> {
+  const type = (blob.type || "audio/webm").split(";")[0], ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+  const path = `${ws}/${clientId}/${crypto.randomUUID()}.${ext}`;
+  const up = await db().storage.from("message-audio").upload(path, blob, { contentType: type }); if (up.error) throw up.error;
+  return path;
+}

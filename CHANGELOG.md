@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-10-26 - Audio en el comentario del entrenamiento + más acentos oscuros
+- Jeff puede dejar un audio (hasta 2 min) junto al comentario de un entrenamiento; el cliente lo oye en su pantalla "Hoy". El audio reemplazado o quitado se borra del almacenamiento con la limpieza de mensajes.
+- **Migración `0031_workout_comment_audio.sql` (hay que correrla en Supabase ANTES de que funcione esta versión).** Añade `workout_logs.coach_comment_audio`, amplía `protect_coach_columns` (un cliente no puede escribirla) y recrea `review_workout(p_log, p_comment, p_audio)`. Prueba nueva: `supabase/tests/rls_commentaudio.sql` (encontró y cerró que el cliente podía escribir la columna).
+- Hoy: reporte diario en tarjeta oscura con botones propios; iconos de marca en cada sección; mensajes con icono por tipo.
+- Avatares de cliente en negro con aro rojo (dashboard, clientes, mensajes, reportes); agenda: sesión confirmada en negro; se quitó el verde de estados (Activo, Confirmada, origen en el historial, punto "tiempo real", "Enviado").
+- Revertir: ver migración (instrucciones arriba) y el bloque "Acentos negros en clientes, agenda y estados" al final de `coach.css`.
+
 ## 2026-10-26 - Ficha del cliente: pestaña "Hoy"
 - Nueva primera pestaña "Hoy" (abre por defecto) con lo del día: entrenamiento (con detalle y revisión), nutrición (comidas marcadas), reporte diario (comentario, vídeo, marcar visto) y mensajes de hoy (con vídeo). Cuatro indicadores arriba; lo hecho va marcado en rojo, sin verde. "Resumen" queda como antes, sin mezclar.
 - Pestañas en celular: ya no se mueven arriba y abajo; estilo píldora con acento negro. Avatar y primer indicador con acentos negros.
