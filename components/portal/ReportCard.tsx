@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { localDate, useSubmitReport, useTodayReport, useVideoEnabled } from "@/lib/queries";
-import { MAX_VIDEO_MB, MAX_VIDEO_SECONDS, UploadError, discardVideo, uploadVideo } from "@/lib/upload-video";
+import { MAX_SOURCE_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS, UploadError, discardVideo, uploadVideo } from "@/lib/upload-video";
 import { Icon } from "@/components/ui/Icon";
 import { useVideoPick } from "@/components/ui/useVideoPick";
 import { QuickRow } from "./QuickRow";
@@ -14,7 +14,7 @@ export function ReportCard({ clientId }: { clientId: string }) {
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   // Si ya se había subido uno y se elige otro (o se quita), el anterior se descarta de inmediato: no queda ocupando espacio ni cupo.
   const choose = (f: File | null) => { discardVideo(videoId); setVideoId(null); setFile(f); };
-  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_VIDEO_SECONDS, maxMB: MAX_VIDEO_MB, onFile: choose, onError: setErr });
+  const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_VIDEO_SECONDS, maxSourceSeconds: MAX_SOURCE_SECONDS, maxMB: MAX_VIDEO_MB, onFile: choose, onError: setErr });
   if (rep.isPending || enabled.isPending) return <div className="sk" style={{ height: 58, marginBottom: 12 }} />;
   if (rep.data) return (
     <QuickRow icon="check" tone="ok" title="Reporte enviado" sub={rep.data.seen ? "Tu coach ya lo vio" : "Tu coach lo verá pronto"}>{rep.data.comment ? <p className="qrow-quote">“{rep.data.comment}”</p> : null}</QuickRow>);
@@ -43,7 +43,7 @@ export function ReportCard({ clientId }: { clientId: string }) {
           <button type="button" className="report-btn ghost" style={{ margin: 0, width: "100%" }} onClick={() => cam.current?.click()} disabled={busy}>Grabar ahora</button>
         </div>
         {file && preview && <div className="rep-pick"><video src={`${preview}#t=0.1`} muted playsInline preload="metadata" /><span><b>Vídeo listo para enviar</b><i>{file.name.slice(0, 28)} · {(file.size / 1048576).toFixed(file.size < 10485760 ? 1 : 0)} MB</i></span><button type="button" aria-label="Quitar vídeo" disabled={busy} onClick={() => choose(null)}><Icon name="close" size={14} /></button></div>}
-        <p style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 6 }}>Máximo {MAX_VIDEO_SECONDS} segundos: si el vídeo es más largo, lo recortas aquí mismo. Muestra que entrenaste. Se borra solo después de que tu coach lo vea.</p>
+        <p style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 6 }}>Máximo {MAX_VIDEO_SECONDS} segundos; con 10 a 20 s es suficiente y sube más rápido. Si el vídeo dura hasta {MAX_SOURCE_SECONDS} s, lo recortas aquí mismo. Muestra que entrenaste. Se borra solo después de que tu coach lo vea.</p>
       </>}
       <textarea aria-label="Comentario del día" maxLength={1000} placeholder="¿Cómo te sentiste? ¿Algo que tu coach deba saber? (obligatorio)" value={comment} onChange={(e) => setComment(e.target.value)} style={{ width: "100%", minHeight: 70, marginTop: 12, border: "1px solid var(--line)", borderRadius: 12, padding: 12, fontSize: 13.5, resize: "vertical" }} />
       {pct !== null && <div style={{ marginTop: 10 }} aria-live="polite"><div style={{ height: 6, borderRadius: 6, background: "var(--line)", overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: "var(--accent)", transition: "width .3s" }} /></div><div style={{ fontSize: 12, marginTop: 4, color: "var(--text-dim)" }}>Subiendo vídeo… {pct}%. No cierres esta pantalla.</div></div>}

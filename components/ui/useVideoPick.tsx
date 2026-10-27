@@ -5,7 +5,7 @@ import { videoDuration } from "@/lib/upload-video";
 import { VideoTrimmer } from "@/components/ui/VideoTrimmer";
 import { BrandLoader } from "@/components/ui/BrandLoader";
 // Elegir un vídeo: si se pasa del máximo, se abre el cortador en vez de rechazarlo. Si cabe, se sube tal cual (sin recomprimir).
-export function useVideoPick({ maxSeconds, maxMB, onFile, onError }: { maxSeconds: number; maxMB: number; onFile: (f: File) => void; onError: (m: string) => void }) {
+export function useVideoPick({ maxSeconds, maxSourceSeconds, maxMB, onFile, onError }: { maxSeconds: number; maxSourceSeconds?: number; maxMB: number; onFile: (f: File) => void; onError: (m: string) => void }) {
   const [pending, setPending] = useState<{ file: File; duration: number } | null>(null);
   const [busy, setBusy] = useState<{ label: string; pct?: number; skip?: boolean } | null>(null);
   const pick = async (f: File | null) => {
@@ -13,6 +13,7 @@ export function useVideoPick({ maxSeconds, maxMB, onFile, onError }: { maxSecond
     if (!f.type.startsWith("video/") && !/\.(mp4|mov|m4v|webm|3gp|mkv|avi|hevc)$/i.test(f.name)) return onError("Elige un vídeo.");
     setBusy({ label: "Leyendo tu vídeo…" });
     const d = await videoDuration(f);
+    if (d && maxSourceSeconds && d > maxSourceSeconds + 1) { setBusy(null); return onError(`Ese vídeo dura ${Math.round(d)} s. Elige uno de máximo ${maxSourceSeconds} s (lo ideal es ${maxSeconds} s o menos).`); }
     if (d && d > maxSeconds + 1) { setBusy(null); return setPending({ file: f, duration: d }); }
     setBusy(null);
     if (f.size > maxMB * 1048576) return onError(`El vídeo pesa demasiado (máx. ${maxMB} MB).`);

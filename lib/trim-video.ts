@@ -1,5 +1,5 @@
 // Recorta (y ajusta de tamaño) un vídeo en el propio teléfono, sin librerías pesadas: se reproduce el tramo elegido
-// sobre un lienzo y se graba con MediaRecorder. Tarda lo que dura el tramo (≤ 30 s) y deja un archivo liviano (≤ 720p).
+// sobre un lienzo y se graba con MediaRecorder. Tarda lo que dura el tramo (≤ 20 s) y deja un archivo liviano (≤ 720p).
 export class TrimError extends Error { constructor(public code: "unsupported" | "failed" | "cancelled", public reason = "") { super(code); } }
 const MIMES = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
 export const trimSupported = () => typeof MediaRecorder !== "undefined" && typeof HTMLCanvasElement !== "undefined" && "captureStream" in HTMLCanvasElement.prototype;

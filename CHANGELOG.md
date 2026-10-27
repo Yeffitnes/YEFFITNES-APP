@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-10-26 - Vídeos del cliente más cortos
+- Reporte y mensaje del cliente: máximo 20 s al enviar (antes 30). Se pueden elegir vídeos de hasta 60 s para recortarlos; uno más largo se rechaza al elegirlo, con un mensaje claro. El coach no cambia (hasta 300 s).
+- Archivos: `lib/upload-video.ts` (`MAX_VIDEO_SECONDS`, `MAX_SOURCE_SECONDS`), `components/ui/useVideoPick.tsx` (`maxSourceSeconds`), `ReportCard`, `ThreadView`.
+- Revertir: `MAX_VIDEO_SECONDS = 30` y quitar `maxSourceSeconds` de las dos llamadas a `useVideoPick`.
+
 ## 2026-10-26 - Prueba: selector de galería sin conversión (iPhone)
 - `ReportCard`: el selector "Elegir de la galería" acepta tipos concretos (mp4, mov, m4v) en vez de `video/*`, para que el iPhone entregue el vídeo sin convertirlo. Experimento, solo se ve en Vercel hasta fusionar.
 - Revertir: volver a `accept="video/*"` en el input `gallery` de `components/portal/ReportCard.tsx`.
