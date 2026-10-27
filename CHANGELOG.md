@@ -1,6 +1,9 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Se quita el aligerado automático de vídeos
+- Los vídeos que caben en el máximo se suben tal cual (sin recomprimir): el aligerado añadía espera y no era necesario. Se mantiene el recorte solo cuando el vídeo se pasa del máximo. El cortador carga solo los metadatos (`preload="metadata"`) para gastar menos memoria con vídeos largos. Revertir: `git revert`.
+
 ## 2026-10-26 · Vídeos de galería: la espera ya no puede alargarse sin control
 - Reporte de uso: un vídeo de la galería tardaba unos 10 min en quedar listo. Causa no confirmada (puede ser la conversión/descarga de iCloud que hace el propio teléfono al elegirlo, o el aligerado que añadí). Cambios: el aligerado tiene un tope de tiempo (1,6 × la duración + 12 s) y un botón "Subir sin optimizar"; si el vídeo deja de avanzar 8 s se corta solo y se sube el original; abortar ahora sí termina la operación (antes quedaba colgada). La pantalla de carga dice en qué fase va ("Leyendo…", "Optimizando… N %").
 - Probado en Chromium: recorte de 6 s en 6,5 s; abortar a los 1,5 s corta en 1,5 s. Sin probar en teléfono real.

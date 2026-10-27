@@ -48,7 +48,7 @@ export function VideoTrimmer({ file, duration, maxSeconds, onDone, onCancel }: {
         <p className="vt-sub">Tu vídeo dura {fmt(duration)}. Elige el tramo que quieres enviar (máximo {maxSeconds} s).</p>
         <div className="vt-stage">
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video ref={vid} src={url ? `${url}#t=0.1` : undefined} playsInline preload="auto" onLoadedMetadata={() => seek(0)} onClick={toggle} />
+          <video ref={vid} src={url ? `${url}#t=0.1` : undefined} playsInline preload="metadata" onLoadedMetadata={() => seek(0)} onClick={toggle} />
           {!playing && !busy && <button type="button" className="vt-play" aria-label="Reproducir" onClick={toggle}><Icon name="play" size={22} /></button>}
           {busy && <div className="vt-busy"><BrandLoader dark label={`Preparando tu vídeo… ${pct}%`} /></div>}
         </div>
