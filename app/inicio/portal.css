@@ -1094,3 +1094,29 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
   .main{max-width:100%}
 }
 .sess-tag{background:var(--ink);color:#fff}
+
+/* ───── Bloqueo por plan y cuenta pendiente (diseño FeatureGate de DaniFit en la marca; 27-oct) ───── */
+.lk-card{position:relative;overflow:hidden;min-height:190px;border:1px solid var(--line);border-radius:18px;background:#fff;padding:20px}
+.lk-ghost{filter:blur(3px);user-select:none;opacity:.75}
+.lk-tag{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px}
+.lk-line{height:11px;border-radius:6px;background:var(--line);margin-top:10px;width:100%}
+.lk-line.w60{width:60%;height:15px;margin-top:0}.lk-line.w80{width:80%}
+.lk-over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.88) 55%,rgba(255,255,255,.96) 100%)}
+.lk-ico{width:38px;height:38px;flex:none;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:12px;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.lk-title{font-family:var(--font-display),sans-serif;font-weight:600;font-size:15px;margin-bottom:4px;color:var(--text)}
+.lk-sub{font-size:12.5px;color:var(--text-dim);line-height:1.5;margin-bottom:14px;max-width:240px}
+.lk-cta{display:inline-flex;align-items:center;gap:7px;padding:0 16px;height:38px;border-radius:10px;border:0;cursor:pointer;color:#fff;font:inherit;font-weight:700;font-size:12.5px;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);transition:opacity .2s ease,transform .2s ease}
+.lk-cta:hover{opacity:.9;transform:translateY(-1px)}.lk-cta:disabled{opacity:.6;cursor:default;transform:none}
+.lk-sent{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text);max-width:280px;line-height:1.45}
+.lk-sent svg{color:var(--neon);flex:none}
+.lk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:14px}
+.lk-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;padding:16px 18px;border-radius:18px;color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.45),transparent 62%),var(--ink)}
+.lk-banner .lk-ico{margin:0;background:rgba(255,255,255,.1)}
+.lk-banner-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px;font-size:13px;line-height:1.45}
+.lk-banner-txt span{color:rgba(255,255,255,.72)}
+.lk-banner .lk-cta{background:#fff;color:var(--ink)}
+.lk-banner .lk-sent{color:#fff}

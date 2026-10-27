@@ -1,19 +1,26 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useMaterialList, useOpenMaterial, type MaterialItem, type MaterialOpen } from "@/lib/queries";
+import { useMaterialList, useOpenMaterial, useMe, type MaterialItem, type MaterialOpen } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 import { VideoModal } from "./VideoModal";
 import { upgradeLink } from "@/lib/features";
+import { PendingSection } from "./LockedPanel";
+import { useProfile } from "@/components/Providers";
 import { Icon } from "@/components/ui/Icon";
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function MaterialClientView() {
-  const { data, isPending, isError, refetch } = useMaterialList(), open = useOpenMaterial();
+  const { data, isPending, isError, refetch } = useMaterialList(), open = useOpenMaterial(), { profileId } = useProfile(), me = useMe(profileId);
   const [q, setQ] = useState(""), [f, setF] = useState<"all" | "article" | "video">("all"), [shown, setShown] = useState<MaterialOpen | null>(null), [locked, setLocked] = useState<MaterialItem | null>(null);
   const all = data ?? [], feat = all.find((m) => m.featured && m.unlocked);
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   const go = (m: MaterialItem) => { if (!m.unlocked) return setLocked(m); open.mutate(m.id, { onSuccess: setShown }); };
   const lockLink = upgradeLink("education_full");
+  if (me.data?.status === "pending") return <PendingSection eyebrow="Material" title="Material de Jeff" panels={[
+    { tag: "Vídeo", title: "Técnica de ejercicios", sub: "Cómo hacer cada movimiento bien, explicado por Jeff." },
+    { tag: "Artículo", title: "Guías y consejos", sub: "Lo que necesitas saber para entrenar y comer mejor." },
+    { tag: "Vídeo", title: "Vídeos de Jeff", sub: "Mensajes y clases que Jeff publica para sus clientes." },
+  ]} />;
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>Aprende con tu coach</h1><p className="greeting-sub">{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"} para acompañar tu proceso` : "Cargando…"}</p></div></div>

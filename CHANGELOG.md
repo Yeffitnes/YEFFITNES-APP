@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-10-27 - Cliente sin plan dentro de la app, con candados y "Solicitar acceso"
+- Decisión de Cristian: el cliente que se registra **entra a la app** (antes quedaba en una pantalla aparte). Ve todos los paneles con el candado borroso del FeatureGate de DaniFit (en la marca) y arriba un aviso con el botón **"Solicitar acceso a Jeff"**.
+- Al pedir acceso, a Jeff le llega un aviso push y en **Clientes** el cliente sale primero con "Pidió acceso · hoy · asígnale un plan". Se puede volver a avisar cada 12 h.
+- Cuando Jeff le asigna el plan, al cliente le llega "Tu plan está activo" (una sola vez).
+- `FeatureGate` ahora usa el mismo panel bloqueado: sin plan → "Solicitar acceso"; con un plan que no lo incluye → "Hablar con tu coach".
+- Hoy, Agenda, Material y Objetivos muestran paneles bloqueados al cliente pendiente; Mi plan y Progreso usan el FeatureGate. Mensajes sigue abierto para el pendiente, solo texto (3 al día), para que Jeff pueda hablarle.
+- `/pendiente` queda solo para cuentas **en pausa**.
+- **Migración `0034_access_request.sql` (correrla en Supabase ANTES de subir este código).** Columnas nuevas en `clients` (`access_requested_at`, `activated_at`, `activation_notified_at`), `request_access()`, `activation_targets()` y un disparador al activar. Prueba nueva: `supabase/tests/rls_access.sql`.
+- Archivos: `components/portal/LockedPanel.tsx` (nuevo), `components/FeatureGate.tsx`, `app/api/access/*` (nuevas), `app/inicio/layout.tsx`, `app/pendiente/page.tsx`, vistas del portal, `ClientsView.tsx`, `lib/queries.ts`, bloque "Bloqueo por plan" al final de `portal.css`.
+- Revertir: ver la cabecera de la migración; en `app/inicio/layout.tsx` volver a `if (!client || client.status !== "active") redirect("/pendiente")`; restaurar `FeatureGate.tsx` y `app/pendiente/page.tsx` del commit `0fffddf`.
+
 ## 2026-10-27 - Borrado garantizado de los vídeos del reporte
 - Reglas nuevas (decisión de Cristian): el vídeo se borra **32 h después de enviado si Jeff no lo ve** y **12 h después de que Jeff lo marca visto**. Antes: 7 días y 24 h.
 - **Migración `0033_report_video_expiry.sql` (correrla en Supabase ANTES de subir este código a producción).** Cambia los plazos en `submit_report` y `review_report` (mismas firmas: `main` sigue funcionando), ajusta los vídeos ya subidos y crea las funciones de la tarea programada (validan la clave del cron).

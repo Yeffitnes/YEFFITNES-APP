@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { changeSessionLink } from "@/lib/features";
 import { icsHref } from "@/lib/ics";
+import { PendingSection } from "./LockedPanel";
 import { KIND_COLOR, KIND_LABEL, useBookSlot, useCancelBooking, useMe, useMyBookings, useOpenSlots, weekBounds, type Slot } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { DAY3, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
@@ -15,6 +16,10 @@ export function AgendaClientView() {
   const list = (slots.data ?? []).filter((s) => new Date(s.startsAt) > now && (filter === "all" || s.kind === filter));
   const when = (iso: string) => `${new Date(iso).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })} · ${hhmm(iso)}`;
   const upcoming = mine.data ?? [];
+  if (me.data?.status === "pending") return <PendingSection eyebrow="Agenda" title="Tus sesiones con Jeff" panels={[
+    { tag: "Agenda", title: "Horarios disponibles", sub: "Jeff publica sus horarios y tú eliges el que te sirva." },
+    { tag: "Reservas", title: "Tus próximas sesiones", sub: "Tus llamadas reservadas, con recordatorio antes de empezar." },
+  ]} />;
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Reserva tu próxima sesión</h1><p className="greeting-sub">Tu coach publica horarios cada semana. Elige el que te sirve y confirma al instante. Puedes tener una sesión reservada a la vez y cancelarla hasta 24 horas antes.</p></div></div>

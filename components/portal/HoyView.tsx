@@ -16,6 +16,7 @@ import { DAY_LONG, categoryLabel, weekDates } from "@/lib/week";
 import { Icon } from "@/components/ui/Icon";
 import { QuickRow } from "./QuickRow";
 import { RoutineVideo } from "./RoutineVideo";
+import { PendingSection } from "./LockedPanel";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
@@ -42,6 +43,14 @@ export function HoyView() {
   const plans = useTrainingPlans(cid), logs = useLogs(cid);
   if (me.isPending || (cid && (plans.isPending || logs.isPending))) return <div aria-busy="true"><div className="sk" style={{ height: 30, width: 200, marginBottom: 22 }} /><div className="sk" style={{ height: 80, marginBottom: 18 }} /><div className="sk" style={{ height: 260 }} /></div>;
   if (me.isError || plans.isError || logs.isError) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu día. Revisa tu conexión e inténtalo de nuevo.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => { me.refetch(); plans.refetch(); logs.refetch(); }}>Reintentar</button></div>;
+  if (me.data?.status === "pending") return <PendingSection eyebrow={cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))} title={`Hola, ${name.split(" ")[0] || ""}`} panels={[
+    { tag: "Hoy", title: "Tu entrenamiento del día", sub: "Rutina, series y peso de cada ejercicio, armados por Jeff para ti." },
+    { tag: "Reporte", title: "Reporte diario", sub: "Un vídeo corto y un comentario para que Jeff vea cómo vas." },
+    { tag: "Nutrición", title: "Tu nutrición de hoy", sub: "Tus comidas del día para marcarlas a medida que cumples." },
+    { tag: "Progreso", title: "Tu progreso", sub: "Peso, medidas y fotos para ver tu cambio semana a semana." },
+    { tag: "Agenda", title: "Llamada con Jeff", sub: "Reserva tu llamada para conocerse y ajustar tu plan." },
+    { tag: "Vídeo", title: "Vídeo de la semana", sub: "El mensaje de Jeff para empezar la semana." },
+  ]} />;
   const today = localDate(), wd = (new Date().getDay() + 6) % 7 + 1;
   const plan = plans.data?.find((p) => p.status === "active"), day = plan?.days.find((d) => d.weekday === wd);
   const logList = logs.data ?? [], logToday = logList.find((l) => l.date === today);

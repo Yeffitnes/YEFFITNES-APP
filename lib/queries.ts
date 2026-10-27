@@ -4,12 +4,12 @@ import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 
 export type Plan = { id: string; name: string; features: string[] };
-export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null };
+export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
-type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; plans: unknown; profiles: unknown };
+type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; plans: unknown; profiles: unknown };
 type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
@@ -17,9 +17,9 @@ export const fetchPlans = async (): Promise<Plan[]> => {
   if (error) throw error; return data as Plan[];
 };
 export const fetchClients = async (): Promise<ClientRow[]> => {
-  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
+  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
   if (error) throw error;
-  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at }));
+  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
   const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,template_items(count)").eq("active", true).order("name");
@@ -47,6 +47,8 @@ export function useSetPlan() {
     mutationFn: async ({ id, planId }: { id: string; planId: string | null }) => {
       const { error } = await db().from("clients").update(planId ? { plan_id: planId, status: "active" } : { plan_id: null, status: "pending" }).eq("id", id);
       if (error) throw error;
+      // Si se acaba de activar, le llega "Tu plan está activo" (la base de datos decide si toca; si no, no envía nada).
+      if (planId) void fetch("/api/access/activated", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId: id }) }).catch(() => {});
     },
     onMutate: async ({ id, planId }) => {
       await qc.cancelQueries({ queryKey: KEYS.clients });
@@ -169,13 +171,22 @@ export function useSetWeight(clientId: string) {
 }
 
 // ---- Portal del cliente ----
-export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean; objective: string | null; objectiveAt: string | null };
+export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null };
 export const fetchMe = async (profileId: string): Promise<Me | null> => {
-  const { data, error } = await db().from("clients").select("id,status,onboarded_at,objective,objective_at,plans(name,features)").eq("profile_id", profileId).maybeSingle();
+  const { data, error } = await db().from("clients").select("id,status,onboarded_at,objective,objective_at,access_requested_at,plans(name,features)").eq("profile_id", profileId).maybeSingle();
   if (error) throw error; if (!data) return null;
   const p = (data as unknown as { plans: { name: string; features: string[] } | null }).plans;
-  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at, objective: (data as unknown as { objective: string | null }).objective, objectiveAt: (data as unknown as { objective_at: string | null }).objective_at };
+  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at, objective: (data as unknown as { objective: string | null }).objective, objectiveAt: (data as unknown as { objective_at: string | null }).objective_at, accessRequestedAt: (data as unknown as { access_requested_at: string | null }).access_requested_at };
 };
+// El cliente pendiente pide acceso a su coach (0034). Devuelve la hora de la solicitud para pintarla al instante.
+export function useRequestAccess(profileId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async () => { const r = await fetch("/api/access/request", { method: "POST" }); if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error ?? "failed"); },
+    onSuccess: () => { qc.setQueryData<Me | null>(["me", profileId], (m) => (m ? { ...m, accessRequestedAt: new Date().toISOString() } : m)); toast("Listo. Le avisamos a tu coach."); },
+    onError: (e) => toast((e as Error).message === "not_pending" ? "Tu cuenta ya está activa. Recarga la app." : "No pudimos enviar la solicitud. Revisa tu conexión e inténtalo de nuevo.", true),
+  });
+}
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, enabled: !!profileId, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
 export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; sets: SetLog[] };
