@@ -1073,11 +1073,9 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .rep-pick span i{font-style:normal;color:var(--text-dim);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .rep-pick button{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
 
-/* Cabecera oscura en celular: ocupa también la zona de la barra de estado del iPhone (sin franja cortada) */
+/* Celular: cabecera clara que respeta la zona segura del iPhone */
 @media (max-width:1020px){
-  .main > .m-logo{display:block;margin:-22px -20px 0;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 44px;position:relative;
-    background:linear-gradient(180deg,#0A0910 0,#0A0910 calc(100% - 30px),rgb(20,19,26) calc(100% - 26px),rgb(47,46,53) calc(100% - 22px),rgb(84,84,90) calc(100% - 19px),rgb(128,128,133) calc(100% - 15px),rgb(171,171,176) calc(100% - 11px),rgb(208,209,213) calc(100% - 8px),rgb(235,236,240) calc(100% - 4px),rgb(245,246,250) 100%);}
-  .main > .m-logo .m-logo-row{position:relative;z-index:2}
-  .main > .m-logo .pm-btn{box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+  .main{padding-top:calc(22px + env(safe-area-inset-top,0px))}
+  .main > .m-logo{display:block;margin:0 0 16px}
 }
 @media (min-width:1021px){.main > .m-logo{display:none}}

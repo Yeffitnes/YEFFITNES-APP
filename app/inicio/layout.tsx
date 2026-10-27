@@ -19,7 +19,7 @@ export default async function PortalLayout({ children }: { children: React.React
     <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name} prefetch={false} me={{ id: client.id, status: client.status, planName: (client.plans as unknown as { name: string } | null)?.name ?? null, features: (client.plans as unknown as { features: string[] } | null)?.features ?? [], onboarded: !!client.onboarded_at, objective: client.objective, objectiveAt: client.objective_at }}>
       <div className="shell">
         <PortalSide />
-        <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Cliente" /></div></div><ActionsBar side="client" />{children}</main>
+        <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Cliente" /></div></div><ActionsBar side="client" />{children}</main>
         <PortalBottomNav />
         <Onboarding />
         <Warmup />

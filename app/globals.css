@@ -87,7 +87,7 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 /* Perfil en celular */
 .m-logo-row{display:flex;align-items:center;justify-content:space-between}
 .pm{position:relative}
-.pm-btn{width:38px;height:38px;border-radius:50%;border:0;background:linear-gradient(135deg,#E5322D,#B71C4B);color:#fff;font-weight:800;font-size:13px;letter-spacing:.02em;cursor:pointer;display:grid;place-items:center}
+.pm-btn{width:38px;height:38px;border-radius:50%;border:0;background:var(--ink,#0A0910);color:#fff;font-weight:800;font-size:13px;letter-spacing:.02em;cursor:pointer;display:grid;place-items:center;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(247,37,75,.6)}
 .pm-menu{position:absolute;right:0;top:46px;z-index:95;min-width:200px;background:#fff;border:1px solid var(--line,#e5e5e5);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px}
 .pm-who{display:grid;gap:2px;padding:10px 12px;border-bottom:1px solid var(--line,#eee);margin-bottom:4px}
 .pm-who b{font-size:13.5px;color:var(--ink,#111)}.pm-who span{font-size:11.5px;color:var(--text-dim,#666)}

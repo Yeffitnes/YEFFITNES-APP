@@ -682,15 +682,16 @@ html{scroll-behavior:smooth;}
 .side-group-label{color:rgba(205,177,112,.55);}
 .side-coach{background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);}
 
-/* Cabecera oscura en celular: ocupa también la zona de la barra de estado del iPhone (sin franja cortada) */
+/* Celular: cabecera clara que respeta la zona segura del iPhone + acentos negros como en el panel del cliente */
 @media (max-width:1080px){
-  .main > .m-logo{display:block;margin:-20px -16px 0;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 44px;position:relative;
-    background:linear-gradient(180deg,#0A0910 0,#0A0910 calc(100% - 30px),rgb(20,19,26) calc(100% - 26px),rgb(47,46,53) calc(100% - 22px),rgb(84,84,90) calc(100% - 19px),rgb(128,128,133) calc(100% - 15px),rgb(171,171,176) calc(100% - 11px),rgb(208,209,213) calc(100% - 8px),rgb(235,236,240) calc(100% - 4px),rgb(245,246,250) 100%);}
-  .main > .m-logo .m-logo-row{position:relative;z-index:2}
-  .main > .m-logo .pm-btn{box-shadow:0 0 0 2px rgba(255,255,255,.14)}
-}
-@media (max-width:1080px){
-  .mobile-nav{margin-top:0}
+  .main{padding-top:calc(20px + env(safe-area-inset-top,0px))}
+  .main > .m-logo{display:block;margin:0 0 16px}
   .mobile-nav a{background:#fff;box-shadow:0 1px 0 rgba(10,9,16,.04)}
-  .mobile-nav a.active{background:linear-gradient(90deg,var(--neon),var(--rose));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(247,37,75,.28)}
+  .mobile-nav a.active{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);border-color:var(--ink);color:#fff}
+  .primary-btn{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.55),transparent 60%),var(--ink)}
+  .kpi-card:first-child{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.3),transparent 60%),var(--ink);border-color:var(--ink)}
+  .kpi-card:first-child .kpi-label{color:rgba(255,255,255,.7)}
+  .kpi-card:first-child .kpi-val{color:#fff}
+  .kpi-card:first-child .kpi-sub{color:rgba(255,255,255,.55)}
+  .kpi-card:first-child .kpi-sub.alert{color:#ff8a9a}
 }
