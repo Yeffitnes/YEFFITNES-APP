@@ -694,4 +694,13 @@ html{scroll-behavior:smooth;}
   .kpi-card:first-child .kpi-val{color:#fff}
   .kpi-card:first-child .kpi-sub{color:rgba(255,255,255,.55)}
   .kpi-card:first-child .kpi-sub.alert{color:#ff8a9a}
+  /* Mismo lenguaje en el resto: negro con brillo rojo suave en lo activo y lo que pide acción */
+  .filter-chip.active,.day-tab.active,.day-pill.active,.modal-btn.primary,.week-today-btn{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);border-color:var(--ink);color:#fff}
+  .card-dark{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.34),transparent 60%),radial-gradient(90% 140% at 100% 100%,rgba(205,177,112,.14),transparent 60%),var(--ink);border-color:var(--ink);color:#fff}
+  .card-dark .card-tag{color:var(--pearl)}
+  .card-dark .card-title{color:#fff}
+  .main .inbox-row.active{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.45),transparent 62%),var(--ink);border-color:var(--ink);box-shadow:none}
+  .main .inbox-row.active .inbox-name{color:#fff}
+  .main .inbox-row.active .inbox-last{color:rgba(255,255,255,.65)}
+  .day-col.today .day-col-num{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.6),transparent 62%),var(--ink)}
 }

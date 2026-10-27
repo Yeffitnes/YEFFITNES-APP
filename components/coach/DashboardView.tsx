@@ -45,7 +45,7 @@ export function DashboardView() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {unseenReports > 0 && <Link href="/coach/reportes" className="card" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar <Icon name="arrow" size={13} /></div></Link>}
+          {unseenReports > 0 && <Link href="/coach/reportes" className="card card-dark" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar <Icon name="arrow" size={13} /></div></Link>}
           <MessagesCard />
           <AgendaTodayCard />
           <ActivityCard />

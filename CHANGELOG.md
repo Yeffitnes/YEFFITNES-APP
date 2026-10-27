@@ -3,7 +3,7 @@
 - Botón "Cancelar" en: lectura del vídeo, subida del reporte, subida de vídeo en mensajes y subida en segundo plano (coach). Cancelar corta la subida y borra el vídeo parcial en Bunny. Código `cancelled` en `lib/upload-video.ts` (`signal`).
 - Cerrar sesión en celular: el círculo con las iniciales (junto al logo, cliente y coach) abre un menú con "Cerrar sesión" (`components/ProfileMenu.tsx`).
 - Corrección iPhone instalado: el contenido queda debajo de la barra de estado (margen de zona segura arriba). Sin franja ni cabecera oscura (se probó y se descartó).
-- Coach en celular: acentos negros como el panel del cliente (botones principales y sección activa en negro con brillo rojo suave; primera tarjeta del dashboard en negro).
+- Coach en celular: acentos negros como el panel del cliente (botones principales y sección activa en negro con brillo rojo suave; primera tarjeta del dashboard en negro). Extendido a chips de filtro activos (Todos, Pendientes...), pestañas de día de la agenda y "Hoy", conversación activa de la bandeja de mensajes, botones primarios de los diálogos y la tarjeta "Reportes diarios por revisar" del dashboard (`.card-dark`).
 - Revertir: quitar el `signal` de `uploadVideo` y los botones; quitar `ProfileMenu` de `app/inicio/layout.tsx` y `app/coach/layout.tsx`; para los acentos, borrar el bloque "Celular" al final de `coach.css`.
 
 ## 2026-10-26 - Subida de vídeo en segundo plano (coach)
