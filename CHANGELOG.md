@@ -1,6 +1,11 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Vídeos de galería: la espera ya no puede alargarse sin control
+- Reporte de uso: un vídeo de la galería tardaba unos 10 min en quedar listo. Causa no confirmada (puede ser la conversión/descarga de iCloud que hace el propio teléfono al elegirlo, o el aligerado que añadí). Cambios: el aligerado tiene un tope de tiempo (1,6 × la duración + 12 s) y un botón "Subir sin optimizar"; si el vídeo deja de avanzar 8 s se corta solo y se sube el original; abortar ahora sí termina la operación (antes quedaba colgada). La pantalla de carga dice en qué fase va ("Leyendo…", "Optimizando… N %").
+- Probado en Chromium: recorte de 6 s en 6,5 s; abortar a los 1,5 s corta en 1,5 s. Sin probar en teléfono real.
+- Revertir: `git revert` del commit.
+
 ## 2026-10-26 · Hoy: el audio del coach se escucha en la fila del mensaje
 - La fila "Mensaje de tu coach" de Hoy decía "Te envió una foto" para los audios. Ahora dice "Te envió un audio" y trae el reproductor dentro de la fila (más el texto, si lo hay). Revertir: `git revert`.
 

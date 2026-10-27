@@ -30,6 +30,8 @@ export async function trimVideo(file: File, start: number, end: number, onProgre
     await new Promise<void>((res) => { v.onseeked = () => res(); setTimeout(res, 3000); });
     const done = new Promise<Blob>((res, rej) => { rec!.onstop = () => res(new Blob(chunks, { type: rec!.mimeType || mime || "video/webm" })); rec!.onerror = () => rej(new TrimError("failed")); });
     const finish = () => { if (rec && rec.state !== "inactive") rec.stop(); };
+    signal?.addEventListener("abort", finish);
+    let lastT = -1, lastMove = Date.now(), stalled = false;
     const tick = () => {
       if (stopped) return;
       ctx.drawImage(v, 0, 0, w, h);
@@ -39,12 +41,15 @@ export async function trimVideo(file: File, start: number, end: number, onProgre
       raf = requestAnimationFrame(tick);
     };
     // Si la pestaña se oculta, requestAnimationFrame se detiene: un temporizador de respaldo sigue pintando.
-    timer = window.setInterval(() => { if (document.hidden && !stopped) { ctx.drawImage(v, 0, 0, w, h); if (v.currentTime >= end - 0.02 || v.ended) finish(); } }, 100);
+    timer = window.setInterval(() => {
+      if (v.currentTime !== lastT) { lastT = v.currentTime; lastMove = Date.now(); } else if (Date.now() - lastMove > 8000 && !stopped) { stalled = true; finish(); }   // el vídeo no avanza: se corta en vez de esperar
+      if (document.hidden && !stopped) { ctx.drawImage(v, 0, 0, w, h); if (v.currentTime >= end - 0.02 || v.ended) finish(); } }, 100);
     rec.start(500);
     try { await v.play(); } catch { v.muted = true; await v.play(); }   // Safari puede negar el sonido sin un toque reciente: se graba igual, sin audio
     raf = requestAnimationFrame(tick);
     const blob = await done;
     if (signal?.aborted) throw new TrimError("cancelled");
+    if (stalled) throw new TrimError("failed", "el vídeo no avanzaba");
     if (!blob.size) throw new TrimError("failed");
     const ext = blob.type.includes("mp4") ? "mp4" : "webm";
     onProgress(100);
