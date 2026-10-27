@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-26 - Prueba: selector de galería sin conversión (iPhone)
+- `ReportCard`: el selector "Elegir de la galería" acepta tipos concretos (mp4, mov, m4v) en vez de `video/*`, para que el iPhone entregue el vídeo sin convertirlo. Experimento, solo se ve en Vercel hasta fusionar.
+- Revertir: volver a `accept="video/*"` en el input `gallery` de `components/portal/ReportCard.tsx`.
+
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
 ## 2026-10-26 · Vídeos huérfanos: ya no quedan guardados ni gastan cupo (migración 0030)

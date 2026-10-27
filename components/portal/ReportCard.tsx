@@ -36,7 +36,7 @@ export function ReportCard({ clientId }: { clientId: string }) {
     <QuickRow icon="video" tone="todo" title="Reporte de hoy" sub={needVideo ? "Vídeo y comentario obligatorios" : "Comentario obligatorio"} chip="Pendiente">
       <div className="card-title" style={{ fontSize: 15 }}>Cuéntale a tu coach cómo te fue</div>
       {needVideo && <>
-        <input ref={gallery} type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+        <input ref={gallery} type="file" accept="video/mp4,video/quicktime,video/x-m4v,.mov,.mp4,.m4v" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
         <input ref={cam} type="file" accept="video/*" capture="user" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
           <button type="button" className="report-btn ghost" style={{ margin: 0, width: "100%" }} onClick={() => gallery.current?.click()} disabled={busy}><Icon name="video" size={16} /> {file ? "Cambiar vídeo" : "Elegir de la galería"}</button>
