@@ -14,5 +14,10 @@ export async function POST() {
   for (const v of (due ?? []) as { id: string; video_id: string }[]) {
     try { await deleteVideo(v.video_id); const { error: e2 } = await supabase.rpc("mark_video_deleted", { p_id: v.id }); if (!e2) deleted++; } catch { /* se reintenta la próxima vez */ }
   }
+  // Vídeos huérfanos (subidos hace más de 30 min y nunca usados): fuera de Bunny y del registro.
+  const { data: orphans } = await supabase.rpc("due_orphan_videos");
+  for (const o of (orphans ?? []) as { video_id: string }[]) {
+    try { await deleteVideo(o.video_id); const { data: ok } = await supabase.rpc("discard_video_upload", { p_video: o.video_id }); if (ok) deleted++; } catch { /* se reintenta */ }
+  }
   return NextResponse.json({ deleted });
 }

@@ -1,6 +1,12 @@
 # CHANGELOG
 Formato: fecha · título · qué y por qué · archivos/SQL · **cómo revertir**. Lo más reciente arriba.
 
+## 2026-10-26 · Vídeos huérfanos: ya no quedan guardados ni gastan cupo (migración 0030)
+- Problema: la subida anticipada del reporte creaba un vídeo en Bunny por cada intento; al cambiar de vídeo el anterior quedaba guardado y contaba para el límite de 5 al día ("ya subiste varios vídeos hoy"). Ahora: el vídeo se sube SOLO al enviar el reporte; si se cambia o se quita uno ya subido, o si la subida/el envío falla, se descarta al instante (`/api/video/discard` → Bunny + registro, libera el cupo); y cualquier huérfano de más de 30 min se borra cuando el coach abre Reportes (`/api/video/purge`).
+- SQL `0030_discard_videos.sql`: `discard_video_upload`, `due_orphan_videos`, `_video_in_use`. Prueba nueva `rls_videodiscard.sql` (no descarta ajenos ni en uso; solo el coach lista huérfanos). Suite completa "TODO OK"; build compila. Sin probar con Bunny real.
+- El reporte muestra una vista previa del vídeo elegido (miniatura, nombre, peso) y un botón para quitarlo.
+- Revertir: `git revert` + `drop function public.discard_video_upload(text); drop function public.due_orphan_videos(); drop function public._video_in_use(text);`.
+
 ## 2026-10-26 · Se quita el aligerado automático de vídeos
 - Los vídeos que caben en el máximo se suben tal cual (sin recomprimir): el aligerado añadía espera y no era necesario. Se mantiene el recorte solo cuando el vídeo se pasa del máximo. El cortador carga solo los metadatos (`preload="metadata"`) para gastar menos memoria con vídeos largos. Revertir: `git revert`.
 

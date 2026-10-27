@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast, useWorkspaceId } from "@/components/Providers";
 import { compressImage } from "@/lib/image";
-import { uploadVideo, UploadError } from "@/lib/upload-video";
+import { discardVideo, uploadVideo, UploadError } from "@/lib/upload-video";
 
 export type Msg = { id: string; sender: "client" | "coach"; body: string | null; imagePath: string | null; audioPath: string | null; hasVideo: boolean; youtubeId: string | null; readAt: string | null; createdAt: string; pending?: boolean };
 export type Thread = { clientId: string; name: string; status: string; lastSender: "client" | "coach"; lastBody: string | null; lastKind: "text" | "image" | "video" | "audio"; lastAt: string; unread: number };
@@ -76,7 +76,7 @@ export function useSendMessage(clientId?: string, ownClientId?: string) {
       }
       if (x.video) videoId = await uploadVideo(x.video, x.onProgress ?? (() => {}), { purpose: "message", clientId });
       const { data, error } = await db().rpc("send_message", { p_client: clientId ?? null, p_body: x.body || null, p_image: imagePath, p_video: videoId, p_youtube: x.youtube ?? null });
-      if (error) throw new SendError(/too_many|wait_reply|too_long|empty|not_allowed/.exec(error.message)?.[0] ?? "failed");
+      if (error) { discardVideo(videoId); throw new SendError(/too_many|wait_reply|too_long|empty|not_allowed/.exec(error.message)?.[0] ?? "failed"); }
       void fetch("/api/push/notify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messageId: data }) }).catch(() => {});
       return data as string;
     },
