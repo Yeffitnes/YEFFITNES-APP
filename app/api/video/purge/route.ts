@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { bunnyConfigured, deleteVideo } from "@/lib/bunny";
 export const dynamic = "force-dynamic";
-// Borra de Bunny los vídeos vencidos (24 h tras verlos, 7 días máx.). Se ejecuta con la sesión del coach al abrir "Reportes".
+// Borra de Bunny los vídeos vencidos (12 h tras verlos, 32 h sin verlos; 0033). Se ejecuta con la sesión del coach al abrir "Reportes".
+// Respaldo de la tarea programada /api/cron/purge-videos, que es la que garantiza el borrado.
 export async function POST() {
   if (!bunnyConfigured()) return NextResponse.json({ deleted: 0 });
   const supabase = createClient();

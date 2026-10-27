@@ -11,7 +11,7 @@ begin
   select id into ws from public.workspaces where slug='yeffitnes';
   select id into ca from public.clients where profile_id=a; select id into cb from public.clients where profile_id=b; select id into cc from public.clients where profile_id=c;
   update public.clients set status='pending', plan_id=null where id=cc;
-  insert into public.video_uploads (video_id, workspace_id, client_id) values ('a1a1a1a1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca), ('b2b2b2b2-bbbb-bbbb-bbbb-bbbbbbbbbbbb', ws, cb);
+  insert into public.video_uploads (video_id, workspace_id, client_id) values ('a1a1a1a1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca), ('b2b2b2b2-bbbb-bbbb-bbbb-bbbbbbbbbbbb', ws, cb), ('a9a9a9a9-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca);
 
   perform pg_temp.as_user(a);
   mid := public.send_message(ca, 'Hola Jeff');                                         -- p_client se ignora para clientes
@@ -40,13 +40,18 @@ begin
   if not pg_temp.try('select public.send_message(null,''Quiero activar mi plan'')') then bad:=bad||' [pendiente no puede escribir]'; end if;
   if pg_temp.try('select public.send_message(null,null,''ws/x/y.jpg'')') then bad:=bad||' [pendiente envió foto]'; end if;
 
-  -- no es un chat: máximo 3 sin leer, 600 caracteres, y se borra tras leerlo
+  -- no es un chat (0032): por día 3 textos, 1 foto y 1 vídeo; 600 caracteres; el cupo NO se reinicia al ser leído
   perform pg_temp.as_user(a);
-  if pg_temp.try('select public.send_message(null,''cuarto sin leer'')') then bad:=bad||' [más de 3 mensajes sin leer]'; end if;
   if pg_temp.try('select public.send_message(null,'''||repeat('x',601)||''')') then bad:=bad||' [cliente envió más de 600 caracteres]'; end if;
-  perform pg_temp.reset(); update public.messages set read_at = now() where client_id=ca and sender='client';
+  if not pg_temp.try('select public.send_message(null,''ya puedo escribir'')') then bad:=bad||' [no pudo enviar su tercer texto]'; end if;
+  if pg_temp.try('select public.send_message(null,''cuarto texto'')') then bad:=bad||' [más de 3 textos al día]'; end if;
+  if pg_temp.try('select public.send_message(null,null,null,''a9a9a9a9-aaaa-aaaa-aaaa-aaaaaaaaaaaa'')') then bad:=bad||' [más de 1 vídeo al día]'; end if;
+  if not pg_temp.try('select public.send_message(null,''con foto'','''||ws||'/'||ca||'/f1.jpg'')') then bad:=bad||' [no pudo enviar su foto del día]'; end if;
+  if pg_temp.try('select public.send_message(null,null,'''||ws||'/'||ca||'/f2.jpg'')') then bad:=bad||' [más de 1 foto al día]'; end if;
+  if pg_temp.try('select public.send_audio_message('''||ca||''','''||ws||'/'||ca||'/a.webm'')') then bad:=bad||' [cliente envió audio]'; end if;
+  perform pg_temp.reset(); update public.messages set read_at = now() where client_id=ca and sender='client' and body is distinct from 'ya puedo escribir';
   perform pg_temp.as_user(a);
-  if not pg_temp.try('select public.send_message(null,''ya puedo escribir'')') then bad:=bad||' [no pudo escribir tras ser leído]'; end if;
+  if pg_temp.try('select public.send_message(null,''tras ser leído'')') then bad:=bad||' [el cupo se reinició al ser leído]'; end if;
   if pg_temp.try('select public.purge_messages()') then bad:=bad||' [cliente ejecutó la limpieza del coach]'; end if;
   if pg_temp.try('select public.due_message_trash()') and (select count(*) from public.due_message_trash())<>0 then bad:=bad||' [cliente ve la basura]'; end if;
   perform pg_temp.reset();

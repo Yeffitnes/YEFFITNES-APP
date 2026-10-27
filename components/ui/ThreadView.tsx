@@ -11,7 +11,10 @@ import { youtubeId } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
 
 type Media = { kind: "image"; url: string } | { kind: "yt"; id: string } | { kind: "bunny"; msg: string };
-const MAX_CLIENT_CHARS = 600, MAX_COACH_CHARS = 2000, MAX_UNREAD = 3;
+const MAX_CLIENT_CHARS = 600, MAX_COACH_CHARS = 2000;
+// Cupo diario del cliente (migración 0032): 3 mensajes de texto, 1 foto y 1 vídeo. Un mensaje con foto o vídeo cuenta como ese adjunto.
+export const CLIENT_DAILY = { text: 3, image: 1, video: 1 } as const;
+const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString();
 const when = (iso: string) => { const d = new Date(iso), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1); const h = d.toLocaleTimeString("es", { hour: "numeric", minute: "2-digit" }); return d.toDateString() === t.toDateString() ? `Hoy · ${h}` : d.toDateString() === y.toDateString() ? `Ayer · ${h}` : `${d.toLocaleDateString("es", { day: "numeric", month: "short" })} · ${h}`; };
 // Los mensajes no se acumulan: se borran solos 24 h después de que la otra persona los lee.
 const goesIn = (readAt: string) => { const h = Math.ceil((new Date(readAt).getTime() + 86400000 - Date.now()) / 3600000); return h <= 1 ? "se borra en menos de 1 h" : h < 24 ? `se borra en ${h} h` : "se borra mañana"; };
@@ -55,7 +58,9 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   const msgs = useMemo(() => [...(data ?? [])].reverse(), [data]);       // lo más nuevo primero
   const me = coach ? "coach" : "client", maxChars = coach ? MAX_COACH_CHARS : MAX_CLIENT_CHARS;
   const unreadFromOther = msgs.filter((m) => m.sender !== me && !m.readAt).length;
-  const mineUnread = msgs.filter((m) => m.sender === me && !m.readAt && !m.pending).length, blocked = !coach && mineUnread >= MAX_UNREAD;
+  const mineToday = coach ? [] : msgs.filter((m) => m.sender === me && isToday(m.createdAt));
+  const left = { text: CLIENT_DAILY.text - mineToday.filter((m) => !m.imagePath && !m.hasVideo).length, image: CLIENT_DAILY.image - mineToday.filter((m) => m.imagePath).length, video: CLIENT_DAILY.video - mineToday.filter((m) => m.hasVideo).length };
+  const blocked = !coach && left.text <= 0 && (textOnly || (left.image <= 0 && left.video <= 0));
   const preview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   useEffect(() => { if (unreadFromOther > 0 && document.visibilityState === "visible") void markRead(); }, [unreadFromOther]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -64,7 +69,8 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   const { pick: pickVideo, trimmer } = useVideoPick({ maxSeconds: maxS, maxSourceSeconds: coach ? MAX_COACH_VIDEO_SECONDS : MAX_SOURCE_SECONDS, maxMB, onFile: (f) => { setVideo(f); setImage(null); setAudio(null); setYt(""); setShowYt(false); }, onError: setErr });
   const pickImage = (f: File | null) => { setErr(""); if (!f) return; if (!f.type.startsWith("image/")) return setErr("Elige una foto."); setImage(f); setVideo(null); setAudio(null); setYt(""); setShowYt(false); };
   const ytId = yt.trim() ? youtubeId(yt) : null;
-  const canSend = !send.isPending && !blocked && !rec.recording && (text.trim() || image || video || ytId || audio);
+  const quotaOk = coach || (video ? left.video > 0 : image ? left.image > 0 : left.text > 0);
+  const canSend = !send.isPending && !blocked && quotaOk && !rec.recording && (text.trim() || image || video || ytId || audio);
   const ctl = useRef<AbortController | null>(null);
   const submit = async () => {
     if (!canSend) return; setErr("");
@@ -79,7 +85,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   return (
     <div className="mb">
       <section className="mb-compose" aria-label={coach ? `Escribir a ${otherName}` : "Escribir a tu coach"}>
-        {blocked ? <div className="mb-wait"><Icon name="clock" size={18} /><div><b>Tu coach aún no ha visto tus últimos mensajes.</b><span>Apenas los vea podrás escribirle de nuevo. Te avisamos cuando responda.</span></div></div> : <>
+        {blocked ? <div className="mb-wait"><Icon name="clock" size={18} /><div><b>Ya usaste tus mensajes de hoy.</b><span>Mañana puedes escribirle de nuevo. Tu reporte diario va aparte y siempre lo puedes enviar.</span></div></div> : <>
           <textarea rows={3} maxLength={maxChars} aria-label="Escribe tu mensaje" placeholder={coach ? `Responder a ${otherName}…` : "Cuéntale a tu coach: una duda, cómo te sientes, algo que notaste…"} value={text} onChange={(e) => setText(e.target.value)} />
           {rec.recording && <div className="mb-rec" role="status"><i aria-hidden /><b>Grabando</b><span>{Math.floor(rec.secs / 60)}:{String(rec.secs % 60).padStart(2, "0")} / {Math.floor(MAX_AUDIO_SECONDS / 60)}:00</span><button type="button" onClick={() => rec.stop(true)}>Cancelar</button><button type="button" className="go" onClick={() => rec.stop()}><Icon name="stop" size={13} /> Terminar</button></div>}
           {audio && audioUrl && !rec.recording && <div className="mb-attach mb-attach-audio"><Icon name="mic" size={14} /><audio controls src={audioUrl} /><button type="button" aria-label="Quitar audio" onClick={() => setAudio(null)}><Icon name="close" size={14} /></button></div>}
@@ -92,8 +98,8 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
               <input ref={imgIn} type="file" accept="image/*" hidden onChange={(e) => { pickImage(e.target.files?.[0] ?? null); e.target.value = ""; }} />
               {trimmer}
               <input ref={vidIn} type="file" accept="video/*" hidden onChange={(e) => { void pickVideo(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-              <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => imgIn.current?.click()}><Icon name="camera" size={16} />Foto</button>
-              <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => vidIn.current?.click()}><Icon name="video" size={16} />Vídeo</button>
+              <button type="button" className="mb-tool" disabled={send.isPending || (!coach && left.image <= 0)} onClick={() => imgIn.current?.click()}><Icon name="camera" size={16} />Foto</button>
+              <button type="button" className="mb-tool" disabled={send.isPending || (!coach && left.video <= 0)} onClick={() => vidIn.current?.click()}><Icon name="video" size={16} />Vídeo</button>
               {coach && audioSupported() && <button type="button" className="mb-tool" disabled={send.isPending || rec.recording} onClick={() => void rec.start()}><Icon name="mic" size={16} />Audio</button>}
               {coach && <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => { setShowYt((v) => !v); setImage(null); setVideo(null); }}><Icon name="play" size={14} />YouTube</button>}
             </>}
@@ -101,7 +107,8 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
             {send.isPending && video && <button type="button" className="mini-btn" onClick={() => ctl.current?.abort()}>Cancelar subida</button>}
             <button type="button" className="mini-btn primary mb-send" disabled={!canSend} onClick={() => void submit()}>{label}</button>
           </div>
-          <p className="mb-note">{coach ? "Los mensajes se borran solos 24 horas después de que el cliente los lee." : `Puedes tener hasta ${MAX_UNREAD} mensajes sin leer. Se borran solos 24 horas después de que tu coach los lee.`}</p>
+          {!coach && !image && !video && left.text <= 0 && <p className="comp-err" role="status">Ya enviaste tus {CLIENT_DAILY.text} mensajes de texto de hoy.{!textOnly && (left.image > 0 || left.video > 0) ? " Aún puedes enviar una foto o un vídeo." : ""}</p>}
+          <p className="mb-note">{coach ? "Escribes sin límite. Los mensajes se borran solos 24 horas después de que el cliente los lee." : textOnly ? `Hoy te quedan ${Math.max(left.text, 0)} de ${CLIENT_DAILY.text} mensajes. Se borran solos 24 horas después de que tu coach los lee.` : `Hoy te quedan ${Math.max(left.text, 0)} de ${CLIENT_DAILY.text} mensajes, ${Math.max(left.image, 0)} foto y ${Math.max(left.video, 0)} vídeo. Se borran solos 24 horas después de que tu coach los lee.`}</p>
         </>}
         {justSent && !blocked && <p className="mb-sent" role="status"><Icon name="check" size={14} stroke={2.4} /> Enviado. {coach ? "Le llegó un aviso." : "Tu coach te responde cuando pueda."}</p>}
       </section>

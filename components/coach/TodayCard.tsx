@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Modal } from "@/components/ui/Modal";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { fetchReportVideoUrl, localDate, useClientLogs, useClientNutrition, useCoachReports, useMealLogs, useReviewReport, type CoachReport } from "@/lib/queries";
+import { fetchReportVideoUrl, localDate, useClientLogs, useClientNutrition, useCoachReports, useMealLogs, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
 import { useThread, type Msg } from "@/lib/messages";
 import { ago } from "@/lib/format";
 import { hhmm } from "@/lib/dates";
@@ -69,7 +69,8 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
             {report.videoState === "uploaded" && <button className="today-play" onClick={() => void openVideo(report)}><Icon name="play" size={12} /> Ver vídeo</button>}
             {report.videoState === "deleted" && <span className="today-viewed">Vídeo borrado automáticamente</span>}
             {!report.seen ? <button className="today-seen" disabled={review.isPending} onClick={() => review.mutate(report.id)}>Marcar visto</button> : <span className="today-viewed">Ya lo viste</span>}
-          </div></div>}
+          </div>
+          {videoExpiry(report) && <p className="today-viewed" style={{ marginTop: 8 }}>{videoExpiry(report)}</p>}</div>}
       </div>
 
       <div className="card today-sec">

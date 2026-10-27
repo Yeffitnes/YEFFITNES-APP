@@ -507,17 +507,26 @@ export function useSubmitReport(clientId: string, date: string) {
   return useMutation({ mutationFn: async (v: { comment: string; videoId: string | null }) => { const { error } = await db().rpc("submit_report", { p_date: date, p_comment: v.comment, p_video_id: v.videoId }); if (error) throw error; },
     onSuccess: () => toast("¡Reporte enviado!"), onError: (e) => toast(reportError(e), true), onSettled: () => qc.invalidateQueries({ queryKey: ["report", clientId, date] }) });
 }
-export type CoachReport = { id: string; clientId: string; clientName: string; date: string; comment: string | null; videoState: "none" | "uploaded" | "deleted"; seen: boolean; sentAt: string };
+export type CoachReport = { id: string; clientId: string; clientName: string; date: string; comment: string | null; videoState: "none" | "uploaded" | "deleted"; seen: boolean; sentAt: string; deleteAfter: string | null };
+// Texto de cuándo se borra el vídeo (migración 0033: 32 h sin verlo, 12 h después de verlo).
+export function videoExpiry(r: CoachReport): string | null {
+  if (r.videoState !== "uploaded" || !r.deleteAfter) return null;
+  const h = Math.ceil((new Date(r.deleteAfter).getTime() - Date.now()) / 3600000);
+  const when = h <= 1 ? "en menos de 1 h" : `en ${h} h`;
+  return r.seen ? `El vídeo se borra ${when}.` : `Si no lo ves, el vídeo se borra solo ${when}.`;
+}
 export const useCoachReports = () => useQuery({ queryKey: ["coach-reports"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<CoachReport[]> => {
   const since = new Date(); since.setDate(since.getDate() - 14);
-  const { data, error } = await db().from("daily_reports").select("id,client_id,report_date,comment,video_state,coach_seen_at,created_at,clients(profiles(full_name))").gte("report_date", localDate(since)).order("report_date", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
-  type Raw = { id: string; client_id: string; report_date: string; comment: string | null; video_state: "none" | "uploaded" | "deleted"; coach_seen_at: string | null; created_at: string; clients: { profiles: { full_name: string } | null } | null };
-  return (data as unknown as Raw[]).map((r) => ({ id: r.id, clientId: r.client_id, clientName: r.clients?.profiles?.full_name || "Cliente", date: r.report_date, comment: r.comment, videoState: r.video_state, seen: !!r.coach_seen_at, sentAt: r.created_at }));
+  const { data, error } = await db().from("daily_reports").select("id,client_id,report_date,comment,video_state,coach_seen_at,created_at,delete_after,clients(profiles(full_name))").gte("report_date", localDate(since)).order("report_date", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
+  type Raw = { id: string; client_id: string; report_date: string; comment: string | null; video_state: "none" | "uploaded" | "deleted"; coach_seen_at: string | null; created_at: string; delete_after: string | null; clients: { profiles: { full_name: string } | null } | null };
+  return (data as unknown as Raw[]).map((r) => ({ id: r.id, clientId: r.client_id, clientName: r.clients?.profiles?.full_name || "Cliente", date: r.report_date, comment: r.comment, videoState: r.video_state, seen: !!r.coach_seen_at, sentAt: r.created_at, deleteAfter: r.delete_after }));
 } });
 export function useReviewReport() {
   const qc = useQueryClient(), toast = useToast(), key = ["coach-reports"];
   return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("review_report", { p_id: id }); if (error) throw error; },
-    onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<CoachReport[]>(key); qc.setQueryData<CoachReport[]>(key, (l) => l?.map((r) => (r.id === id ? { ...r, seen: true } : r))); return { prev }; },
+    onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<CoachReport[]>(key); const r = prev?.find((x) => x.id === id);
+      qc.setQueryData<CoachReport[]>(key, (l) => l?.map((x) => (x.id === id ? { ...x, seen: true, deleteAfter: x.videoState === "uploaded" ? new Date(Math.min(Date.now() + 12 * 3600000, x.deleteAfter ? +new Date(x.deleteAfter) : Infinity)).toISOString() : x.deleteAfter } : x))); return { prev, hadVideo: r?.videoState === "uploaded" }; },
+    onSuccess: (_d, _v, ctx) => { if (ctx?.hadVideo) toast("Visto. El vídeo se borrará en las próximas 12 horas."); },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos marcarlo como visto.", true); }, onSettled: () => qc.invalidateQueries({ queryKey: key }) });
 }
 export async function fetchReportVideoUrl(id: string): Promise<string> {

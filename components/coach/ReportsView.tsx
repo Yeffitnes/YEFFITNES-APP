@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchReportVideoUrl, useCoachReports, useReviewReport, type CoachReport } from "@/lib/queries";
+import { fetchReportVideoUrl, useCoachReports, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { ago, gradient, initials } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
@@ -25,12 +25,13 @@ export function ReportsView() {
           {r.videoState === "deleted" && <span className="note-date">Vídeo borrado automáticamente</span>}
           {!r.seen && <button className="primary-btn" disabled={review.isPending} onClick={() => review.mutate(r.id)}>Marcar visto</button>}
         </div>
+        {videoExpiry(r) && <div className="note-date" style={{ marginTop: 6 }}>{videoExpiry(r)}</div>}
       </div>
     </div>);
   return (
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Reportes diarios</div><h1>{data ? (pending.length ? `${pending.length} por revisar` : "Todo al día") : "Reportes diarios"}</h1>
-        <p className="greeting-sub">Vídeo de verificación y comentario de cada cliente. El vídeo se borra solo 24 horas después de que lo marcas como visto (y a los 7 días como máximo).</p></div></div>
+        <p className="greeting-sub">Vídeo de verificación y comentario de cada cliente. El vídeo se borra solo 12 horas después de que lo marcas como visto, y a las 32 horas de enviado aunque no lo veas.</p></div></div>
       {isPending && <Skeleton rows={3} />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar los reportes. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && !all.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Aún no hay reportes. Cuando tus clientes los envíen, aparecerán aquí, los más recientes primero.</p></div>}

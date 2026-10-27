@@ -47,7 +47,7 @@ export function useMarkRead(clientId?: string) {
 
 export type SendInput = { body: string; audio?: Blob | null; image?: File | null; video?: File | null; youtube?: string | null; onProgress?: (pct: number) => void; signal?: AbortSignal };
 export class SendError extends Error { constructor(public code: string) { super(code); } }
-const ERR: Record<string, string> = { too_many: "Ya enviaste varios mensajes hoy. Escríbele de nuevo mañana.", wait_reply: "Tu coach aún no ha visto tus últimos mensajes. Cuando los vea podrás enviar más.", not_allowed: "No puedes enviar eso con tu cuenta.", too_long: "El mensaje es muy largo (máximo 600 caracteres).", empty: "Escribe algo antes de enviar.", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa tu conexión y vuelve a intentarlo.", not_configured: "Los vídeos aún no están activados." };
+const ERR: Record<string, string> = { too_many: "Ya enviaste varios mensajes hoy. Escríbele de nuevo mañana.", wait_reply: "Tu coach aún no ha visto tus últimos mensajes. Cuando los vea podrás enviar más.", limit_text: "Ya enviaste tus 3 mensajes de hoy. Mañana puedes escribir de nuevo.", limit_image: "Hoy ya enviaste una foto. Mañana puedes enviar otra.", limit_video: "Hoy ya enviaste un vídeo. Mañana puedes enviar otro.", one_attachment: "Envía la foto y el vídeo por separado.", not_allowed: "No puedes enviar eso con tu cuenta.", too_long: "El mensaje es muy largo (máximo 600 caracteres).", empty: "Escribe algo antes de enviar.", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa tu conexión y vuelve a intentarlo.", not_configured: "Los vídeos aún no están activados." };
 export const sendErrorText = (e: unknown) => (e instanceof SendError || e instanceof UploadError ? ERR[e.code] : null) ?? "No se pudo enviar. Inténtalo de nuevo.";
 
 export function useSendMessage(clientId?: string, ownClientId?: string) {
@@ -76,7 +76,7 @@ export function useSendMessage(clientId?: string, ownClientId?: string) {
       }
       if (x.video) videoId = await uploadVideo(x.video, x.onProgress ?? (() => {}), { purpose: "message", clientId, signal: x.signal });
       const { data, error } = await db().rpc("send_message", { p_client: clientId ?? null, p_body: x.body || null, p_image: imagePath, p_video: videoId, p_youtube: x.youtube ?? null });
-      if (error) { discardVideo(videoId); throw new SendError(/too_many|wait_reply|too_long|empty|not_allowed/.exec(error.message)?.[0] ?? "failed"); }
+      if (error) { discardVideo(videoId); throw new SendError(/limit_text|limit_image|limit_video|one_attachment|too_many|wait_reply|too_long|empty|not_allowed/.exec(error.message)?.[0] ?? "failed"); }
       void fetch("/api/push/notify", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messageId: data }) }).catch(() => {});
       return data as string;
     },

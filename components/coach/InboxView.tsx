@@ -22,7 +22,7 @@ function Inbox() {
   const select = (id: string | null) => router.replace(id ? `/coach/mensajes?c=${id}` : "/coach/mensajes", { scroll: false });
   return (
     <>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Mensajes</div><h1>Bandeja de mensajes</h1><p className="greeting-sub">Cada cliente puede dejarte hasta 3 mensajes sin leer. Respóndeles con texto, foto, vídeo o YouTube; les llega un aviso. Todo se borra solo 24 horas después de leerse.</p></div></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Mensajes</div><h1>Bandeja de mensajes</h1><p className="greeting-sub">Cada cliente puede enviarte al día 3 mensajes, 1 foto y 1 vídeo (sin audios). Tú respondes sin límite con texto, foto, vídeo, audio o YouTube; les llega un aviso. Todo se borra solo 24 horas después de leerse.</p></div></div>
       <div className={`inbox-layout${current ? " open" : ""}`}>
         <div className="inbox-side">
           <div className="search-box" style={{ maxWidth: "none", marginBottom: 10 }}><input type="search" placeholder="Buscar cliente…" aria-label="Buscar cliente" value={q} onChange={(e) => setQ(e.target.value)} style={{ fontSize: 16 }} /></div>

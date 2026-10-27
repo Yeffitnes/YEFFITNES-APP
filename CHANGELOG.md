@@ -1,4 +1,19 @@
 # CHANGELOG
+## 2026-10-27 - Borrado garantizado de los vídeos del reporte
+- Reglas nuevas (decisión de Cristian): el vídeo se borra **32 h después de enviado si Jeff no lo ve** y **12 h después de que Jeff lo marca visto**. Antes: 7 días y 24 h.
+- **Migración `0033_report_video_expiry.sql` (correrla en Supabase ANTES de subir este código a producción).** Cambia los plazos en `submit_report` y `review_report` (mismas firmas: `main` sigue funcionando), ajusta los vídeos ya subidos y crea las funciones de la tarea programada (validan la clave del cron).
+- Nueva ruta `/api/cron/purge-videos`: la llama una tarea programada cada hora y borra en Bunny los vídeos vencidos y los huérfanos aunque Jeff no abra la app. **Hay que programarla** (paso en `docs/PASO_A_PRODUCCION.md` §2). El borrado al abrir Reportes sigue como respaldo.
+- Jeff ve en Reportes y en la pestaña Hoy cuándo se borra cada vídeo; al marcar visto le sale "El vídeo se borrará en las próximas 12 horas". El cliente ve la regla en su tarjeta de reporte.
+- Prueba nueva: `supabase/tests/rls_videoexpiry.sql` (sin clave o con clave mala no se lista ni se borra nada; un vídeo en uso nunca es huérfano).
+- Revertir: ver la cabecera de la migración; borrar `app/api/cron/purge-videos/`; quitar `videoExpiry` y `deleteAfter` de `lib/queries.ts`, `ReportsView.tsx` y `TodayCard.tsx`; desprogramar la tarea (`select cron.unschedule('yeffitnes-videos');`).
+
+## 2026-10-27 - Mensajes del cliente: 3 textos, 1 foto y 1 vídeo al día
+- Decisión de Cristian: que no se vuelva un chat. El cliente envía al día (hora de Bogotá) **máx. 3 mensajes de texto, 1 foto y 1 vídeo; nunca audio**. Jeff escribe sin límite (texto, foto, vídeo, audio, YouTube). El reporte diario va aparte y no cuenta.
+- Se quitó la regla anterior ("3 sin leer" y "12 al día"): ahora el cupo no se reinicia cuando Jeff lee.
+- **Migración `0032_client_message_quota.sql` (correrla en Supabase ANTES de subir este código a producción).** Recrea `send_message` con la misma firma.
+- Pantalla de mensajes del cliente: muestra cuánto le queda hoy y apaga Foto o Vídeo cuando ya los usó. Prueba de ataque actualizada en `rls_messages.sql` (incluye que el cliente no puede enviar audio).
+- Revertir: volver a ejecutar el bloque `send_message` de `0028_messages_board.sql`; en `ThreadView.tsx` volver a `MAX_UNREAD` (commit `4d1e343`).
+
 ## 2026-10-26 - Cruce del blueprint con la app
 - Nuevo `docs/BLUEPRINT_GAPS.md`: tabla de qué pide el Product Blueprint v1, qué existe en `bloque-hoy`, qué cambió por decisiones posteriores y qué falta. Solo documentación; se verificó leyendo código y migraciones, sin abrir la app con datos reales.
 - Revertir: borrar `docs/BLUEPRINT_GAPS.md`.
