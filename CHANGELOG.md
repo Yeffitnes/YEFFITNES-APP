@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-26 - Dashboard: tarjetas fuera de pantalla en celular
+- Causa: los filtros con desplazamiento de "Seguimiento de hoy" ensanchaban la columna de la cuadrícula. Ahora la cuadrícula usa `minmax(0, ...)` y las tarjetas no pueden ser más anchas que la columna.
+- Revertir: borrar el bloque "Dashboard: ninguna tarjeta puede ensanchar la columna" al final de `coach.css`.
+
 ## 2026-10-26 - Dashboard: "Seguimiento de hoy"
 - La tarjeta "Clientes por revisar" del dashboard se reemplaza por "Seguimiento de hoy": cada cliente activo con tres marcas (Entreno, Nutrición, Reporte) = hecho / falta, filtros (Por escribir, Sin nada hoy, Sin reporte, Sin entrenar, Sin nutrición, Al día) con su conteo, y botón Escribir. Solo cuenta lo que le corresponde a cada cliente: plan de entrenamiento activo, plan de nutrición activo, plan que exige reporte diario. La razón de atención anterior (días sin entrenar, entrenamientos sin revisar) sigue visible bajo el nombre.
 - La 5.ª tarjeta ("Por escribirles hoy") lleva a esa tarjeta. Lógica en `lib/followup.ts` (sin migración).
