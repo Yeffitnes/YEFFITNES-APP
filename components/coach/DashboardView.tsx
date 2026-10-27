@@ -1,13 +1,14 @@
 "use client";
 import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
-import { useActivePlanClients, useClients, useCoachReports, useCoachSlots, useRecentLogs, localDate } from "@/lib/queries";
+import { useActivePlanClients, useClients, useCoachReports, useCoachSlots, useRecentLogs } from "@/lib/queries";
 import { useThreads } from "@/lib/messages";
 import { hhmm, sameDay } from "@/lib/dates";
 import { useProfile } from "@/components/Providers";
 import { attention } from "@/lib/attention";
 import { ago, gradient, initials } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
+import { DashKpis } from "./DashKpis";
 import { AnnouncementsCard } from "./AnnouncementsCard";
 import { ActivityCard } from "./ActivityCard";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -16,8 +17,7 @@ export function DashboardView() {
   if (clients.isPending || logs.isPending || plans.isPending) return <div><div className="sk" style={{ height: 30, width: 220, marginBottom: 22 }} /><div className="sk" style={{ height: 90, marginBottom: 18 }} /><Skeleton rows={3} /></div>;
   if (clients.isError || logs.isError || plans.isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el panel. <button className="filter-chip" onClick={() => { clients.refetch(); logs.refetch(); plans.refetch(); }}>Reintentar</button></p></div>;
   const cl = clients.data, lg = logs.data, active = cl.filter((c) => c.status === "active"), pending = cl.filter((c) => c.status === "pending").length;
-  const attn = attention(cl, lg, new Set(plans.data)), today = localDate();
-  const trainedToday = new Set(lg.filter((l) => l.completed && l.date === today).map((l) => l.clientId)).size;
+  const attn = attention(cl, lg, new Set(plans.data));
   const unreviewed = lg.filter((l) => l.completed && !l.seen).length;
   const recent = lg.filter((l) => l.completed && l.completedAt).sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")).slice(0, 6);
   const unseenReports = (reports.data ?? []).filter((r) => !r.seen).length;
@@ -26,12 +26,7 @@ export function DashboardView() {
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Panel — {new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}</div><h1>Hola, {name.split(" ")[0] || "Coach"}</h1>
         <p className="greeting-sub">{sub}{pending ? ` ${pending} cliente${pending > 1 ? "s" : ""} por activar.` : ""}</p></div></div>
-      <div className="kpi-strip">
-        <div className="kpi-card"><div className="kpi-label">Clientes activos</div><div className="kpi-val">{active.length}</div><div className="kpi-sub">{pending ? `${pending} por activar` : "Sin pendientes"}</div></div>
-        <div className="kpi-card"><div className="kpi-label">Entrenaron hoy</div><div className="kpi-val">{trainedToday}</div><div className="kpi-sub">de {active.length} activos</div></div>
-        <div className="kpi-card"><div className="kpi-label">Revisiones pendientes</div><div className="kpi-val">{unreviewed}</div><div className={`kpi-sub${unreviewed ? " alert" : ""}`}>{unreviewed ? "Requiere atención" : "Al día"}</div></div>
-        <div className="kpi-card"><div className="kpi-label">Clientes por revisar</div><div className="kpi-val">{attn.length}</div><div className={`kpi-sub${attn.some((a) => a.urgent) ? " alert" : ""}`}>{attn.some((a) => a.urgent) ? "Hay casos urgentes" : "Ordenados por urgencia"}</div></div>
-      </div>
+      <DashKpis clients={cl} logs={lg} attn={attn} withPlan={new Set(plans.data)} reports={reports.data ?? []} />
       <div className="dash-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="card">

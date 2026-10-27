@@ -591,6 +591,16 @@ export function useLogMeal(clientId: string, date: string) {
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 }
+// Quién completó entrenamiento / nutrición hoy (eventos del día, para las listas del dashboard).
+export const useTodayActivity = () => useQuery({ queryKey: ["activity-today"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async () => {
+  const { data, error } = await db().from("activity_events").select("client_id,kind,created_at").eq("event_date", localDate()); if (error) throw error;
+  return ((data ?? []) as { client_id: string; kind: "training_done" | "nutrition_done" | "day_done"; created_at: string }[]).map((r) => ({ clientId: r.client_id, kind: r.kind, at: r.created_at }));
+} });
+// Clientes con plan de nutrición activo (para saber a quién le falta la nutrición de hoy).
+export const useNutritionClients = () => useQuery({ queryKey: ["nutrition-clients"], staleTime: 60_000, queryFn: async (): Promise<string[]> => {
+  const { data, error } = await db().from("nutrition_plans").select("client_id").eq("active", true).not("client_id", "is", null); if (error) throw error;
+  return Array.from(new Set(((data ?? []) as { client_id: string }[]).map((r) => r.client_id)));
+} });
 export type ActivityKind = "training_done" | "nutrition_done" | "day_done";
 export type Activity = { id: string; clientId: string; clientName: string; kind: ActivityKind; date: string; at: string; seen: boolean };
 export const useActivityFeed = () => useQuery({ queryKey: ["activity"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<Activity[]> => {

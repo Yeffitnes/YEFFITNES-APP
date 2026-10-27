@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-10-26 - Dashboard del coach interactivo
+- Las tarjetas de arriba ahora se abren: Clientes activos, Entrenaron hoy (quiénes ya entrenaron y quiénes aún no), Nutrición hoy (quiénes completaron las comidas y a quién le falta), Revisiones pendientes (reportes diarios, mensajes sin leer y entrenamientos sin revisar juntos) y Clientes por revisar. Cada fila lleva a la ficha y tiene botón "Escribir" que abre el chat con ese cliente.
+- `components/coach/DashKpis.tsx` (nuevo), `useTodayActivity` y `useNutritionClients` en `lib/queries.ts`. Sin migración: usa tablas existentes (activity_events, nutrition_plans).
+- "Revisiones pendientes" antes contaba solo entrenamientos sin revisar; ahora suma reportes y mensajes.
+- Revertir: restaurar el bloque `kpi-strip` de `DashboardView.tsx` (commit anterior `59b6f87`) y borrar `DashKpis.tsx`.
+
 ## 2026-10-26 - Cancelar subidas y Salir en celular
 - Botón "Cancelar" en: lectura del vídeo, subida del reporte, subida de vídeo en mensajes y subida en segundo plano (coach). Cancelar corta la subida y borra el vídeo parcial en Bunny. Código `cancelled` en `lib/upload-video.ts` (`signal`).
 - Cerrar sesión en celular: el círculo con las iniciales (junto al logo, cliente y coach) abre un menú con "Cerrar sesión" (`components/ProfileMenu.tsx`).
