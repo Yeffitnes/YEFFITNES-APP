@@ -1,4 +1,7 @@
 # CHANGELOG
+## 2026-10-26 - HANDOFF: inventario de lo construido y lo que falta
+- `docs/HANDOFF.md` gana la sección 9b (construido, faltante, decisiones de Jeff, deuda técnica y pre-lanzamiento), tomada de `CONTEXT.md` y `PROJECT_STATE.md`. No es una auditoría contra el blueprint. Solo documentación. Revertir: borrar esa sección.
+
 ## 2026-10-26 - HANDOFF: dónde está el plano
 - `docs/HANDOFF.md` gana la sección 1b (mockups, blueprint, contexto y qué documentos están desactualizados). Solo documentación. Revertir: borrar esa sección.
 

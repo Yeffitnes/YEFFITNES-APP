@@ -84,5 +84,24 @@ Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio
 5. Ideas aprobadas en conversación pero **no construidas**: botón "escribir a todos los de este filtro" en el seguimiento, racha por cliente, avisos de fin de plan, PDFs en Material, modo sin conexión, apps de tienda. Para el panel del cliente, cruzar "sin entrenar hoy" con el día de descanso del plan (hoy un día libre cuenta como "falta").
 6. Aparte (fuera de este repo): la landing de **Carlos Coaching** se entregó y está en `carloscoach.vercel.app`; a Carlos le faltan WhatsApp, foto, logo, planes y precios.
 
+## 9b. Qué está construido y qué falta (inventario al 26-oct)
+Armado con `docs/CONTEXT.md`, `docs/PROJECT_STATE.md` y lo trabajado en esta etapa. **No es una auditoría contra el Product Blueprint** (no está en el repo): la primera tarea útil del próximo chat, cuando Cristian pase el enlace, es cruzar el blueprint con la app y dejar una tabla de huecos.
+
+**Construido (existe en el código; la mayoría sin validar con usuarios reales):**
+- *Coach:* dashboard (tarjetas que se abren, "Hoy: a quién escribirle", mensajes, agenda de hoy, tiempo real, anuncios); clientes y ficha (Hoy, Resumen, Entrenamiento, Nutrición, Progreso, Mensajes, Agenda, Notas privadas); catálogo (ejercicios, rutinas, plantillas de nutrición); revisión de entrenos con comentario de texto o audio; reportes diarios con vídeo; mensajes (texto, foto, vídeo, YouTube, audio de Jeff); agenda con horarios y clases grupales; material educativo; buscador rápido; avisos push.
+- *Cliente:* Hoy, Mi plan, Progreso (mediciones y fotos), Agenda, Material, Mensajes, Objetivos, onboarding básico de 3 pasos, reporte diario, recordatorios automáticos, instalación como app (con puerta de instalación opcional).
+- *Otros:* landing de venta en `/landing`, recortador de vídeo, subida de vídeo en segundo plano para Jeff.
+
+**Falta o está a medias (según los documentos del repo):**
+- Onboarding con **personaje guía** y el contenido que defina Jeff (P2).
+- **PDFs** en Material y el **vídeo de la semana** en Hoy.
+- **Modo sin conexión** (P2). Apps de tienda y moverlo a **dominio propio**.
+- **Decisiones de Jeff sin tomar** (`docs/CONTEXT.md` §11): nombres, precios y contenido de los planes; reglas de agenda (hoy PROPUESTA: 1 reserva futura, cancelar hasta 24 h antes); duración y obligatoriedad del vídeo diario y plazo de borrado; qué partes del registro son obligatorias; horarios de los recordatorios.
+- **Deuda técnica conocida** (`docs/CONTEXT.md` §12): textos "Jeff" fijos y el registro asigna siempre el primer espacio (solo sirve con un coach); zona horaria única (Bogotá); `ex_client_read` expone el catálogo completo de ejercicios al cliente con plan; ítems de menú sin pantalla (apagados); los diálogos no atrapan el foco del teclado.
+- **Pre-lanzamiento:** quitar la insignia "Powered by Netlify", confirmación de correo, revisión final de RLS, prueba con 2 o 3 clientes reales, dominio, Supabase Pro, repositorio privado.
+- **Futuro (P3):** multi-coach con logo y colores propios, cobro a coaches.
+- **Plazo del proyecto:** hasta el 21-dic-2026, ampliable a 3 meses (21-ene-2027).
+- **Lo que Cristian pidió y no está hecho:** ver sección 9, punto 5.
+
 ## 10. Cómo arrancar un chat nuevo
-Pega: *"Lee `AGENTS.md`, `docs/HANDOFF.md`, `docs/PASO_A_PRODUCCION.md` y las 10 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame qué entendiste y qué falta verificar antes de tocar código."*
+Pega: *"Lee `AGENTS.md`, `docs/HANDOFF.md`, `docs/PASO_A_PRODUCCION.md` y las 10 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame qué entendiste y qué falta verificar antes de tocar código. Después, con el enlace del blueprint, cruza el blueprint con la app y dame una tabla de qué falta."*
