@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-10-27 - Documentos y limpieza para la próxima salida a main
+- `docs/PRODUCT_BLUEPRINT.md`: copia del blueprint v1 dentro del repo (pedido de Cristian). `docs/BLUEPRINT_GAPS.md` gana las decisiones del 27-oct y la propuesta de rango de repeticiones (sin construir). `docs/FUTURO_MULTICOACH.md`: plan para vender la app a otros coaches (solo planeado).
+- `docs/PASO_A_PRODUCCION.md`: migraciones 0032 a 0035, quinta tarea programada (`yeffitnes-videos`) y §10 "Próxima salida a main" paso a paso. `docs/HANDOFF.md` actualizado.
+- Se quitó `/zz-test` (página de prueba del micrófono que quedaba publicada).
+- Bloqueos: el contenido borroso de los paneles bloqueados se ve un poco más.
+- Revertir: borrar los documentos nuevos; restaurar `app/zz-test/page.tsx` del commit `93cebbd`.
+
 ## 2026-10-27 - Material: vídeo privado y vídeo del día o de la semana en Hoy
 - Jeff elige **YouTube o Privado** al crear un vídeo en Material. El privado se sube desde la app en segundo plano (hasta 15 min), queda como borrador mientras sube y **se publica solo al terminar**. Solo lo ven los clientes cuyo plan incluye ese material.
 - La estrella ahora pregunta: **Vídeo del día** (se ve en Hoy hasta la medianoche) o **Vídeo de la semana** (7 días). El cliente ve "Vídeo del día" o "Vídeo de la semana" en Hoy y en Material. Los destacados que ya existían siguen sin vencimiento.

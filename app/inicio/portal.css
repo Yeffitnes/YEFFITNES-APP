@@ -1097,9 +1097,9 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 
 /* ───── Bloqueo por plan y cuenta pendiente (diseño FeatureGate de DaniFit en la marca; 27-oct) ───── */
 .lk-card{position:relative;overflow:hidden;min-height:190px;border:1px solid var(--line);border-radius:18px;background:#fff;padding:20px}
-.lk-ghost{filter:blur(3px);user-select:none;opacity:.75}
+.lk-ghost{filter:blur(3px);user-select:none}
 .lk-tag{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px}
-.lk-line{height:11px;border-radius:6px;background:var(--line);margin-top:10px;width:100%}
+.lk-line{height:11px;border-radius:6px;background:#D9DCE5;margin-top:10px;width:100%}
 .lk-line.w60{width:60%;height:15px;margin-top:0}.lk-line.w80{width:80%}
 .lk-over{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;
   background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.88) 55%,rgba(255,255,255,.96) 100%)}

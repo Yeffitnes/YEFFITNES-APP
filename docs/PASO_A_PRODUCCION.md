@@ -14,7 +14,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 1. Variables de entorno (en Netlify y en Vercel, iguales)
 - [ ] `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - [ ] `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
-- [ ] `BUNNY_API_KEY`, `BUNNY_LIBRARY_ID` (y `BUNNY_TOKEN_KEY` si se usa) — pendiente de crear la cuenta
+- [ ] `BUNNY_API_KEY`, `BUNNY_LIBRARY_ID` (y `BUNNY_TOKEN_KEY` si se usa) — la cuenta ya existe y funciona en Vercel; **falta ponerlas en Netlify** y regenerar la clave (salió en capturas)
 - [ ] `NEXT_PUBLIC_SITE_URL` solo con dominio propio (en Netlify, si no existe, se usa `URL`, que Netlify define sola; ver `app/layout.tsx`)
 - [ ] `NEXT_PUBLIC_REQUIRE_INSTALL=1` para obligar a usar la app instalada en celulares (apagada si está vacía). `NEXT_PUBLIC_APP_NAME=YEFFITNES Test` solo en Vercel.
 - [ ] Tras cambiar variables `NEXT_PUBLIC_*`, volver a desplegar (se incrustan al construir).
@@ -22,23 +22,33 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 2. Supabase
 - [ ] **Authentication → URL Configuration:** **Site URL = dirección de Netlify**; en **Redirect URLs** poner la de Netlify y la de Vercel (ambas con `/**` y sin `/**`).
 - [ ] **Tareas programadas (pg_cron):** las cuatro (`yeffitnes-buenosdias`, `-mediodia`, `-noche`, `-sesiones`) deben llamar a la **dirección de Netlify** (SQL en `docs/CONTEXT.md` §13). Si se crearon con otra dirección: `select cron.unschedule('nombre');` y volver a programarlas.
+- [ ] **Quinta tarea, borrado de vídeos (0033), programarla justo DESPUÉS de fusionar a `main`** (antes Netlify no tiene la ruta): cada hora, borra en Bunny los vídeos de reporte vencidos (32 h sin ver, 12 h tras verlos) y los huérfanos.
+  `select cron.schedule('yeffitnes-videos', '7 * * * *', $$ select net.http_post(url:='https://yeffitnes.netlify.app/api/cron/purge-videos', headers:=jsonb_build_object('x-cron-secret','LA-MISMA-CLAVE-DEL-CRON')) $$);`
+  Detener: `select cron.unschedule('yeffitnes-videos');`. Si cambias la clave del cron, reprograma también esta.
 - [ ] **Clave del cron:** cambiarla por una nueva antes de lanzar (`update public.app_secrets set value='NUEVA' where name='cron';`) y reprogramar las tareas; la actual circuló en capturas.
 - [ ] Confirmación de correo: decidir si queda activa.
 - [ ] Plan de Supabase: pasar a **Pro** antes de lanzar.
 - [ ] Restringir el registro si Jeff solo quiere clientes invitados (hoy `/login` permite crear cuenta).
 
 ## 3. Notificaciones y app instalada
+- [ ] Desde el 27-oct el cliente **no puede usar la app sin activar las notificaciones** (si el teléfono las admite). Sin `NEXT_PUBLIC_VAPID_PUBLIC_KEY` esa pantalla no aparece: confirma que esté en Netlify antes de fusionar.
 - [ ] Las suscripciones push y la app instalada son **por dirección**: los clientes y Jeff deben activar avisos e instalar la app **desde la dirección de Netlify**. Lo hecho en Vercel no vale.
 - [ ] Mantener las **mismas claves VAPID** en los dos sitios; si se cambian, todos deben reactivar avisos.
 - [ ] iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o superior).
 
 ## 3b. Migraciones pendientes antes de fusionar a `main`
-- [ ] `0028_messages_board.sql`, `0029_audio_messages.sql` y `0030_discard_videos.sql` y `0031_workout_comment_audio.sql` en el SQL editor de Supabase (la 0029 es necesaria para el código de `bloque-hoy`: lee `audio_path`; la 0031, porque ese código lee `coach_comment_audio` y sin ella las pantallas de entrenamiento fallan).
+- [x] `0028` a `0031`: corridas (Cristian confirmó la 0031 el 27-oct).
+- [ ] **`0032` a `0035`, en orden** (27-oct). El código de `bloque-hoy` las necesita: sin la 0034 fallan Clientes y el portal del cliente (leen `access_requested_at`); sin la 0035, Material. Las cuatro son compatibles con el código viejo de `main`.
+  - `0032_client_message_quota.sql`: cliente 3 textos, 1 foto, 1 vídeo al día.
+  - `0033_report_video_expiry.sql`: vídeos de reporte 32 h / 12 h y funciones de la tarea programada.
+  - `0034_access_request.sql`: "Solicitar acceso" y aviso "Tu plan está activo".
+  - `0035_material_private_video.sql`: vídeo privado en Material y vídeo del día o de la semana.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
 - [ ] Si se activa protección por dominio o token en Bunny, **añadir la dirección de Netlify** (y la de Vercel si se prueba allí).
-- [ ] Probar: vídeo de rutina (coach sube, cliente ve) y vídeo del reporte (máx. 30 s). Borrado automático de reportes: ya implementado (se ejecuta al abrir Reportes). Probar también el cortador con un vídeo de más de 30 s.
+- [ ] Probar: vídeo de rutina (coach sube, cliente ve), vídeo del reporte (máx. **20 s**; de la galería hasta 60 s con recorte) y vídeo privado de Material (Jeff sube, cliente con el plan lo ve; sin el plan, no).
+- [ ] Borrado de vídeos de reporte: 32 h sin verlos, 12 h tras verlos. Lo garantiza la tarea `yeffitnes-videos` (§2); abrir Reportes lo hace también como respaldo.
 
 ## 5. Dominio propio (opcional)
 - [ ] Configurarlo en Netlify, poner `NEXT_PUBLIC_SITE_URL`, actualizar Supabase (punto 2) y las tareas programadas, y volver a desplegar.
@@ -62,3 +72,12 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 9. Tras cada salida a producción
 - [ ] Probar en Netlify: login, Hoy, series (marcar y destachar), nutrición, mensaje, reporte con vídeo, agenda y avisos.
 - [ ] Anotar la fecha en `CHANGELOG.md`.
+
+## 10. Próxima salida a `main` (preparada el 27-oct; NO fusionar hasta que Cristian diga "fusiona")
+Orden:
+1. Correr `0032` a `0035` en Supabase (§3b) y probar en Vercel con el cliente de prueba.
+2. En Vercel, de punta a punta: registro nuevo → app con candados → "Solicitar acceso" (a Jeff le llega el aviso) → Jeff asigna plan (al cliente le llega "Tu plan está activo") → activar notificaciones → bienvenida con el personaje → mensajes (3 textos, 1 foto, 1 vídeo; el cuarto texto se rechaza) → reporte con vídeo → Jeff lo marca visto (dice "se borrará en 12 h") → Material: vídeo privado y vídeo del día.
+3. Revisar en Netlify: `BUNNY_*`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`).
+5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos).
+6. Justo después: programar `yeffitnes-videos` (§2) y probar en Netlify lo de §9.
