@@ -6,7 +6,7 @@ import { BunnyModal } from "@/components/ui/BunnyModal";
 import { useMarkRead, useSendMessage, useSignedAudio, useSignedImage, useThread, sendErrorText, type Msg } from "@/lib/messages";
 import { MAX_AUDIO_SECONDS, audioSupported, useAudioRecorder } from "@/components/ui/useAudioRecorder";
 import { useVideoPick } from "@/components/ui/useVideoPick";
-import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, MAX_SOURCE_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS } from "@/lib/upload-video";
+import { UploadError, MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, MAX_SOURCE_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS } from "@/lib/upload-video";
 import { youtubeId } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
 
@@ -65,14 +65,15 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
   const pickImage = (f: File | null) => { setErr(""); if (!f) return; if (!f.type.startsWith("image/")) return setErr("Elige una foto."); setImage(f); setVideo(null); setAudio(null); setYt(""); setShowYt(false); };
   const ytId = yt.trim() ? youtubeId(yt) : null;
   const canSend = !send.isPending && !blocked && !rec.recording && (text.trim() || image || video || ytId || audio);
+  const ctl = useRef<AbortController | null>(null);
   const submit = async () => {
     if (!canSend) return; setErr("");
     if (yt.trim() && !ytId) return setErr("Ese enlace de YouTube no es válido.");
     try {
-      setPct(video ? 0 : null);
-      await send.mutateAsync({ body: text, audio: audio?.blob ?? null, image, video, youtube: ytId, onProgress: setPct });
+      setPct(video ? 0 : null); ctl.current = new AbortController();
+      await send.mutateAsync({ body: text, audio: audio?.blob ?? null, image, video, youtube: ytId, onProgress: setPct, signal: ctl.current.signal });
       setText(""); setAudio(null); setImage(null); setVideo(null); setYt(""); setShowYt(false); setJustSent(true);
-    } catch (e) { setErr(sendErrorText(e)); } finally { setPct(null); }
+    } catch (e) { if (!(e instanceof UploadError && e.code === "cancelled")) setErr(sendErrorText(e)); } finally { setPct(null); ctl.current = null; }
   };
   const label = send.isPending ? (audio ? "Enviando audio…" : video ? `Subiendo ${pct ?? 0}%` : image ? "Subiendo foto…" : "Enviando…") : coach ? "Enviar" : "Enviar a tu coach";
   return (
@@ -97,6 +98,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
               {coach && <button type="button" className="mb-tool" disabled={send.isPending} onClick={() => { setShowYt((v) => !v); setImage(null); setVideo(null); }}><Icon name="play" size={14} />YouTube</button>}
             </>}
             <span className="mb-count">{text.length}/{maxChars}</span>
+            {send.isPending && video && <button type="button" className="mini-btn" onClick={() => ctl.current?.abort()}>Cancelar subida</button>}
             <button type="button" className="mini-btn primary mb-send" disabled={!canSend} onClick={() => void submit()}>{label}</button>
           </div>
           <p className="mb-note">{coach ? "Los mensajes se borran solos 24 horas después de que el cliente los lee." : `Puedes tener hasta ${MAX_UNREAD} mensajes sin leer. Se borran solos 24 horas después de que tu coach los lee.`}</p>

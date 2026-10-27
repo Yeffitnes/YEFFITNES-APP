@@ -14,6 +14,8 @@ const ERR: Record<string, string> = { too_many: "Subiste muchos vídeos hoy. Int
 
 export function UploadProvider({ toast, children }: { toast: (m: string, err?: boolean) => void; children: React.ReactNode }) {
   const qc = useQueryClient(), [jobs, setJobs] = useState<Job[]>([]), seq = useRef(0), lock = useRef<{ release: () => Promise<void> } | null>(null);
+  const ctls = useRef(new Map<number, AbortController>());
+  const cancel = (id: number) => ctls.current.get(id)?.abort();
   const patch = (id: number, p: Partial<Job>) => setJobs((l) => l.map((j) => (j.id === id ? { ...j, ...p } : j)));
   const active = jobs.some((j) => j.state === "up");
 
@@ -21,10 +23,13 @@ export function UploadProvider({ toast, children }: { toast: (m: string, err?: b
     const id = ++seq.current; setJobs((l) => [...l, { id, label, pct: 0, state: "up" }]);
     void (async () => {
       try {
-        const vid = await uploadVideo(file, (pct) => patch(id, { pct }), opts);
+        const ac = new AbortController(); ctls.current.set(id, ac);
+        const vid = await uploadVideo(file, (pct) => patch(id, { pct }), { ...opts, signal: ac.signal });
         await finish(vid, qc); patch(id, { pct: 100, state: "done" }); toast(`${label}: listo`);
         setTimeout(() => setJobs((l) => l.filter((j) => j.id !== id)), 4000);
-      } catch (e) { patch(id, { state: "err", msg: e instanceof UploadError ? ERR[e.code] ?? ERR.upload_failed : "No pudimos guardar el vídeo. Inténtalo de nuevo." }); }
+      } catch (e) {
+        if (e instanceof UploadError && e.code === "cancelled") { setJobs((l) => l.filter((j) => j.id !== id)); toast("Subida cancelada"); return; }
+        patch(id, { state: "err", msg: e instanceof UploadError ? ERR[e.code] ?? ERR.upload_failed : "No pudimos guardar el vídeo. Inténtalo de nuevo." }); } finally { ctls.current.delete(id); }
     })();
   }, [qc, toast]);
 
@@ -45,7 +50,7 @@ export function UploadProvider({ toast, children }: { toast: (m: string, err?: b
       {jobs.length > 0 && <div className="upl-stack" role="status" aria-live="polite">{jobs.map((j) => (
         <div key={j.id} className={`upl-chip${j.state === "err" ? " err" : ""}`}>
           <div className="upl-row"><b>{j.label}</b><span>{j.state === "up" ? `${j.pct}%` : j.state === "done" ? "Listo" : "Error"}</span></div>
-          {j.state === "up" && <><div className="upl-bar"><i style={{ width: `${j.pct}%` }} /></div><small>Puedes seguir usando la app. No la cierres hasta que termine.</small></>}
+          {j.state === "up" && <><div className="upl-bar"><i style={{ width: `${j.pct}%` }} /></div><small>Puedes seguir usando la app. No la cierres hasta que termine.</small><button className="ghost-btn" style={{ height: 28, fontSize: 11.5 }} onClick={() => cancel(j.id)}>Cancelar subida</button></>}
           {j.state === "err" && <><small>{j.msg}</small><button className="ghost-btn" style={{ height: 28, fontSize: 11.5, marginTop: 6 }} onClick={() => setJobs((l) => l.filter((x) => x.id !== j.id))}>Cerrar</button></>}
         </div>))}</div>}
     </Ctx.Provider>

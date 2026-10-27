@@ -1,5 +1,6 @@
 import type { Viewport } from "next";
 import { redirect } from "next/navigation";
+import { signOut } from "@/app/login/actions";
 import { requireUser } from "@/lib/session";
 import { Providers } from "@/components/Providers";
 import { PortalBottomNav, PortalSide } from "@/components/portal/PortalNav";
@@ -18,7 +19,7 @@ export default async function PortalLayout({ children }: { children: React.React
     <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name} prefetch={false} me={{ id: client.id, status: client.status, planName: (client.plans as unknown as { name: string } | null)?.name ?? null, features: (client.plans as unknown as { features: string[] } | null)?.features ?? [], onboarded: !!client.onboarded_at, objective: client.objective, objectiveAt: client.objective_at }}>
       <div className="shell">
         <PortalSide />
-        <main className="main"><div className="m-logo"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /></div><ActionsBar side="client" />{children}</main>
+        <main className="main"><div className="m-logo"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><form action={signOut}><button className="m-out">Salir</button></form></div><ActionsBar side="client" />{children}</main>
         <PortalBottomNav />
         <Onboarding />
         <Warmup />

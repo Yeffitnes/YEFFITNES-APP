@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUnread } from "@/lib/messages";
+import { signOut } from "@/app/login/actions";
 const I = {
   dash: <><rect x="3" y="3" width="6" height="6" rx="1.5" /><rect x="11" y="3" width="6" height="6" rx="1.5" /><rect x="3" y="11" width="6" height="6" rx="1.5" /><rect x="11" y="11" width="6" height="6" rx="1.5" /></>,
   cli: <><circle cx="10" cy="7" r="3.2" /><path d="M3.5 17c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" /></>,
@@ -42,5 +43,5 @@ export function SideNav({ clientCount }: { clientCount: number }) {
 export function MobileNav() {
   const path = usePathname(), unread = useUnread().data ?? 0;
   const L = [["/coach", "Dashboard"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"], ["/coach/mensajes", "Mensajes"], ["/coach/reportes", "Reportes"], ["/coach/agenda", "Agenda"], ["/coach/material", "Material"]];
-  return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} prefetch className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}{t === "Mensajes" && unread > 0 ? ` (${unread})` : ""}</Link>)}</nav>;
+  return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} prefetch className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}{t === "Mensajes" && unread > 0 ? ` (${unread})` : ""}</Link>)}<form action={signOut} style={{ flex: "0 0 auto" }}><button className="m-out-pill">Salir</button></form></nav>;
 }

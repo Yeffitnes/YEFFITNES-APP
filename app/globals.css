@@ -83,3 +83,9 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 .upl-bar{height:5px;border-radius:5px;background:rgba(0,0,0,.08);overflow:hidden}
 .upl-bar i{display:block;height:100%;background:var(--red,#e5322d);transition:width .3s}
 .upl-chip small{color:var(--text-dim,#666);font-size:11.5px}
+
+/* Salir en celular */
+.m-logo{align-items:center;justify-content:space-between}
+@media (max-width:1080px){.m-logo{display:flex}}
+.m-out{background:none;border:1px solid var(--line,#ddd);border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:700;color:var(--text-dim,#666);cursor:pointer}
+.m-out-pill{font:inherit;font-size:12.5px;font-weight:700;padding:9px 14px;border-radius:20px;background:var(--paper,#fff);border:1px solid var(--line,#ddd);color:var(--text-dim,#666);cursor:pointer;white-space:nowrap}
