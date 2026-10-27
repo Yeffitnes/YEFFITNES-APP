@@ -8,6 +8,12 @@ Estado al **26-oct-2026, noche**. Escrito para que un asistente nuevo (o una per
 - Repositorio: `Yeffitnes/YEFFITNES-APP`. Ruta de trabajo del asistente: `/home/claude/yeffitnes`.
 - Responde corto, claro y sin tecnicismos. Di **qué cambió, qué verificaste y qué NO pudiste verificar**. Cristian prueba en su iPhone y en escritorio con Safari y te dice cómo se ve: confía en eso para lo visual.
 
+## 1b. Dónde está el "plano" del proyecto (blueprint, diseño y contexto)
+- **Diseño visual:** `design/mockups/*.html` es la fuente visual (hay mockups del dashboard, clientes, catálogo, agenda y material del coach, y de Hoy, Mi plan, Progreso, Agenda y Material del cliente) y `design/README.md` explica cómo usarlos. Regla del proyecto: copiar estructura, clases, textos y flujo; mejorar sí, improvisar no. **Ojo:** desde el 26-oct se cambiaron a propósito el verde (fuera) y los acentos negros con brillo rojo; los mockups viejos aún tienen verde.
+- **Qué es el producto, prioridades P0 a P3, reglas de oro:** `docs/CONTEXT.md` y `docs/ARCHITECTURE.md`. Cómo trabajar un agente: `docs/AGENT_PLAYBOOK.md`.
+- **Product Blueprint v1 y propuesta comercial a Jeff:** se publicaron como documentos de Claude y **no están dentro del repo**; el `CHANGELOG.md` solo los menciona. De ahí salen los planes de la landing (Esencial y Completo, sin precios: son PROPUESTA y hay que validarlos con Jeff). **Cristian: pega aquí el enlace de esos documentos para que el próximo asistente los pueda leer:** `ENLACE_DEL_BLUEPRINT: pendiente`.
+- **Antigüedad:** `docs/CONTEXT.md` (24-oct) y `docs/PROJECT_STATE.md` (25-oct) quedaron **desactualizados**; lo que pasó después está en `CHANGELOG.md` y en este archivo. Si algo se contradice, mandan este archivo y el `CHANGELOG.md`.
+
 ## 2. Reglas fijas (Cristian las repitió varias veces; no las olvides)
 1. **Sin emojis ni símbolos genéricos.** Usa los iconos de marca (`components/ui/Icon.tsx`). Si falta uno, se agrega ahí.
 2. **Sin verde.** No le gustan los chulos ni las letras verdes. Lo completado va en la marca: rojo (`--neon` a `--rose`) y negro (`--ink` #0A0910). Ya se quitó el verde en panel del coach y del cliente; si ves uno nuevo, quítalo. Excepciones deliberadas: el color de una línea de la gráfica de progreso y la flecha de mejora en métricas.

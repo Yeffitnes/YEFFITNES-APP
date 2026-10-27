@@ -1,4 +1,7 @@
 # CHANGELOG
+## 2026-10-26 - HANDOFF: dónde está el plano
+- `docs/HANDOFF.md` gana la sección 1b (mockups, blueprint, contexto y qué documentos están desactualizados). Solo documentación. Revertir: borrar esa sección.
+
 ## 2026-10-26 - Documento de traspaso
 - Nuevo `docs/HANDOFF.md` (estado, reglas fijas, entornos Netlify/Vercel/Supabase, vídeos, trampas, pendientes y cómo arrancar un chat nuevo) y `CLAUDE.md` que lo apunta; `AGENTS.md` lo pone primero. Solo documentación.
 - Revertir: borrar `docs/HANDOFF.md` y `CLAUDE.md`, y la primera frase añadida en `AGENTS.md`.
