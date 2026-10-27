@@ -6,7 +6,7 @@ import { UploadError, uploadVideo } from "@/lib/upload-video";
 // Subidas en segundo plano: viven en la raíz de la app, no en la pantalla donde empezaron.
 // El coach puede cambiar de sección mientras sube; la pantalla se mantiene encendida y se avisa si intenta cerrar.
 type Job = { id: number; label: string; pct: number; state: "up" | "done" | "err"; msg?: string };
-type Enqueue = (j: { file: File; label: string; opts?: { purpose?: "report" | "message"; clientId?: string }; finish: (videoId: string, qc: QueryClient) => Promise<void> }) => void;
+type Enqueue = (j: { file: File; label: string; opts?: { purpose?: "report" | "message" | "material"; clientId?: string }; finish: (videoId: string, qc: QueryClient) => Promise<void> }) => void;
 const Ctx = createContext<Enqueue>(() => {});
 export const useBackgroundUpload = () => useContext(Ctx);
 

@@ -8,6 +8,7 @@ import { KIND_LABEL } from "@/lib/queries";
 import { DAY3, hhmm } from "@/lib/dates";
 import { todayWeekday } from "@/lib/week";
 import { VideoModal } from "./VideoModal";
+import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
 import { Icon } from "@/components/ui/Icon";
 import { icsHref } from "@/lib/ics";
@@ -70,9 +71,10 @@ export function FeaturedVideo() {
   return (
     <>
       <button className="featured-video-card" style={{ border: 0, width: "100%", textAlign: "left", font: "inherit" }} disabled={open.isPending} onClick={() => open.mutate(f.id, { onSuccess: setShown })}>
-        <div className="fv-text"><div className="fv-tag">Vídeo de la semana</div><div className="fv-title">{f.title}</div><div className="fv-caption">Tu coach comparte un mensaje corto para toda su comunidad — se actualiza cada semana.</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
+        <div className="fv-text"><div className="fv-tag">{f.featuredPeriod === "day" ? "Vídeo del día" : "Vídeo de la semana"}</div><div className="fv-title">{f.title}</div><div className="fv-caption">{f.featuredPeriod === "day" ? "El mensaje de tu coach para hoy." : "Tu coach comparte un mensaje corto para toda su comunidad esta semana."}</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
         <div className="fv-thumb"><div className="fv-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div></div></button>
       {shown?.videoRef && <VideoModal ytId={shown.videoRef} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
+      {shown && !shown.videoRef && shown.privateVideo && <BunnyModal param={`material=${shown.id}`} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
     </>
   );
 }

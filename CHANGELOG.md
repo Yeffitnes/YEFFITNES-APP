@@ -1,4 +1,19 @@
 # CHANGELOG
+## 2026-10-27 - Material: vídeo privado y vídeo del día o de la semana en Hoy
+- Jeff elige **YouTube o Privado** al crear un vídeo en Material. El privado se sube desde la app en segundo plano (hasta 15 min), queda como borrador mientras sube y **se publica solo al terminar**. Solo lo ven los clientes cuyo plan incluye ese material.
+- La estrella ahora pregunta: **Vídeo del día** (se ve en Hoy hasta la medianoche) o **Vídeo de la semana** (7 días). El cliente ve "Vídeo del día" o "Vídeo de la semana" en Hoy y en Material. Los destacados que ya existían siguen sin vencimiento.
+- Un vídeo subido se considera huérfano a las **3 h** (antes 30 min), para no borrar a mitad de camino un vídeo largo de Jeff.
+- **Migración `0035_material_private_video.sql` (correrla en Supabase ANTES de subir este código).** Mantiene compatibles las llamadas del código viejo de `main`. Pruebas: nueva `rls_matvideo.sql`; `rls_videodiscard.sql` ajustada a las 3 h.
+- Archivos: `MaterialView.tsx`, `MaterialClientView.tsx`, `HoySide.tsx`, `lib/queries.ts`, `lib/upload-video.ts`, `lib/upload-manager.tsx`, `app/api/video/upload-url` y `play` (`?material=`), estilos "Material: vídeo privado" al final de `coach.css`.
+- Revertir: ver la cabecera de la migración; restaurar esos archivos del commit `a2cfa31`.
+
+## 2026-10-27 - Notificaciones obligatorias y bienvenida interactiva con personaje guía
+- Decisión de Cristian: al entrar, el cliente **tiene que activar las notificaciones** (pantalla que no se puede saltar; si las bloqueó, explica cómo activarlas en iPhone o Android y vuelve a revisar al regresar a la app). Aplica también al cliente sin plan, para que le llegue "Tu plan está activo". Si el teléfono no admite avisos, o aún no hay claves VAPID, no se bloquea.
+- Después, con el plan activo, viene la **bienvenida interactiva**: un personaje guía recorre los paneles reales (los ilumina en el menú: Hoy, Mi plan, Agenda, Progreso, Material, Mensajes), y al final pide punto de partida (peso y cintura), **consentimiento de fotos de progreso** y la llamada con Jeff. Se puede saltar.
+- El personaje es una **propuesta provisional** en la marca (`components/portal/Guide.tsx`); el diseño definitivo sigue NO DEFINIDO y se cambia solo en ese archivo. Textos = PROPUESTA.
+- Archivos: `components/portal/FirstRun.tsx` (nuevo), `Guide.tsx` (nuevo), `Onboarding.tsx` (reescrito), `app/inicio/layout.tsx`, icono `send` en `Icon.tsx`, bloque "Primer arranque" al final de `portal.css`. Sin migración.
+- Revertir: en `app/inicio/layout.tsx` volver a `<Onboarding />` en lugar de `<FirstRun />` y restaurar `Onboarding.tsx` del commit `a2cfa31`.
+
 ## 2026-10-27 - Cliente sin plan dentro de la app, con candados y "Solicitar acceso"
 - Decisión de Cristian: el cliente que se registra **entra a la app** (antes quedaba en una pantalla aparte). Ve todos los paneles con el candado borroso del FeatureGate de DaniFit (en la marca) y arriba un aviso con el botón **"Solicitar acceso a Jeff"**.
 - Al pedir acceso, a Jeff le llega un aviso push y en **Clientes** el cliente sale primero con "Pidió acceso · hoy · asígnale un plan". Se puede volver a avisar cada 12 h.

@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/session";
 import { Providers } from "@/components/Providers";
 import { PortalBottomNav, PortalSide } from "@/components/portal/PortalNav";
 import { ActionsBar } from "@/components/ActionsBar";
-import { Onboarding } from "@/components/portal/Onboarding";
+import { FirstRun } from "@/components/portal/FirstRun";
 import { Warmup } from "@/components/portal/Warmup";
 import { PendingBanner } from "@/components/portal/LockedPanel";
 import "./portal.css";
@@ -23,7 +23,7 @@ export default async function PortalLayout({ children }: { children: React.React
         <PortalSide />
         <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Cliente" /></div></div><ActionsBar side="client" /><PendingBanner />{children}</main>
         <PortalBottomNav />
-        <Onboarding />
+        <FirstRun />
         <Warmup />
       </div>
     </Providers>

@@ -1,51 +1,104 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useCompleteOnboarding, useMe, useSaveMeasure } from "@/lib/queries";
+import { useCompleteOnboarding, useGiveConsent, useMe, useSaveMeasure } from "@/lib/queries";
 import { useProfile, useWorkspaceId } from "@/components/Providers";
-import { Icon } from "@/components/ui/Icon";
-// Bienvenida de un minuto, solo la primera vez. Textos = PROPUESTA (el contenido y el personaje guía los define Jeff).
+import { Guide } from "./Guide";
+
+// Bienvenida interactiva, solo la primera vez y solo con plan activo (va después de activar las notificaciones; ver FirstRun).
+// El personaje recorre los paneles REALES de la app (los ilumina en el menú) y al final pide punto de partida, permiso de fotos y la llamada.
+// Textos = PROPUESTA (el contenido final y el diseño del personaje los define Jeff).
+type Spot = { kind: "spot"; href: string; title: string; text: string };
+type Step = { kind: "hello" } | Spot | { kind: "measures" } | { kind: "consent" } | { kind: "call" };
+const TOUR: Spot[] = [
+  { kind: "spot", href: "/inicio", title: "Hoy", text: "Lo primero que ves al abrir: tu rutina del día, tus series y tu reporte diario. Si no sabes qué hacer, empieza aquí." },
+  { kind: "spot", href: "/inicio/plan", title: "Mi plan", text: "Tu semana completa de entrenamiento y tu nutrición, con vídeos de técnica de cada ejercicio." },
+  { kind: "spot", href: "/inicio/agenda", title: "Agenda", text: "Aquí reservas tus llamadas conmigo en los horarios que publico." },
+  { kind: "spot", href: "/inicio/progreso", title: "Progreso", text: "Tu peso, tus medidas y tus fotos. Así vemos juntos cómo cambias semana a semana." },
+  { kind: "spot", href: "/inicio/material", title: "Material", text: "Vídeos y guías que preparo para ti: técnica, consejos y el vídeo de la semana." },
+  { kind: "spot", href: "/inicio/mensajes", title: "Mensajes", text: "Para lo importante: hasta 3 mensajes al día, una foto y un vídeo. Yo te respondo con calma." },
+];
+// Busca el enlace visible en el menú (abajo en el celular, a la izquierda en el computador, o el botón de mensajes de arriba).
+function findTarget(href: string): HTMLElement | null {
+  const all = Array.from(document.querySelectorAll<HTMLElement>(`.bottom-nav a[href="${href}"], .side-nav a[href="${href}"], .act-btn[href="${href}"], a.act-btn[href="${href}"]`));
+  return all.find((el) => el.offsetParent !== null && el.getBoundingClientRect().width > 0) ?? null;
+}
+
 export function Onboarding() {
-  const { profileId, name } = useProfile(), ws = useWorkspaceId(), me = useMe(profileId), done = useCompleteOnboarding(profileId), save = useSaveMeasure(me.data?.id ?? "", ws), router = useRouter();
-  const [step, setStep] = useState(0), [w, setW] = useState(""), [waist, setWaist] = useState(""), [err, setErr] = useState("");
+  const { profileId, name } = useProfile(), ws = useWorkspaceId(), me = useMe(profileId), done = useCompleteOnboarding(profileId), router = useRouter();
+  const save = useSaveMeasure(me.data?.id ?? "", ws), consent = useGiveConsent(profileId);
+  const [i, setI] = useState(0), [w, setW] = useState(""), [waist, setWaist] = useState(""), [err, setErr] = useState("");
+  const hasProgress = !!me.data?.features.includes("progress");
+  const steps: Step[] = [{ kind: "hello" }, ...TOUR, ...(hasProgress ? [{ kind: "measures" } as Step, { kind: "consent" } as Step] : []), { kind: "call" }];
+  const step = steps[Math.min(i, steps.length - 1)];
+  const next = () => { setErr(""); setI((x) => Math.min(x + 1, steps.length - 1)); };
+  const back = () => { setErr(""); setI((x) => Math.max(x - 1, 0)); };
+  const finish = (go?: string) => { done.mutate(); if (go) router.push(go); };
   if (!me.data || me.data.status !== "active" || me.data.onboarded) return null;
   const first = name.split(" ")[0] || "";
-  const finish = (go?: string) => { done.mutate(); if (go) router.push(go); };
   const saveMeasures = () => {
     const wt = w.trim() === "" ? null : Number(w.replace(",", ".")), ws2 = waist.trim() === "" ? null : Number(waist.replace(",", "."));
     if ((wt != null && !(wt >= 20 && wt <= 400)) || (ws2 != null && !(ws2 >= 30 && ws2 <= 300))) return setErr("Revisa los números: peso entre 20 y 400 kg, cintura entre 30 y 300 cm.");
-    if (wt == null && ws2 == null) return setStep(2);
-    save.mutate({ ...(wt != null ? { weight: wt } : {}), ...(ws2 != null ? { waist: ws2 } : {}) }, { onSuccess: () => setStep(2) });
+    if (wt == null && ws2 == null) return next();
+    save.mutate({ ...(wt != null ? { weight: wt } : {}), ...(ws2 != null ? { waist: ws2 } : {}) }, { onSuccess: next, onError: () => setErr("No pudimos guardarlo. Puedes seguir y hacerlo después en Progreso.") });
   };
-  return (
-    <div className="modal-backdrop open" role="dialog" aria-modal="true" aria-label="Bienvenida">
-      <div className="modal-box" style={{ maxWidth: 440 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <span className="fv-avatar" style={{ width: 38, height: 38, fontSize: 15 }}>J</span>
-          <div style={{ fontSize: 12, color: "var(--text-dim)" }}>Paso {step + 1} de 3 · <button style={{ background: "none", border: 0, color: "var(--text-dim)", textDecoration: "underline", cursor: "pointer", font: "inherit" }} onClick={() => finish()}>Saltar</button></div>
-        </div>
-        {step === 0 && <>
-          <div className="modal-title">¡Bienvenido{first ? `, ${first}` : ""}!</div>
-          <div className="modal-sub">Soy Jeff, tu coach. Así funciona todo en un minuto:</div>
-          <div style={{ fontSize: 13.5, lineHeight: 1.7, marginTop: 12 }}>
-            <div className="ob-row"><Icon name="dumbbell" size={16} /><span><b>Hoy</b>: tu rutina del día. Registra tus series y cómo te sentiste.</span></div>
-            <div className="ob-row"><Icon name="video" size={16} /><span><b>Reporte diario</b>: un vídeo corto y un comentario cuando termines.</span></div>
-            <div className="ob-row"><Icon name="chart" size={16} /><span><b>Progreso</b>: tus medidas y fotos para ver tu cambio.</span></div>
-            <div className="ob-row"><Icon name="calendar" size={16} /><span><b>Agenda</b>: reserva tu llamada conmigo.</span></div>
-          </div>
-          <div className="modal-actions"><button className="modal-btn primary" onClick={() => setStep(1)}>Empezar</button></div></>}
-        {step === 1 && <>
+  const dots = <div className="tour-dots" aria-label={`Paso ${i + 1} de ${steps.length}`}>{steps.map((_, k) => <i key={k} className={k === i ? "on" : k < i ? "done" : ""} />)}</div>;
+  const skip = <button type="button" className="tour-skip" onClick={() => finish()}>Saltar</button>;
+
+  if (step.kind === "spot") return <SpotStep key={step.href} step={step} dots={dots} skip={skip} onNext={next} onBack={back} />;
+  return createPortal(
+    <div className="modal-backdrop open tour-center" role="dialog" aria-modal="true" aria-label="Bienvenida">
+      <div className="modal-box tour-box">
+        <div className="tour-top"><Guide size={step.kind === "hello" ? 76 : 52} talking />{skip}</div>
+        {step.kind === "hello" && <>
+          <div className="modal-title">¡Hola{first ? `, ${first}` : ""}! Soy Jeff.</div>
+          <div className="modal-sub">Tu plan ya está activo. Te muestro la app en un minuto: dónde está cada cosa y qué haces en cada panel.</div>
+          <div className="modal-actions">{dots}<button className="modal-btn primary" onClick={next}>Empezar el recorrido</button></div></>}
+        {step.kind === "measures" && <>
           <div className="modal-title">Tu punto de partida</div>
-          <div className="modal-sub">Así podremos ver tu avance. Puedes omitirlo y hacerlo después en Progreso.</div>
+          <div className="modal-sub">Con esto vemos tu avance desde el primer día. Si no lo tienes a mano, lo haces después en Progreso.</div>
           <div className="modal-field"><label htmlFor="ow">Peso (kg)</label><input id="ow" inputMode="decimal" value={w} onChange={(e) => { setW(e.target.value); setErr(""); }} placeholder="Ej. 68.5" /></div>
           <div className="modal-field"><label htmlFor="oc">Cintura (cm, opcional)</label><input id="oc" inputMode="decimal" value={waist} onChange={(e) => { setWaist(e.target.value); setErr(""); }} placeholder="Ej. 78" /></div>
           {err && <p role="alert" style={{ color: "var(--accent)", fontSize: 13 }}>{err}</p>}
-          <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setStep(2)}>Omitir</button><button className="modal-btn primary" disabled={save.isPending} onClick={saveMeasures}>{save.isPending ? "Guardando…" : "Guardar y seguir"}</button></div></>}
-        {step === 2 && <>
+          <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={next}>Omitir</button><button className="modal-btn primary" disabled={save.isPending} onClick={saveMeasures}>{save.isPending ? "Guardando…" : "Guardar y seguir"}</button></div></>}
+        {step.kind === "consent" && <>
+          <div className="modal-title">Fotos de progreso</div>
+          <div className="modal-sub">Para ver tu cambio puedes subir fotos tuyas. Son privadas: solo las vemos tú y yo, nunca se publican y las puedes borrar cuando quieras.</div>
+          <p className="tour-note">¿Aceptas guardar tus fotos de progreso en la app con estas condiciones?</p>
+          {err && <p role="alert" style={{ color: "var(--accent)", fontSize: 13 }}>{err}</p>}
+          <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={next}>Ahora no</button><button className="modal-btn primary" disabled={consent.isPending} onClick={() => consent.mutate(undefined, { onSuccess: next, onError: () => setErr("No pudimos guardarlo. Puedes aceptarlo después en Progreso.") })}>{consent.isPending ? "Guardando…" : "Acepto"}</button></div></>}
+        {step.kind === "call" && <>
           <div className="modal-title">Agenda tu llamada conmigo</div>
-          <div className="modal-sub">Hablamos por llamada para conocernos y ajustar tu plan. Elige un horario disponible.</div>
-          <div className="modal-actions"><button className="modal-btn ghost" onClick={() => finish()}>Más tarde</button><button className="modal-btn primary" onClick={() => finish("/inicio/agenda")}>Ver horarios</button></div></>}
+          <div className="modal-sub">Hablamos para conocernos y ajustar tu plan a ti. Elige uno de los horarios que publico.</div>
+          <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={() => finish()}>Más tarde</button><button className="modal-btn primary" onClick={() => finish("/inicio/agenda")}>Ver horarios</button></div></>}
       </div>
-    </div>
-  );
+    </div>, document.body);
+}
+
+// Paso que ilumina un panel real del menú y pone al personaje al lado, con su explicación.
+function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: React.ReactNode; skip: React.ReactNode; onNext: () => void; onBack: () => void }) {
+  const [r, setR] = useState<DOMRect | null>(null);
+  const measure = useCallback(() => { const el = findTarget(step.href); setR(el ? el.getBoundingClientRect() : null); }, [step.href]);
+  useLayoutEffect(() => { measure(); }, [measure]);
+  useEffect(() => { window.addEventListener("resize", measure); window.addEventListener("scroll", measure, true); const t = setTimeout(measure, 300);
+    return () => { window.removeEventListener("resize", measure); window.removeEventListener("scroll", measure, true); clearTimeout(t); }; }, [measure]);
+  const vw = typeof window !== "undefined" ? window.innerWidth : 400, vh = typeof window !== "undefined" ? window.innerHeight : 800, pad = 6;
+  // Dónde va la burbuja: encima si el panel está abajo (celular), a la derecha si está en el menú lateral, debajo si está arriba.
+  const W = Math.min(340, vw - 32);
+  let pos: React.CSSProperties = { left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: W };
+  if (r) {
+    if (r.top > vh * 0.6) pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), bottom: vh - r.top + 18, width: W };
+    else if (r.right < vw * 0.4) pos = { left: r.right + 18, top: Math.min(Math.max(16, r.top + r.height / 2 - 90), vh - 260), width: W };
+    else pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), top: r.bottom + 18, width: W };
+  }
+  return createPortal(
+    <div className="tour-layer" role="dialog" aria-modal="true" aria-label={`Recorrido: ${step.title}`}>
+      {r ? <div className="tour-ring" style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} /> : <div className="tour-dim" />}
+      <div className="tour-bubble" style={pos}>
+        <div className="tour-bubble-head"><Guide size={44} talking /><div><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
+        <p className="tour-bubble-text">{step.text}</p>
+        <div className="tour-bubble-actions">{dots}<button type="button" className="modal-btn ghost" onClick={onBack}>Atrás</button><button type="button" className="modal-btn primary" onClick={onNext}>Siguiente</button></div>
+      </div>
+    </div>, document.body);
 }

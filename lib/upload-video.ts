@@ -14,7 +14,7 @@ export function videoDuration(file: File): Promise<number | null> {
 }
 // Descarta en el servidor un vídeo creado pero no usado (borra en Bunny y libera el cupo). Sin esperar ni fallar.
 export const discardVideo = (videoId: string | null | undefined) => { if (videoId) void fetch("/api/video/discard", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ videoId }) }).catch(() => {}); };
-export async function uploadVideo(file: File, onProgress: (pct: number) => void, opts: { purpose?: "report" | "message"; clientId?: string; signal?: AbortSignal } = {}): Promise<string> {
+export async function uploadVideo(file: File, onProgress: (pct: number) => void, opts: { purpose?: "report" | "message" | "material"; clientId?: string; signal?: AbortSignal } = {}): Promise<string> {
   const { signal, ...body } = opts;
   if (signal?.aborted) throw new UploadError("cancelled");
   const r = await fetch("/api/video/upload-url", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal }).catch(() => { throw new UploadError(signal?.aborted ? "cancelled" : "failed"); });
@@ -25,7 +25,7 @@ export async function uploadVideo(file: File, onProgress: (pct: number) => void,
     const up = new Upload(file, {
       endpoint: a.endpoint, retryDelays: [0, 3000, 8000, 20000], chunkSize: 5 * 1024 * 1024,
       headers: { AuthorizationSignature: a.signature, AuthorizationExpire: String(a.expire), VideoId: a.videoId, LibraryId: a.libraryId },
-      metadata: { filetype: file.type || "video/mp4", title: `${body.purpose === "message" ? "mensaje" : "reporte"}-${a.videoId.slice(0, 8)}` },
+      metadata: { filetype: file.type || "video/mp4", title: `${body.purpose ?? "reporte"}-${a.videoId.slice(0, 8)}` },
       onError: () => reject(new UploadError("upload_failed")),
       onProgress: (sent, total) => onProgress(Math.round((sent / total) * 100)),
       onSuccess: () => resolve(),

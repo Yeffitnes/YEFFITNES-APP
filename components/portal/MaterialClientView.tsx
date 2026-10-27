@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMaterialList, useOpenMaterial, useMe, type MaterialItem, type MaterialOpen } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 import { VideoModal } from "./VideoModal";
+import { BunnyModal } from "@/components/ui/BunnyModal";
 import { upgradeLink } from "@/lib/features";
 import { PendingSection } from "./LockedPanel";
 import { useProfile } from "@/components/Providers";
@@ -25,7 +26,7 @@ export function MaterialClientView() {
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>Aprende con tu coach</h1><p className="greeting-sub">{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"} para acompañar tu proceso` : "Cargando…"}</p></div></div>
       {feat && <button className="featured-video-card" style={{ border: 0, width: "100%", textAlign: "left", font: "inherit" }} onClick={() => go(feat)}>
-        <div className="fv-text"><div className="fv-tag">Vídeo de la semana</div><div className="fv-title">{feat.title}</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
+        <div className="fv-text"><div className="fv-tag">{feat.featuredPeriod === "day" ? "Vídeo del día" : "Vídeo de la semana"}</div><div className="fv-title">{feat.title}</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
         <div className="fv-thumb"><div className="fv-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div></div></button>}
       <div className="filter-row">
         <div className="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" /><line x1="13.2" y1="13.2" x2="17" y2="17" /></svg><input type="text" placeholder="Buscar contenido..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar contenido" /></div>
@@ -45,6 +46,7 @@ export function MaterialClientView() {
           <div className="content-body"><div className="content-title">{m.title}</div><div className="content-cat">{m.category}</div><div className="content-date">{fmt(m.date)}</div></div>
         </button>))}</div>
       {shown?.kind === "video" && shown.videoRef && <VideoModal ytId={shown.videoRef} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
+      {shown?.kind === "video" && !shown.videoRef && shown.privateVideo && <BunnyModal param={`material=${shown.id}`} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
       {shown?.kind === "article" && <div className="read-modal-backdrop open" onMouseDown={(e) => e.target === e.currentTarget && setShown(null)}>
         <div className="read-modal" role="dialog" aria-modal="true" aria-label={shown.title}>
           <button className="read-modal-close" aria-label="Cerrar" onClick={() => setShown(null)}><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" /></svg></button>

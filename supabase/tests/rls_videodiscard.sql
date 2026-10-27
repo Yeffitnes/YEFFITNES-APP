@@ -11,7 +11,8 @@ begin
   select id into ca from public.clients where profile_id=a; select id into cb from public.clients where profile_id=b;
   insert into public.video_uploads (video_id, workspace_id, client_id, created_at) values
     ('d1d1d1d1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca, now()), ('d2d2d2d2-bbbb-bbbb-bbbb-bbbbbbbbbbbb', ws, cb, now()),
-    ('d3d3d3d3-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca, now() - interval '2 hours');
+    ('d3d3d3d3-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca, now() - interval '4 hours'),   -- huérfano: más de 3 h (0035)
+    ('d4d4d4d4-aaaa-aaaa-aaaa-aaaaaaaaaaaa', ws, ca, now() - interval '2 hours');   -- subida larga en curso: aún no es huérfano
   -- el cliente descarta el suyo, no el de otro; uno en uso no se descarta
   perform pg_temp.as_user(a);
   select public.discard_video_upload('d2d2d2d2-bbbb-bbbb-bbbb-bbbbbbbbbbbb') into ok; if ok then bad:=bad||' [descartó un vídeo ajeno]'; end if;
@@ -23,6 +24,7 @@ begin
   select public.discard_video_upload('d3d3d3d3-aaaa-aaaa-aaaa-aaaaaaaaaaaa') into ok; if ok then bad:=bad||' [otro coach descartó]'; end if;
   perform pg_temp.as_user(jeff);
   select count(*) into n from public.due_orphan_videos() where video_id = 'd3d3d3d3-aaaa-aaaa-aaaa-aaaaaaaaaaaa'; if n<>1 then bad:=bad||' [coach no ve el huérfano viejo]'; end if;
+  select count(*) into n from public.due_orphan_videos() where video_id = 'd4d4d4d4-aaaa-aaaa-aaaa-aaaaaaaaaaaa'; if n<>0 then bad:=bad||' [trató como huérfano un vídeo de hace 2 h]'; end if;
   select count(*) into n from public.due_orphan_videos() where video_id = 'd2d2d2d2-bbbb-bbbb-bbbb-bbbbbbbbbbbb'; if n<>0 then bad:=bad||' [lista uno reciente]'; end if;
   select public.discard_video_upload('d3d3d3d3-aaaa-aaaa-aaaa-aaaaaaaaaaaa') into ok; if not ok then bad:=bad||' [coach no pudo descartar]'; end if;
   perform pg_temp.reset();

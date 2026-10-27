@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
+import { useBackgroundUpload } from "@/lib/upload-manager";
 
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null };
@@ -410,22 +411,34 @@ export function useCoachBook() {
 
 // ---- Material educativo ----
 export const MAT_CATS = ["Técnica", "Nutrición", "Movilidad", "Recuperación", "Motivación"];
-export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; tier: "basic" | "full"; featured: boolean; published: boolean; date: string; views: number };
+export type FeaturedPeriod = "day" | "week";
+export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; tier: "basic" | "full"; featured: boolean; featuredPeriod: FeaturedPeriod; featuredUntil: string | null; published: boolean; date: string; views: number };
+const bogotaToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 export const useCoachMaterials = () => useQuery({ queryKey: ["coach-materials"], staleTime: 30_000, queryFn: async (): Promise<CoachMaterial[]> => {
-  const { data, error } = await db().from("materials").select("id,kind,title,category,body,video_ref,tier,is_featured,published,published_on,material_views(count)").order("published_on", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
-  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; tier: "basic" | "full"; is_featured: boolean; published: boolean; published_on: string; material_views: { count: number }[] };
-  return (data as unknown as Raw[]).map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, tier: m.tier, featured: m.is_featured, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0 }));
+  const { data, error } = await db().from("materials").select("id,kind,title,category,body,video_ref,video_id,tier,is_featured,featured_period,featured_until,published,published_on,material_views(count)").order("published_on", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
+  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; video_id: string | null; tier: "basic" | "full"; is_featured: boolean; featured_period: FeaturedPeriod; featured_until: string | null; published: boolean; published_on: string; material_views: { count: number }[] };
+  const today = bogotaToday();
+  return (data as unknown as Raw[]).map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, privateVideo: !!m.video_id, tier: m.tier,
+    featured: m.is_featured && (!m.featured_until || m.featured_until >= today), featuredPeriod: m.featured_period ?? "week", featuredUntil: m.featured_until, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0 }));
 } });
-export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean };
+// file: vídeo privado nuevo (Bunny). Se guarda como borrador, se sube en segundo plano y al terminar se engancha y se publica (0035).
+export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean };
 export function useSaveMaterial(workspaceId: string) {
-  const qc = useQueryClient(), toast = useToast();
+  const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
   return useMutation({
     mutationFn: async (v: MaterialInput) => {
-      const row = { title: v.title.trim(), kind: v.kind, category: v.category, tier: v.tier, published: v.published, body: v.kind === "article" ? v.body.trim() : null, video_ref: v.kind === "video" ? v.videoRef : null };
-      const { error } = v.id ? await db().from("materials").update(row).eq("id", v.id) : await db().from("materials").insert({ ...row, workspace_id: workspaceId });
-      if (error) throw error;
+      const priv = v.kind === "video" && (!!v.file || !!v.keepPrivate);
+      const row: Record<string, unknown> = { title: v.title.trim(), kind: v.kind, category: v.category, tier: v.tier, published: v.file ? false : v.published, body: v.kind === "article" ? v.body.trim() : null };
+      if (v.kind !== "video" || !priv) { row.video_ref = v.kind === "video" ? v.videoRef : null; row.video_id = null; }
+      const res = v.id ? await db().from("materials").update(row).eq("id", v.id).select("id").single() : await db().from("materials").insert({ ...row, workspace_id: workspaceId }).select("id").single();
+      if (res.error) throw res.error;
+      const id = (res.data as { id: string }).id;
+      if (v.file) upload({ file: v.file, label: `Vídeo "${v.title.trim().slice(0, 28)}"`, opts: { purpose: "material" }, finish: async (vid, q) => {
+        const { error } = await db().rpc("attach_material_video", { p_material: id, p_video: vid, p_publish: v.published }); if (error) throw error;
+        void q.invalidateQueries({ queryKey: ["coach-materials"] });
+      } });
     },
-    onSuccess: (_d, v) => toast(v.id ? "Contenido actualizado" : "Contenido publicado"),
+    onSuccess: (_d, v) => toast(v.file ? "Guardado. El vídeo se está subiendo; se publica solo al terminar." : v.id ? "Contenido actualizado" : "Contenido publicado"),
     onError: () => toast("No pudimos guardar el contenido. Revisa los datos e inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }),
   });
@@ -437,25 +450,25 @@ export function useDeleteMaterial() {
 }
 export function useFeatureMaterial() {
   const qc = useQueryClient(), toast = useToast();
-  return useMutation({ mutationFn: async (v: { id: string; on: boolean }) => { const { error } = await db().rpc("set_featured_material", { p_id: v.id, p_on: v.on }); if (error) throw error; },
-    onSuccess: (_d, v) => toast(v.on ? "Vídeo de la semana actualizado" : "Ya no hay vídeo destacado"),
-    onError: (e) => toast((e as { message?: string })?.message?.includes("not_featurable") ? "Solo un vídeo publicado y de acceso para todos los planes puede ser el vídeo de la semana." : "No pudimos destacarlo. Inténtalo de nuevo.", true),
+  return useMutation({ mutationFn: async (v: { id: string; on: boolean; period?: FeaturedPeriod }) => { const { error } = await db().rpc("set_featured_material", { p_id: v.id, p_on: v.on, p_period: v.period ?? "week" }); if (error) throw error; },
+    onSuccess: (_d, v) => toast(!v.on ? "Ya no hay vídeo destacado" : v.period === "day" ? "Listo: es el vídeo del día. Se ve en Hoy hasta la medianoche." : "Listo: es el vídeo de la semana. Se ve en Hoy durante 7 días."),
+    onError: (e) => toast((e as { message?: string })?.message?.includes("not_featurable") ? "Solo un vídeo publicado y de acceso para todos los planes se puede destacar." : "No pudimos destacarlo. Inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
 }
-export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; unlocked: boolean; isNew: boolean };
+export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; featuredPeriod: FeaturedPeriod; privateVideo: boolean; unlocked: boolean; isNew: boolean };
 export const useMaterialList = () => useQuery({ queryKey: ["materials"], staleTime: 60_000, queryFn: async (): Promise<MaterialItem[]> => {
   const { data, error } = await db().rpc("list_materials"); if (error) throw error;
-  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean }[])
-    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, unlocked: m.unlocked, isNew: m.is_new }));
+  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean; featured_period?: FeaturedPeriod; private_video?: boolean }[])
+    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, featuredPeriod: m.featured_period ?? "week", privateVideo: !!m.private_video, unlocked: m.unlocked, isNew: m.is_new }));
 } });
-export type MaterialOpen = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; date: string };
+export type MaterialOpen = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; date: string };
 export function useOpenMaterial() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (id: string): Promise<MaterialOpen> => {
       const { data, error } = await db().rpc("open_material", { p_id: id }); if (error) throw error;
-      const m = (data as { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; published_on: string }[])[0];
-      return { id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, date: m.published_on };
+      const m = (data as { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; published_on: string; private_video?: boolean }[])[0];
+      return { id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, privateVideo: !!m.private_video, date: m.published_on };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["materials"] }),
     onError: (e) => toast((e as { message?: string })?.message?.includes("locked") ? "Este contenido no está incluido en tu plan." : "No pudimos abrir el contenido. Inténtalo de nuevo.", true),
