@@ -6,10 +6,11 @@ import { Modal } from "@/components/ui/Modal";
 import { useThreads } from "@/lib/messages";
 import { localDate, useNutritionClients, useTodayActivity, type ClientRow, type CoachReport, type RecentLog } from "@/lib/queries";
 import type { Attn } from "@/lib/attention";
+import { useFollowUp } from "@/lib/followup";
 import { ago, gradient, initials } from "@/lib/format";
 import { hhmm } from "@/lib/dates";
 
-type Panel = "active" | "trained" | "meals" | "reviews" | "attn";
+type Panel = "active" | "trained" | "meals" | "reviews";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 function Row({ i, id, name, sub, urgent, href, write = true }: { i: number; id: string; name: string; sub: string; urgent?: boolean; href?: string; write?: boolean }) {
@@ -43,9 +44,9 @@ export function DashKpis({ clients, logs, attn, withPlan, reports }: { clients: 
   const unreviewed = logs.filter((l) => l.completed && !l.seen), unseenReports = reports.filter((r) => !r.seen);
   const unreadThreads = (threads.data ?? []).filter((t) => t.unread > 0);
   const reviewsTotal = unreviewed.length + unseenReports.length + unreadThreads.length;
-  const urgent = attn.some((a) => a.urgent);
-  const K = ({ p, label, val, sub, alert }: { p: Panel; label: string; val: number | string; sub: string; alert?: boolean }) => (
-    <button type="button" className="kpi-card kpi-btn" onClick={() => setOpen(p)}><div className="kpi-label">{label}</div><div className="kpi-val">{val}</div><div className={`kpi-sub${alert ? " alert" : ""}`}>{sub}</div><span className="kpi-go" aria-hidden><Icon name="arrow" size={12} /></span></button>
+  const follow = useFollowUp(clients, logs, withPlan, reports, attn), toWrite = follow.filter((r) => r.missing > 0).length, nothing = follow.filter((r) => r.nothing).length;
+  const K = ({ p, label, val, sub, alert }: { p: Panel | "follow"; label: string; val: number | string; sub: string; alert?: boolean }) => (
+    <button type="button" className="kpi-card kpi-btn" onClick={() => (p === "follow" ? document.getElementById("seguimiento")?.scrollIntoView({ behavior: "smooth", block: "start" }) : setOpen(p))}><div className="kpi-label">{label}</div><div className="kpi-val">{val}</div><div className={`kpi-sub${alert ? " alert" : ""}`}>{sub}</div><span className="kpi-go" aria-hidden><Icon name="arrow" size={12} /></span></button>
   );
   return (
     <>
@@ -54,7 +55,7 @@ export function DashKpis({ clients, logs, attn, withPlan, reports }: { clients: 
         <K p="trained" label="Entrenaron hoy" val={trainedIds.size} sub={`de ${withPlan.size ? active.filter((c) => withPlan.has(c.id)).length : active.length} con plan`} />
         <K p="meals" label="Nutrición hoy" val={mealsDone.length} sub={`de ${nutActive.length} con plan`} />
         <K p="reviews" label="Revisiones pendientes" val={reviewsTotal} sub={reviewsTotal ? "Requiere atención" : "Al día"} alert={reviewsTotal > 0} />
-        <K p="attn" label="Clientes por revisar" val={attn.length} sub={urgent ? "Hay casos urgentes" : "Ordenados por urgencia"} alert={urgent} />
+        <K p="follow" label="Por escribirles hoy" val={toWrite} sub={nothing ? `${nothing} sin nada hoy` : toWrite ? "Les falta algo de hoy" : "Todos al día"} alert={nothing > 0} />
       </div>
       {open === "active" && <Modal wide title="Clientes activos" sub={`${active.length} activo${active.length === 1 ? "" : "s"}`} onClose={() => setOpen(null)}>
         <Section title="Activos" n={active.length} empty="Aún no hay clientes activos.">{active.map((c, i) => <Row key={c.id} i={i} id={c.id} name={c.name} sub={`${c.plan ? `Plan ${c.plan}` : "Sin plan"} · ${lastTxt(c.id)}`} />)}</Section>
@@ -73,9 +74,6 @@ export function DashKpis({ clients, logs, attn, withPlan, reports }: { clients: 
         <Section title="Reportes diarios" n={unseenReports.length} empty="No hay reportes por ver.">{unseenReports.map((r, i) => <Row key={r.id} i={i} id={r.clientId} href="/coach/reportes" write={false} name={r.clientName} sub={`${r.videoState === "uploaded" ? "Con vídeo · " : ""}${cap(ago(r.date))}`} />)}</Section>
         <Section title="Mensajes sin leer" n={unreadThreads.length} empty="No hay mensajes sin leer.">{unreadThreads.map((t, i) => <Row key={t.clientId} i={i} id={t.clientId} href={`/coach/mensajes?c=${t.clientId}`} write={false} name={t.name} sub={`${t.unread} sin leer`} />)}</Section>
         <Section title="Entrenamientos sin revisar" n={unreviewed.length} empty="No hay entrenamientos sin revisar.">{unreviewed.slice(0, 20).map((l, i) => <Row key={l.id} i={i} id={l.clientId} name={l.clientName} write={false} sub={`${l.routine ?? "Entrenamiento"}${l.effort ? ` · esfuerzo ${l.effort}/10` : ""} · ${cap(ago(l.date))}`} urgent={(l.effort ?? 0) >= 9} />)}</Section>
-      </Modal>}
-      {open === "attn" && <Modal wide title="Clientes por revisar" sub="Los que más necesitan que les escribas, primero" onClose={() => setOpen(null)}>
-        <Section title="Necesitan atención" n={attn.length} empty="Todo al día. Ningún cliente necesita atención ahora.">{attn.map((a, i) => <Row key={a.clientId} i={i} id={a.clientId} name={a.name} sub={a.reason} urgent={a.urgent} />)}</Section>
       </Modal>}
     </>
   );

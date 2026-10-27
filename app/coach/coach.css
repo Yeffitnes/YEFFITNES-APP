@@ -787,3 +787,16 @@ html{scroll-behavior:smooth;}
 .today-done svg{stroke:var(--accent);flex:none}
 .today-done span{flex:1;min-width:140px}
 .today-done button{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);padding:6px 12px;border-radius:20px;background:#fff;border:1px solid var(--line)}
+
+/* Seguimiento de hoy */
+.fu-sub{font-size:13.5px;color:var(--text-dim);margin:2px 0 12px}
+.fu-chips{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding-bottom:6px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
+.fu-chips .filter-chip{flex:0 0 auto;white-space:nowrap}
+.fu-chips .filter-chip b{font-family:var(--font-mono),monospace;margin-left:4px;opacity:.75}
+.fu-chips .filter-chip.active{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);border-color:var(--ink);color:#fff}
+.fu-row .attn-body{min-width:0}
+.fu-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.fu-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
+.fu-pill i{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.fu-pill.done{background:var(--ink);color:#fff}
+.fu-pill.missing{background:#fff;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(212,26,64,.4)}

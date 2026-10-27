@@ -6,9 +6,10 @@ import { useThreads } from "@/lib/messages";
 import { hhmm, sameDay } from "@/lib/dates";
 import { useProfile } from "@/components/Providers";
 import { attention } from "@/lib/attention";
-import { ago, gradient, initials } from "@/lib/format";
+import { ago } from "@/lib/format";
 import { Skeleton } from "@/components/ui/Modal";
 import { DashKpis } from "./DashKpis";
+import { FollowUpCard } from "./FollowUp";
 import { AnnouncementsCard } from "./AnnouncementsCard";
 import { ActivityCard } from "./ActivityCard";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -16,7 +17,7 @@ export function DashboardView() {
   const { name } = useProfile(), clients = useClients(), logs = useRecentLogs(), plans = useActivePlanClients(), reports = useCoachReports();
   if (clients.isPending || logs.isPending || plans.isPending) return <div><div className="sk" style={{ height: 30, width: 220, marginBottom: 22 }} /><div className="sk" style={{ height: 90, marginBottom: 18 }} /><Skeleton rows={3} /></div>;
   if (clients.isError || logs.isError || plans.isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el panel. <button className="filter-chip" onClick={() => { clients.refetch(); logs.refetch(); plans.refetch(); }}>Reintentar</button></p></div>;
-  const cl = clients.data, lg = logs.data, active = cl.filter((c) => c.status === "active"), pending = cl.filter((c) => c.status === "pending").length;
+  const cl = clients.data, lg = logs.data, pending = cl.filter((c) => c.status === "pending").length;
   const attn = attention(cl, lg, new Set(plans.data));
   const unreviewed = lg.filter((l) => l.completed && !l.seen).length;
   const recent = lg.filter((l) => l.completed && l.completedAt).sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? "")).slice(0, 6);
@@ -29,15 +30,7 @@ export function DashboardView() {
       <DashKpis clients={cl} logs={lg} attn={attn} withPlan={new Set(plans.data)} reports={reports.data ?? []} />
       <div className="dash-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div className="card">
-            <div className="card-head"><div><div className="card-tag">Necesitan atención</div><div className="card-title">Clientes por revisar</div></div><Link href="/coach/clientes" className="card-link">Ver todos <Icon name="arrow" size={12} /></Link></div>
-            {!attn.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 8 }}>{active.length ? "Todo al día. Ningún cliente necesita atención ahora." : "Aún no hay clientes activos. Activa a un cliente asignándole un plan."}</p>}
-            {attn.map((a, i) => (
-              <Link key={a.clientId} href={`/coach/clientes/${a.clientId}`} className="attn-row">
-                <div className="attn-avatar" style={{ background: gradient(i) }}>{initials(a.name)}</div>
-                <div className="attn-body"><div className="attn-name">{a.name}</div><div className={`attn-reason${a.urgent ? " urgent" : ""}`}>{a.reason}</div></div>
-              </Link>))}
-          </div>
+          <FollowUpCard clients={cl} logs={lg} withPlan={new Set(plans.data)} reports={reports.data ?? []} attn={attn} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {unseenReports > 0 && <Link href="/coach/reportes" className="card card-dark" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar <Icon name="arrow" size={13} /></div></Link>}

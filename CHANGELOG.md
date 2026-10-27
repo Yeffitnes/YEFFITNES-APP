@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-10-26 - Dashboard: "Seguimiento de hoy"
+- La tarjeta "Clientes por revisar" del dashboard se reemplaza por "Seguimiento de hoy": cada cliente activo con tres marcas (Entreno, Nutrición, Reporte) = hecho / falta, filtros (Por escribir, Sin nada hoy, Sin reporte, Sin entrenar, Sin nutrición, Al día) con su conteo, y botón Escribir. Solo cuenta lo que le corresponde a cada cliente: plan de entrenamiento activo, plan de nutrición activo, plan que exige reporte diario. La razón de atención anterior (días sin entrenar, entrenamientos sin revisar) sigue visible bajo el nombre.
+- La 5.ª tarjeta ("Por escribirles hoy") lleva a esa tarjeta. Lógica en `lib/followup.ts` (sin migración).
+- Revertir: volver a `DashboardView.tsx` y `DashKpis.tsx` del commit `bbb2a19`; borrar `lib/followup.ts` y `FollowUp.tsx`.
+
 ## 2026-10-26 - Hoy: "Entrenamientos anteriores" desplegable al final
 - Al final de la pestaña "Hoy": lista desplegable de los entrenamientos anteriores (sin el de hoy), con cuántos están sin revisar; cada uno se abre para ver el detalle y revisarlo. `RecentWorkouts` gana las opciones `title`, `skipDate` y `collapsible`.
 - Revertir: quitar la línea `<RecentWorkouts ... collapsible />` de `TodayCard.tsx`.
