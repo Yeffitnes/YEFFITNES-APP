@@ -44,6 +44,7 @@ Estado al **27-oct-2026, noche** (actualizado; lo nuevo del 27-oct está marcado
 
 ## 4. Base de datos (Supabase)
 - Rapidez al abrir (28-oct): "Hoy" se dibuja en el servidor (`app/inicio/layout.tsx` + `lib/fetchers.ts`), el service worker guarda solo archivos fijos, y `/api/ping` + tarea `yeffitnes-despierta` mantienen el servidor despierto (PASO_A_PRODUCCION §3c).
+- **Producción (Netlify) al día desde el 28-oct** (`main` = `37970c1`). Tareas programadas activas: 4 recordatorios, `yeffitnes-videos`, `yeffitnes-despierta` (Netlify) y `yeffitnes-despierta-vercel`.
 - Migraciones en `supabase/migrations/` (hoy hasta **0037**). **Se corren a mano en el SQL Editor de Supabase, ANTES de subir el código que las usa.** Si el código de `bloque-hoy` pide una columna que no existe, las pantallas fallan en Vercel.
 - Estado conocido (según Cristian): **0028 a 0035 corridas** (0032-0035 confirmadas el 27-oct, noche). **0036 corrida** (27-oct, noche). **0037 corrida** (28-oct, según Cristian). Lección: si Vercel muestra "No pudimos cargar los clientes", casi siempre falta correr la última migración.
 - **Compatibilidad con `main`:** mientras Netlify tenga código viejo, las migraciones deben seguir funcionando con él (columnas nuevas opcionales, funciones con parámetros por defecto). La 0031 recrea `review_workout(p_log, p_comment, p_audio default null)`: el código viejo, que llama con dos argumentos, debería seguir funcionando, pero **no se probó contra `main`**.
