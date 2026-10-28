@@ -16,7 +16,7 @@ import { DAY_LONG, categoryLabel, weekDates } from "@/lib/week";
 import { Icon } from "@/components/ui/Icon";
 import { QuickRow } from "./QuickRow";
 import { RoutineVideo } from "./RoutineVideo";
-import { PendingSection } from "./LockedPanel";
+import { PendingSection, PlanWait } from "./LockedPanel";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
@@ -55,7 +55,7 @@ export function HoyView() {
   const plan = plans.data?.find((p) => p.status === "active"), day = plan?.days.find((d) => d.weekday === wd);
   const logList = logs.data ?? [], logToday = logList.find((l) => l.date === today);
   const first = name.split(" ")[0] || "";
-  const sub = !plan ? "Tu coach está preparando tu plan." : day ? `Hoy toca ${day.name.toLowerCase()}.` : "Hoy es día de descanso. Recupérate bien.";
+  const sub = !plan ? "Después de tu primera llamada, Jeff arma tu rutina y tu nutrición para ti." : day ? `Hoy toca ${day.name.toLowerCase()}.` : "Hoy es día de descanso. Recupérate bien.";
   const planWd = plan?.days.map((d) => d.weekday) ?? [], wk = weekDates(), n = streak(plan?.days.map((d) => d.weekday) ?? [], logList);
   return (
     <>
@@ -71,13 +71,13 @@ export function HoyView() {
       {!!ann.data?.length && <QuickRow icon="megaphone" tone="idle" title={ann.data.length === 1 ? "Anuncio de tu coach" : `${ann.data.length} anuncios de tu coach`} sub={ann.data[0].title || ann.data[0].body.slice(0, 60)}>
         {ann.data.map((a) => <div key={a.id} style={{ marginTop: 8, fontSize: 14, lineHeight: 1.55 }}>{a.pinned && <Icon name="pin" size={13} style={{ marginRight: 5 }} />}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
       </QuickRow>}
-      {me.data && (me.data.features.includes("daily_report") ? <ReportCard clientId={cid} /> : <div style={{ marginBottom: 12 }}><FeatureGate features={me.data.features} feature="daily_report" name={name}><span /></FeatureGate></div>)}
+      {me.data && (me.data.features.includes("daily_report") ? (plan ? <ReportCard clientId={cid} /> : <div style={{ marginBottom: 12 }}><PlanWait kind="report" /></div>) : <div style={{ marginBottom: 12 }}><FeatureGate features={me.data.features} feature="daily_report" name={name}><span /></FeatureGate></div>)}
       </div>
       <DayDone cid={cid} features={me.data?.features ?? []} trainingToday={!!day} trainingDone={!!logToday?.completed} />
       <FeaturedVideo />
       <div className="dash-grid">
         {me.data && !me.data.features.includes("training") ? <FeatureGate features={me.data.features} feature="training" name={name}><span /></FeatureGate>
-          : !plan ? <div className="card card-routine"><div className="card-tag">Tu rutina</div><p className="empty-note">Todavía no tienes una rutina asignada. Cuando tu coach publique tu plan, aparecerá aquí.</p></div>
+          : !plan ? <PlanWait kind="training" />
           : !day ? <div className="card card-routine"><div className="card-tag">Hoy</div><div className="card-title">Día de descanso</div><p className="empty-note">No tienes rutina hoy. El descanso también es parte del entrenamiento.</p></div>
           : <Routine key={day.id} cid={cid} day={day} title={day.name} items={day.items} log={logToday} today={today} guide={logList.filter((l) => l.completed).length < 2} />}
         <SessionCard cid={cid} />

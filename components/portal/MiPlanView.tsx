@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { PlanWait } from "./LockedPanel";
 import { useClientNutrition, useLogs, useMe, useTrainingPlans, type PlanDay, type PlanItem } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
@@ -45,7 +46,7 @@ export function MiPlanView() {
   const byDay = new Map<number, PlanDay>((plan?.days ?? []).map((d) => [d.weekday, d]));
   const trainDays = plan?.days.length ?? 0;
   const todayDay = byDay.get(wd);
-  const sub = !plan ? "Tu coach está preparando tu plan." : `${trainDays} ${trainDays === 1 ? "día" : "días"} de entrenamiento por semana. ${todayDay ? `Hoy toca ${todayDay.name.toLowerCase()}.` : "Hoy es día de descanso."}`;
+  const sub = !plan ? "Después de tu primera llamada, Jeff arma tu plan para ti." : `${trainDays} ${trainDays === 1 ? "día" : "días"} de entrenamiento por semana. ${todayDay ? `Hoy toca ${todayDay.name.toLowerCase()}.` : "Hoy es día de descanso."}`;
   return (
     <>
       <div className="topbar">
@@ -58,7 +59,7 @@ export function MiPlanView() {
       {mode === "nutrition" ? (
         <FeatureGate features={features} feature="nutrition" name={name}><NutritionPanel clientId={cid} /></FeatureGate>
       ) : !features.includes("training") ? <FeatureGate features={features} feature="training" name={name}><span /></FeatureGate>
-      : !plan ? <div className="card"><div className="card-tag">Tu rutina</div><p className="empty-note">Todavía no tienes una rutina asignada. Cuando tu coach publique tu plan, aparecerá aquí.</p></div>
+      : !plan ? <PlanWait kind="training" />
       : (
         <>
           <div className="day-selector" role="tablist" aria-label="Días de la semana">
@@ -136,7 +137,7 @@ function NutritionPanel({ clientId }: { clientId: string }) {
   const { data, isPending, isError, refetch } = useClientNutrition(clientId), [day, setDay] = useState(todayWeekday());
   if (isPending) return <div className="sk" style={{ height: 220 }} />;
   if (isError) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu plan de nutrición.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => refetch()}>Reintentar</button></div>;
-  if (!data) return <div className="card"><div className="card-tag">Plan nutricional</div><p className="empty-note">Tu coach todavía no publica tu plan de nutrición. Cuando lo haga, aparecerá aquí.</p></div>;
+  if (!data) return <PlanWait kind="nutrition" />;
   const macros = [data.kcal != null && ["Calorías", `${data.kcal} kcal`], data.protein != null && ["Proteína", `${data.protein} g`], data.carbs != null && ["Carbohidratos", `${data.carbs} g`], data.fat != null && ["Grasas", `${data.fat} g`]].filter(Boolean) as string[][];
   const todays = [...data.meals.filter((m) => m.weekday === null), ...data.meals.filter((m) => m.weekday === day)];
   const recs = (data.notes ?? "").split("\n").map((l) => l.trim()).filter(Boolean);

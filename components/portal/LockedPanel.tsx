@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { useProfile } from "@/components/Providers";
-import { useMe, useRequestAccess } from "@/lib/queries";
+import { useFirstCall, useMe, useRequestAccess, useTrainingPlans } from "@/lib/queries";
+import { usePathname } from "next/navigation";
+import { Guide, GuideFace } from "./Guide";
 import { ago } from "@/lib/format";
 // Panel bloqueado (diseño del FeatureGate de DaniFit, en la marca): contenido de muestra borroso + candado + qué hacer.
 // El bloqueo visual NO es la seguridad: la base de datos no entrega nada de lo que el plan no incluye.
@@ -50,6 +52,48 @@ export function PendingBanner() {
       <span className="lk-ico"><Icon name="lock" size={16} stroke={1.8} /></span>
       <div className="lk-banner-txt"><b>Tu cuenta está creada.</b><span>Puedes recorrer la app; todo se desbloquea cuando Jeff active tu plan.</span></div>
       <RequestAccessButton />
+    </section>
+  );
+}
+
+// ───── Antes de la primera llamada (27-oct): el plan está activo pero la rutina y la nutrición las arma Jeff después de la llamada ─────
+const WAIT: Record<"training" | "nutrition" | "report", { tag: string; title: string; sub: string }> = {
+  training: { tag: "Tu rutina", title: "Jeff creará tu rutina para ti", sub: "Después de tu primera llamada, Jeff arma tu entrenamiento según tu objetivo, tu nivel y tu tiempo." },
+  nutrition: { tag: "Tu nutrición", title: "Jeff creará tu nutrición para ti", sub: "Después de tu primera llamada, Jeff arma tu plan de comidas a tu medida." },
+  report: { tag: "Reporte diario", title: "Tu reporte empieza con tu rutina", sub: "Cuando tengas tu rutina, al terminar cada entrenamiento le envías a Jeff un vídeo corto y un comentario." },
+};
+const callWhen = (iso: string) => `${new Date(iso).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })} a las ${new Date(iso).toLocaleTimeString("es", { hour: "numeric", minute: "2-digit" })}`;
+function CallCta() {
+  const { profileId } = useProfile(), me = useMe(profileId), call = useFirstCall(me.data?.id ?? "");
+  if (call.data?.next) return <span className="lk-sent"><Icon name="calendar" size={13} /> Tu llamada: {callWhen(call.data.next.startsAt)}</span>;
+  if (call.data?.any) return <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> Ya hablaste con Jeff: tu plan está en camino.</span>;
+  return <Link href="/inicio/agenda" className="lk-cta"><Icon name="calendar" size={13} /> Agendar mi llamada</Link>;
+}
+// Mismo diseño del panel bloqueado, sin candado: aquí no falta pagar nada, falta poco.
+export function PlanWait({ kind }: { kind: "training" | "nutrition" | "report" }) {
+  const w = WAIT[kind];
+  return (
+    <div className="lk-card lk-wait">
+      <div aria-hidden className="lk-ghost"><div className="lk-tag">{w.tag}</div><div className="lk-line w60" /><div className="lk-line" /><div className="lk-line w80" /><div className="lk-line" /></div>
+      <div className="lk-over">
+        <GuideFace size={44} />
+        <div className="lk-eyebrow">Falta poco</div>
+        <div className="lk-title">{w.title}</div>
+        <p className="lk-sub">{w.sub}</p>
+        <CallCta />
+      </div>
+    </div>
+  );
+}
+// Aviso fijo arriba hasta que el cliente agende su primera llamada (y mientras no tenga rutina).
+export function FirstCallBanner() {
+  const { profileId } = useProfile(), me = useMe(profileId), cid = me.data?.status === "active" ? me.data.id : "", call = useFirstCall(cid), plans = useTrainingPlans(cid), path = usePathname();
+  if (!cid || !call.data || call.data.any || path.startsWith("/inicio/agenda") || plans.data?.some((p) => p.status === "active")) return null;
+  return (
+    <section className="lk-banner fc-banner" aria-label="Agenda tu primera llamada">
+      <Guide size={54} pose="wave" />
+      <div className="lk-banner-txt"><b>Primer paso: agenda tu llamada con Jeff.</b><span>Ahí se conocen y después Jeff arma tu rutina y tu nutrición especialmente para ti.</span></div>
+      <Link href="/inicio/agenda" className="lk-cta"><Icon name="calendar" size={13} /> Agendar mi llamada</Link>
     </section>
   );
 }

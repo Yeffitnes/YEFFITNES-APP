@@ -1,40 +1,49 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { enablePush, pushState, type PushState } from "@/lib/push-client";
+import { enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
 import { signOut } from "@/app/login/actions";
 import { Guide } from "./Guide";
 import { Onboarding } from "./Onboarding";
-const isIos = () => typeof navigator !== "undefined" && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+const ua = () => (typeof navigator === "undefined" ? "" : navigator.userAgent);
+const isIos = () => /iPhone|iPad|iPod/.test(ua()) || (/Macintosh/.test(ua()) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
+const isMobile = () => isIos() || /Android/.test(ua());
 
-// Primer arranque del cliente (decisión de Cristian, 27-oct): 1) notificaciones OBLIGATORIAS; 2) después, la bienvenida interactiva.
-// Si el teléfono no admite avisos (o aún no hay claves VAPID) no se puede exigir: se sigue sin bloquear.
+// Primer arranque del cliente (decisión de Cristian): 1) notificaciones OBLIGATORIAS, sin poder tocar nada antes; 2) la bienvenida.
+// Casos:
+//  - "on": este teléfono ya tiene avisos (aunque los haya activado otra cuenta): se pasan a ESTA cuenta (resyncPush) y sigue.
+//  - "off" / "denied": pantalla que no se puede saltar.
+//  - "unsupported" en celular: casi siempre es iPhone/Android en el navegador sin instalar la app → pide instalarla (sin la app no hay avisos).
+//  - "unsupported" en computador o "not_configured" (sin claves VAPID): no se puede exigir; sigue.
 export function FirstRun() {
   const [ps, setPs] = useState<PushState | "check">("check");
-  const check = useCallback(() => { void pushState().then(setPs).catch(() => setPs("unsupported")); }, []);
+  const check = useCallback(() => { void pushState().then((s) => { setPs(s); if (s === "on") void resyncPush(); }).catch(() => setPs("unsupported")); }, []);
   useEffect(() => {
     check();
-    const onVis = () => { if (document.visibilityState === "visible") check(); };   // vuelve de Ajustes con los avisos activados
+    const onVis = () => { if (document.visibilityState === "visible") check(); };   // vuelve de Ajustes con los avisos activados (o desactivados)
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [check]);
-  if (ps === "check") return null;
+  if (ps === "check") return <div className="nf-gate nf-wait" aria-busy="true" />;   // mientras revisa (también al cargar en el servidor), nada se puede tocar
   if (ps === "off" || ps === "denied") return <NotifyGate state={ps} onState={setPs} recheck={check} />;
+  if (ps === "unsupported" && isMobile()) return <NotifyGate state="install" onState={setPs} recheck={check} />;
   return <Onboarding />;
 }
 
-function NotifyGate({ state, onState, recheck }: { state: "off" | "denied"; onState: (s: PushState) => void; recheck: () => void }) {
+function NotifyGate({ state, onState, recheck }: { state: "off" | "denied" | "install"; onState: (s: PushState) => void; recheck: () => void }) {
   const [busy, setBusy] = useState(false), [tried, setTried] = useState(false);
   const turnOn = async () => { setBusy(true); try { onState(await enablePush()); } catch { onState("off"); } finally { setBusy(false); setTried(true); } };
   return createPortal(
     <div className="nf-gate" role="dialog" aria-modal="true" aria-labelledby="nf-title">
       <div className="nf-box">
-        <Guide size={72} talking />
-        <h2 id="nf-title" className="nf-title">Activa las notificaciones</h2>
-        <p className="nf-sub">Es lo único obligatorio para usar la app. Así te llegan los recordatorios de tu rutina y tu reporte, y las respuestas de Jeff.</p>
+        <Guide size={110} pose="wave" />
+        <h2 id="nf-title" className="nf-title">{state === "install" ? "Instala la app para seguir" : "Activa las notificaciones"}</h2>
+        <p className="nf-sub">{state === "install"
+          ? "Las notificaciones son obligatorias y en el celular solo funcionan con la app instalada. Instálala y ábrela desde el icono."
+          : "Es lo único obligatorio para usar la app. Así te llegan los recordatorios de tu rutina y tu reporte, y las respuestas de Jeff."}</p>
         {state === "off" && <>
           <button type="button" className="lk-cta nf-btn" disabled={busy} onClick={() => void turnOn()}>{busy ? "Activando…" : "Activar notificaciones"}</button>
-          {tried && <p className="nf-hint">Si no apareció la pregunta del teléfono, vuelve a tocar el botón.</p>}
+          {tried && <p className="nf-hint">Si no apareció la pregunta del teléfono, vuelve a tocar el botón y elige <b>Permitir</b>.</p>}
         </>}
         {state === "denied" && <>
           <p className="nf-hint"><b>Las notificaciones están bloqueadas en este teléfono.</b> Actívalas así y vuelve a la app:</p>
@@ -44,6 +53,14 @@ function NotifyGate({ state, onState, recheck }: { state: "off" | "denied"; onSt
               : <><li>Mantén presionado el icono de <b>YEFFITNES</b> y toca <b>Información de la app</b>.</li><li>Entra a <b>Notificaciones</b>.</li><li>Activa <b>Todas las notificaciones</b>.</li></>}
           </ol>
           <button type="button" className="lk-cta nf-btn" onClick={recheck}>Ya las activé</button>
+        </>}
+        {state === "install" && <>
+          <ol className="nf-steps">
+            {isIos()
+              ? <><li>Abre esta dirección en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Añadir a pantalla de inicio</b> y abre <b>YEFFITNES</b> desde el icono nuevo.</li></>
+              : <><li>Abre esta dirección en <b>Chrome</b>.</li><li>Toca el menú (los tres puntos) y elige <b>Instalar app</b>.</li><li>Abre <b>YEFFITNES</b> desde el icono nuevo.</li></>}
+          </ol>
+          <button type="button" className="lk-cta nf-btn" onClick={recheck}>Ya la instalé</button>
         </>}
         <form action={signOut}><button className="nf-out">Salir de la cuenta</button></form>
       </div>

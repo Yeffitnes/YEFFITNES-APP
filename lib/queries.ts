@@ -366,7 +366,16 @@ export const useMyBookings = (clientId: string) => useQuery({ queryKey: ["my-boo
     .filter((b) => b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind }))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 } });
-function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
+// Primera llamada (decisión de Cristian, 27-oct): todo cliente agenda primero una llamada con Jeff; su rutina y nutrición llegan después.
+// any = ya tuvo o tiene una sesión (confirmada o hecha); next = la próxima confirmada.
+export type FirstCall = { any: boolean; next: { startsAt: string } | null };
+export const useFirstCall = (clientId: string) => useQuery({ queryKey: ["first-call", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<FirstCall> => {
+  const { data, error } = await db().from("bookings").select("status,availability_slots(starts_at)").eq("client_id", clientId).in("status", ["confirmed", "completed"]); if (error) throw error;
+  const rows = data as unknown as { status: string; availability_slots: { starts_at: string } | null }[];
+  const next = rows.filter((b) => b.status === "confirmed" && b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => b.availability_slots!.starts_at).sort()[0];
+  return { any: rows.length > 0, next: next ? { startsAt: next } : null };
+} });
+function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "first-call"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
 export function useBookSlot() {
   const toast = useToast(), inv = useAgendaInvalidate();
   return useMutation({ mutationFn: async (slotId: string) => { const { error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; },

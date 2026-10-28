@@ -50,7 +50,9 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
     document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
   }, [open]);
-  const togglePush = async () => { if (busy || ps === "unsupported" || ps === "not_configured" || ps === "denied") return; setBusy(true); try { setPs(ps === "on" ? await disablePush() : await enablePush()); } finally { setBusy(false); } };
+  // Cliente: las notificaciones son obligatorias (FirstRun), así que aquí solo se pueden ENCENDER, no apagar.
+  const lockedOn = side === "client" && ps === "on";
+  const togglePush = async () => { if (busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied") return; setBusy(true); try { setPs(ps === "on" ? await disablePush() : await enablePush()); } finally { setBusy(false); } };
   const msgHref = side === "coach" ? "/coach/mensajes" : "/inicio/mensajes";
   return (
     <div className="actions-bar" ref={box}>
@@ -69,7 +71,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
         {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={() => setOpen(false)}>{i.text}<Icon name="chevron" size={14} /></Link>)}
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
-        <button type="button" className="act-push" onClick={togglePush} disabled={busy || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>
+        <button type="button" className="act-push" onClick={togglePush} disabled={busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>
           <span className={`act-switch${ps === "on" ? " on" : ""}`} aria-hidden />{PUSH_TXT[ps]}
         </button>
       </div>}

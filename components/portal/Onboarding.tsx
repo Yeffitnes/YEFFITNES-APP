@@ -2,12 +2,13 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useCompleteOnboarding, useGiveConsent, useMe, useSaveMeasure } from "@/lib/queries";
+import { useCompleteOnboarding, useFirstCall, useGiveConsent, useMe, useSaveMeasure } from "@/lib/queries";
 import { useProfile, useWorkspaceId } from "@/components/Providers";
-import { Guide } from "./Guide";
+import { Guide, type GuideDir, type GuidePose } from "./Guide";
 
 // Bienvenida interactiva, solo la primera vez y solo con plan activo (va después de activar las notificaciones; ver FirstRun).
 // El personaje recorre los paneles REALES de la app (los ilumina en el menú) y al final pide punto de partida, permiso de fotos y la llamada.
+// La primera llamada es OBLIGATORIA (decisión de Cristian, 27-oct): no hay "más tarde"; "Saltar" lleva directo a ese paso.
 // Textos = PROPUESTA (el contenido final y el diseño del personaje los define Jeff).
 type Spot = { kind: "spot"; href: string; title: string; text: string };
 type Step = { kind: "hello" } | Spot | { kind: "measures" } | { kind: "consent" } | { kind: "call" };
@@ -27,7 +28,7 @@ function findTarget(href: string): HTMLElement | null {
 
 export function Onboarding() {
   const { profileId, name } = useProfile(), ws = useWorkspaceId(), me = useMe(profileId), done = useCompleteOnboarding(profileId), router = useRouter();
-  const save = useSaveMeasure(me.data?.id ?? "", ws), consent = useGiveConsent(profileId);
+  const save = useSaveMeasure(me.data?.id ?? "", ws), consent = useGiveConsent(profileId), call = useFirstCall(me.data?.status === "active" ? me.data.id : "");
   const [i, setI] = useState(0), [w, setW] = useState(""), [waist, setWaist] = useState(""), [err, setErr] = useState("");
   const hasProgress = !!me.data?.features.includes("progress");
   const steps: Step[] = [{ kind: "hello" }, ...TOUR, ...(hasProgress ? [{ kind: "measures" } as Step, { kind: "consent" } as Step] : []), { kind: "call" }];
@@ -44,34 +45,46 @@ export function Onboarding() {
     save.mutate({ ...(wt != null ? { weight: wt } : {}), ...(ws2 != null ? { waist: ws2 } : {}) }, { onSuccess: next, onError: () => setErr("No pudimos guardarlo. Puedes seguir y hacerlo después en Progreso.") });
   };
   const dots = <div className="tour-dots" aria-label={`Paso ${i + 1} de ${steps.length}`}>{steps.map((_, k) => <i key={k} className={k === i ? "on" : k < i ? "done" : ""} />)}</div>;
-  const skip = <button type="button" className="tour-skip" onClick={() => finish()}>Saltar</button>;
+  const toCall = () => { setErr(""); setI(steps.length - 1); };
+  const skip = step.kind === "call" ? null : <button type="button" className="tour-skip" onClick={toCall}>Saltar</button>;
+  const pose: GuidePose = step.kind === "hello" ? "wave" : step.kind === "call" ? "cheer" : "idle";
+  const booked = !!call.data?.any;
 
   if (step.kind === "spot") return <SpotStep key={step.href} step={step} dots={dots} skip={skip} onNext={next} onBack={back} />;
   return createPortal(
     <div className="modal-backdrop open tour-center" role="dialog" aria-modal="true" aria-label="Bienvenida">
       <div className="modal-box tour-box">
-        <div className="tour-top"><Guide size={step.kind === "hello" ? 76 : 52} talking />{skip}</div>
+        <div className="tour-top"><span key={i} className="gd-pop"><Guide size={step.kind === "hello" || step.kind === "call" ? 92 : 70} pose={pose} /></span>{skip}</div>
+        <div key={`t${i}`}>
         {step.kind === "hello" && <>
-          <div className="modal-title">¡Hola{first ? `, ${first}` : ""}! Soy Jeff.</div>
-          <div className="modal-sub">Tu plan ya está activo. Te muestro la app en un minuto: dónde está cada cosa y qué haces en cada panel.</div>
-          <div className="modal-actions">{dots}<button className="modal-btn primary" onClick={next}>Empezar el recorrido</button></div></>}
+          <div className="modal-title say">¡Hola{first ? `, ${first}` : ""}! Soy Jeff.</div>
+          <div className="modal-sub say say-2">Tu plan ya está activo. Así vamos a trabajar:</div>
+          <ol className="ob-steps say say-3">
+            <li><b>1</b><span>Agendas tu <b>primera llamada</b> conmigo para conocernos.</span></li>
+            <li><b>2</b><span>Con lo que hablemos, <b>armo tu rutina y tu nutrición</b> especialmente para ti.</span></li>
+            <li><b>3</b><span>Entrenas, registras tus series y me envías tu <b>reporte</b>. Yo reviso y ajusto.</span></li>
+          </ol>
+          <div className="modal-actions">{dots}<button className="modal-btn primary" onClick={next}>Ver la app</button></div></>}
         {step.kind === "measures" && <>
-          <div className="modal-title">Tu punto de partida</div>
-          <div className="modal-sub">Con esto vemos tu avance desde el primer día. Si no lo tienes a mano, lo haces después en Progreso.</div>
+          <div className="modal-title say">Tu punto de partida</div>
+          <div className="modal-sub say say-2">Con esto vemos tu avance desde el primer día. Si no lo tienes a mano, lo haces después en Progreso.</div>
           <div className="modal-field"><label htmlFor="ow">Peso (kg)</label><input id="ow" inputMode="decimal" value={w} onChange={(e) => { setW(e.target.value); setErr(""); }} placeholder="Ej. 68.5" /></div>
           <div className="modal-field"><label htmlFor="oc">Cintura (cm, opcional)</label><input id="oc" inputMode="decimal" value={waist} onChange={(e) => { setWaist(e.target.value); setErr(""); }} placeholder="Ej. 78" /></div>
           {err && <p role="alert" style={{ color: "var(--accent)", fontSize: 13 }}>{err}</p>}
           <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={next}>Omitir</button><button className="modal-btn primary" disabled={save.isPending} onClick={saveMeasures}>{save.isPending ? "Guardando…" : "Guardar y seguir"}</button></div></>}
         {step.kind === "consent" && <>
-          <div className="modal-title">Fotos de progreso</div>
-          <div className="modal-sub">Para ver tu cambio puedes subir fotos tuyas. Son privadas: solo las vemos tú y yo, nunca se publican y las puedes borrar cuando quieras.</div>
+          <div className="modal-title say">Fotos de progreso</div>
+          <div className="modal-sub say say-2">Para ver tu cambio puedes subir fotos tuyas. Son privadas: solo las vemos tú y yo, nunca se publican y las puedes borrar cuando quieras.</div>
           <p className="tour-note">¿Aceptas guardar tus fotos de progreso en la app con estas condiciones?</p>
           {err && <p role="alert" style={{ color: "var(--accent)", fontSize: 13 }}>{err}</p>}
           <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={next}>Ahora no</button><button className="modal-btn primary" disabled={consent.isPending} onClick={() => consent.mutate(undefined, { onSuccess: next, onError: () => setErr("No pudimos guardarlo. Puedes aceptarlo después en Progreso.") })}>{consent.isPending ? "Guardando…" : "Acepto"}</button></div></>}
         {step.kind === "call" && <>
-          <div className="modal-title">Agenda tu llamada conmigo</div>
-          <div className="modal-sub">Hablamos para conocernos y ajustar tu plan a ti. Elige uno de los horarios que publico.</div>
-          <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={() => finish()}>Más tarde</button><button className="modal-btn primary" onClick={() => finish("/inicio/agenda")}>Ver horarios</button></div></>}
+          <div className="modal-title say">{booked ? "¡Ya tienes tu llamada!" : "Primer paso: tu llamada conmigo"}</div>
+          <div className="modal-sub say say-2">{booked ? "Nos vemos en la llamada. Después armo tu rutina y tu nutrición, y te aviso cuando estén listas." : "Todo empieza aquí: en la llamada nos conocemos y después armo tu rutina y tu nutrición. Elige el horario que te sirva."}</div>
+          <div className="modal-actions">{dots}{booked
+            ? <button className="modal-btn primary" onClick={() => finish()}>Listo</button>
+            : <button className="modal-btn primary" onClick={() => finish("/inicio/agenda")}>Elegir mi horario</button>}</div></>}
+        </div>
       </div>
     </div>, document.body);
 }
@@ -86,18 +99,18 @@ function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: Reac
   const vw = typeof window !== "undefined" ? window.innerWidth : 400, vh = typeof window !== "undefined" ? window.innerHeight : 800, pad = 6;
   // Dónde va la burbuja: encima si el panel está abajo (celular), a la derecha si está en el menú lateral, debajo si está arriba.
   const W = Math.min(340, vw - 32);
-  let pos: React.CSSProperties = { left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: W };
+  let pos: React.CSSProperties = { left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: W }, dir: GuideDir = "down";
   if (r) {
-    if (r.top > vh * 0.6) pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), bottom: vh - r.top + 18, width: W };
-    else if (r.right < vw * 0.4) pos = { left: r.right + 18, top: Math.min(Math.max(16, r.top + r.height / 2 - 90), vh - 260), width: W };
-    else pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), top: r.bottom + 18, width: W };
+    if (r.top > vh * 0.6) { pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), bottom: vh - r.top + 18, width: W }; dir = "down"; }
+    else if (r.right < vw * 0.4) { pos = { left: r.right + 18, top: Math.min(Math.max(16, r.top + r.height / 2 - 90), vh - 300), width: W }; dir = "left"; }
+    else { pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), top: r.bottom + 18, width: W }; dir = "up"; }
   }
   return createPortal(
     <div className="tour-layer" role="dialog" aria-modal="true" aria-label={`Recorrido: ${step.title}`}>
       {r ? <div className="tour-ring" style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} /> : <div className="tour-dim" />}
       <div className="tour-bubble" style={pos}>
-        <div className="tour-bubble-head"><Guide size={44} talking /><div><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
-        <p className="tour-bubble-text">{step.text}</p>
+        <div className="tour-bubble-head"><span className="gd-pop tour-guide"><Guide size={58} pose="point" dir={dir} /></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
+        <p className="tour-bubble-text say say-2">{step.text}</p>
         <div className="tour-bubble-actions">{dots}<button type="button" className="modal-btn ghost" onClick={onBack}>Atrás</button><button type="button" className="modal-btn primary" onClick={onNext}>Siguiente</button></div>
       </div>
     </div>, document.body);

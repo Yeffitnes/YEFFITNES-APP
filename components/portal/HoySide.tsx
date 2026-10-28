@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { PlanWait } from "./LockedPanel";
 import Link from "next/link";
 import { useClientNutrition, useMaterialList, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialOpen } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
@@ -40,6 +41,7 @@ export function NutritionTodayCard({ cid, features, name }: { cid: string; featu
   const has = features.includes("nutrition"), { data } = useClientNutrition(has ? cid : ""), wd = todayWeekday();
   if (!has) return <div className="card-nutrition"><FeatureGate features={features} feature="nutrition" name={name}><span /></FeatureGate></div>;
   const meals = data ? [...data.meals.filter((m) => m.weekday === null), ...data.meals.filter((m) => m.weekday === wd)] : [];
+  if (data === null) return <div className="card-nutrition"><PlanWait kind="nutrition" /></div>;
   return (
     <div className="card card-nutrition"><div className="card-tag">Tu plan de hoy</div><div className="card-title" style={{ fontSize: 15 }}>Nutrición</div>
       {!data ? <p className="empty-note" style={{ marginTop: 10 }}>Tu coach todavía no publica tu plan de nutrición.</p>

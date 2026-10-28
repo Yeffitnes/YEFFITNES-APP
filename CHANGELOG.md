@@ -1,4 +1,26 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Notificaciones sí o sí, primera llamada obligatoria y personaje guía con cuerpo
+- **Notificaciones:** se revisó por qué no salió la pantalla en el teléfono de Cristian: ese teléfono ya tenía avisos activados (de otra cuenta), así que la app los pasa a la cuenta nueva y no pide nada; es lo correcto. Se cerraron los huecos:
+  - Mientras la app revisa, no se puede tocar nada.
+  - iPhone o Android en el navegador sin la app instalada (ahí no hay avisos): ahora sale "Instala la app para seguir", con los pasos.
+  - Avisos activados en el teléfono: se asocian siempre a la cuenta que entra.
+  - El cliente ya no puede apagar los avisos desde el menú de arriba.
+  - Probado en el computador con 5 casos simulados (celular nuevo, avisos bloqueados, iPhone sin instalar, teléfono con avisos ya activos y computador sin soporte).
+  - **Error encontrado y corregido antes de subir:** la primera versión de este cambio rompía el portal al cargar en el servidor.
+- **Primera llamada (decisión de Cristian):** todo cliente agenda primero su llamada con Jeff; la rutina y la nutrición llegan después.
+  - La bienvenida lo explica en 3 pasos y termina en "Elegir mi horario", sin "Más tarde". "Saltar" lleva directo a ese paso.
+  - Mientras no haya agendado ni tenga rutina, arriba sale "Primer paso: agenda tu llamada con Jeff".
+  - Hoy, Mi plan, Nutrición y el Reporte muestran el panel **"Falta poco: Jeff creará tu rutina/nutrición para ti"**: mismo diseño del candado, sin candado. Muestra "Agendar mi llamada" o la fecha de la llamada ya agendada.
+- **Personaje guía:**
+  - Ahora tiene cuerpo, brazos, piernas y tenis.
+  - Parpadea, respira, gira la cabeza y mira a los lados.
+  - Saluda con la mano (pantalla de avisos, bienvenida y aviso de la llamada), señala el panel del menú en el recorrido y celebra con los brazos arriba en el paso de la llamada.
+  - Aparece de un salto en cada paso y los textos entran con animación suave.
+  - Su cara sale también en los paneles "Falta poco".
+  - Diseño provisional (`components/portal/Guide.tsx`).
+- Archivos: `FirstRun.tsx`, `Guide.tsx`, `Onboarding.tsx`, `LockedPanel.tsx` (`PlanWait`, `FirstCallBanner`), `HoyView.tsx`, `HoySide.tsx`, `MiPlanView.tsx`, `ActionsBar.tsx`, `lib/queries.ts` (`useFirstCall`), `app/inicio/layout.tsx`, `portal.css`. Sin migración.
+- Revertir: restaurar esos archivos del commit `de32a6f`.
+
 ## 2026-10-27 - Documentos y limpieza para la próxima salida a main
 - `docs/PRODUCT_BLUEPRINT.md`: copia del blueprint v1 dentro del repo (pedido de Cristian). `docs/BLUEPRINT_GAPS.md` gana las decisiones del 27-oct y la propuesta de rango de repeticiones (sin construir). `docs/FUTURO_MULTICOACH.md`: plan para vender la app a otros coaches (solo planeado).
 - `docs/PASO_A_PRODUCCION.md`: migraciones 0032 a 0035, quinta tarea programada (`yeffitnes-videos`) y §10 "Próxima salida a main" paso a paso. `docs/HANDOFF.md` actualizado.
