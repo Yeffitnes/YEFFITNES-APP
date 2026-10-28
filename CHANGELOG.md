@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Seguimiento de hoy: lo pendiente en gris
+- Pedido de Cristian: en "Seguimiento de hoy" lo que el cliente aún no hace (Entreno, Nutrición, Reporte) ya no va en rojo, que confundía con "hecho". Ahora va en gris suave; lo hecho sigue en negro con chulito.
+- Archivo: `coach.css` (`.fu-pill.missing`). Revertir: color `var(--accent)` y borde `rgba(212,26,64,.4)`.
+
 ## 2026-10-27 (noche) - Recorrido: primero el gesto, después señala
 - Pedido de Cristian: en cada panel el personaje primero hace el gesto del tema (mancuerna, sentadilla, planilla, cronómetro, libro, celular) y a los 2,6 s señala el panel en el menú, que es lo que queda si el cliente se demora leyendo.
 - Archivo: `Onboarding.tsx`. Revertir: restaurar del commit `e1c412d`.
