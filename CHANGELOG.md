@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-10-28 (tarde) - PUBLICACIÓN A PRODUCCIÓN (Netlify): `bloque-hoy` → `main` en un solo bloque
+- Autorizado por Cristian ("fusiona"). `main` estaba en `2f2f1d8` (25-oct, migración 0027). Entran 65 cambios: las migraciones 0028-0037 ya estaban corridas en la base compartida y todo se probó antes en Vercel.
+- Antes de fusionar se confirmaron:
+  - Variables de Netlify: Bunny, `NEXT_PUBLIC_REQUIRE_INSTALL=1`, VAPID propias de Netlify, sin `NEXT_PUBLIC_APP_NAME`.
+  - `0037` (`send_nudge`) presente.
+  - Las 4 tareas de recordatorios apuntan a Netlify.
+  - Los 4 chequeos OK.
+- Después de fusionar, programar en Supabase `yeffitnes-videos` (§2) y `yeffitnes-despierta` (§3c) de `docs/PASO_A_PRODUCCION.md`.
+- Revertir: en Netlify → Deploys, publicar de nuevo el deploy anterior ("Publish deploy", sin compilar ni gastar créditos). En git, `main` puede volver a `2f2f1d8`.
+
 ## 2026-10-28 (tarde) - Activar avisos desde la pantalla, salir rápido, consejo de repeticiones y avisos que llevan al sitio
 Pedidos de Cristian.
 - **Pantalla de notificaciones obligatorias:**
