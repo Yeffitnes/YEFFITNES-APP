@@ -1,4 +1,17 @@
 # CHANGELOG
+## 2026-10-28 - Primera apertura: servidor despierto y menos llamadas al servidor
+- **Pedido de Cristian:** la segunda apertura ya es inmediata, pero la primera seguía tardando cerca de 10 s, sobre todo pensando en Netlify. Medido: en Netlify, despertar el servidor tarda unos 3,3 s, frente a 0,25 s cuando ya está despierto.
+- **Mantener despierto:** ruta nueva `/api/ping`, que no toca la base y queda fuera del middleware. Una tarea de Supabase (pg_cron) la llama cada 5 min de 5 a. m. a medianoche, hora de Colombia. Costo estimado en Netlify: unos 3 créditos al mes. El SQL está en `docs/PASO_A_PRODUCCION.md` §3c; no se activa solo.
+- **Menos llamadas al servidor en cada apertura:**
+  - `/api/video/config` ahora es fija al publicar y sale del CDN. Si cambian las claves de Bunny, hay que volver a publicar.
+  - El reenlace de avisos del teléfono (`resyncPush`) se hace solo si cambió la cuenta o el dispositivo, o una vez al día. Antes eran dos llamadas en cada apertura.
+- **Panel de Jeff:** el perfil y el conteo de clientes se piden a la vez (`app/coach/layout.tsx`).
+- Revertir:
+  - Borrar `app/api/ping` y quitar `api/ping|` del matcher de `middleware.ts`.
+  - Volver a `force-dynamic` en `app/api/video/config/route.ts`.
+  - Restaurar `lib/push-client.ts`, `ActionsBar.tsx`, `FirstRun.tsx` y `app/coach/layout.tsx` del commit `6b5d5a8`.
+  - Detener la tarea: `select cron.unschedule('yeffitnes-despierta');`.
+
 ## 2026-10-28 - La app abre más rápido
 - **Pedido de Cristian:** la app tardaba unos 10 s en abrir.
 - **Causas y cambios:**

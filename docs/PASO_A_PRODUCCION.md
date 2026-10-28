@@ -25,6 +25,9 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] **Quinta tarea, borrado de vídeos (0033), programarla justo DESPUÉS de fusionar a `main`** (antes Netlify no tiene la ruta): cada hora, borra en Bunny los vídeos de reporte vencidos (32 h sin ver, 12 h tras verlos) y los huérfanos.
   `select cron.schedule('yeffitnes-videos', '7 * * * *', $$ select net.http_post(url:='https://yeffitnes.netlify.app/api/cron/purge-videos', headers:=jsonb_build_object('x-cron-secret','LA-MISMA-CLAVE-DEL-CRON')) $$);`
   Detener: `select cron.unschedule('yeffitnes-videos');`. Si cambias la clave del cron, reprograma también esta.
+- [ ] **§3c Mantener despierto el servidor (primera apertura rápida):** DESPUÉS de fusionar (la ruta `/api/ping` debe existir en `main`). Cada 5 min, de 5 a. m. a medianoche hora Colombia (las horas del cron van en UTC). Costo en Netlify: unos 3 créditos/mes.
+  `select cron.schedule('yeffitnes-despierta', '*/5 0-4,10-23 * * *', $$ select net.http_get(url:='https://yeffitnes.netlify.app/api/ping') $$);`
+  Detener: `select cron.unschedule('yeffitnes-despierta');`. Si existe la de pruebas (`yeffitnes-despierta-vercel`), se puede dejar o detener igual.
 - [ ] **Clave del cron:** cambiarla por una nueva antes de lanzar (`update public.app_secrets set value='NUEVA' where name='cron';`) y reprogramar las tareas; la actual circuló en capturas.
 - [ ] Confirmación de correo: decidir si queda activa.
 - [ ] Plan de Supabase: pasar a **Pro** antes de lanzar.

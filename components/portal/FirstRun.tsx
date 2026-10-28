@@ -5,6 +5,7 @@ import { enablePush, pushState, resyncPush, type PushState } from "@/lib/push-cl
 import { signOut } from "@/app/login/actions";
 import { Guide } from "./Guide";
 import { Onboarding } from "./Onboarding";
+import { useProfile } from "@/components/Providers";
 const ua = () => (typeof navigator === "undefined" ? "" : navigator.userAgent);
 const isIos = () => /iPhone|iPad|iPod/.test(ua()) || (/Macintosh/.test(ua()) && typeof navigator !== "undefined" && navigator.maxTouchPoints > 1);
 const isMobile = () => isIos() || /Android/.test(ua());
@@ -16,8 +17,8 @@ const isMobile = () => isIos() || /Android/.test(ua());
 //  - "unsupported" en celular: casi siempre es iPhone/Android en el navegador sin instalar la app → pide instalarla (sin la app no hay avisos).
 //  - "unsupported" en computador o "not_configured" (sin claves VAPID): no se puede exigir; sigue.
 export function FirstRun() {
-  const [ps, setPs] = useState<PushState | "check">("check");
-  const check = useCallback(() => { void pushState().then((s) => { setPs(s); if (s === "on") void resyncPush(); }).catch(() => setPs("unsupported")); }, []);
+  const [ps, setPs] = useState<PushState | "check">("check"), { profileId } = useProfile();
+  const check = useCallback(() => { void pushState().then((s) => { setPs(s); if (s === "on") void resyncPush(profileId); }).catch(() => setPs("unsupported")); }, [profileId]);
   useEffect(() => {
     check();
     const onVis = () => { if (document.visibilityState === "visible") check(); };   // vuelve de Ajustes con los avisos activados (o desactivados)

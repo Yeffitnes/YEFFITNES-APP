@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/session";
+import { requireUser, serverDb } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
 import { Providers } from "@/components/Providers";
 import { ActionsBar } from "@/components/ActionsBar";
@@ -8,9 +8,9 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { initials } from "@/lib/format";
 import "./coach.css";
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
-  const { supabase, profile } = await requireUser();
+  // Perfil y número de clientes a la vez (antes uno después del otro).
+  const [{ profile }, { count }] = await Promise.all([requireUser(), serverDb().from("clients").select("id", { count: "exact", head: true })]);
   if (profile.role !== "coach") redirect("/inicio");
-  const { count } = await supabase.from("clients").select("id", { count: "exact", head: true });
   return (
     <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name}>
     <div className="shell">

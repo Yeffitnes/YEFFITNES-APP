@@ -27,9 +27,12 @@ export async function disablePush(): Promise<PushState> {
   return "off";
 }
 // Si el permiso ya estaba dado (otra sesión/otro usuario en el mismo teléfono), vuelve a asociar este dispositivo con la cuenta actual.
-export async function resyncPush() {
+export async function resyncPush(profileId?: string) {
   if (!pushSupported() || Notification.permission !== "granted" || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return;
   const reg = await navigator.serviceWorker.getRegistration("/sw.js"), sub = await reg?.pushManager.getSubscription(); if (!sub) return;
-  const j = sub.toJSON();
-  await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }) }).catch(() => {});
+  // Solo si cambió el dispositivo o la cuenta, o pasó un día: antes se llamaba al servidor en CADA apertura de la app.
+  const j = sub.toJSON(), mark = `${profileId ?? ""}|${j.endpoint}`, KEY = "yf-push-sync";
+  try { const prev = JSON.parse(localStorage.getItem(KEY) ?? "null") as { m: string; t: number } | null; if (prev && prev.m === mark && Date.now() - prev.t < 86_400_000) return; } catch {}
+  const r = await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }) }).catch(() => null);
+  if (r?.ok) { try { localStorage.setItem(KEY, JSON.stringify({ m: mark, t: Date.now() })); } catch {} }
 }

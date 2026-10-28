@@ -42,7 +42,8 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
   const qc = useQueryClient();
   useEffect(() => { if (side === "client") void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side]);   // "Mensajes" abre al instante
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);
-  useEffect(() => { void pushState().then(setPs); void resyncPush(); }, []);
+  const { profileId } = useProfile();
+  useEffect(() => { void pushState().then(setPs); void resyncPush(profileId); }, [profileId]);
   useEffect(() => { const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; try { void (unread > 0 ? nav.setAppBadge?.(unread) : nav.clearAppBadge?.()); } catch { /* sin soporte */ } }, [unread]);
   useEffect(() => {
     if (!open) return;
