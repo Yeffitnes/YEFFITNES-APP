@@ -18,6 +18,8 @@ import { QuickRow } from "./QuickRow";
 import { RoutineVideo } from "./RoutineVideo";
 import { PendingSection, PlanWait } from "./LockedPanel";
 import { repRange, rangeText, setTip } from "@/lib/progression";
+import { NUDGE_TXT } from "@/lib/nudges";
+import { useMyNudges } from "@/lib/queries";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
@@ -69,6 +71,7 @@ export function HoyView() {
       </div>
       <div className="qrows">
       <FromCoach />
+      <CoachNudges cid={cid} />
       {!!ann.data?.length && <QuickRow icon="megaphone" tone="idle" title={ann.data.length === 1 ? "Anuncio de tu coach" : `${ann.data.length} anuncios de tu coach`} sub={ann.data[0].title || ann.data[0].body.slice(0, 60)}>
         {ann.data.map((a) => <div key={a.id} style={{ marginTop: 8, fontSize: 14, lineHeight: 1.55 }}>{a.pinned && <Icon name="pin" size={13} style={{ marginRight: 5 }} />}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
       </QuickRow>}
@@ -183,6 +186,17 @@ function FromCoach() {
       {last.audioPath && (audio.data ? <audio controls preload="metadata" src={audio.data} style={{ width: "100%", height: 38, marginBottom: last.body ? 10 : 0 }} /> : <p className="qrow-quote" style={{ fontStyle: "normal" }}>Cargando audio…</p>)}
       {(last.body || !last.audioPath) && <p className="qrow-quote" style={{ fontStyle: "normal", color: "var(--text)" }}>{text}</p>}
       <Link href="/inicio/mensajes" className="mini-btn primary" style={{ textDecoration: "none", display: "inline-flex", marginTop: 12 }}>Responder</Link>
+    </QuickRow>
+  );
+}
+
+// Avisos rápidos de Jeff de hoy (Seguimiento → "Avisar"): visibles aquí aunque el teléfono no tenga notificaciones activas.
+function CoachNudges({ cid }: { cid: string }) {
+  const n = useMyNudges(cid), list = n.data ?? [];
+  if (!list.length) return null;
+  return (
+    <QuickRow icon="bell" tone="new" title="Jeff te está esperando" sub={NUDGE_TXT[list[0]].body} chip="Hoy" defaultOpen={list.length > 1}>
+      {list.length > 1 && list.map((k) => <p key={k} className="qrow-quote" style={{ fontStyle: "normal", color: "var(--text)" }}>{NUDGE_TXT[k].body}</p>)}
     </QuickRow>
   );
 }

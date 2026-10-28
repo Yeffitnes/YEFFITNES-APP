@@ -48,5 +48,24 @@ begin
   update public.clients set objective_video_id=null where id=ca; get diagnostics n=row_count; if n<>0 then bad:=bad||' [cliente cambió su vídeo de objetivo]'; end if;
   perform pg_temp.reset();
   if not public._video_in_use('0b0b0b0b-0000-0000-0000-00000000000a') then bad:=bad||' [el vídeo del objetivo cuenta como huérfano]'; end if;
+  -- 0037: send_nudge guarda el aviso; el cliente ve SOLO los suyos; push una sola vez
+  perform pg_temp.reset(); delete from public.nudges;
+  perform pg_temp.as_user(jeff);
+  declare nid uuid; begin
+    nid := public.send_nudge(ca, 'meals');
+    if pg_temp.try(format('select public.send_nudge(%L, %L)', ca, 'meals')) then bad:=bad||' [send_nudge repetido el mismo día]'; end if;
+    select count(*) into n from public.nudge_push_targets(nid) where endpoint='https://push.example/a-nudge'; if n<>1 then bad:=bad||' [push del aviso no devolvió el dispositivo]'; end if;
+    select count(*) into n from public.nudge_push_targets(nid); if n<>0 then bad:=bad||' [push del aviso repetido]'; end if;
+    perform pg_temp.as_user(o);
+    if pg_temp.try(format('select public.send_nudge(%L, %L)', cb, 'train')) then bad:=bad||' [otro coach usó send_nudge]'; end if;
+    select count(*) into n from public.nudge_push_targets(nid); if n<>0 then bad:=bad||' [otro coach obtuvo dispositivos]'; end if;
+    perform pg_temp.as_user(a);
+    select count(*) into n from public.nudges; if n<>1 then bad:=bad||' [el cliente no ve su aviso]'; end if;
+    if pg_temp.try(format('select public.send_nudge(%L, %L)', ca, 'train')) then bad:=bad||' [cliente usó send_nudge]'; end if;
+    select count(*) into n from public.nudge_push_targets(nid); if n<>0 then bad:=bad||' [cliente obtuvo dispositivos]'; end if;
+    perform pg_temp.as_user(b);
+    select count(*) into n from public.nudges; if n<>0 then bad:=bad||' [B ve avisos de A]'; end if;
+  end;
+  perform pg_temp.reset();
   raise notice 'RESULTADO ATAQUES NUDGES: %', coalesce(nullif(bad,''),'ninguno');
 end $$;

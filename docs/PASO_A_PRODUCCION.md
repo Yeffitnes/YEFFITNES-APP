@@ -44,6 +44,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
   - `0034_access_request.sql`: "Solicitar acceso" y aviso "Tu plan está activo".
   - `0035_material_private_video.sql`: vídeo privado en Material y vídeo del día o de la semana.
 - [x] **`0036_nudges_activity_objective_video.sql`** (corrida) (27-oct, noche): botón "Avisar", actividad solo de hoy, vídeo del objetivo. El código de `bloque-hoy` la necesita (Clientes y portal leen `objective_video_id`).
+- [ ] **`0037_nudges_in_app.sql`** (27-oct, noche): "Avisar" guarda el aviso aunque falle el push y el cliente lo ve en Hoy. El código de `bloque-hoy` la necesita para "Avisar".
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
@@ -76,7 +77,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 
 ## 10. Próxima salida a `main` (preparada el 27-oct; NO fusionar hasta que Cristian diga "fusiona")
 Orden:
-1. Correr `0032` a `0036` en Supabase (§3b) y probar en Vercel con el cliente de prueba.
+1. Correr `0032` a `0037` en Supabase (§3b) y probar en Vercel con el cliente de prueba.
 2. En Vercel, de punta a punta: registro nuevo → app con candados → "Solicitar acceso" (a Jeff le llega el aviso) → Jeff asigna plan (al cliente le llega "Tu plan está activo") → activar notificaciones → bienvenida con el personaje → mensajes (3 textos, 1 foto, 1 vídeo; el cuarto texto se rechaza) → reporte con vídeo → Jeff lo marca visto (dice "se borrará en 12 h") → Material: vídeo privado y vídeo del día.
 3. Revisar en Netlify: `BUNNY_*`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
 4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`).

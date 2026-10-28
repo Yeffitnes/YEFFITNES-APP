@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-10-27 (noche) - "Avisar" arreglado: el aviso queda guardado y el cliente lo ve en Hoy
+- **Problema que reportó Cristian:** tocaba "Avisar" y al cliente no le llegaba nada; al volver a entrar aparecían otra vez todos los botones. Causa: el aviso solo existía como notificación del teléfono (si el cliente no tenía avisos activos en esa dirección, no llegaba a ningún lado) y dependía de una llamada al servidor; si esa llamada fallaba, no quedaba guardado y el botón volvía.
+- **Ahora:**
+  - El aviso se guarda primero en la base desde el navegador de Jeff (`send_nudge`). La notificación del teléfono va después y, si falla, el aviso igual queda.
+  - El cliente ve sus avisos de hoy en su pantalla **Hoy** como "Jeff te está esperando" con el texto del aviso, tenga o no notificaciones activas.
+  - El mensaje de confirmación de Jeff dice si le llegó al teléfono o solo quedó en la app.
+- **Migración `0037_nudges_in_app.sql` (correrla ANTES de probar; sin ella "Avisar" dice "No pudimos guardar el aviso").** Prueba ampliada en `rls_nudges.sql`.
+- Archivos: `lib/nudges.ts` (nuevo, textos), `lib/queries.ts`, `app/api/push/nudge/route.ts`, `HoyView.tsx`.
+- Revertir: cabecera de la migración y restaurar esos archivos del commit `a0c1214`.
+
 ## 2026-10-27 (noche) - Avisar desde Seguimiento, actividad solo de hoy y vídeo en el objetivo
 - **Seguimiento de hoy:** en los filtros "Sin nada hoy", "Sin reporte", "Sin entrenar" y "Sin nutrición" aparece el botón **"Avisar"** junto a Escribir. Un toque le envía al cliente un aviso automático según el filtro; por ejemplo: "Jeff está esperando tu reporte de hoy…". Es una vez por tipo y día, y luego sale "Avisado". En "Por escribir" solo queda Escribir.
 - **Actividad:**

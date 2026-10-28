@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
+import { bogotaDay, type NudgeKind } from "@/lib/nudges";
 
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean };
@@ -661,10 +662,11 @@ export function useSetPlanInfo(clientId: string) {
     onSuccess: () => toast("Datos del plan guardados"), onError: () => toast("No pudimos guardar los datos del plan. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }) });
 }
 
-// ---- Avisos rápidos de Jeff (migración 0036) ----
-export type NudgeKind = "nothing" | "train" | "meals" | "report";
-const bogotaDay = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-export const useTodayNudges = () => useQuery({ queryKey: ["nudges"], staleTime: 30_000, queryFn: async (): Promise<string[]> => {
+// ---- Avisos rápidos de Jeff (migraciones 0036 y 0037) ----
+// El aviso se guarda primero en la base (send_nudge, desde el navegador): así queda aunque falle la notificación del teléfono,
+// y el cliente lo ve en su pantalla Hoy. Después se pide la notificación al servidor.
+export type { NudgeKind } from "@/lib/nudges";
+export const useTodayNudges = () => useQuery({ queryKey: ["nudges"], staleTime: 30_000, refetchInterval: 60_000, queryFn: async (): Promise<string[]> => {
   const { data, error } = await db().from("nudges").select("client_id,kind").eq("day", bogotaDay()); if (error) throw error;
   return ((data ?? []) as { client_id: string; kind: string }[]).map((r) => `${r.client_id}:${r.kind}`);
 } });
@@ -672,16 +674,23 @@ export function useNudge() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (v: { clientId: string; kind: NudgeKind }) => {
-      const r = await fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(v) });
-      const j = (await r.json().catch(() => ({}))) as { error?: string; sent?: number };
-      if (!r.ok) throw new Error(j.error ?? "failed"); return j.sent ?? 0;
+      const { data, error } = await db().rpc("send_nudge", { p_client: v.clientId, p_kind: v.kind });
+      if (error) throw new Error(/already_sent/.test(error.message) ? "already_sent" : "failed");
+      const r = await fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) }).catch(() => null);
+      const j = r && r.ok ? ((await r.json().catch(() => ({}))) as { sent?: number }) : {};
+      return j.sent ?? 0;
     },
     onMutate: (v) => { qc.setQueryData<string[]>(["nudges"], (l) => [...(l ?? []), `${v.clientId}:${v.kind}`]); },
-    onSuccess: (sent) => toast(sent ? "Aviso enviado" : "Aviso guardado, pero este cliente no tiene los avisos activos en su teléfono."),
-    onError: (e) => { toast((e as Error).message === "already_sent" ? "Ya le avisaste esto hoy." : "No pudimos enviar el aviso.", true); void qc.invalidateQueries({ queryKey: ["nudges"] }); },
+    onSuccess: (sent) => toast(sent ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy." : "Aviso guardado: lo verá en su pantalla Hoy (su teléfono no tiene avisos activos)."),
+    onError: (e) => { if ((e as Error).message === "already_sent") { toast("Ya le avisaste esto hoy."); return; } toast("No pudimos guardar el aviso. Inténtalo de nuevo.", true); },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["nudges"] }); },
   });
 }
-
+// Avisos de hoy para el propio cliente (pantalla Hoy).
+export const useMyNudges = (clientId: string) => useQuery({ queryKey: ["my-nudges", clientId], enabled: !!clientId, staleTime: 60_000, refetchInterval: 120_000, queryFn: async (): Promise<NudgeKind[]> => {
+  const { data, error } = await db().from("nudges").select("kind").eq("client_id", clientId).eq("day", bogotaDay()); if (error) throw error;
+  return ((data ?? []) as { kind: NudgeKind }[]).map((r) => r.kind);
+} });
 // Vídeo del objetivo (0036): Jeff lo sube para un cliente (se registra como vídeo de ese cliente) y queda en clients.objective_video_id.
 export function useObjectiveVideo(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
