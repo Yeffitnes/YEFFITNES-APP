@@ -1,4 +1,20 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Recorrido con un gesto distinto en cada panel
+- **Poses nuevas del personaje:**
+  - Planilla (`clipboard`): la sostiene y mira.
+  - Cronómetro (`stopwatch`): lo levanta y la aguja gira.
+  - Celular (`phone`).
+  - Libro (`study`): lee con la cabeza inclinada.
+  - Señalar abajo con la mano izquierda (`down-left`).
+- **Recorrido (pedido de Cristian):**
+  - En cada panel primero señala y a los 2 segundos cambia al gesto del tema.
+  - Hoy: curl con mancuerna. Mi plan: sentadilla. Agenda: planilla. Progreso: cronómetro. Material: libro. Mensajes: celular.
+  - En el celular, para los paneles de la izquierda (Hoy, Plan, Agenda) el personaje va a la izquierda y señala con la mano derecha. Para los de la derecha (Progreso, Material) se pasa al otro lado y señala con la izquierda.
+  - Bienvenida: saluda. Punto de partida: saca músculo. Llamada: celebra.
+- **Error corregido:** si el panel a señalar no se encontraba (por ejemplo, Mensajes), la burbuja del recorrido quedaba fuera de la pantalla y no se podía tocar "Siguiente". Ahora se centra bien.
+- Probado en un celular simulado (390 px) recorriendo los 6 paneles.
+- Archivos: `Guide.tsx`, `Onboarding.tsx`, `portal.css`. Revertir: restaurar del commit `b1adc17`.
+
 ## 2026-10-27 (noche) - Personaje sin saturar
 - Pedido de Cristian: dentro de los paneles vuelve **solo la carita** ("Falta poco" y "Día completado").
 - El cuerpo completo queda para:

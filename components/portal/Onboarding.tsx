@@ -15,11 +15,11 @@ type Spot = { kind: "spot"; href: string; title: string; text: string; topic: Gu
 type Step = { kind: "hello" } | Spot | { kind: "measures" } | { kind: "consent" } | { kind: "call" };
 const TOUR: Spot[] = [
   { kind: "spot", href: "/inicio", title: "Hoy", text: "Lo primero que ves al abrir: tu rutina del día, tus series y tu reporte diario. Si no sabes qué hacer, empieza aquí.", topic: "workout" },
-  { kind: "spot", href: "/inicio/plan", title: "Mi plan", text: "Tu semana completa de entrenamiento y tu nutrición, con vídeos de técnica de cada ejercicio.", topic: "flex" },
-  { kind: "spot", href: "/inicio/agenda", title: "Agenda", text: "Aquí reservas tus llamadas conmigo en los horarios que publico.", topic: "wave" },
-  { kind: "spot", href: "/inicio/progreso", title: "Progreso", text: "Tu peso, tus medidas y tus fotos. Así vemos juntos cómo cambias semana a semana.", topic: "squat" },
-  { kind: "spot", href: "/inicio/material", title: "Material", text: "Vídeos y guías que preparo para ti: técnica, consejos y el vídeo de la semana.", topic: "point" },
-  { kind: "spot", href: "/inicio/mensajes", title: "Mensajes", text: "Para lo importante: hasta 3 mensajes al día, una foto y un vídeo. Yo te respondo con calma.", topic: "wave" },
+  { kind: "spot", href: "/inicio/plan", title: "Mi plan", text: "Tu semana completa de entrenamiento y tu nutrición, con vídeos de técnica de cada ejercicio.", topic: "squat" },
+  { kind: "spot", href: "/inicio/agenda", title: "Agenda", text: "Aquí reservas tus llamadas conmigo en los horarios que publico.", topic: "clipboard" },
+  { kind: "spot", href: "/inicio/progreso", title: "Progreso", text: "Tu peso, tus medidas y tus fotos. Así vemos juntos cómo cambias semana a semana.", topic: "stopwatch" },
+  { kind: "spot", href: "/inicio/material", title: "Material", text: "Vídeos y guías que preparo para ti: técnica, consejos y el vídeo de la semana.", topic: "study" },
+  { kind: "spot", href: "/inicio/mensajes", title: "Mensajes", text: "Para lo importante: hasta 3 mensajes al día, una foto y un vídeo. Yo te respondo con calma.", topic: "phone" },
 ];
 // Busca el enlace visible en el menú (abajo en el celular, a la izquierda en el computador, o el botón de mensajes de arriba).
 function findTarget(href: string): HTMLElement | null {
@@ -104,9 +104,13 @@ function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: Reac
   const vw = typeof window !== "undefined" ? window.innerWidth : 400, vh = typeof window !== "undefined" ? window.innerHeight : 800, pad = 6;
   // Dónde va la burbuja: encima si el panel está abajo (celular), a la derecha si está en el menú lateral, debajo si está arriba.
   const W = Math.min(340, vw - 32);
-  let pos: React.CSSProperties = { left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: W }, dir: GuideDir = "down";
+  // Sin panel que señalar: centrada (sin transform, porque la animación de entrada lo pisaría y la sacaba de la pantalla).
+  let pos: React.CSSProperties = { left: (vw - W) / 2, top: Math.max(16, vh / 2 - 150), width: W }, dir: GuideDir = "down";
+  // En el celular: si el panel está a la izquierda (Hoy, Plan, Agenda) el personaje va a la izquierda y señala con la mano derecha;
+  // si está a la derecha (Progreso, Material) se pasa al otro lado y señala con la izquierda.
+  const onRight = !!r && r.left + r.width / 2 > vw / 2;
   if (r) {
-    if (r.top > vh * 0.6) { pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), bottom: vh - r.top + 18, width: W }; dir = "down"; }
+    if (r.top > vh * 0.6) { pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), bottom: vh - r.top + 18, width: W }; dir = onRight ? "down-left" : "down"; }
     else if (r.right < vw * 0.4) { pos = { left: r.right + 18, top: Math.min(Math.max(16, r.top + r.height / 2 - 90), vh - 300), width: W }; dir = "left"; }
     else { pos = { left: Math.min(Math.max(16, r.left + r.width / 2 - W / 2), vw - W - 16), top: r.bottom + 18, width: W }; dir = "up"; }
   }
@@ -114,7 +118,7 @@ function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: Reac
     <div className="tour-layer" role="dialog" aria-modal="true" aria-label={`Recorrido: ${step.title}`}>
       {r ? <div className="tour-ring" style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} /> : <div className="tour-dim" />}
       <div className="tour-bubble" style={pos}>
-        <div className="tour-bubble-head"><span className="gd-pop tour-guide"><Guide size={58} pose={act} dir={dir} /></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
+        <div className={`tour-bubble-head${onRight && dir !== "left" ? " flip" : ""}`}><span key={act} className="gd-pop tour-guide"><Guide size={58} pose={act} dir={dir} /></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
         <p className="tour-bubble-text say say-2">{step.text}</p>
         <div className="tour-bubble-actions">{dots}<button type="button" className="modal-btn ghost" onClick={onBack}>Atrás</button><button type="button" className="modal-btn primary" onClick={onNext}>Siguiente</button></div>
       </div>

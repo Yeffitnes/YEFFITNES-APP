@@ -1163,6 +1163,30 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 /* Toma agua */
 .gd-hydrate .gd-arm-r{animation:none;transform:rotate(-24deg)}.gd-hydrate .gd-fore-r{animation:gd-sip 3.6s ease-in-out infinite}
 .gd-hydrate .gd-head{animation:gd-sip-head 3.6s ease-in-out infinite}
+/* Planilla de la agenda: la sostiene frente al pecho y mira hacia ella */
+.gd-clipboard .gd-arm-r{animation:none;transform:rotate(-30deg)}.gd-clipboard .gd-fore-r{animation:gd-hold 2.6s ease-in-out infinite}
+.gd-clipboard .gd-head{animation:gd-look-down 2.6s ease-in-out infinite}
+/* Cronómetro en alto, lo mira y la aguja gira */
+.gd-stopwatch .gd-arm-r{animation:none;transform:rotate(-60deg)}.gd-stopwatch .gd-fore-r{animation:gd-raise 1.6s ease-in-out infinite}
+.gd-stopwatch .gd-head{animation:gd-turn-r 3.4s ease-in-out infinite}
+.gd-tick{transform-origin:0 0;transform-box:view-box;animation:gd-tick 2s steps(8) infinite}
+/* Celular: lo mira y toca la pantalla */
+.gd-phone .gd-arm-r{animation:none;transform:rotate(-24deg)}.gd-phone .gd-fore-r{animation:gd-hold 1.2s ease-in-out infinite}
+.gd-phone .gd-head{animation:gd-look-down 2.4s ease-in-out infinite}
+.gd-phone .gd-arm-l{animation:none;transform:rotate(-28deg)}.gd-phone .gd-fore-l{animation:gd-tap 1.2s ease-in-out infinite}
+/* Libro: lee con la cabeza un poco inclinada */
+.gd-study .gd-arm-r{animation:none;transform:rotate(-28deg)}.gd-study .gd-fore-r{animation:gd-hold 3s ease-in-out infinite}
+.gd-study .gd-head{animation:gd-read 3s ease-in-out infinite}
+.gd-acc-bob{animation:none}
+.gd-point.gd-to-down-left .gd-arm-l{animation:gd-point-dl 1.6s ease-in-out infinite}
+.gd-point.gd-to-down-left .gd-head{animation:gd-turn-l 3.4s ease-in-out infinite}
+@keyframes gd-hold{0%,100%{transform:rotate(-102deg)}50%{transform:rotate(-96deg)}}
+@keyframes gd-raise{0%,100%{transform:rotate(-60deg)}50%{transform:rotate(-54deg)}}
+@keyframes gd-tick{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes gd-tap{0%,100%{transform:rotate(-80deg)}50%{transform:rotate(-70deg)}}
+@keyframes gd-look-down{0%,100%{transform:rotate(5deg) translateY(1px)}50%{transform:rotate(2deg) translateY(1.5px)}}
+@keyframes gd-read{0%,40%,100%{transform:rotate(4deg) translateY(1.2px)}60%,80%{transform:rotate(-3deg) translateY(1.2px)}}
+@keyframes gd-point-dl{0%,100%{transform:rotate(30deg)}50%{transform:rotate(20deg)}}
 /* Sentadilla: baja el cuerpo, doblan rodillas y los tenis no se mueven */
 .gd-squat .gd-all{animation:gd-sq-body 2.6s ease-in-out infinite}
 .gd-squat .gd-thigh-l{animation:gd-sq-thigh-l 2.6s ease-in-out infinite}.gd-squat .gd-thigh-r{animation:gd-sq-thigh-r 2.6s ease-in-out infinite}
@@ -1287,3 +1311,6 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .sess-guide{position:absolute;right:12px;top:6px;pointer-events:none}
 .book-done{display:flex;align-items:center;gap:10px}
 .book-done>.gd-pop{flex:none;display:inline-flex;padding:2px 6px 0;border-radius:12px;background:rgba(255,255,255,.1)}
+.tour-bubble-head.flip{flex-direction:row-reverse}
+.tour-bubble-head.flip .tour-guide{margin:-34px -6px -4px 0}
+.tour-bubble-head.flip>div{text-align:right}

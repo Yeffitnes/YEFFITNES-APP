@@ -3,9 +3,10 @@ import { useId } from "react";
 // Personaje guía de YEFFITNES (versión 3, 27-oct: ropa estilo ilustración): mezcla del primero (cabeza con solo la cinta, cara amable con sonrisa fija)
 // con la propuesta de Cristian (ropa deportiva, codos y rodillas articulados, tenis, accesorios). Sin seguir el ratón y sin abrir la boca:
 // al "hablar" la sonrisa solo se mueve un poco. Todo se anima con CSS (bloque "Personaje guía" en app/inicio/portal.css).
-// Poses: idle · wave · point(dir) · cheer · flex · workout (mancuerna) · hydrate (botella) · squat (sentadilla).
-export type GuidePose = "idle" | "wave" | "point" | "cheer" | "flex" | "workout" | "hydrate" | "squat";
-export type GuideDir = "up" | "down" | "left" | "right";
+// Poses: idle · wave · point(dir) · cheer · flex · workout (mancuerna) · hydrate (botella) · squat (sentadilla)
+//        · clipboard (planilla de la agenda) · stopwatch (cronómetro) · phone (celular, mensajes) · study (libro, material).
+export type GuidePose = "idle" | "wave" | "point" | "cheer" | "flex" | "workout" | "hydrate" | "squat" | "clipboard" | "stopwatch" | "phone" | "study";
+export type GuideDir = "up" | "down" | "down-left" | "left" | "right";   // down-left: señala abajo con la mano izquierda
 const INK = "#0A0910", RED = "#F7254B";
 
 function Defs({ id }: { id: string }) {
@@ -138,6 +139,36 @@ function Accessory({ pose }: { pose: GuidePose }) {
       <rect x="-2.6" y="-4" width="5.2" height="8" rx="1.3" fill={RED} opacity=".85" />
       <rect x="-2.8" y="-12.6" width="5.6" height="3" rx="1" fill={RED} />
     </g>);
+  // Objetos que se sostienen frente al pecho o en alto: se dibujan en la mano y se contrarrestan los giros del brazo para que queden derechos.
+  const held = (turn: number, child: React.ReactNode) => <g transform={`translate(93 121) rotate(${turn})`}>{child}</g>;
+  if (pose === "clipboard") return held(130, (
+    <g className="gd-acc-bob" transform="translate(-3 -10) rotate(-6)">
+      <rect x="-7" y="-9" width="14" height="18" rx="2" fill="#2A2436" stroke={OUT} strokeWidth="1" />
+      <rect x="-5.6" y="-6.6" width="11.2" height="14.4" rx="1" fill="#fff" />
+      <rect x="-3" y="-10.4" width="6" height="3.4" rx="1.2" fill={RED} stroke={OUT} strokeWidth=".8" />
+      <path d="M-3.8 -3 L-2.6 -1.8 L-0.6 -4.2 M0.8 -2.8 L3.8 -2.8 M-3.8 1.4 L-2.6 2.6 L-0.6 0.2 M0.8 1.6 L3.8 1.6 M-3.8 5 L3.8 5" stroke={RED} strokeWidth=".9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </g>));
+  if (pose === "stopwatch") return held(120, (
+    <g transform="translate(0 -9)">
+      <rect x="-1.4" y="-10.6" width="2.8" height="2.4" rx=".7" fill="#D9DCE5" stroke={OUT} strokeWidth=".7" />
+      <circle r="7.6" fill="#fff" stroke={OUT} strokeWidth="1.1" />
+      <circle r="5.8" fill="none" stroke={RED} strokeWidth="1" />
+      <path className="gd-tick" d="M0 0 L0 -4.6" stroke={OUT} strokeWidth="1.2" strokeLinecap="round" />
+      <circle r=".9" fill={OUT} />
+    </g>));
+  if (pose === "phone") return held(130, (
+    <g className="gd-acc-bob" transform="translate(-2 -9) rotate(-8)">
+      <rect x="-4.6" y="-8.2" width="9.2" height="16.4" rx="2.2" fill={OUT} />
+      <rect x="-3.6" y="-6.6" width="7.2" height="12.4" rx="1.2" fill="#fff" />
+      <rect x="-2.6" y="-5" width="4.6" height="2.4" rx="1.2" fill={RED} /><rect x="-0.8" y="-1.6" width="3.4" height="2.4" rx="1.2" fill="#D9DCE5" /><rect x="-2.6" y="1.8" width="4" height="2.4" rx="1.2" fill={RED} />
+    </g>));
+  if (pose === "study") return held(130, (
+    <g transform="translate(-4 -9) rotate(-4)">
+      <path d="M0 -6.6 Q-5 -8.4 -10 -6.8 L-10 6.4 Q-5 4.8 0 6.6 Q5 4.8 10 6.4 L10 -6.8 Q5 -8.4 0 -6.6 Z" fill={RED} stroke={OUT} strokeWidth="1" strokeLinejoin="round" />
+      <path d="M0 -5.6 Q-4.4 -7.2 -8.6 -5.8 L-8.6 5 Q-4.4 3.8 0 5.4 Q4.4 3.8 8.6 5 L8.6 -5.8 Q4.4 -7.2 0 -5.6 Z" fill="#fff" />
+      <path d="M0 -5.6 L0 5.4" stroke="#D9DCE5" strokeWidth=".8" />
+      <path d="M-6.8 -3 L-2 -3 M-6.8 -0.4 L-2 -0.4 M-6.8 2.2 L-3.4 2.2 M2 -3 L6.8 -3 M2 -0.4 L6.8 -0.4" stroke="#B5B9C6" strokeWidth=".7" strokeLinecap="round" />
+    </g>));
   return null;
 }
 // Brazo con manga de chaqueta (franja roja a lo largo) y puño acanalado.
