@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Tarjetas que se pliegan, plan junto al nombre y SQL de cuentas de prueba
+- **Hoy (cliente):** al terminar el entrenamiento, la tarjeta se pliega en un resumen: rutina completada, series, esfuerzo y el comentario de Jeff si hay. "Ver detalle" la despliega y "Editar" la abre para cambiarla; "Plegar" la vuelve a cerrar. Lo mismo con la nutrición de hoy cuando todas las comidas están marcadas.
+- **Ficha del cliente (Jeff):** el plan ya no está escondido en Resumen. Sale arriba, junto al nombre: un botón "Plan Esencial ▾" que se cambia con dos toques. Si el cliente no tiene plan, el botón sale resaltado como "Asignar plan" y dice cuándo pidió acceso. Resumen queda más corto.
+- **`docs/SQL_CUENTAS.md`:** SQL para **reiniciar** una cuenta como recién registrada y para **borrar** una cuenta. Probados en la base local; no tocan la cuenta del coach.
+- Archivos: `HoyView.tsx`, `HoySide.tsx`, `ClientFicha.tsx`, bloques nuevos al final de `portal.css` y `coach.css`. Sin migración.
+- Revertir: restaurar esos archivos del commit `1d73c83`.
+
 ## 2026-10-27 (noche) - Rango de repeticiones con sugerencia de peso
 - Decisión de Cristian: las series son fijas y las repeticiones pueden ser un **rango**. Jeff lo escribe en la rutina como "8-12" (o "8 a 12"). Sin migración: la app entiende el texto.
 - **Cliente:**

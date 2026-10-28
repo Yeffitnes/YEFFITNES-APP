@@ -92,13 +92,25 @@ export function HoyView() {
 function Routine({ cid, day, title, items, log, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; today: string; guide: boolean }) {
   const firstTodo = items.find((i) => (log?.sets.filter((x) => x.itemId === i.id).length ?? 0) < i.sets);
   const [open, setOpen] = useState<string | null>(log?.completed ? null : firstTodo?.id ?? null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null);
-  const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? "");
+  const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false);
   const finish = useFinish(cid);
   const saved = (id: string) => log?.sets.filter((s) => s.itemId === id) ?? [];
   const doneCount = items.filter((i) => saved(i.id).length >= i.sets).length;
   const anySet = (log?.sets.length ?? 0) > 0, closed = !!log?.completed && !editing;
+  // Terminado: la tarjeta se pliega en un resumen (pedido de Cristian, 27-oct). Se despliega para verla o editarla.
+  if (closed && !unfold) return (
+    <div className="card card-routine fold-card">
+      <button type="button" className="fold-head" aria-expanded={false} onClick={() => setUnfold(true)}>
+        <span className="fold-ok"><Icon name="check" size={16} stroke={2.4} /></span>
+        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Rutina de hoy · completada</span><b>{title}</b><small>{log?.sets.length ?? 0} series registradas{log?.effort ? ` · esfuerzo ${log.effort}/10` : ""}</small></span>
+        <Icon name="down" size={16} />
+      </button>
+      {(log?.coachComment || log?.coachCommentAudio) && <div className="fold-coach"><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
+      <div className="fold-actions"><button type="button" className="mini-btn ghost" onClick={() => setUnfold(true)}>Ver detalle</button><button type="button" className="mini-btn ghost" onClick={() => { setUnfold(true); setEditing(true); }}>Editar</button></div>
+    </div>);
   return (
-    <div className="card card-routine">
+    <div className={`card card-routine${log?.completed ? " fold-open" : ""}`}>
+      {log?.completed && !editing && <button type="button" className="fold-close" onClick={() => setUnfold(false)}>Plegar <Icon name="up" size={13} /></button>}
       <div className="card-tag"><span className="live-dot" />Rutina de hoy</div>
       <div className="card-title">{title}</div>
       <div className="card-meta">{[`${items.length} ejercicios`, day.minutes ? `${day.minutes} min aprox.` : null, categoryLabel(day.category) ?? day.category].filter(Boolean).join(" · ")}</div>
@@ -125,7 +137,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
             <div className="effort-row">{Array.from({ length: 10 }, (_, k) => <button key={k} className={`effort-btn${effort === k + 1 ? " on" : ""}`} aria-label={`Esfuerzo ${k + 1}`} onClick={() => setEffort(k + 1)}>{k + 1}</button>)}</div>
             <textarea className="set-input" style={{ height: 70, padding: 10, resize: "vertical" }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario para Jeff (opcional)" aria-label="Comentario para tu coach" />
             <button className="mini-btn primary" style={{ marginTop: 12, width: "100%", height: 44 }} disabled={!anySet || !effort || finish.isPending}
-              onClick={() => finish.mutate({ date: today, effort, note }, { onSuccess: () => setEditing(false) })}>{finish.isPending ? "Guardando…" : "Terminar entrenamiento"}</button>
+              onClick={() => finish.mutate({ date: today, effort, note }, { onSuccess: () => { setEditing(false); setUnfold(false); } })}>{finish.isPending ? "Guardando…" : "Terminar entrenamiento"}</button>
             {!anySet && <p className="routine-progress-count">Registra al menos una serie para poder terminar.</p>}
           </>)}
       </div>

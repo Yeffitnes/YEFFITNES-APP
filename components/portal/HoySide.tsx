@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { PlanWait } from "./LockedPanel";
 import Link from "next/link";
-import { useClientNutrition, useMaterialList, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialOpen } from "@/lib/queries";
+import { localDate, useClientNutrition, useMaterialList, useMealLogs, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialOpen } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { KIND_LABEL } from "@/lib/queries";
@@ -38,12 +38,22 @@ export function ObjectiveCard() {
   );
 }
 export function NutritionTodayCard({ cid, features, name }: { cid: string; features: string[]; name: string }) {
-  const has = features.includes("nutrition"), { data } = useClientNutrition(has ? cid : ""), wd = todayWeekday();
+  const has = features.includes("nutrition"), { data } = useClientNutrition(has ? cid : ""), wd = todayWeekday(), logs = useMealLogs(has ? cid : "", localDate()), [unfold, setUnfold] = useState(false);
   if (!has) return <div className="card-nutrition"><FeatureGate features={features} feature="nutrition" name={name}><span /></FeatureGate></div>;
   const meals = data ? [...data.meals.filter((m) => m.weekday === null), ...data.meals.filter((m) => m.weekday === wd)] : [];
   if (data === null) return <div className="card-nutrition"><PlanWait kind="nutrition" /></div>;
+  // Todas las comidas marcadas: se pliega en un resumen y se despliega con un toque (pedido de Cristian, 27-oct).
+  const allDone = meals.length > 0 && meals.every((m) => !!m.id && (logs.data ?? []).includes(m.id));
+  if (allDone && !unfold) return (
+    <div className="card card-nutrition fold-card">
+      <button type="button" className="fold-head" aria-expanded={false} onClick={() => setUnfold(true)}>
+        <span className="fold-ok"><Icon name="check" size={16} stroke={2.4} /></span>
+        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Nutrición de hoy · completada</span><b>{meals.length} de {meals.length} comidas</b><small>Toca para ver o cambiar</small></span>
+        <Icon name="down" size={16} />
+      </button>
+    </div>);
   return (
-    <div className="card card-nutrition"><div className="card-tag">Tu plan de hoy</div><div className="card-title" style={{ fontSize: 15 }}>Nutrición</div>
+    <div className={`card card-nutrition${allDone ? " fold-open" : ""}`}>{allDone && <button type="button" className="fold-close" onClick={() => setUnfold(false)}>Plegar <Icon name="up" size={13} /></button>}<div className="card-tag">Tu plan de hoy</div><div className="card-title" style={{ fontSize: 15 }}>Nutrición</div>
       {!data ? <p className="empty-note" style={{ marginTop: 10 }}>Tu coach todavía no publica tu plan de nutrición.</p>
         : !meals.length ? <p className="empty-note" style={{ marginTop: 10 }}>No hay comidas cargadas para hoy.</p>
         : <MealChecklist clientId={cid} meals={meals} compact />}

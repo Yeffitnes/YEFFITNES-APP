@@ -1,9 +1,10 @@
 "use client";
 import { Icon } from "@/components/ui/Icon";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useClientBookings, useClients, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
-import { initials } from "@/lib/format";
+import { ago, initials } from "@/lib/format";
+import type { ClientRow, Plan } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
 import { RecentWorkouts } from "./RecentWorkouts";
@@ -16,42 +17,56 @@ import { ProgressPanels } from "@/components/portal/ProgressPanels";
 const TABS = ["Hoy", "Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
 const SOON: Record<string, string> = {};
 export function ClientFicha({ id }: { id: string }) {
-  const { data, isPending } = useClients(), { data: plans } = usePlans(), setPlan = useSetPlan();
+  const { data, isPending } = useClients(), { data: plans } = usePlans();
   const [tab, setTab] = useState("Hoy");
   const c = data?.find((x) => x.id === id);
-  const [sel, setSel] = useState<string | null>(null);
   if (isPending) return <Skeleton rows={3} />;
   if (!c) return <div><Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link><div className="card"><p style={{ fontSize: 14 }}>No encontramos a este cliente.</p></div></div>;
-  const chosen = sel ?? c.planId ?? "";
   const since = new Date(c.createdAt).toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" });
   const status = { pending: "Pendiente", active: "Activo", paused: "Pausado" }[c.status];
   return (
     <div>
       <Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link>
       <div className="ficha-header"><div className="ficha-avatar">{initials(c.name)}</div>
-        <div><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {c.plan ? `Plan ${c.plan}` : "Sin plan"}</div></div></div>
+        <div style={{ minWidth: 0, flex: 1 }}><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {status}</div></div>
+        <PlanPicker c={c} plans={plans ?? []} /></div>
       <div className="tab-row">{TABS.map((t) => <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>{t}</button>)}</div>
       {tab === "Hoy" ? <TodayCard clientId={c.id} first={c.name.split(" ")[0]} onGo={setTab} /> : tab === "Resumen" ? (
         <>
           <div className="mini-kpi-strip">
             <div className="mini-kpi"><div className="mini-kpi-label">Estado</div><div className="mini-kpi-val">{status}</div></div>
-            <div className="mini-kpi"><div className="mini-kpi-label">Plan</div><div className="mini-kpi-val">{c.plan ?? "—"}</div></div>
             <div className="mini-kpi"><div className="mini-kpi-label">Registro</div><div className="mini-kpi-val">{new Date(c.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div></div>
-          </div>
-          <div className="card" style={{ maxWidth: 560 }}>
-            <div className="card-tag">Plan y acceso</div>
-            <p style={{ fontSize: 13, color: "var(--text-dim)", margin: "10px 0 14px", lineHeight: 1.5 }}>Al asignar un plan el cliente queda activo y ve solo lo que ese plan incluye. Sin plan, todo aparece bloqueado.</p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <select aria-label="Plan" value={chosen} onChange={(e) => setSel(e.target.value)} style={{ height: 38, borderRadius: 11, border: "1px solid var(--line)", padding: "0 12px", fontSize: 13, flex: 1, minWidth: 180 }}>
-                <option value="">Sin plan (pendiente)</option>{plans?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-              <button className="primary-btn" disabled={setPlan.isPending || chosen === (c.planId ?? "")} onClick={() => setPlan.mutate({ id: c.id, planId: chosen || null }, { onSuccess: () => setSel(null) })}>Guardar</button>
-            </div>
           </div>
           <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} />
           <RecentWorkouts clientId={c.id} />
         </>
       ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Mensajes" ? <ThreadView clientId={c.id} otherName={c.name.split(" ")[0]} coach /> : tab === "Agenda" ? <AgendaTab clientId={c.id} first={c.name.split(" ")[0]} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
+    </div>
+  );
+}
+
+// Plan del cliente, arriba junto a su nombre (pedido de Cristian, 27-oct): se ve de primeras y se cambia con dos toques.
+// Asignar un plan activa al cliente (y le llega "Tu plan está activo"); "Sin plan" lo deja pendiente con todo bloqueado.
+function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {
+  const setPlan = useSetPlan(), [open, setOpen] = useState(false), box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); }, esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const pick = (planId: string | null) => { setOpen(false); if (planId !== c.planId) setPlan.mutate({ id: c.id, planId }); };
+  const needs = !c.planId;
+  return (
+    <div className="plan-pick" ref={box}>
+      <button type="button" className={`plan-pill${needs ? " needs" : ""}`} aria-haspopup="listbox" aria-expanded={open} disabled={setPlan.isPending} onClick={() => setOpen((v) => !v)}>
+        <span className="plan-pill-lbl">{needs ? (c.accessRequestedAt ? `Pidió acceso ${ago(c.accessRequestedAt).toLowerCase()}` : "Sin plan") : "Plan"}</span>
+        <b>{setPlan.isPending ? "Guardando…" : needs ? "Asignar plan" : c.plan}</b><Icon name="down" size={13} />
+      </button>
+      {open && <div className="plan-menu" role="listbox" aria-label="Elegir plan">
+        {plans.map((p) => <button key={p.id} type="button" role="option" aria-selected={p.id === c.planId} className={p.id === c.planId ? "on" : ""} onClick={() => pick(p.id)}>{p.name}{p.id === c.planId && <Icon name="check" size={13} stroke={2.4} />}</button>)}
+        <button type="button" role="option" aria-selected={!c.planId} className={`off${!c.planId ? " on" : ""}`} onClick={() => pick(null)}>Sin plan (todo bloqueado)</button>
+      </div>}
     </div>
   );
 }
