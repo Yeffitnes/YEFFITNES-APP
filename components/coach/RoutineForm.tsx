@@ -15,11 +15,11 @@ export function RoutineForm({ exercises, items, onChange }: { exercises: Ex[]; i
             <option value="">Elige un ejercicio…</option>{exercises.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
           </select>
           <input aria-label="Series" type="number" min={1} value={it.sets} onChange={(e) => set(i, { sets: Number(e.target.value) })} style={{ ...F, width: 64 }} title="Series" />
-          <input aria-label="Repeticiones" value={it.reps} onChange={(e) => set(i, { reps: e.target.value })} style={{ ...F, width: 80 }} title="Repeticiones (ej. 10 o 30s)" />
+          <input aria-label="Repeticiones" value={it.reps} onChange={(e) => set(i, { reps: e.target.value })} style={{ ...F, width: 80 }} title="Repeticiones: un número (10), un tiempo (30s) o un rango (8-12). Con rango, la app le dice al cliente cuándo subir o bajar el peso y a ti te lo recomienda." />
           <input aria-label="Descanso en segundos" type="number" min={0} value={it.rest_seconds ?? ""} onChange={(e) => set(i, { rest_seconds: e.target.value === "" ? null : Number(e.target.value) })} style={{ ...F, width: 76 }} title="Descanso (s)" />
           <button type="button" aria-label="Quitar ejercicio" onClick={() => onChange(rows.filter((_, k) => k !== i))} disabled={rows.length === 1} style={{ ...F, cursor: "pointer", width: 38 }}>×</button>
         </div>))}
-      <p className="modal-cap-hint">Series · repeticiones · descanso en segundos</p>
+      <p className="modal-cap-hint">Series · repeticiones · descanso en segundos. En repeticiones puedes escribir un rango (8-12): si el cliente pasa de 12, la app le sugiere subir el peso y a ti te lo recomienda en su revisión.</p>
       <button type="button" className="ghost-btn" style={{ marginTop: 8 }} onClick={() => onChange([...rows, blank()])}>+ Agregar ejercicio</button>
     </div>
   );

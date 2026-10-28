@@ -5,7 +5,8 @@ import { Icon } from "@/components/ui/Icon";
 import { useWorkspaceId } from "@/components/Providers";
 import { MAX_AUDIO_SECONDS, audioSupported, useAudioRecorder } from "@/components/ui/useAudioRecorder";
 import { uploadCoachAudio, useSignedAudio } from "@/lib/messages";
-import { useClientLogs, useReviewWorkout, type ClientLog } from "@/lib/queries";
+import { useClientLogs, useReviewWorkout, useSetWeight, useTrainingPlans, type ClientLog } from "@/lib/queries";
+import { advise, nextWeight, rangeText, repRange } from "@/lib/progression";
 import { Skeleton } from "@/components/ui/Modal";
 const when = (iso: string) => { const d = Math.round((new Date(new Date().toDateString()).getTime() - new Date(iso + "T00:00:00").getTime()) / 86400000); return d <= 0 ? "Hoy" : d === 1 ? "Ayer" : new Date(iso + "T00:00:00").toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" }); };
 export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", skipDate, collapsible }: { clientId: string; title?: string; skipDate?: string; collapsible?: boolean }) {
@@ -31,6 +32,24 @@ export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", s
     </div>
   );
 }
+// Sugerencia de peso por ejercicio según el rango de repeticiones que puso Jeff (lib/progression.ts). Jeff decide: un toque cambia el peso del plan.
+function WeightAdvice({ clientId, sets, effort }: { clientId: string; sets: ClientLog["sets"]; effort: number | null }) {
+  const plans = useTrainingPlans(clientId), setW = useSetWeight(clientId), [done, setDone] = useState<number | null>(null);
+  const itemId = sets.find((x) => x.itemId)?.itemId;
+  const item = itemId ? plans.data?.flatMap((p) => p.days.flatMap((d) => d.items)).find((i) => i.id === itemId) : undefined;
+  const range = repRange(item?.reps); if (!item || !range) return null;
+  const work = sets.filter((x) => !x.warmup), a = advise(range, work.map((x) => x.reps), effort);
+  if (a.kind === "keep") return null;
+  const used = work.map((x) => x.weight).filter((w): w is number => w != null), base = used.length ? Math.max(...used) : item.weight, next = nextWeight(base, a.kind);
+  return (
+    <div className={`wadv ${a.kind}`}>
+      <Icon name={a.kind === "up" ? "up" : "down"} size={14} />
+      <div className="wadv-txt"><b>{a.kind === "up" ? "Recomendado: subir el peso" : "Recomendado: bajar el peso"}</b><span>{a.reason} Rango {rangeText(range)}.{item.weight != null ? ` En el plan: ${item.weight} kg.` : ""}</span></div>
+      {done != null ? <span className="wadv-ok">Plan actualizado: {done} kg</span>
+        : next != null && <button type="button" className="mini-btn" disabled={setW.isPending} onClick={() => setW.mutate({ itemId: item.id, weight: next }, { onSuccess: () => setDone(next) })}>{a.kind === "up" ? "Subir" : "Bajar"} a {next} kg</button>}
+    </div>
+  );
+}
 export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: string; onSaved?: () => void }) {
   const review = useReviewWorkout(clientId), ws = useWorkspaceId(), [c, setC] = useState(l.comment ?? "");
   const [audio, setAudio] = useState<{ blob: Blob; secs: number } | null>(null), [keep, setKeep] = useState(!!l.commentAudio), [aErr, setAErr] = useState(""), [saving, setSaving] = useState(false), [url, setUrl] = useState<string | null>(null);
@@ -46,8 +65,11 @@ export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: strin
     <div style={{ marginTop: 10 }}>
       {!byEx.size && <p style={{ fontSize: 13, color: "var(--text-dim)" }}>No registró series.</p>}
       {Array.from(byEx.entries()).map(([ex, ss]) => (
-        <div key={ex} className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13, flex: 1, fontWeight: 600 }}>{ex}</span>
-          <span style={{ fontSize: 12.5, color: "var(--text-dim)" }}>{ss.sort((a, b) => a.n - b.n).map((s) => `${s.reps ?? "–"}${s.weight != null ? `×${s.weight} kg` : ""}`).join(" · ")}</span></div>))}
+        <div key={ex}>
+          <div className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13, flex: 1, fontWeight: 600 }}>{ex}</span>
+            <span style={{ fontSize: 12.5, color: "var(--text-dim)" }}>{ss.sort((a, b) => a.n - b.n).map((s) => `${s.reps ?? "–"}${s.weight != null ? `×${s.weight} kg` : ""}`).join(" · ")}</span></div>
+          <WeightAdvice clientId={clientId} sets={ss} effort={l.effort} />
+        </div>))}
       {l.note && <p style={{ fontSize: 13, margin: "12px 0 0", padding: 10, background: "var(--surface)", borderRadius: 10 }}><b>Comentario del cliente:</b> {l.note}</p>}
       {l.completed && (
         <div className="modal-field"><label>Tu comentario para el cliente</label>

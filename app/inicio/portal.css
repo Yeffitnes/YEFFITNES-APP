@@ -1229,3 +1229,7 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .lk-card>.lk-over{position:relative;inset:auto;margin:-20px;padding:22px 18px}
 .tour-box .tour-top{position:relative;justify-content:center;margin-top:-6px}
 .tour-box .tour-top .tour-skip{position:absolute;right:-6px;top:-6px}
+/* Rango de repeticiones: regla y consejo de peso (27-oct) */
+.rep-tip{display:flex;gap:8px;align-items:flex-start;margin:8px 0 2px;font-size:12.5px;line-height:1.5;color:var(--text-dim)}
+.rep-tip.warn{padding:10px 12px;border-radius:12px;color:var(--text);background:rgba(247,37,75,.07);border:1px solid rgba(247,37,75,.22)}
+.rep-tip.warn svg{flex:none;margin-top:2px;color:var(--neon)}

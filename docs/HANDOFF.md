@@ -44,7 +44,7 @@ Estado al **27-oct-2026, noche** (actualizado; lo nuevo del 27-oct está marcado
 
 ## 4. Base de datos (Supabase)
 - Migraciones en `supabase/migrations/` (hoy hasta **0035**). **Se corren a mano en el SQL Editor de Supabase, ANTES de subir el código que las usa.** Si el código de `bloque-hoy` pide una columna que no existe, las pantallas fallan en Vercel.
-- Estado conocido (según Cristian): **0028 a 0031 corridas** (0031 confirmada el 27-oct). **0032, 0033, 0034 y 0035 (27-oct): SIN CORRER.** El código de `bloque-hoy` ya las usa: hasta que se corran fallan en Vercel Clientes, el portal del cliente y Material. Pídele que las corra en orden y confírmalo.
+- Estado conocido (según Cristian): **0028 a 0035 corridas** (0032-0035 confirmadas el 27-oct, noche).
 - **Compatibilidad con `main`:** mientras Netlify tenga código viejo, las migraciones deben seguir funcionando con él (columnas nuevas opcionales, funciones con parámetros por defecto). La 0031 recrea `review_workout(p_log, p_comment, p_audio default null)`: el código viejo, que llama con dos argumentos, debería seguir funcionando, pero **no se probó contra `main`**.
 - Seguridad: todo cuelga de `workspace_id` con RLS. Los clientes escriben solo por funciones `SECURITY DEFINER` (RPC). Cada migración nueva con tablas, funciones o columnas del coach **necesita su prueba de ataque** en `supabase/tests/` (y entrar a la lista de `run_local.sh`). La prueba de la 0031 encontró un hueco real: un cliente podía escribir una columna del coach porque el disparador `protect_coach_columns` no la conocía. **Si agregas columnas que solo el coach escribe, amplía ese disparador.**
 - Buckets de Storage privados: `message-images`, `message-audio` (audios de Jeff, en `<espacio>/<cliente>/<archivo>`), `progress-photos`.
@@ -62,6 +62,7 @@ Estado al **27-oct-2026, noche** (actualizado; lo nuevo del 27-oct está marcado
 ## 6. Mapa rápido del código
 - Datos y hooks del panel: `lib/queries.ts` (clientes, planes, entrenos, reportes, nutrición, actividad). Mensajes: `lib/messages.ts` (no es un chat. **Desde el 27-oct, 0032:** el cliente envía al día máx. 3 textos, 1 foto y 1 vídeo, nunca audio, 600 caracteres; Jeff sin límite. Se borran 24 h después de leídos o a los 30 días).
 - **Cliente sin plan (27-oct, 0034):** entra a la app con todo bloqueado (`components/portal/LockedPanel.tsx`, `FeatureGate.tsx`) y botón "Solicitar acceso a Jeff" (`/api/access/request`); al asignarle plan le llega "Tu plan está activo" (`/api/access/activated`). `/pendiente` queda solo para cuentas en pausa.
+- **Primer llamada (27-oct):** el cliente activo sin rutina ve "Falta poco: Jeff creará tu rutina/nutrición para ti" (diseño del candado sin candado) y el aviso "Primer paso: agenda tu llamada" hasta agendarla (`useFirstCall`).
 - **Primer arranque (27-oct):** `components/portal/FirstRun.tsx`: notificaciones obligatorias y luego la bienvenida (`Onboarding.tsx`) con el personaje guía (`Guide.tsx`, provisional) que ilumina cada panel del menú, punto de partida, consentimiento de fotos y llamada.
 - Dashboard del coach: `components/coach/DashboardView.tsx`, `DashKpis.tsx` (tarjetas que se abren), `FollowUp.tsx` + `lib/followup.ts` ("Hoy: a quién escribirle", con filtros). Ficha del cliente: `ClientFicha.tsx`; pestaña **Hoy** = `TodayCard.tsx` (entreno, nutrición, reporte, mensajes de hoy, pendientes anteriores). Resumen se dejó **como estaba** a propósito.
 - Portal del cliente: `app/inicio/*`, `components/portal/*`. Estilos por zona: `app/coach/coach.css`, `app/inicio/portal.css`, y globales en `app/globals.css`, `app/messages.css`. Perfil en celular: `components/ProfileMenu.tsx` (círculo con iniciales que abre "Cerrar sesión").
@@ -83,7 +84,7 @@ Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio
 
 ## 9. Pendientes (orden sugerido)
 1. **Correr 0032 a 0035** y probar en Vercel el recorrido completo de `PASO_A_PRODUCCION.md` §10 (registro → candados → solicitar acceso → activar → notificaciones → bienvenida → mensajes con cupo → reporte → Material privado). Luego, cuando Cristian diga "fusiona", seguir ese §10.
-1b. **Definir con Jeff el rango de repeticiones / series** (ver `BLUEPRINT_GAPS.md`, "Rutinas"): no se construyó.
+1b. **Hecho (27-oct, noche):** rango de repeticiones "8-12" con consejo al cliente y recomendación de peso a Jeff (`lib/progression.ts`); primera llamada obligatoria con paneles "Falta poco" (`PlanWait`, `FirstCallBanner`); notificaciones sí o sí, incluido "Instala la app" en celular sin instalar (`FirstRun.tsx`); personaje guía con cuerpo y poses (`Guide.tsx`). Probar todo en el iPhone.
 2. Reportar cómo se ve en el iPhone: cabecera, pestañas, tarjetas sin desbordes, selector de galería.
 3. Bunny en Netlify + regenerar la clave. Cambiar la clave del cron. Supabase Pro. Repositorio privado y revocar el token de GitHub que se usó.
 4. Antes de lanzar: WhatsApp de Jeff (`COACH_PHONE` y `wa.me/57XXXXXXXXXX` en `public/landing/index.html`), foto, planes y precios con Jeff, limpiar datos de prueba, restringir el registro en `/login`, mover la landing a su propia dirección.

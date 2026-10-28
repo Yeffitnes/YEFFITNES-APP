@@ -17,6 +17,7 @@ import { Icon } from "@/components/ui/Icon";
 import { QuickRow } from "./QuickRow";
 import { RoutineVideo } from "./RoutineVideo";
 import { PendingSection, PlanWait } from "./LockedPanel";
+import { repRange, rangeText, setTip } from "@/lib/progression";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
@@ -112,7 +113,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
           <div className={`ex-row${saved(i.id).length >= i.sets ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(open === i.id ? null : i.id); } }}>
             <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><div className="ex-name">{i.name}</div><div className="ex-meta">{saved(i.id).length}/{i.sets} · {i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
-          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}</div>}
+          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}<RepTip item={i} sets={saved(i.id)} /></div>}
         </div>))}</div>
       {(log?.coachComment || log?.coachCommentAudio) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
@@ -131,8 +132,15 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
     </div>
   );
 }
+// Rango de repeticiones (p. ej. 8-12): explica la regla y, tras la última serie guardada, aconseja subir o bajar el peso. No bloquea nada.
+function RepTip({ item, sets }: { item: PlanItem; sets: SetLog[] }) {
+  const r = repRange(item.reps); if (!r) return null;
+  const last = [...sets].filter((x) => x.reps != null).sort((a, b) => b.setNumber - a.setNumber)[0], tip = last ? setTip(r, last.reps!) : null;
+  return tip ? <p className="rep-tip warn" role="status"><Icon name={last!.reps! > r.max ? "up" : "down"} size={14} />{tip}</p>
+    : <p className="rep-tip">Rango: <b>{rangeText(r)} repeticiones</b>. Si pasas de {r.max}, sube el peso; si no llegas a {r.min}, bájalo.</p>;
+}
 function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onLast: () => void }) {
-  const target = parseInt(item.reps, 10);
+  const range = repRange(item.reps), target = range ? NaN : parseInt(item.reps, 10);   // con rango, el cliente escribe lo que hizo de verdad
   // Las casillas ya traen lo planeado (editable y visible): "✓" guarda exactamente lo que se ve, nunca algo oculto.
   const log = useLogSet(cid), unlog = useUnlogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
   // Un toque en ✓ basta: si no escribió nada, se guarda lo planeado (reps objetivo y peso objetivo).
@@ -145,7 +153,7 @@ function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: b
   return (
     <div className="set-row">
       <label>SERIE {n}</label>
-      <input className="set-input" inputMode="numeric" type="number" min={0} value={reps} onChange={(e) => setReps(e.target.value)} placeholder={Number.isNaN(target) ? "reps" : `${target} reps`} aria-label={`Repeticiones serie ${n}`} disabled={locked} onKeyDown={onKey} />
+      <input className="set-input" inputMode="numeric" type="number" min={0} value={reps} onChange={(e) => setReps(e.target.value)} placeholder={range ? `${range.min}–${range.max}` : Number.isNaN(target) ? "reps" : `${target} reps`} aria-label={`Repeticiones serie ${n}`} disabled={locked} onKeyDown={onKey} />
       <input className="set-input" inputMode="decimal" type="number" min={0} step={0.5} value={w} onChange={(e) => setW(e.target.value)} placeholder={item.weight ? `${item.weight} kg` : "kg"} aria-label={`Peso serie ${n} en kilos`} disabled={locked} onKeyDown={onKey} />
       <button className={`set-save${saved ? " on" : ""}${hint && !saved ? " hint" : ""}`} disabled={(!ok && !saved) || log.isPending || unlog.isPending || locked} aria-label={saved && !dirty ? `Deshacer serie ${n}` : `Guardar serie ${n}`} title={saved && !dirty ? "Toca para deshacer" : "Guardar serie"} onClick={toggle}><Icon name="check" size={15} stroke={2.2} /></button>
     </div>

@@ -11,7 +11,8 @@ Cruce hecho el 26-oct-2026, noche, sobre la rama `bloque-hoy` (commit `93cebbd`)
 | Notificaciones | **Obligatorias** al entrar, antes de la bienvenida. | Hecho (sin migración) |
 | Bienvenida | Más dinámica, con **personaje guía** que muestra cada panel; incluye **consentimiento de fotos**. | Hecho; el personaje es provisional (diseño NO DEFINIDO) |
 | Vídeos del reporte | Se borran **sí o sí**: 32 h si Jeff no los ve; **12 h** después de verlos, y Jeff ve el aviso. | Hecho (0033); falta programar la tarea al fusionar |
-| Rutinas | Rango mínimo-máximo (ver abajo). Punto importante. | **Por definir con Jeff; no construido** |
+| Rutinas | Series fijas; repeticiones en rango ("8-12"). Si pasa del máximo, sugerir subir el peso al cliente y recomendárselo a Jeff, que lo ajusta. | Hecho (27-oct, noche; `lib/progression.ts`) |
+| Primera llamada | Todo cliente agenda primero su llamada; rutina y nutrición llegan después. Paneles "Falta poco" sin candado. | Hecho (27-oct, noche) |
 | Fotos de progreso | Solo las sube el cliente (no hay sesiones presenciales). A futuro, Jeff debería poder editar lo que registra el cliente. | Se deja como está |
 | Material | Vídeos **privados** además de YouTube; **vídeo del día o de la semana** en Hoy. | Hecho (0035) |
 | Colores por coach | Solo como arquitectura pensada para vender la app a otros coaches. No para esta entrega. | Documentado en `FUTURO_MULTICOACH.md` |

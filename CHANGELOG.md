@@ -1,4 +1,18 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Rango de repeticiones con sugerencia de peso
+- Decisión de Cristian: las series son fijas y las repeticiones pueden ser un **rango**. Jeff lo escribe en la rutina como "8-12" (o "8 a 12"). Sin migración: la app entiende el texto.
+- **Cliente:**
+  - En cada ejercicio con rango ve la regla: "Rango 8 a 12. Si pasas de 12, sube el peso; si no llegas a 8, bájalo".
+  - Al guardar una serie fuera del rango le sale un consejo una sola vez (el de la última serie), sin bloquear nada.
+  - Con rango, la casilla de repeticiones ya no viene llena: escribe lo que hizo de verdad.
+- **Jeff:** en la revisión del entrenamiento (pestaña Hoy de la ficha e historial), bajo cada ejercicio sale "Recomendado: subir el peso" o "bajar", con el motivo y un botón "Subir a 62,5 kg" que cambia el peso del plan del cliente. Él decide.
+- **Reglas (PROPUESTA, en `lib/progression.ts`):**
+  - Subir: la mitad o más de las series pasaron del máximo, o todas llegaron al máximo, o el esfuerzo fue 4/10 o menos sin quedarse corto.
+  - Bajar: la mayoría de las series quedó bajo el mínimo.
+  - Estar en los extremos del rango (8 o 12) está bien.
+  - Pasos de peso: 2,5 kg, o 1 kg si el peso es menor de 20 kg.
+- Revertir: borrar `lib/progression.ts` y restaurar `HoyView.tsx`, `RecentWorkouts.tsx`, `RoutineForm.tsx` y `lib/queries.ts` del commit `41c944f`; quitar los bloques "Rango de repeticiones" de `portal.css` y "Sugerencia de peso" de `coach.css`.
+
 ## 2026-10-27 (noche) - Notificaciones sí o sí, primera llamada obligatoria y personaje guía con cuerpo
 - **Notificaciones:** se revisó por qué no salió la pantalla en el teléfono de Cristian: ese teléfono ya tenía avisos activados (de otra cuenta), así que la app los pasa a la cuenta nueva y no pide nada; es lo correcto. Se cerraron los huecos:
   - Mientras la app revisa, no se puede tocar nada.

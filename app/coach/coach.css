@@ -821,3 +821,13 @@ html{scroll-behavior:smooth;}
 .star-opt b{font-family:var(--font-display),sans-serif;font-size:15px}
 .star-opt span{font-size:12.5px;color:var(--text-dim)}
 .star-opt:disabled{opacity:.6;cursor:default}
+
+/* Sugerencia de peso por rango de repeticiones (27-oct) */
+.wadv{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 10px 16px;padding:10px 12px;border-radius:12px;border:1px solid rgba(247,37,75,.22);background:rgba(247,37,75,.06)}
+.wadv>svg{flex:none;color:var(--neon)}
+.wadv.down{background:var(--surface);border-color:var(--line)}
+.wadv.down>svg{color:var(--text-dim)}
+.wadv-txt{flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:1.45}
+.wadv-txt span{color:var(--text-dim)}
+.wadv .mini-btn{color:#fff;border:0;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.wadv-ok{font-size:12px;font-weight:700}
