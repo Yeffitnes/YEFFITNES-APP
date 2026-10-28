@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Guide } from "./Guide";
 import { PlanWait } from "./LockedPanel";
 import Link from "next/link";
 import { localDate, useClientNutrition, useMaterialList, useMealLogs, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialOpen } from "@/lib/queries";
@@ -19,7 +20,7 @@ const rel = (iso: string) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); c
 export function SessionCard({ cid }: { cid: string }) {
   const { data, isPending } = useMyBookings(cid), b = data?.[0], more = (data?.length ?? 0) - 1;
   return (
-    <div className="card card-session"><div className="card-tag"><span className="live-dot" />Próxima sesión</div>
+    <div className="card card-session">{b && <span className="sess-guide gd-pop" title="¡Nos vemos!"><Guide size={40} pose="wave" talking={false} /></span>}<div className="card-tag"><span className="live-dot" />Próxima sesión</div>
       {isPending ? <div className="sk" style={{ height: 70 }} /> : !b ? <><p className="empty-note" style={{ marginTop: 10 }}>Aún no tienes una sesión reservada. Elige un horario para tu llamada con tu coach.</p><div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none" }}>Reservar</Link></div></>
         : <><div className="session-block"><div className="session-date">{DAY3[(new Date(b.startsAt).getDay() + 6) % 7]}<span>{new Date(b.startsAt).getDate()}</span></div>
             <div><div className="session-name">{rel(b.startsAt)} · {hhmm(b.startsAt)}</div><div className="session-type">{KIND_LABEL[b.kind]} · {b.duration} min{more > 0 ? ` · +${more} más` : ""}</div></div></div>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { Guide } from "./Guide";
 import Link from "next/link";
 import { changeSessionLink } from "@/lib/features";
 import { icsHref } from "@/lib/ics";
@@ -49,7 +50,7 @@ export function AgendaClientView() {
             {!sel && <div className="summary-empty">Elige un horario disponible en el calendario.</div>}
             {sel && <div><div className="summary-datetime">{when(sel.startsAt)}</div><p style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", margin: "8px 0 0" }}>{KIND_LABEL[sel.kind]} · {sel.duration} min{sel.capacity > 1 ? ` · Clase grupal (quedan ${sel.capacity - sel.booked} de ${sel.capacity} cupos)` : ""}</p>
               <button className="summary-confirm" disabled={book.isPending} onClick={() => book.mutate(sel.id, { onSuccess: () => { setDone(sel); setSel(null); } })}>{book.isPending ? "Reservando…" : "Confirmar reserva"}</button></div>}
-            {done && <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55 }}><Icon name="check" size={15} style={{ marginRight: 6 }} />Reservaste el {when(done.startsAt)}.<> <a href={icsHref(done)} download="sesion-yeffitnes.ics" style={{ color: "#fff", fontWeight: 700, textDecoration: "underline" }}>Añadir alarma a mi calendario</a></></div>}
+            {done && <div className="book-done" style={{ marginTop: 12, fontSize: 13, lineHeight: 1.55 }}><span className="gd-pop"><Guide size={44} pose="cheer" talking={false} /></span><span><Icon name="check" size={15} style={{ marginRight: 6 }} />Reservaste el {when(done.startsAt)}.<> <a href={icsHref(done)} download="sesion-yeffitnes.ics" style={{ color: "#fff", fontWeight: 700, textDecoration: "underline" }}>Añadir alarma a mi calendario</a></></span></div>}
           </div>
           <div className="card"><div className="card-tag">Tus próximas sesiones</div>
             {mine.isPending && <div className="sk" style={{ height: 56, marginTop: 8 }} />}

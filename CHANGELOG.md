@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Personaje sin saturar
+- Pedido de Cristian: dentro de los paneles vuelve **solo la carita** ("Falta poco" y "Día completado").
+- El cuerpo completo queda para:
+  - La bienvenida y el recorrido, que cambian de pose en cada paso.
+  - El aviso "Primer paso: agenda tu llamada".
+  - La pantalla de notificaciones.
+- **Nuevo:**
+  - En la tarjeta "Próxima sesión" de Hoy, el personaje saluda pequeño en la esquina cuando hay una sesión reservada.
+  - Al confirmar una reserva en Agenda, celebra junto al mensaje "Reservaste el…".
+- Archivos: `LockedPanel.tsx`, `DayDone.tsx`, `HoySide.tsx`, `AgendaClientView.tsx`, `portal.css`. Revertir: restaurar del commit `aaaaca2`.
+
 ## 2026-10-27 (noche) - El personaje reacciona a lo que muestra
 - Pedido de Cristian: que el personaje use el gesto que va con cada momento.
 - **Bienvenida:**
