@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSignedAudio, useThread } from "@/lib/messages";
 import { BunnyModal } from "@/components/ui/BunnyModal";
@@ -17,8 +17,9 @@ import { Icon } from "@/components/ui/Icon";
 import { QuickRow } from "./QuickRow";
 import { RoutineVideo } from "./RoutineVideo";
 import { PendingSection, PlanWait } from "./LockedPanel";
-import { repRange, rangeText, setTip } from "@/lib/progression";
+import { repRange, setTip } from "@/lib/progression";
 import { NUDGE_TXT } from "@/lib/nudges";
+import { ANCHORS, focusAnchor, useFocusAnchor } from "@/lib/focus";
 import { useMyNudges } from "@/lib/queries";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
@@ -96,13 +97,14 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
   const firstTodo = items.find((i) => (log?.sets.filter((x) => x.itemId === i.id).length ?? 0) < i.sets);
   const [open, setOpen] = useState<string | null>(log?.completed ? null : firstTodo?.id ?? null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false);
+  useFocusAnchor("rutina", () => setUnfold(true));
   const finish = useFinish(cid);
   const saved = (id: string) => log?.sets.filter((s) => s.itemId === id) ?? [];
   const doneCount = items.filter((i) => saved(i.id).length >= i.sets).length;
   const anySet = (log?.sets.length ?? 0) > 0, closed = !!log?.completed && !editing;
   // Terminado: la tarjeta se pliega en un resumen (pedido de Cristian, 27-oct). Se despliega para verla o editarla.
   if (closed && !unfold) return (
-    <div className="card card-routine fold-card">
+    <div id="rutina" className="card card-routine fold-card">
       <button type="button" className="fold-head" aria-expanded={false} onClick={() => setUnfold(true)}>
         <span className="fold-ok"><Icon name="check" size={16} stroke={2.4} /></span>
         <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Rutina de hoy · completada</span><b>{title}</b><small>{log?.sets.length ?? 0} series registradas{log?.effort ? ` · esfuerzo ${log.effort}/10` : ""}</small></span>
@@ -112,7 +114,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
       <div className="fold-actions"><button type="button" className="mini-btn ghost" onClick={() => setUnfold(true)}>Ver detalle</button><button type="button" className="mini-btn ghost" onClick={() => { setUnfold(true); setEditing(true); }}>Editar</button></div>
     </div>);
   return (
-    <div className={`card card-routine${log?.completed ? " fold-open" : ""}`}>
+    <div id="rutina" className={`card card-routine${log?.completed ? " fold-open" : ""}`}>
       {log?.completed && !editing && <button type="button" className="fold-close" onClick={() => setUnfold(false)}>Plegar <Icon name="up" size={13} /></button>}
       <div className="card-tag"><span className="live-dot" />Rutina de hoy</div>
       <div className="card-title">{title}</div>
@@ -148,11 +150,33 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
   );
 }
 // Rango de repeticiones (p. ej. 8-12): explica la regla y, tras la última serie guardada, aconseja subir o bajar el peso. No bloquea nada.
+// Consejo del rango de repeticiones (pedido de Cristian, 28-oct): ya no es un texto fijo (en el teléfono se veía montado).
+// Es un aviso corto que aparece solo un momento: al abrir el ejercicio (una vez al día) y después de guardar una serie fuera del rango.
 function RepTip({ item, sets }: { item: PlanItem; sets: SetLog[] }) {
-  const r = repRange(item.reps); if (!r) return null;
-  const last = [...sets].filter((x) => x.reps != null).sort((a, b) => b.setNumber - a.setNumber)[0], tip = last ? setTip(r, last.reps!) : null;
-  return tip ? <p className="rep-tip warn" role="status"><Icon name={last!.reps! > r.max ? "up" : "down"} size={14} />{tip}</p>
-    : <p className="rep-tip">Rango: <b>{rangeText(r)} repeticiones</b>. Si pasas de {r.max}, sube el peso; si no llegas a {r.min}, bájalo.</p>;
+  const r = repRange(item.reps);
+  const last = [...sets].filter((x) => x.reps != null).sort((a, b) => b.setNumber - a.setNumber)[0];
+  const tip = r && last ? setTip(r, last.reps!) : null;
+  const key = tip ? `s${last!.setNumber}-${last!.reps}` : "intro";
+  // El aviso de entrada sale una vez al día por ejercicio; se decide una sola vez al abrir el ejercicio.
+  const [intro] = useState(() => {
+    if (!r) return false;
+    const k = `yf-rt-${item.id}-${localDate()}`;
+    try { if (localStorage.getItem(k)) return false; localStorage.setItem(k, "1"); } catch { /* sin almacenamiento: se muestra */ }
+    return true;
+  });
+  const [shown, setShown] = useState<string | null>(intro && key === "intro" ? "intro" : null);
+  useEffect(() => { if (r && key !== "intro") setShown(key); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!shown) return; const t = setTimeout(() => setShown(null), shown === "intro" ? 9000 : 7000); return () => clearTimeout(t); }, [shown]);
+  if (!r || shown !== key) return null;
+  const w = item.weight != null ? ` con ${item.weight} kg` : "";
+  const text = tip ?? `Haz tus ${item.sets} series${w} buscando entre ${r.min} y ${r.max} repeticiones. Si pasas de ${r.max}, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Si tienes dudas, pregúntale a Jeff.`;
+  return (
+    <button type="button" className={`rep-pop${tip ? " warn" : ""}`} role="status" onClick={() => setShown(null)} aria-label="Cerrar consejo">
+      <Icon name={tip ? (last!.reps! > r.max ? "up" : "down") : "dumbbell"} size={15} />
+      <span>{text}</span>
+      <i className="rep-pop-bar" style={{ animationDuration: tip ? "7s" : "9s" }} />
+    </button>
+  );
 }
 function SetRow({ cid, item, n, today, saved, locked, onLast, hint }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onLast: () => void }) {
   const range = repRange(item.reps), target = range ? NaN : parseInt(item.reps, 10);   // con rango, el cliente escribe lo que hizo de verdad
@@ -195,8 +219,11 @@ function CoachNudges({ cid }: { cid: string }) {
   const n = useMyNudges(cid), list = n.data ?? [];
   if (!list.length) return null;
   return (
-    <QuickRow icon="bell" tone="new" title="Jeff te está esperando" sub={NUDGE_TXT[list[0]].body} chip="Hoy" defaultOpen={list.length > 1}>
-      {list.length > 1 && list.map((k) => <p key={k} className="qrow-quote" style={{ fontStyle: "normal", color: "var(--text)" }}>{NUDGE_TXT[k].body}</p>)}
+    <QuickRow anchor="avisos" icon="bell" tone="new" title="Jeff te está esperando" sub={NUDGE_TXT[list[0]].body} chip="Hoy" defaultOpen>
+      {list.map((k) => <div key={k} className="nudge-line">
+        {list.length > 1 && <p>{NUDGE_TXT[k].body}</p>}
+        {k !== "nothing" && <button type="button" className="mini-btn primary" onClick={() => focusAnchor(ANCHORS[k])}>{k === "report" ? "Hacer mi reporte" : k === "train" ? "Ir a mi rutina" : "Marcar mi nutrición"}</button>}
+      </div>)}
     </QuickRow>
   );
 }

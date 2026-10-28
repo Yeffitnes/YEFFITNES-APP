@@ -32,7 +32,7 @@ export function nextWeight(current: number | null | undefined, dir: "up" | "down
 }
 // Consejo inmediato al cliente después de guardar una serie (se muestra una sola vez por ejercicio: el de la última serie).
 export function setTip(range: RepRange, reps: number): string | null {
-  if (reps > range.max) return `Hiciste ${reps}: pasaste de ${range.max}. En la siguiente serie (o la próxima vez) sube un poco el peso para quedar entre ${rangeText(range)}.`;
-  if (reps < range.min) return `Hiciste ${reps}, por debajo de ${range.min}. Baja un poco el peso o descansa un poco más para quedar entre ${rangeText(range)}.`;
+  if (reps > range.max) return `Hiciste ${reps}: pasaste de ${range.max}. En la siguiente serie (o la próxima vez) sube un poco el peso para quedar entre ${range.min} y ${range.max}.`;
+  if (reps < range.min) return `Hiciste ${reps}, por debajo de ${range.min}. Baja un poco el peso o descansa un poco más para quedar entre ${range.min} y ${range.max}.`;
   return null;
 }

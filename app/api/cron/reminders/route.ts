@@ -14,6 +14,6 @@ export async function POST(req: NextRequest) {
   const { data, error } = await createClient().rpc("due_reminders", { p_secret: secret, p_kind: kind });
   if (error) return NextResponse.json({ error: "failed" }, { status: 500 });
   const rows = (data ?? []) as Row[]; let sent = 0;
-  await Promise.all(rows.map(async (r) => { const dead = await sendPush([r], { title: r.title, body: r.body, url: r.url, tag: r.tag }); if (!dead.length) sent++; }));
+  await Promise.all(rows.map(async (r) => { const dead = await sendPush([r], { title: r.title, body: r.body, url: r.url === "/inicio" && r.tag === "report" ? "/inicio#reporte" : r.url === "/inicio" && r.tag === "training" ? "/inicio#rutina" : r.url, tag: r.tag }); if (!dead.length) sent++; }));
   return NextResponse.json({ ok: true, due: rows.length, sent });
 }

@@ -5,7 +5,7 @@ import { useMe } from "@/lib/queries";
 import { useUnread } from "@/lib/messages";
 import { useProfile } from "@/components/Providers";
 import { initials } from "@/lib/format";
-import { signOut } from "@/app/login/actions";
+import { SignOutButton } from "@/components/SignOutButton";
 import { BN_ICONS, SIDE_ICONS } from "./icons";
 const MSG_ICON = "<svg viewBox=\"0 0 20 20\"><path d=\"M3.5 5.5A1.5 1.5 0 0 1 5 4h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 15 14H9l-3.5 3v-3H5a1.5 1.5 0 0 1-1.5-1.5v-7z\"/></svg>";
 const SIDE = [["Hoy", "/inicio"], ["Mi plan", "/inicio/plan"], ["Agenda", "/inicio/agenda"], ["Progreso", "/inicio/progreso"], ["Objetivos", "/inicio/objetivos"], ["Mensajes", "/inicio/mensajes"], ["Material", "/inicio/material"]];
@@ -21,7 +21,7 @@ export function PortalSide() {
       <div className="side-spacer" />
       <div className="side-client"><div className="side-avatar">{initials(name)}</div>
         <div style={{ flex: 1 }}><div className="side-client-name">{name || "Cliente"}</div><div className="side-client-plan">{me.data?.planName ? `Plan ${me.data.planName}` : "Sin plan"}</div></div>
-        <form action={signOut}><button style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Salir</button></form></div>
+        <SignOutButton label="Salir" style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }} /></div>
     </aside>
   );
 }

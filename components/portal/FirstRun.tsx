@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
-import { signOut } from "@/app/login/actions";
+import { SignOutButton } from "@/components/SignOutButton";
 import { Guide } from "./Guide";
 import { Onboarding } from "./Onboarding";
 import { useProfile } from "@/components/Providers";
@@ -32,38 +32,46 @@ export function FirstRun() {
 }
 
 function NotifyGate({ state, onState, recheck }: { state: "off" | "denied" | "install"; onState: (s: PushState) => void; recheck: () => void }) {
-  const [busy, setBusy] = useState(false), [tried, setTried] = useState(false);
-  const turnOn = async () => { setBusy(true); try { onState(await enablePush()); } catch { onState("off"); } finally { setBusy(false); setTried(true); } };
+  // Pedido de Cristian (28-oct): el botón de activar está SIEMPRE ahí, y también el personaje lo activa al tocarlo.
+  // Si el teléfono las tiene bloqueadas, el sistema ya no muestra la pregunta: entonces salen los pasos para Ajustes.
+  const [busy, setBusy] = useState(false), [tried, setTried] = useState(false), [blocked, setBlocked] = useState(state === "denied");
+  const turnOn = async () => {
+    if (busy) return; setBusy(true);
+    try { const r = await enablePush(); onState(r); if (r === "denied") setBlocked(true); } catch { onState("off"); } finally { setBusy(false); setTried(true); }
+  };
+  const ios = isIos();
   return createPortal(
     <div className="nf-gate" role="dialog" aria-modal="true" aria-labelledby="nf-title">
       <div className="nf-box">
-        <Guide size={110} pose="wave" />
+        {state === "install"
+          ? <Guide size={110} pose="wave" />
+          : <button type="button" className="nf-guide" aria-label="Activar notificaciones" onClick={() => void turnOn()}><Guide size={110} pose={busy ? "cheer" : "wave"} /></button>}
         <h2 id="nf-title" className="nf-title">{state === "install" ? "Instala la app para seguir" : "Activa las notificaciones"}</h2>
         <p className="nf-sub">{state === "install"
           ? "Las notificaciones son obligatorias y en el celular solo funcionan con la app instalada. Instálala y ábrela desde el icono."
           : "Es lo único obligatorio para usar la app. Así te llegan los recordatorios de tu rutina y tu reporte, y las respuestas de Jeff."}</p>
-        {state === "off" && <>
+        {state !== "install" && <>
           <button type="button" className="lk-cta nf-btn" disabled={busy} onClick={() => void turnOn()}>{busy ? "Activando…" : "Activar notificaciones"}</button>
-          {tried && <p className="nf-hint">Si no apareció la pregunta del teléfono, vuelve a tocar el botón y elige <b>Permitir</b>.</p>}
-        </>}
-        {state === "denied" && <>
-          <p className="nf-hint"><b>Las notificaciones están bloqueadas en este teléfono.</b> Actívalas así y vuelve a la app:</p>
-          <ol className="nf-steps">
-            {isIos()
-              ? <><li>Abre <b>Ajustes</b> del iPhone.</li><li>Entra a <b>Notificaciones</b> y busca <b>YEFFITNES</b>.</li><li>Activa <b>Permitir notificaciones</b>.</li></>
-              : <><li>Mantén presionado el icono de <b>YEFFITNES</b> y toca <b>Información de la app</b>.</li><li>Entra a <b>Notificaciones</b>.</li><li>Activa <b>Todas las notificaciones</b>.</li></>}
-          </ol>
-          <button type="button" className="lk-cta nf-btn" onClick={recheck}>Ya las activé</button>
+          {tried && !blocked && <p className="nf-hint">Si no apareció la pregunta del teléfono, vuelve a tocar el botón y elige <b>Permitir</b>.</p>}
+          {blocked && <>
+            <p className="nf-hint"><b>Tu teléfono las tiene bloqueadas</b> y ya no deja preguntar desde la app. Actívalas así y vuelve:</p>
+            <ol className="nf-steps">
+              {ios
+                ? <><li>Abre <b>Ajustes</b> del iPhone.</li><li>Entra a <b>Notificaciones</b> y busca <b>YEFFITNES</b>.</li><li>Activa <b>Permitir notificaciones</b>.</li></>
+                : <><li>Mantén presionado el icono de <b>YEFFITNES</b> y toca <b>Información de la app</b>.</li><li>Entra a <b>Notificaciones</b>.</li><li>Activa <b>Todas las notificaciones</b>.</li></>}
+            </ol>
+            <button type="button" className="nf-again" onClick={recheck}>Ya las activé en Ajustes</button>
+          </>}
         </>}
         {state === "install" && <>
           <ol className="nf-steps">
-            {isIos()
+            {ios
               ? <><li>Abre esta dirección en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Añadir a pantalla de inicio</b> y abre <b>YEFFITNES</b> desde el icono nuevo.</li></>
               : <><li>Abre esta dirección en <b>Chrome</b>.</li><li>Toca el menú (los tres puntos) y elige <b>Instalar app</b>.</li><li>Abre <b>YEFFITNES</b> desde el icono nuevo.</li></>}
           </ol>
           <button type="button" className="lk-cta nf-btn" onClick={recheck}>Ya la instalé</button>
         </>}
-        <form action={signOut}><button className="nf-out">Salir de la cuenta</button></form>
+        <SignOutButton className="nf-out" label="Salir de la cuenta" />
       </div>
     </div>, document.body);
 }

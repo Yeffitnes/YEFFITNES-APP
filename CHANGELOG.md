@@ -1,4 +1,26 @@
 # CHANGELOG
+## 2026-10-28 (tarde) - Activar avisos desde la pantalla, salir rápido, consejo de repeticiones y avisos que llevan al sitio
+Pedidos de Cristian.
+- **Pantalla de notificaciones obligatorias:**
+  - El botón **"Activar notificaciones"** aparece siempre, también si el teléfono las tenía bloqueadas, y el personaje también las activa al tocarlo.
+  - Si el teléfono ya no deja preguntar, salen los pasos para Ajustes y "Ya las activé en Ajustes" queda como opción secundaria.
+  - Archivos: `FirstRun.tsx` y `portal.css` (`.nf-guide`, `.nf-again`).
+- **Cerrar sesión rápido:**
+  - Se cierra desde el teléfono, ya no pasa por el servidor de la app: espera máx. 1,2 s a Supabase, borra la sesión y va a la entrada.
+  - Componente nuevo `SignOutButton.tsx`, usado en `ProfileMenu`, `PortalNav`, el layout del coach y `FirstRun`.
+- **Rango de repeticiones:**
+  - Se quitó el texto fijo bajo las series, que en el teléfono se veía montado porque cada palabra en negrilla quedaba como una columna.
+  - Ahora es un aviso corto que se va solo y se cierra con un toque. Al abrir el ejercicio (una vez al día) dice: "Haz tus 4 series con 60 kg buscando entre 10 y 12 repeticiones… si tienes dudas, pregúntale a Jeff" (9 s).
+  - Después de guardar una serie fuera del rango, sale el consejo de subir o bajar el peso (7 s).
+  - Archivos: `HoyView.tsx` (`RepTip`), `lib/progression.ts` y `portal.css` (`.rep-pop`).
+- **Avisos y notificaciones que llevan al sitio:**
+  - "Aún no envías tu reporte de hoy" abre y despliega el reporte en Hoy.
+  - Las notificaciones del teléfono van a `/inicio#reporte`, `#rutina` o `#nutricion` según el caso: Jeff te espera, recordatorio del reporte, "hoy toca entrenar".
+  - En "Jeff te está esperando" hay botones: "Hacer mi reporte", "Ir a mi rutina", "Marcar mi nutrición".
+  - Archivos: `lib/focus.ts` (nuevo), `QuickRow` (`anchor`), `ReportCard`, `HoySide`, `ActionsBar`, `api/push/nudge` y `api/cron/reminders`.
+- Sin migración.
+- Revertir: restaurar esos archivos del commit `bc6f359` y borrar `SignOutButton.tsx` y `lib/focus.ts`.
+
 ## 2026-10-28 - Primera apertura: servidor despierto y menos llamadas al servidor
 - **Pedido de Cristian:** la segunda apertura ya es inmediata, pero la primera seguía tardando cerca de 10 s, sobre todo pensando en Netlify. Medido: en Netlify, despertar el servidor tarda unos 3,3 s, frente a 0,25 s cuando ya está despierto.
 - **Mantener despierto:** ruta nueva `/api/ping`, que no toca la base y queda fuera del middleware. Una tarea de Supabase (pg_cron) la llama cada 5 min de 5 a. m. a medianoche, hora de Colombia. Costo estimado en Netlify: unos 3 créditos al mes. El SQL está en `docs/PASO_A_PRODUCCION.md` §3c; no se activa solo.

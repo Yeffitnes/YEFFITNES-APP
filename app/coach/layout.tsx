@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireUser, serverDb } from "@/lib/session";
-import { signOut } from "@/app/login/actions";
+import { SignOutButton } from "@/components/SignOutButton";
 import { Providers } from "@/components/Providers";
 import { ActionsBar } from "@/components/ActionsBar";
 import { SideNav, MobileNav } from "@/components/coach/CoachNav";
@@ -21,7 +21,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
         <div className="side-coach">
           <div className="side-avatar">{initials(profile.full_name)}</div>
           <div style={{ flex: 1 }}><div className="side-coach-name">{profile.full_name || "Coach"}</div><div className="side-coach-role">Coach</div></div>
-          <form action={signOut}><button style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Salir</button></form>
+          <SignOutButton label="Salir" style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }} />
         </div>
       </aside>
       <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Coach" /></div></div><MobileNav /><ActionsBar side="coach" />{children}</main>

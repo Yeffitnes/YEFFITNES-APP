@@ -10,6 +10,8 @@ import { disablePush, enablePush, pushState, resyncPush, type PushState } from "
 import { QuickSearch } from "@/components/coach/QuickSearch";
 import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
+import { focusAnchor } from "@/lib/focus";
+import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 
 type Item = { key: string; text: string; href: string };
@@ -24,7 +26,7 @@ function useItems(side: "client" | "coach"): Item[] {
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
-    if (wantsReport && rep.data === null) items.push({ key: "rep", text: "Aún no envías tu reporte de hoy", href: "/inicio" });
+    if (wantsReport && rep.data === null) items.push({ key: "rep", text: "Aún no envías tu reporte de hoy", href: "/inicio#reporte" });
     const next = bookings.data?.[0];
     if (next) { const ms = new Date(next.startsAt).getTime() - Date.now(); if (ms < 36 * 3600_000) items.push({ key: "bk", text: `Tu sesión: ${new Date(next.startsAt).toLocaleDateString("es", { weekday: "long" })} a las ${new Date(next.startsAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`, href: "/inicio/agenda" }); }
   } else {
@@ -42,7 +44,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
   const qc = useQueryClient();
   useEffect(() => { if (side === "client") void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side]);   // "Mensajes" abre al instante
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);
-  const { profileId } = useProfile();
+  const { profileId } = useProfile(), pathname = usePathname();
   useEffect(() => { void pushState().then(setPs); void resyncPush(profileId); }, [profileId]);
   useEffect(() => { const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; try { void (unread > 0 ? nav.setAppBadge?.(unread) : nav.clearAppBadge?.()); } catch { /* sin soporte */ } }, [unread]);
   useEffect(() => {
@@ -69,7 +71,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
       {open && <div className="act-pop" role="dialog" aria-label="Avisos">
         <div className="act-pop-title">Avisos</div>
         {!items.length && <p className="act-empty">Todo al día. No tienes pendientes.</p>}
-        {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={() => setOpen(false)}>{i.text}<Icon name="chevron" size={14} /></Link>)}
+        {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={(e) => { setOpen(false); const [p, h] = i.href.split("#"); if (h && p === pathname) { e.preventDefault(); focusAnchor(h); } }}>{i.text}<Icon name="chevron" size={14} /></Link>)}
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
         <button type="button" className="act-push" onClick={togglePush} disabled={busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>

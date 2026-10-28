@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { signOut } from "@/app/login/actions";
+import { SignOutButton } from "@/components/SignOutButton";
 import { initials } from "@/lib/format";
 // Perfil en celular: el círculo con las iniciales abre un menú pequeño con "Cerrar sesión".
 export function ProfileMenu({ name, role }: { name: string; role: string }) {
@@ -16,7 +16,7 @@ export function ProfileMenu({ name, role }: { name: string; role: string }) {
       <button type="button" className="pm-btn" aria-label="Mi perfil" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{initials(name)}</button>
       {open && <div className="pm-menu" role="menu">
         <div className="pm-who"><b>{name || role}</b><span>{role}</span></div>
-        <form action={signOut}><button className="pm-out" role="menuitem">Cerrar sesión</button></form>
+        <SignOutButton className="pm-out" role="menuitem" />
       </div>}
     </div>
   );

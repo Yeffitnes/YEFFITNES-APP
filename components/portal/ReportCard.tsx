@@ -18,7 +18,7 @@ export function ReportCard({ clientId }: { clientId: string }) {
   const ctl = useRef<AbortController | null>(null);
   if (rep.isPending || enabled.isPending) return <div className="sk" style={{ height: 58, marginBottom: 12 }} />;
   if (rep.data) return (
-    <QuickRow icon="check" tone="ok" title="Reporte enviado" sub={rep.data.seen ? "Tu coach ya lo vio" : "Tu coach lo verá pronto"}>{rep.data.comment ? <p className="qrow-quote">“{rep.data.comment}”</p> : null}</QuickRow>);
+    <QuickRow anchor="reporte" icon="check" tone="ok" title="Reporte enviado" sub={rep.data.seen ? "Tu coach ya lo vio" : "Tu coach lo verá pronto"}>{rep.data.comment ? <p className="qrow-quote">“{rep.data.comment}”</p> : null}</QuickRow>);
   const needVideo = enabled.data === true;
   const send = async () => {
     if (busy) return; setErr("");
@@ -34,7 +34,7 @@ export function ReportCard({ clientId }: { clientId: string }) {
     } catch (e) { if (e instanceof UploadError && e.code !== "cancelled") setErr(UP_ERR[e.code] ?? UP_ERR.upload_failed); } finally { setBusy(false); setPct(null); }
   };
   return (
-    <QuickRow icon="video" tone="todo" title="Reporte de hoy" sub={needVideo ? "Vídeo y comentario obligatorios" : "Comentario obligatorio"} chip="Pendiente">
+    <QuickRow anchor="reporte" icon="video" tone="todo" title="Reporte de hoy" sub={needVideo ? "Vídeo y comentario obligatorios" : "Comentario obligatorio"} chip="Pendiente">
       <div className="card-title" style={{ fontSize: 15 }}>Cuéntale a tu coach cómo te fue</div>
       {needVideo && <>
         <input ref={gallery} type="file" accept="video/mp4,video/quicktime,video/x-m4v,.mov,.mp4,.m4v" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />

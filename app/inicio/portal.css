@@ -1316,3 +1316,23 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .tour-bubble-head.flip>div{text-align:right}
 .obj-play{display:inline-flex;align-items:center;gap:6px;margin-top:12px;height:34px;padding:0 12px;border-radius:10px;border:0;font:inherit;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer;
   background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+
+/* Activar notificaciones: el personaje también es botón; "Ya las activé" queda como enlace secundario (28-oct) */
+.nf-guide{background:none;border:0;padding:0;cursor:pointer;border-radius:50%;-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.nf-guide:active{transform:scale(.95)}
+.nf-again{background:none;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;margin-top:2px}
+/* Consejo del rango de repeticiones: aviso corto que se va solo (28-oct) */
+.rep-pop{position:relative;overflow:hidden;display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;margin:10px 0 2px;padding:11px 12px 13px;border-radius:12px;
+  font:inherit;font-size:13px;line-height:1.45;color:var(--text);background:#F5F6FA;border:1px solid var(--line);cursor:pointer;animation:rise .25s ease-out both}
+.rep-pop>span{flex:1;min-width:0}
+.rep-pop svg{flex:none;margin-top:1px;color:var(--text-dim)}
+.rep-pop.warn{background:rgba(247,37,75,.07);border-color:rgba(247,37,75,.22)}
+.rep-pop.warn svg{color:var(--neon)}
+.rep-pop-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--ink,#0A0910);opacity:.18;transform-origin:left;animation:rep-pop-bar linear forwards}
+.rep-pop.warn .rep-pop-bar{background:var(--neon);opacity:.45}
+@keyframes rep-pop-bar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* Ir directo a una parte de Hoy (avisos y notificaciones, 28-oct) */
+#reporte,#rutina,#nutricion,#avisos{scroll-margin-top:84px}
+.focus-flash{box-shadow:0 0 0 3px rgba(247,37,75,.35),0 0 24px rgba(247,37,75,.25)!important;transition:box-shadow .4s}
+.nudge-line{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:8px}
+.nudge-line p{margin:0;font-size:14px;line-height:1.5}
