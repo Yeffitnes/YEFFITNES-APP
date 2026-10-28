@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Recorrido: primero el gesto, después señala
+- Pedido de Cristian: en cada panel el personaje primero hace el gesto del tema (mancuerna, sentadilla, planilla, cronómetro, libro, celular) y a los 2,6 s señala el panel en el menú, que es lo que queda si el cliente se demora leyendo.
+- Archivo: `Onboarding.tsx`. Revertir: restaurar del commit `e1c412d`.
+
 ## 2026-10-27 (noche) - Recorrido con un gesto distinto en cada panel
 - **Poses nuevas del personaje:**
   - Planilla (`clipboard`): la sostiene y mira.

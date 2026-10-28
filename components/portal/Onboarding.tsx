@@ -94,9 +94,10 @@ export function Onboarding() {
 // Paso que ilumina un panel real del menú y pone al personaje al lado, con su explicación.
 function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: React.ReactNode; skip: React.ReactNode; onNext: () => void; onBack: () => void }) {
   const [r, setR] = useState<DOMRect | null>(null);
-  // Primero señala el panel en el menú; un momento después hace el gesto del tema (mancuerna en Hoy, músculo en Mi plan, sentadilla en Progreso…).
-  const [act, setAct] = useState<GuidePose>("point");
-  useEffect(() => { setAct("point"); if (step.topic === "point") return; const t = setTimeout(() => setAct(step.topic), 1800); return () => clearTimeout(t); }, [step]);
+  // Primero hace el gesto del tema (mancuerna en Hoy, sentadilla en Mi plan, planilla en Agenda…) y después señala el panel en el menú,
+  // que es lo que queda si el cliente se demora leyendo (pedido de Cristian).
+  const [act, setAct] = useState<GuidePose>(step.topic);
+  useEffect(() => { setAct(step.topic); if (step.topic === "point") return; const t = setTimeout(() => setAct("point"), 2600); return () => clearTimeout(t); }, [step]);
   const measure = useCallback(() => { const el = findTarget(step.href); setR(el ? el.getBoundingClientRect() : null); }, [step.href]);
   useLayoutEffect(() => { measure(); }, [measure]);
   useEffect(() => { window.addEventListener("resize", measure); window.addEventListener("scroll", measure, true); const t = setTimeout(measure, 300);
