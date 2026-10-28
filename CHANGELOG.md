@@ -1,4 +1,39 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Agenda por días, avisos que se cumplen, vídeo destacado, plan mensual, bienvenida obligatoria, respuestas de Jeff y avisos en computador
+Pedidos de Cristian tras probar producción. Solo en `bloque-hoy` (Vercel); NO en `main`.
+- **Agenda del coach (celular/tableta):** no se podía cambiar de día; se quedaba en el día actual. Había dos fallos de CSS: la clase del día elegido no coincidía y la regla general `.today{display:grid}` dejaba siempre visible el día de hoy. Ahora cada pestaña muestra su día y lleva el número de horarios publicados. Archivos: `coach.css` y `AgendaView.tsx`.
+- **"Jeff te está esperando" en Hoy:** cada aviso se marca solo como hecho ("Reporte enviado", "Rutina hecha", "Nutrición marcada"). Cuando el cliente cumple todo, la fila pasa a "Listo: cumpliste lo que Jeff te pidió" y se pliega. Archivo: `HoyView.tsx`.
+- **Vídeo del día / de la semana:** en Material del coach hay un panel arriba con "Subir vídeo del día", "Subir vídeo de la semana" y "Quitar", y muestra cuál está activo. El vídeo queda destacado en Hoy apenas termina de subir. Antes solo se podía con la estrella de cada vídeo y no se encontraba. Archivos: `MaterialView.tsx`, `useSaveMaterial` y `coach.css`.
+- **Plan mensual (30 días):**
+  - `clients.plan_since` se pone solo al asignar o cambiar el plan.
+  - Al vencer, el plan no se quita solo.
+  - El panel de Jeff muestra la tarjeta "Planes mensuales" (vencidos y los que vencen en 3 días o menos) con "Renovar 30 días" y "Quitar plan".
+  - En Avisos sale "N planes mensuales vencidos".
+  - En la ficha se ve cuándo vence el plan.
+  - La tarea de la mañana le manda a Jeff una notificación por cada vencimiento; esto solo funciona en Netlify, porque el cron apunta allí.
+  - Los clientes que ya tenían plan empiezan a contar desde su activación o desde hoy.
+  - Archivos: `PlansDueCard.tsx`, `lib/planmonth.ts` y `api/cron/reminders`.
+- **Bienvenida:**
+  - Ya no hay botón "Saltar".
+  - El personaje alterna gestos cada 2,5 s: en los paneles, gesto del tema y señalar en bucle; saludo y quieto; músculo y quieto; celebra, quieto y celular.
+  - "Tu punto de partida" pide peso (kg) y estatura (acepta 1,70 o 170), es obligatorio y sale para todos; se quitó la cintura.
+  - Se guarda en la ficha y Jeff lo ve junto al nombre. Si el plan incluye Progreso, también queda como medición del día.
+  - Archivos: `Onboarding.tsx` y `portal.css` (`.gd-swap`).
+- **Respuestas de Jeff a un entrenamiento:**
+  - Salen en Hoy como aviso aparte: "Jeff respondió a tu entrenamiento de torso y brazos · martes 27", con el texto y el audio. Aparecen aunque Jeff responda al día siguiente.
+  - No se responden: el cliente toca "Marcar como visto". Se muestran las de las últimas 2 semanas.
+  - Al cliente le llega una notificación cuando Jeff responde.
+  - En la revisión, Jeff ve "El cliente ya lo vio / aún no lo ve".
+  - Archivos: `HoyView.tsx`, `lib/fetchers.ts`, `RecentWorkouts.tsx` y `api/push/feedback`.
+- **Jeff cancela una sesión:** ya podía hacerlo con la ×. Ahora puede escribir un motivo opcional y al cliente le llega una notificación ("Jeff canceló tu sesión… Reserva otro horario"). El horario queda libre para agendar a alguien más. Archivos: `AgendaView.tsx` y `api/push/booking-cancel`.
+- **Notificaciones en computador:**
+  - En el computador ya no bloquean la app: sale "Seguir sin avisos en este computador", que se recuerda en ese navegador. En el celular siguen siendo obligatorias.
+  - Si fallan, se explica por qué y salen los pasos para Chrome o Safari en Mac.
+  - `enablePush` tiene límite de tiempo y, si había una suscripción vieja hecha con otra clave, la rehace.
+  - Archivos: `FirstRun.tsx`, `lib/push-client.ts` y `ActionsBar.tsx`.
+- **Migración `0038_start_point_feedback_plan_month.sql` (CORRERLA ANTES; sin ella fallan Hoy y Clientes en Vercel).** Prueba nueva: `rls_month.sql`.
+- Revertir: ver la cabecera de la migración y restaurar los archivos del commit `8377db1`.
+
 ## 2026-10-28 (tarde) - PUBLICACIÓN A PRODUCCIÓN (Netlify): `bloque-hoy` → `main` en un solo bloque
 - Autorizado por Cristian ("fusiona"). `main` estaba en `2f2f1d8` (25-oct, migración 0027). Entran 65 cambios: las migraciones 0028-0037 ya estaban corridas en la base compartida y todo se probó antes en Vercel.
 - Antes de fusionar se confirmaron:

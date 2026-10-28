@@ -1,4 +1,5 @@
 "use client";
+import { PlansDueCard } from "./PlansDueCard";
 import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { localDate, useActivePlanClients, useActivityFeed, useClients, useCoachReports, useCoachSlots, useRecentLogs, type CoachReport, type RecentLog } from "@/lib/queries";
@@ -29,6 +30,7 @@ export function DashboardView() {
       <DashKpis clients={cl} logs={lg} attn={attn} withPlan={new Set(plans.data)} reports={reports.data ?? []} />
       <div className="dash-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <PlansDueCard clients={cl} />
           <FollowUpCard clients={cl} logs={lg} withPlan={new Set(plans.data)} reports={reports.data ?? []} attn={attn} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>

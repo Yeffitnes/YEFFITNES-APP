@@ -20,7 +20,7 @@ import { PendingSection, PlanWait } from "./LockedPanel";
 import { repRange, setTip } from "@/lib/progression";
 import { NUDGE_TXT } from "@/lib/nudges";
 import { ANCHORS, focusAnchor, useFocusAnchor } from "@/lib/focus";
-import { useMyNudges } from "@/lib/queries";
+import { feedbackUnseen, hasFeedback, useClientNutrition, useMarkFeedbackSeen, useMealLogs, useMyNudges, useTodayReport, type NudgeKind } from "@/lib/queries";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
@@ -72,7 +72,8 @@ export function HoyView() {
       </div>
       <div className="qrows">
       <FromCoach />
-      <CoachNudges cid={cid} />
+      <CoachNudges cid={cid} trainingDone={!!logToday?.completed} />
+      <CoachFeedback cid={cid} logs={logList} />
       {!!ann.data?.length && <QuickRow icon="megaphone" tone="idle" title={ann.data.length === 1 ? "Anuncio de tu coach" : `${ann.data.length} anuncios de tu coach`} sub={ann.data[0].title || ann.data[0].body.slice(0, 60)}>
         {ann.data.map((a) => <div key={a.id} style={{ marginTop: 8, fontSize: 14, lineHeight: 1.55 }}>{a.pinned && <Icon name="pin" size={13} style={{ marginRight: 5 }} />}{a.title && <b>{a.title} — </b>}{a.body}</div>)}
       </QuickRow>}
@@ -110,7 +111,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
         <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Rutina de hoy · completada</span><b>{title}</b><small>{log?.sets.length ?? 0} series registradas{log?.effort ? ` · esfuerzo ${log.effort}/10` : ""}</small></span>
         <Icon name="down" size={16} />
       </button>
-      {(log?.coachComment || log?.coachCommentAudio) && <div className="fold-coach"><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
+      {log && hasFeedback(log) && !feedbackUnseen(log) && <div className="fold-coach"><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
       <div className="fold-actions"><button type="button" className="mini-btn ghost" onClick={() => setUnfold(true)}>Ver detalle</button><button type="button" className="mini-btn ghost" onClick={() => { setUnfold(true); setEditing(true); }}>Editar</button></div>
     </div>);
   return (
@@ -132,7 +133,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
           </div>
           {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onLast={() => setOpen(items[idx + 1]?.id ?? null)} />)}<RepTip item={i} sets={saved(i.id)} /></div>}
         </div>))}</div>
-      {(log?.coachComment || log?.coachCommentAudio) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
+      {log && hasFeedback(log) && !feedbackUnseen(log) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Comentario de tu coach</div>{log.coachComment}{log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}</div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
       <Link href="/inicio/plan" className="tech-link" style={{ marginTop: 14, display: "inline-flex" }}>Ver rutina completa <Icon name="arrow" size={13} /></Link>
       <div style={{ marginTop: 18 }}>
@@ -215,16 +216,54 @@ function FromCoach() {
 }
 
 // Avisos rápidos de Jeff de hoy (Seguimiento → "Avisar"): visibles aquí aunque el teléfono no tenga notificaciones activas.
-function CoachNudges({ cid }: { cid: string }) {
-  const n = useMyNudges(cid), list = n.data ?? [];
+// Cada aviso se marca solo como hecho cuando el cliente cumple (reporte enviado, rutina terminada, comidas marcadas) y,
+// cuando ya cumplió todo, la fila cambia a "Listo" y se pliega (pedido de Cristian, 28-oct).
+function CoachNudges({ cid, trainingDone }: { cid: string; trainingDone: boolean }) {
+  const n = useMyNudges(cid), list = n.data ?? [], today = localDate();
+  const rep = useTodayReport(cid, today, list.includes("report") || list.includes("nothing"));
+  const nut = useClientNutrition(list.includes("meals") ? cid : ""), ml = useMealLogs(list.includes("meals") ? cid : "", today), wd = (new Date().getDay() + 6) % 7 + 1;
   if (!list.length) return null;
+  const meals = (nut.data?.meals ?? []).filter((m) => m.weekday === null || m.weekday === wd);
+  const mealsDone = meals.length > 0 && meals.every((m) => !!m.id && (ml.data ?? []).includes(m.id)), anyMeal = (ml.data ?? []).length > 0;
+  const done: Record<NudgeKind, boolean> = { report: !!rep.data, train: trainingDone, meals: mealsDone, nothing: !!rep.data || trainingDone || anyMeal };
+  const DONE_TXT: Record<NudgeKind, string> = { report: "Reporte enviado", train: "Rutina hecha", meals: "Nutrición marcada", nothing: "Ya registraste algo hoy" };
+  const allDone = list.every((k) => done[k]);
   return (
-    <QuickRow anchor="avisos" icon="bell" tone="new" title="Jeff te está esperando" sub={NUDGE_TXT[list[0]].body} chip="Hoy" defaultOpen>
-      {list.map((k) => <div key={k} className="nudge-line">
-        {list.length > 1 && <p>{NUDGE_TXT[k].body}</p>}
-        {k !== "nothing" && <button type="button" className="mini-btn primary" onClick={() => focusAnchor(ANCHORS[k])}>{k === "report" ? "Hacer mi reporte" : k === "train" ? "Ir a mi rutina" : "Marcar mi nutrición"}</button>}
+    <QuickRow key={allDone ? "ok" : "todo"} anchor="avisos" icon={allDone ? "check" : "bell"} tone={allDone ? "ok" : "new"}
+      title={allDone ? "Listo: cumpliste lo que Jeff te pidió" : "Jeff te está esperando"}
+      sub={allDone ? list.map((k) => DONE_TXT[k]).join(" · ") : NUDGE_TXT[list.find((k) => !done[k]) ?? list[0]].body}
+      chip={allDone ? undefined : "Hoy"} defaultOpen={!allDone}>
+      {list.map((k) => <div key={k} className={`nudge-line${done[k] ? " ok" : ""}`}>
+        {done[k]
+          ? <p className="nudge-done"><Icon name="check" size={14} stroke={2.4} />{DONE_TXT[k]}</p>
+          : <>{list.length > 1 && <p>{NUDGE_TXT[k].body}</p>}
+              {k !== "nothing" && <button type="button" className="mini-btn primary" onClick={() => focusAnchor(ANCHORS[k])}>{k === "report" ? "Hacer mi reporte" : k === "train" ? "Ir a mi rutina" : "Marcar mi nutrición"}</button>}</>}
       </div>)}
     </QuickRow>
+  );
+}
+
+// Respuestas de Jeff a tus entrenamientos (pedido de Cristian, 28-oct): aparecen aquí como aviso aparte, aunque sean de un día anterior
+// (Jeff puede responder de madrugada o al día siguiente). No se responden: el cliente las lee o escucha y las marca como vistas.
+function CoachFeedback({ cid, logs }: { cid: string; logs: WorkoutLog[] }) {
+  const seen = useMarkFeedbackSeen(cid), since = localDate(new Date(Date.now() - 14 * 86_400_000)), list = logs.filter((l) => l.date >= since && feedbackUnseen(l)).slice(0, 5);   // solo las de las últimas 2 semanas
+  useFocusAnchor("respuestas");
+  if (!list.length) return null;
+  return (
+    <div id="respuestas" className="fb-list">
+      {list.map((l) => {
+        const day = cap(new Date(`${l.date}T12:00:00`).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "short" }));
+        return (
+          <QuickRow key={l.id} icon="message" tone="new" chip="Nuevo" defaultOpen={list.length === 1}
+            title={`Jeff respondió a tu entrenamiento${l.routine ? ` de ${l.routine.toLowerCase()}` : ""}`}
+            sub={`${day}${l.coachCommentAudio ? " · con audio" : ""}`}>
+            {l.coachComment && <p className="fb-text">{l.coachComment}</p>}
+            {l.coachCommentAudio && <CoachAudio path={l.coachCommentAudio} />}
+            <div className="fb-foot"><span>Es la respuesta de Jeff a ese entrenamiento; no se responde.</span>
+              <button type="button" className="mini-btn primary" disabled={seen.isPending} onClick={() => seen.mutate(l.id)}>Marcar como visto</button></div>
+          </QuickRow>);
+      })}
+    </div>
   );
 }
 

@@ -14,14 +14,27 @@ const untilTxt = (m: CoachMaterial) => (m.featuredUntil ? (m.featuredPeriod === 
 export function MaterialView() {
   const { data, isPending, isError, refetch } = useCoachMaterials(), feat = useFeatureMaterial(), del = useDeleteMaterial();
   const [q, setQ] = useState(""), [f, setF] = useState<"all" | "article" | "video">("all"), [edit, setEdit] = useState<CoachMaterial | "new" | null>(null), [rm, setRm] = useState<CoachMaterial | null>(null);
-  const [star, setStar] = useState<CoachMaterial | null>(null), [watch, setWatch] = useState<CoachMaterial | null>(null);
+  const [star, setStar] = useState<CoachMaterial | null>(null), [watch, setWatch] = useState<CoachMaterial | null>(null), [newFeat, setNewFeat] = useState<FeaturedPeriod | null>(null);
   const all = data ?? [], featured = all.find((m) => m.featured);
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"}` : "Material educativo"}</h1><p className="greeting-sub">Lo ven tus clientes activos según su plan. Un vídeo puede ser de YouTube (debe permitir “insertar”) o privado: lo subes desde aquí y solo lo ven tus clientes. Destaca uno como vídeo del día o de la semana para que salga en “Hoy”.</p></div>
         <button className="primary-btn" onClick={() => setEdit("new")}>Nuevo contenido</button></div>
-      {featured && <div className="featured-banner"><svg viewBox="0 0 20 20"><path d={STAR} /></svg><span>{PERIOD[featured.featuredPeriod]}: <b>{featured.title}</b> — {untilTxt(featured)}.</span></div>}
+      {/* Vídeo del día / de la semana a la vista (pedido de Cristian, 28-oct): antes solo se podía con la estrella de cada vídeo y no se encontraba. */}
+      <div className="fv-panel">
+        <span className="fv-panel-ic"><svg viewBox="0 0 20 20"><path d={STAR} /></svg></span>
+        <div className="fv-panel-txt">
+          <div className="fv-panel-tag">Vídeo destacado en Hoy</div>
+          {featured ? <><b>{PERIOD[featured.featuredPeriod]}: {featured.title}</b><span>{untilTxt(featured).replace(/^se/, "Se")}.</span></>
+            : <><b>Ahora no hay vídeo del día ni de la semana</b><span>Sube uno y sale arriba en la pantalla Hoy de todos tus clientes.</span></>}
+        </div>
+        <div className="fv-panel-acts">
+          <button className="ghost-btn" onClick={() => setNewFeat("day")}>Subir vídeo del día</button>
+          <button className="primary-btn" onClick={() => setNewFeat("week")}>Subir vídeo de la semana</button>
+          {featured && <button className="ghost-btn" disabled={feat.isPending} onClick={() => feat.mutate({ id: featured.id, on: false })}>Quitar</button>}
+        </div>
+      </div>
       <div className="filter-row">
         <div className="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" /><line x1="13.2" y1="13.2" x2="17" y2="17" /></svg><input type="text" placeholder="Buscar contenido..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar contenido" /></div>
         {([["all", "Todos"], ["article", "Artículos"], ["video", "Vídeos"]] as const).map(([k, t]) => <button key={k} className={`filter-chip${f === k ? " active" : ""}`} onClick={() => setF(k)}>{t}</button>)}
@@ -45,6 +58,7 @@ export function MaterialView() {
             <div className="content-meta"><span className="content-date">{fmt(m.date)}</span><span className="content-views">Visto por {m.views}</span></div></div>
         </div>))}</div>
       {edit && <MaterialForm item={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
+      {newFeat && <MaterialForm item={null} feature={newFeat} onClose={() => setNewFeat(null)} />}
       {watch && <BunnyModal param={`material=${watch.id}`} title={watch.title} sub="Vídeo privado" onClose={() => setWatch(null)} />}
       {star && <Modal title="Destacar en Hoy" sub={`“${star.title}” sale arriba en la pantalla Hoy de todos tus clientes. Solo puede haber uno a la vez.`} onClose={() => setStar(null)}>
         <div className="star-opts">
@@ -57,9 +71,9 @@ export function MaterialView() {
     </div>
   );
 }
-function MaterialForm({ item, onClose }: { item: CoachMaterial | null; onClose: () => void }) {
+function MaterialForm({ item, feature, onClose }: { item: CoachMaterial | null; feature?: FeaturedPeriod; onClose: () => void }) {
   const ws = useWorkspaceId(), save = useSaveMaterial(ws);
-  const [v, setV] = useState({ kind: item?.kind ?? "article", title: item?.title ?? "", category: item?.category ?? MAT_CATS[0], body: item?.body ?? "", video: item?.videoRef ? `https://youtu.be/${item.videoRef}` : "", src: (item?.privateVideo ? "private" : "youtube") as "youtube" | "private", tier: item?.tier ?? "basic", published: item?.published ?? true }), [err, setErr] = useState("");
+  const [v, setV] = useState({ kind: item?.kind ?? (feature ? "video" : "article"), title: item?.title ?? "", category: item?.category ?? (feature ? "Motivación" : MAT_CATS[0]), body: item?.body ?? "", video: item?.videoRef ? `https://youtu.be/${item.videoRef}` : "", src: (item?.privateVideo || feature ? "private" : "youtube") as "youtube" | "private", tier: item?.tier ?? "basic", published: item?.published ?? true }), [err, setErr] = useState("");
   const [file, setFile] = useState<File | null>(null), [checking, setChecking] = useState(false);
   const set = (p: Partial<typeof v>) => { setV({ ...v, ...p }); setErr(""); };
   const pick = async (f: File | null) => {
@@ -76,16 +90,16 @@ function MaterialForm({ item, onClose }: { item: CoachMaterial | null; onClose: 
     if (v.kind === "video" && !priv && !vid) return setErr("Pega un enlace de YouTube válido.");
     if (priv && !file && !item?.privateVideo) return setErr("Elige el vídeo que vas a subir.");
     if (v.kind === "article" && v.body.trim().length < 20) return setErr("El artículo es muy corto: escribe al menos una frase completa.");
-    const input: MaterialInput = { id: item?.id, kind: v.kind, title: v.title, category: v.category, body: v.body, videoRef: vid ?? "", tier: v.tier, published: v.published, file: priv ? file : null, keepPrivate: priv && !file };
+    const input: MaterialInput = { id: item?.id, kind: v.kind, title: v.title, category: v.category, body: v.body, videoRef: vid ?? "", tier: feature ? "basic" : v.tier, published: feature ? true : v.published, file: priv ? file : null, keepPrivate: priv && !file, feature };
     save.mutate(input, { onSuccess: onClose });
   };
   return (
-    <Modal title={item ? "Editar contenido" : "Nuevo contenido educativo"} sub="Aparece en el portal de los clientes cuyo plan lo incluya." onClose={onClose}>
-      <div className="type-select-row">
+    <Modal title={feature ? PERIOD[feature] : item ? "Editar contenido" : "Nuevo contenido educativo"} sub={feature ? (feature === "day" ? "Sale arriba en Hoy de todos tus clientes solo hoy, hasta la medianoche. También queda guardado en Material." : "Sale arriba en Hoy de todos tus clientes durante 7 días. Ideal para saludar y contar qué viene esta semana. También queda guardado en Material.") : "Aparece en el portal de los clientes cuyo plan lo incluya."} onClose={onClose}>
+      {!feature && <div className="type-select-row">
         <button type="button" className={`type-select-btn${v.kind === "article" ? " active" : ""}`} onClick={() => set({ kind: "article" })}><svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z" /></svg>Artículo</button>
         <button type="button" className={`type-select-btn${v.kind === "video" ? " active" : ""}`} onClick={() => set({ kind: "video" })}><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg>Vídeo</button>
-      </div>
-      <div className="modal-field"><label htmlFor="mt">Título</label><input id="mt" value={v.title} maxLength={120} onChange={(e) => set({ title: e.target.value })} placeholder="Ej. Cómo prevenir lesiones de rodilla" /></div>
+      </div>}
+      <div className="modal-field"><label htmlFor="mt">Título</label><input id="mt" value={v.title} maxLength={120} onChange={(e) => set({ title: e.target.value })} placeholder={feature ? (feature === "day" ? "Ej. Hoy: hidrátate bien en el entreno" : "Ej. Semana 3: subimos intensidad") : "Ej. Cómo prevenir lesiones de rodilla"} /></div>
       <div className="modal-field"><label htmlFor="mc">Categoría</label><select id="mc" value={v.category} onChange={(e) => set({ category: e.target.value })}>{MAT_CATS.map((c) => <option key={c}>{c}</option>)}</select></div>
       {v.kind === "article"
         ? <div className="modal-field"><label htmlFor="mb">Contenido</label><textarea id="mb" value={v.body} onChange={(e) => set({ body: e.target.value })} placeholder="Escribe el artículo aquí..." /></div>
@@ -99,10 +113,10 @@ function MaterialForm({ item, onClose }: { item: CoachMaterial | null; onClose: 
                 <input id="mf" type="file" accept="video/*" onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
                 <p className="field-hint">{checking ? "Revisando el vídeo…" : file ? `Listo para subir: ${file.name.slice(0, 40)}` : item?.privateVideo ? "Ya tiene un vídeo privado. Elige otro solo si quieres reemplazarlo." : `Hasta ${MAX_COACH_VIDEO_SECONDS / 60} min. Se sube en segundo plano: puedes seguir usando la app y se publica solo al terminar.`}</p></div>}
         </>}
-      <div className="modal-field"><label htmlFor="mx">Quién lo ve</label><select id="mx" value={v.tier} onChange={(e) => set({ tier: e.target.value as "basic" | "full" })}><option value="basic">Todos los planes con material educativo</option><option value="full">Solo plan completo (biblioteca completa)</option></select></div>
-      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, margin: "6px 0 2px" }}><input type="checkbox" checked={v.published} onChange={(e) => set({ published: e.target.checked })} />Publicado (desmárcalo para guardarlo como borrador)</label>
+      {!feature && <><div className="modal-field"><label htmlFor="mx">Quién lo ve</label><select id="mx" value={v.tier} onChange={(e) => set({ tier: e.target.value as "basic" | "full" })}><option value="basic">Todos los planes con material educativo</option><option value="full">Solo plan completo (biblioteca completa)</option></select></div>
+      <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, margin: "6px 0 2px" }}><input type="checkbox" checked={v.published} onChange={(e) => set({ published: e.target.checked })} />Publicado (desmárcalo para guardarlo como borrador)</label></>}
       {err && <p role="alert" style={{ color: "var(--accent)", fontSize: 13, marginTop: 8 }}>{err}</p>}
-      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : item ? "Guardar cambios" : "Publicar"}</button></div>
+      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : feature ? (file ? "Subir y destacar" : "Publicar y destacar") : item ? "Guardar cambios" : "Publicar"}</button></div>
     </Modal>
   );
 }

@@ -72,7 +72,7 @@ export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: strin
         </div>))}
       {l.note && <p style={{ fontSize: 13, margin: "12px 0 0", padding: 10, background: "var(--surface)", borderRadius: 10 }}><b>Comentario del cliente:</b> {l.note}</p>}
       {l.completed && (
-        <div className="modal-field"><label>Tu comentario para el cliente</label>
+        <div className="modal-field"><label>Tu comentario para el cliente{(l.comment || l.commentAudio) && <span style={{ fontWeight: 600, marginLeft: 8, color: l.clientSaw ? "var(--text)" : "var(--text-faint)" }}>{l.clientSaw ? "· El cliente ya lo vio" : "· El cliente aún no lo ve"}</span>}</label>
           <textarea value={c} onChange={(e) => setC(e.target.value)} placeholder="Ej. Muy bien. Sube 2,5 kg en press banca la próxima semana." />
           {rec.recording && <div className="mb-rec" role="status"><i aria-hidden /><b>Grabando</b><span>{Math.floor(rec.secs / 60)}:{String(rec.secs % 60).padStart(2, "0")} / {Math.floor(MAX_AUDIO_SECONDS / 60)}:00</span><button type="button" onClick={() => rec.stop(true)}>Cancelar</button><button type="button" className="go" onClick={() => rec.stop()}><Icon name="stop" size={13} /> Terminar</button></div>}
           {!rec.recording && audio && url && <div className="mb-attach mb-attach-audio"><Icon name="mic" size={14} /><audio controls src={url} /><button type="button" aria-label="Quitar audio" onClick={() => setAudio(null)}><Icon name="close" size={14} /></button></div>}

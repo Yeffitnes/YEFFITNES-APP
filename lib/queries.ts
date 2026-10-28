@@ -7,12 +7,12 @@ import { bogotaDay, type NudgeKind } from "@/lib/nudges";
 import { loadLogs, loadTrainingPlans, localDate } from "@/lib/fetchers";
 
 export type Plan = { id: string; name: string; features: string[] };
-export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean };
+export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
-type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plans: unknown; profiles: unknown };
+type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plan_since?: string | null; height_cm?: number | null; start_weight_kg?: number | null; plans: unknown; profiles: unknown };
 type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
@@ -20,9 +20,9 @@ export const fetchPlans = async (): Promise<Plan[]> => {
   if (error) throw error; return data as Plan[];
 };
 export const fetchClients = async (): Promise<ClientRow[]> => {
-  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,objective_video_id,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
+  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,objective_video_id,plan_since,height_cm,start_weight_kg,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
   if (error) throw error;
-  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id }));
+  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id, planSince: c.plan_since ?? null, heightCm: c.height_cm ?? null, startWeight: c.start_weight_kg ?? null }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
   const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,template_items(count)").eq("active", true).order("name");
@@ -186,7 +186,7 @@ export function useRequestAccess(profileId: string) {
 }
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, enabled: !!profileId, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
-export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; sets: SetLog[] };
+export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; sets: SetLog[]; routine?: string | null; coachAt?: string | null; feedbackSeenAt?: string | null };
 export { localDate };
 export const fetchLogs = (clientId: string): Promise<WorkoutLog[]> => loadLogs(db(), clientId);
 export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId) });
@@ -246,17 +246,21 @@ export const fetchActivePlanClients = async (): Promise<string[]> => {
   const { data, error } = await db().from("training_plans").select("client_id").eq("status", "active"); if (error) throw error; return (data as unknown as { client_id: string }[]).map((r) => r.client_id);
 };
 export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: fetchActivePlanClients });
-export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[] };
-type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[] };
+export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; clientSaw?: boolean; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[] };
+type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; feedback_seen_at?: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[] };
 export const useClientLogs = (clientId: string) => useQuery({ queryKey: ["client-logs", clientId], staleTime: 30_000, queryFn: async (): Promise<ClientLog[]> => {
-  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)").eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
+  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio,feedback_seen_at,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)").eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
   if (error) throw error;
-  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })) }));
+  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, clientSaw: !!l.feedback_seen_at && !!l.coach_seen_at && l.feedback_seen_at >= l.coach_seen_at, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })) }));
 } });
 export function useReviewWorkout(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { id: string; comment: string; audio?: string | null }) => { const { error } = await db().rpc("review_workout", { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null }); if (error) throw error; },
+    mutationFn: async (v: { id: string; comment: string; audio?: string | null }) => {
+      const { error } = await db().rpc("review_workout", { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null }); if (error) throw error;
+      // Si Jeff dejó texto o audio, al cliente le llega la notificación "Jeff respondió a tu entrenamiento" (la base decide si toca).
+      if (v.comment.trim() || v.audio) void fetch("/api/push/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId: v.id }) }).catch(() => {});
+    },
     onSuccess: () => { toast("Revisión guardada"); qc.invalidateQueries({ queryKey: ["client-logs", clientId] }); qc.invalidateQueries({ queryKey: ["recent-logs"] }); },
     onError: () => toast("No pudimos guardar la revisión. Inténtalo de nuevo.", true),
   });
@@ -421,7 +425,7 @@ export const useCoachMaterials = () => useQuery({ queryKey: ["coach-materials"],
     featured: m.is_featured && (!m.featured_until || m.featured_until >= today), featuredPeriod: m.featured_period ?? "week", featuredUntil: m.featured_until, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0 }));
 } });
 // file: vídeo privado nuevo (Bunny). Se guarda como borrador, se sube en segundo plano y al terminar se engancha y se publica (0035).
-export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean };
+export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean; feature?: FeaturedPeriod };
 export function useSaveMaterial(workspaceId: string) {
   const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
   return useMutation({
@@ -434,10 +438,13 @@ export function useSaveMaterial(workspaceId: string) {
       const id = (res.data as { id: string }).id;
       if (v.file) upload({ file: v.file, label: `Vídeo "${v.title.trim().slice(0, 28)}"`, opts: { purpose: "material" }, finish: async (vid, q) => {
         const { error } = await db().rpc("attach_material_video", { p_material: id, p_video: vid, p_publish: v.published }); if (error) throw error;
+        // Vídeo del día / de la semana: se destaca en Hoy apenas termina de subir.
+        if (v.feature) { const f = await db().rpc("set_featured_material", { p_id: id, p_on: true, p_period: v.feature }); if (f.error) throw f.error; }
         void q.invalidateQueries({ queryKey: ["coach-materials"] });
       } });
+      else if (v.feature) { const f = await db().rpc("set_featured_material", { p_id: id, p_on: true, p_period: v.feature }); if (f.error) throw f.error; }
     },
-    onSuccess: (_d, v) => toast(v.file ? "Guardado. El vídeo se está subiendo; se publica solo al terminar." : v.id ? "Contenido actualizado" : "Contenido publicado"),
+    onSuccess: (_d, v) => toast(v.file ? (v.feature ? `Guardado. El vídeo se está subiendo; al terminar sale en Hoy como ${v.feature === "day" ? "vídeo del día" : "vídeo de la semana"}.` : "Guardado. El vídeo se está subiendo; se publica solo al terminar.") : v.feature ? `Listo: ya sale en Hoy como ${v.feature === "day" ? "vídeo del día" : "vídeo de la semana"}.` : v.id ? "Contenido actualizado" : "Contenido publicado"),
     onError: () => toast("No pudimos guardar el contenido. Revisa los datos e inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }),
   });
@@ -688,4 +695,40 @@ export function useObjectiveVideo(clientId: string) {
     upload: (file: File) => upload({ file, label: "Vídeo del objetivo", opts: { purpose: "message", clientId }, finish: async (vid) => { await set(vid); } }),
     remove: useMutation({ mutationFn: () => set(null), onSuccess: () => toast("Vídeo quitado"), onError: () => toast("No pudimos quitar el vídeo.", true) }),
   };
+}
+
+// ---- Plan mensual (0038): renovar 30 días más ----
+export function useRenewPlan() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (clientId: string) => { const { data, error } = await db().rpc("renew_plan", { p_client: clientId }); if (error) throw error; return data as string; },
+    onMutate: async (clientId) => { await qc.cancelQueries({ queryKey: KEYS.clients }); const today = bogotaDay(); qc.setQueryData<ClientRow[]>(KEYS.clients, (l) => l?.map((c) => (c.id === clientId ? { ...c, planSince: today } : c))); },
+    onSuccess: () => toast("Plan renovado: cuenta 30 días desde hoy."),
+    onError: () => toast("No pudimos renovar el plan. Inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: KEYS.clients }),
+  });
+}
+
+// ---- Punto de partida obligatorio de la bienvenida (0038): peso y estatura ----
+export function useSaveStartPoint() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { weight: number; height: number }) => { const { error } = await db().rpc("save_start_point", { p_weight: v.weight, p_height: v.height }); if (error) throw error; },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["measures"] }); },
+  });
+}
+
+// ---- Respuesta de Jeff a un entrenamiento (0038) ----
+// Se muestra como aviso aparte en Hoy hasta que el cliente la marca como vista. No se responde.
+export const hasFeedback = (l: WorkoutLog) => !!(l.coachComment || l.coachCommentAudio);
+export const feedbackUnseen = (l: WorkoutLog) => hasFeedback(l) && (!l.feedbackSeenAt || (!!l.coachAt && l.feedbackSeenAt < l.coachAt));
+export function useMarkFeedbackSeen(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
+  return useMutation({
+    mutationFn: async (logId: string) => { const { error } = await db().rpc("mark_feedback_seen", { p_log: logId }); if (error) throw error; },
+    onMutate: async (logId) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
+      qc.setQueryData<WorkoutLog[]>(key, (l) => l?.map((x) => (x.id === logId ? { ...x, feedbackSeenAt: new Date().toISOString() } : x))); return { prev }; },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast("No pudimos marcarlo como visto. Inténtalo de nuevo.", true); },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  });
 }

@@ -2,13 +2,15 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useCompleteOnboarding, useFirstCall, useGiveConsent, useMe, useSaveMeasure } from "@/lib/queries";
-import { useProfile, useWorkspaceId } from "@/components/Providers";
+import { useCompleteOnboarding, useFirstCall, useGiveConsent, useMe, useSaveStartPoint } from "@/lib/queries";
+import { useProfile } from "@/components/Providers";
 import { Guide, type GuideDir, type GuidePose } from "./Guide";
 
 // Bienvenida interactiva, solo la primera vez y solo con plan activo (va después de activar las notificaciones; ver FirstRun).
 // El personaje recorre los paneles REALES de la app (los ilumina en el menú) y al final pide punto de partida, permiso de fotos y la llamada.
-// La primera llamada es OBLIGATORIA (decisión de Cristian, 27-oct): no hay "más tarde"; "Saltar" lleva directo a ese paso.
+// La primera llamada es OBLIGATORIA (decisión de Cristian, 27-oct): no hay "más tarde".
+// Desde el 28-oct NO se puede saltar la bienvenida (sin botón "Saltar") y el punto de partida (peso y estatura) es obligatorio.
+// El personaje alterna sus gestos cada 2,5 s mientras el cliente lee (gesto del tema ↔ señalar; saludo ↔ quieto; músculo ↔ quieto…).
 // Textos = PROPUESTA (el contenido final y el diseño del personaje los define Jeff).
 // topic: lo que hace el personaje después de señalar el panel (va con lo que el panel es).
 type Spot = { kind: "spot"; href: string; title: string; text: string; topic: GuidePose };
@@ -27,36 +29,45 @@ function findTarget(href: string): HTMLElement | null {
   return all.find((el) => el.offsetParent !== null && el.getBoundingClientRect().width > 0) ?? null;
 }
 
+// Alterna entre dos (o más) gestos cada `ms` mientras el paso está abierto. Vuelve al primero al cambiar de paso.
+function usePoseCycle(poses: GuidePose[], ms = 2500) {
+  const [k, setK] = useState(0), sig = poses.join("|");
+  useEffect(() => { setK(0); if (poses.length < 2) return; const t = setInterval(() => setK((x) => (x + 1) % poses.length), ms); return () => clearInterval(t); }, [sig, ms]); // eslint-disable-line react-hooks/exhaustive-deps
+  return poses[k % poses.length] ?? poses[0];
+}
+// Acepta "1.75", "1,75" (metros) o "175" (centímetros) y devuelve centímetros.
+const toCm = (v: string) => { const n = Number(v.trim().replace(",", ".")); return !Number.isFinite(n) || n <= 0 ? NaN : n < 3 ? Math.round(n * 1000) / 10 : n; };
+
 export function Onboarding() {
-  const { profileId, name } = useProfile(), ws = useWorkspaceId(), me = useMe(profileId), done = useCompleteOnboarding(profileId), router = useRouter();
-  const save = useSaveMeasure(me.data?.id ?? "", ws), consent = useGiveConsent(profileId), call = useFirstCall(me.data?.status === "active" ? me.data.id : "");
-  const [i, setI] = useState(0), [w, setW] = useState(""), [waist, setWaist] = useState(""), [err, setErr] = useState("");
+  const { profileId, name } = useProfile(), me = useMe(profileId), done = useCompleteOnboarding(profileId), router = useRouter();
+  const save = useSaveStartPoint(), consent = useGiveConsent(profileId), call = useFirstCall(me.data?.status === "active" ? me.data.id : "");
+  const [i, setI] = useState(0), [w, setW] = useState(""), [height, setHeight] = useState(""), [err, setErr] = useState("");
   const hasProgress = !!me.data?.features.includes("progress");
-  const steps: Step[] = [{ kind: "hello" }, ...TOUR, ...(hasProgress ? [{ kind: "measures" } as Step, { kind: "consent" } as Step] : []), { kind: "call" }];
+  // Punto de partida para TODOS (Jeff necesita peso y estatura); el permiso de fotos solo si el plan incluye Progreso.
+  const steps: Step[] = [{ kind: "hello" }, ...TOUR, { kind: "measures" }, ...(hasProgress ? [{ kind: "consent" } as Step] : []), { kind: "call" }];
   const step = steps[Math.min(i, steps.length - 1)];
   const next = () => { setErr(""); setI((x) => Math.min(x + 1, steps.length - 1)); };
   const back = () => { setErr(""); setI((x) => Math.max(x - 1, 0)); };
   const finish = (go?: string) => { done.mutate(); if (go) router.push(go); };
+  const stepKind = steps[Math.min(i, steps.length - 1)].kind;
+  const pose = usePoseCycle(stepKind === "hello" ? ["wave", "idle"] : stepKind === "call" ? ["cheer", "idle", "phone"] : stepKind === "measures" ? ["flex", "idle"] : stepKind === "consent" ? ["idle", "point"] : ["idle"]);
   if (!me.data || me.data.status !== "active" || me.data.onboarded) return null;
   const first = name.split(" ")[0] || "";
   const saveMeasures = () => {
-    const wt = w.trim() === "" ? null : Number(w.replace(",", ".")), ws2 = waist.trim() === "" ? null : Number(waist.replace(",", "."));
-    if ((wt != null && !(wt >= 20 && wt <= 400)) || (ws2 != null && !(ws2 >= 30 && ws2 <= 300))) return setErr("Revisa los números: peso entre 20 y 400 kg, cintura entre 30 y 300 cm.");
-    if (wt == null && ws2 == null) return next();
-    save.mutate({ ...(wt != null ? { weight: wt } : {}), ...(ws2 != null ? { waist: ws2 } : {}) }, { onSuccess: next, onError: () => setErr("No pudimos guardarlo. Puedes seguir y hacerlo después en Progreso.") });
+    const wt = Number(w.trim().replace(",", ".")), cm = toCm(height);
+    if (!w.trim() || !height.trim()) return setErr("Escribe tu peso y tu estatura para seguir.");
+    if (!(wt >= 20 && wt <= 400)) return setErr("Revisa tu peso: escríbelo en kilos, por ejemplo 68,5.");
+    if (!(cm >= 100 && cm <= 250)) return setErr("Revisa tu estatura: por ejemplo 1,70 (metros) o 170 (centímetros).");
+    save.mutate({ weight: Math.round(wt * 10) / 10, height: cm }, { onSuccess: next, onError: () => setErr("No pudimos guardarlo. Revisa tu conexión e inténtalo de nuevo.") });
   };
   const dots = <div className="tour-dots" aria-label={`Paso ${i + 1} de ${steps.length}`}>{steps.map((_, k) => <i key={k} className={k === i ? "on" : k < i ? "done" : ""} />)}</div>;
-  const toCall = () => { setErr(""); setI(steps.length - 1); };
-  const skip = step.kind === "call" ? null : <button type="button" className="tour-skip" onClick={toCall}>Saltar</button>;
-  // Cada paso con su gesto: saluda al entrar, saca músculo en el punto de partida, celebra al agendar.
-  const pose: GuidePose = step.kind === "hello" ? "wave" : step.kind === "call" ? "cheer" : step.kind === "measures" ? "flex" : "idle";
   const booked = !!call.data?.any;
 
-  if (step.kind === "spot") return <SpotStep key={step.href} step={step} dots={dots} skip={skip} onNext={next} onBack={back} />;
+  if (step.kind === "spot") return <SpotStep key={step.href} step={step} dots={dots} onNext={next} onBack={back} />;
   return createPortal(
     <div className="modal-backdrop open tour-center" role="dialog" aria-modal="true" aria-label="Bienvenida">
       <div className="modal-box tour-box">
-        <div className="tour-top"><span key={i} className="gd-pop"><Guide size={step.kind === "hello" || step.kind === "call" ? 92 : 70} pose={pose} /></span>{skip}</div>
+        <div className="tour-top"><span key={i} className="gd-pop"><span key={pose} className="gd-swap"><Guide size={step.kind === "hello" || step.kind === "call" ? 92 : 70} pose={pose} /></span></span></div>
         <div key={`t${i}`}>
         {step.kind === "hello" && <>
           <div className="modal-title say">¡Hola{first ? `, ${first}` : ""}! Soy Jeff.</div>
@@ -69,11 +80,13 @@ export function Onboarding() {
           <div className="modal-actions">{dots}<button className="modal-btn primary" onClick={next}>Ver la app</button></div></>}
         {step.kind === "measures" && <>
           <div className="modal-title say">Tu punto de partida</div>
-          <div className="modal-sub say say-2">Con esto vemos tu avance desde el primer día. Si no lo tienes a mano, lo haces después en Progreso.</div>
-          <div className="modal-field"><label htmlFor="ow">Peso (kg)</label><input id="ow" inputMode="decimal" value={w} onChange={(e) => { setW(e.target.value); setErr(""); }} placeholder="Ej. 68.5" /></div>
-          <div className="modal-field"><label htmlFor="oc">Cintura (cm, opcional)</label><input id="oc" inputMode="decimal" value={waist} onChange={(e) => { setWaist(e.target.value); setErr(""); }} placeholder="Ej. 78" /></div>
+          <div className="modal-sub say say-2">Dos datos que todos sabemos y con los que mido tu avance desde el primer día.</div>
+          <div className="modal-row2">
+            <div className="modal-field"><label htmlFor="ow">Peso (kg)</label><input id="ow" inputMode="decimal" autoComplete="off" value={w} onChange={(e) => { setW(e.target.value); setErr(""); }} placeholder="Ej. 68,5" /></div>
+            <div className="modal-field"><label htmlFor="oh">Estatura</label><input id="oh" inputMode="decimal" autoComplete="off" value={height} onChange={(e) => { setHeight(e.target.value); setErr(""); }} placeholder="Ej. 1,70" /></div>
+          </div>
           {err && <p role="alert" style={{ color: "var(--accent)", fontSize: 13 }}>{err}</p>}
-          <div className="modal-actions">{dots}<button className="modal-btn ghost" onClick={next}>Omitir</button><button className="modal-btn primary" disabled={save.isPending} onClick={saveMeasures}>{save.isPending ? "Guardando…" : "Guardar y seguir"}</button></div></>}
+          <div className="modal-actions">{dots}<button className="modal-btn primary" disabled={save.isPending} onClick={saveMeasures}>{save.isPending ? "Guardando…" : "Guardar y seguir"}</button></div></>}
         {step.kind === "consent" && <>
           <div className="modal-title say">Fotos de progreso</div>
           <div className="modal-sub say say-2">Para ver tu cambio puedes subir fotos tuyas. Son privadas: solo las vemos tú y yo, nunca se publican y las puedes borrar cuando quieras.</div>
@@ -92,12 +105,11 @@ export function Onboarding() {
 }
 
 // Paso que ilumina un panel real del menú y pone al personaje al lado, con su explicación.
-function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: React.ReactNode; skip: React.ReactNode; onNext: () => void; onBack: () => void }) {
+function SpotStep({ step, dots, onNext, onBack }: { step: Spot; dots: React.ReactNode; onNext: () => void; onBack: () => void }) {
   const [r, setR] = useState<DOMRect | null>(null);
-  // Primero hace el gesto del tema (mancuerna en Hoy, sentadilla en Mi plan, planilla en Agenda…) y después señala el panel en el menú,
-  // que es lo que queda si el cliente se demora leyendo (pedido de Cristian).
-  const [act, setAct] = useState<GuidePose>(step.topic);
-  useEffect(() => { setAct(step.topic); if (step.topic === "point") return; const t = setTimeout(() => setAct("point"), 2600); return () => clearTimeout(t); }, [step]);
+  // Primero hace el gesto del tema (mancuerna en Hoy, sentadilla en Mi plan, planilla en Agenda…), luego señala el panel en el menú,
+  // y así sigue alternando cada 2,5 s mientras el cliente lee (pedido de Cristian, 28-oct).
+  const act = usePoseCycle(step.topic === "point" ? ["point"] : [step.topic, "point"]);
   const measure = useCallback(() => { const el = findTarget(step.href); setR(el ? el.getBoundingClientRect() : null); }, [step.href]);
   useLayoutEffect(() => { measure(); }, [measure]);
   useEffect(() => { window.addEventListener("resize", measure); window.addEventListener("scroll", measure, true); const t = setTimeout(measure, 300);
@@ -119,7 +131,7 @@ function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: Reac
     <div className="tour-layer" role="dialog" aria-modal="true" aria-label={`Recorrido: ${step.title}`}>
       {r ? <div className="tour-ring" style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} /> : <div className="tour-dim" />}
       <div className="tour-bubble" style={pos}>
-        <div className={`tour-bubble-head${onRight && dir !== "left" ? " flip" : ""}`}><span key={act} className="gd-pop tour-guide"><Guide size={58} pose={act} dir={dir} /></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
+        <div className={`tour-bubble-head${onRight && dir !== "left" ? " flip" : ""}`}><span className="gd-pop tour-guide"><span key={act} className="gd-swap"><Guide size={58} pose={act} dir={dir} /></span></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div></div>
         <p className="tour-bubble-text say say-2">{step.text}</p>
         <div className="tour-bubble-actions">{dots}<button type="button" className="modal-btn ghost" onClick={onBack}>Atrás</button><button type="button" className="modal-btn primary" onClick={onNext}>Siguiente</button></div>
       </div>

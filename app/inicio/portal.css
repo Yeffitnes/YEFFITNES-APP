@@ -1336,3 +1336,18 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .focus-flash{box-shadow:0 0 0 3px rgba(247,37,75,.35),0 0 24px rgba(247,37,75,.25)!important;transition:box-shadow .4s}
 .nudge-line{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:8px}
 .nudge-line p{margin:0;font-size:14px;line-height:1.5}
+.nudge-done{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--text)}
+.nudge-done svg{color:var(--text)}
+/* Cambio de gesto del personaje mientras se lee un paso (28-oct): suave, sin el salto de entrada */
+.gd-swap{display:inline-flex;animation:gd-swap .35s ease-out both}
+@keyframes gd-swap{from{opacity:.55;transform:translateY(3px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.gd-swap{animation:none!important}}
+.tour-box .modal-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* Respuestas de Jeff a los entrenamientos (28-oct) */
+#respuestas{scroll-margin-top:84px}
+.fb-list{display:flex;flex-direction:column;gap:10px}
+.fb-text{margin:6px 0 0;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.fb-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+.fb-foot span{font-size:12px;color:var(--text-dim);flex:1;min-width:160px}
+.nf-fail{color:var(--text);background:rgba(247,37,75,.07);border:1px solid rgba(247,37,75,.22);border-radius:10px;padding:8px 10px}
+.nf-skip{background:none;border:0;font:inherit;font-size:13px;font-weight:600;color:var(--text);text-decoration:underline;cursor:pointer;margin-top:2px}

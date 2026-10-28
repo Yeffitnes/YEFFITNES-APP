@@ -16,7 +16,7 @@ export function AgendaView() {
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} sesión${conf === 1 ? "" : "es"} confirmada${conf === 1 ? "" : "s"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
         <div className="topbar-actions"><button className="ghost-btn" onClick={() => setAssign(true)}>Agendar cliente</button><button className="primary-btn" onClick={() => setPub(ymd(new Date()))}>Publicar disponibilidad</button></div></div>
       <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" onClick={() => setOff(off - 1)}><Icon name="chevronLeft" size={16} /></button><div className="week-nav-label">{weekLabel(from)}</div><button className="week-nav-btn" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}><Icon name="chevron" size={16} /></button><button className="week-today-btn" onClick={() => { setOff(0); setSel(dayIdx(new Date())); }}>Hoy</button></div>
-      <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}</div>)}</div>
+      <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}{(() => { const n = slots.filter((s) => sameDay(new Date(s.startsAt), d)).length; return n ? <span className="day-tab-n" aria-label={`${n} horarios`}>{n}</span> : null; })()}</div>)}</div>
       {isPending && <Skeleton rows={3} />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && (
@@ -87,10 +87,16 @@ function AssignModal({ slots, onClose }: { slots: CoachSlot[]; onClose: () => vo
   );
 }
 function CancelModal({ s, onClose }: { s: CoachSlot; onClose: () => void }) {
-  const cancel = useCancelBooking();
+  // Jeff cancela la sesión de un cliente: el horario queda libre otra vez y al cliente le llega una notificación (con el motivo, si lo escribe).
+  const cancel = useCancelBooking(), [why, setWhy] = useState(""), b = s.booking;
+  const go = () => b && cancel.mutate(b.id, { onSuccess: () => {
+    void fetch("/api/push/booking-cancel", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookingId: b.id, reason: why }) }).catch(() => {});
+    onClose();
+  } });
   return (
-    <Modal title="Cancelar sesión" sub={`${s.booking?.clientName} · ${DAYLONG[dayIdx(new Date(s.startsAt))]} ${new Date(s.startsAt).getDate()} a las ${hhmm(s.startsAt)}. El horario quedará libre otra vez. Avísale a tu cliente.`} onClose={onClose}>
-      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Conservar</button><button className="modal-btn danger" disabled={cancel.isPending} onClick={() => s.booking && cancel.mutate(s.booking.id, { onSuccess: onClose })}>{cancel.isPending ? "Cancelando…" : "Sí, cancelar sesión"}</button></div>
+    <Modal title="Cancelar sesión" sub={`${b?.clientName} · ${DAYLONG[dayIdx(new Date(s.startsAt))]} ${new Date(s.startsAt).getDate()} a las ${hhmm(s.startsAt)}. El horario queda libre otra vez y a tu cliente le llega un aviso para que reserve otro.`} onClose={onClose}>
+      <div className="modal-field"><label htmlFor="cw">Motivo para tu cliente (opcional)</label><input id="cw" maxLength={120} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="Ej. Me surgió un imprevisto, perdona." /></div>
+      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Conservar</button><button className="modal-btn danger" disabled={cancel.isPending} onClick={go}>{cancel.isPending ? "Cancelando…" : "Sí, cancelar sesión"}</button></div>
     </Modal>
   );
 }

@@ -11,15 +11,26 @@ export async function pushState(): Promise<PushState> {
   const sub = await reg?.pushManager.getSubscription();
   return sub && Notification.permission === "granted" ? "on" : "off";
 }
+// Error con un motivo entendible para mostrarle a la persona (antes un fallo dejaba el botón sin hacer nada).
+export class PushError extends Error { constructor(public reason: "timeout" | "subscribe" | "server") { super(reason); } }
+const within = <T,>(p: Promise<T>, ms: number) => Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new PushError("timeout")), ms))]);
 export async function enablePush(): Promise<PushState> {
   if (!pushSupported()) return "unsupported";
   const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY; if (!key) return "not_configured";
   const perm = await Notification.requestPermission(); if (perm !== "granted") return perm === "denied" ? "denied" : "off";
-  const reg = await navigator.serviceWorker.register("/sw.js"); await navigator.serviceWorker.ready;
-  const sub = (await reg.pushManager.getSubscription()) ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) });
+  const reg = await within(navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready), 12_000);
+  let sub = await reg.pushManager.getSubscription();
+  try { if (!sub) sub = await within(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) }), 15_000); }
+  catch (e) {
+    // Si quedó una suscripción vieja hecha con otra clave, se borra y se intenta una vez más.
+    if (e instanceof PushError) throw e;
+    try { const old = await reg.pushManager.getSubscription(); await old?.unsubscribe(); sub = await within(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(key) }), 15_000); }
+    catch (e2) { throw e2 instanceof PushError ? e2 : new PushError("subscribe"); }
+  }
   const j = sub.toJSON();
-  const r = await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }) });
-  return r.ok ? "on" : "off";
+  const r = await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }) }).catch(() => null);
+  if (!r?.ok) throw new PushError("server");
+  return "on";
 }
 export async function disablePush(): Promise<PushState> {
   const reg = await navigator.serviceWorker.getRegistration("/sw.js"), sub = await reg?.pushManager.getSubscription();

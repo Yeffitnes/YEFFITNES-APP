@@ -549,6 +549,7 @@ html{scroll-behavior:smooth;}
 .day-col-num{font-family:var(--font-display), sans-serif; font-weight:700; font-size:17px; margin-top:2px;}
 .day-col.today .day-col-num{color:#fff; background:linear-gradient(135deg,var(--neon),var(--rose)); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:2px auto 0;}
 .day-col-body{display:flex; flex-direction:column; gap:8px; min-height:80px;}
+.week-grid .day-col{display:block;margin:0;} /* que la regla general .today (tarjeta de Hoy) no cambie la columna del día actual */
 .slot-card{border-radius:12px; padding:10px; font-size:11.5px;}
 .slot-card.group{background:rgba(212,26,64,0.07); border:1.4px dashed rgba(212,26,64,0.35);}
 .slot-card-head{display:flex; align-items:center; justify-content:space-between;}
@@ -597,10 +598,15 @@ html{scroll-behavior:smooth;}
     .day-tab-row{display:flex; gap:8px; overflow-x:auto; margin-bottom:16px; -webkit-overflow-scrolling:touch;}
     .day-tab{flex:0 0 auto; padding:9px 15px; border-radius:20px; border:1px solid var(--line); background:var(--paper); font-size:12px; font-weight:700; color:var(--text-dim); cursor:pointer;}
     .day-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+    .day-tab{position:relative}
+    .day-tab-n{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 4px;margin-left:6px;border-radius:9px;font-size:10.5px;background:var(--line);color:var(--text)}
+    .day-tab.active .day-tab-n{background:rgba(255,255,255,.2);color:#fff}
 
     .week-grid{grid-template-columns:1fr; gap:0;}
-    .day-col{display:none;}
-    .day-col.mobile-visible{display:block;}
+    /* Celular/tableta: solo el día elegido en las pestañas. Antes la clase no coincidía ("mobile-visible") y la regla general
+       .today{display:grid} dejaba siempre visible el día de hoy: por eso la agenda "se quedaba" en el día actual (28-oct). */
+    .week-grid .day-col{display:none;}
+    .week-grid .day-col.active{display:block;}
     .day-col-head{text-align:left; display:flex; align-items:center; gap:8px; margin-bottom:12px;}
     .day-col.today .day-col-num{margin:0;}
   }
@@ -865,3 +871,32 @@ html{scroll-behavior:smooth;}
 .act-group-item time{margin-left:auto;font-family:var(--font-mono),monospace;font-size:11px;color:var(--text-faint)}
 .act-dot{width:6px;height:6px;border-radius:50%;background:var(--ink);flex:none}
 .obj-video{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+
+/* Vídeo del día / de la semana a la vista en Material (28-oct) */
+.fv-panel{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:18px;border-radius:16px;background:var(--paper);border:1px solid var(--line);
+  background-image:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.08),transparent 55%)}
+.fv-panel-ic{flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--ink);
+  background-image:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.55),transparent 62%)}
+.fv-panel-ic svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:1.7}
+.fv-panel-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fv-panel-txt b{font-size:14.5px}
+.fv-panel-txt span{font-size:12.5px;color:var(--text-dim)}
+.fv-panel-tag{font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
+.fv-panel-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:760px){.fv-panel{flex-direction:column;align-items:stretch}.fv-panel-ic{display:none}.fv-panel-acts{justify-content:stretch}.fv-panel-acts button{flex:1}}
+/* Planes mensuales vencidos o por vencer (28-oct) */
+.plans-due-sub{font-size:12.5px;color:var(--text-dim);margin:6px 0 8px}
+.plans-due-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.plans-due-who{flex:1;min-width:150px;display:flex;flex-direction:column;gap:2px;color:inherit;text-decoration:none}
+.plans-due-who b{font-size:14px}
+.plans-due-who span{font-size:12.5px;color:var(--text-dim)}
+.plans-due-row.expired .plans-due-who span{color:var(--text);font-weight:600}
+.plans-due-acts{display:flex;gap:6px}
+.pd-btn{font:inherit;font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--text);cursor:pointer}
+.pd-btn.primary{color:#fff;border-color:var(--ink);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.pd-btn.danger{color:#fff;border-color:var(--accent);background:var(--accent)}
+.pd-btn:disabled{opacity:.6}
+.plan-month{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--text-dim)}
+.plan-month.soon span,.plan-month.expired span{color:var(--text);font-weight:700}
+.plan-month.expired span::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:1px}
+.plan-month button{font:inherit;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;border:0;color:#fff;cursor:pointer;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}

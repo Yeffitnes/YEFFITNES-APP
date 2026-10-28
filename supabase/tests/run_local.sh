@@ -15,7 +15,7 @@ run -f supabase/migrations/0001_foundation.sql
 run -c "insert into public.workspaces (slug,name,whatsapp) values ('yeffitnes','YEFFITNES TRAINING','573000000000')"
 for f in $(ls supabase/migrations/*.sql | sed 1d); do run -f "$f"; done
 echo "Migraciones: $(ls supabase/migrations/*.sql | wc -l) aplicadas"
-for t in rls rls_progress rls_agenda rls_material rls_notes rls_reports rls_nutrition rls_onboarding rls_objective rls_messages rls_audio rls_commentaudio rls_videodiscard rls_dayvideo rls_reminders rls_groups rls_activity rls_videoexpiry rls_access rls_matvideo rls_nudges; do   # el orden importa: cada una usa los datos de la anterior
+for t in rls rls_progress rls_agenda rls_material rls_notes rls_reports rls_nutrition rls_onboarding rls_objective rls_messages rls_audio rls_commentaudio rls_videodiscard rls_dayvideo rls_reminders rls_groups rls_activity rls_videoexpiry rls_access rls_matvideo rls_nudges rls_month; do   # el orden importa: cada una usa los datos de la anterior
   [ -f supabase/tests/$t.sql ] || continue
   OUT=$(PSQL -d "$DB" -f supabase/tests/$t.sql 2>&1)
   if echo "$OUT" | grep -q 'RESULTADO ATAQUES[A-Z ]*: ninguno'; then echo "✓ $t: ninguno"; else echo "✗ $t:"; echo "$OUT" | grep -E 'RESULTADO|ERROR|CONTEXT' | head -5; FAIL=1; fi

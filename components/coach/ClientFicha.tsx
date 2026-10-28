@@ -2,10 +2,11 @@
 import { Icon } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useClientBookings, useClients, useObjectiveVideo, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
+import { useClientBookings, useClients, useRenewPlan, useObjectiveVideo, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { ago, initials } from "@/lib/format";
+import { planMonth, planMonthText, shortDate } from "@/lib/planmonth";
 import type { ClientRow, Plan } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
@@ -30,7 +31,7 @@ export function ClientFicha({ id }: { id: string }) {
     <div>
       <Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link>
       <div className="ficha-header"><div className="ficha-avatar">{initials(c.name)}</div>
-        <div style={{ minWidth: 0, flex: 1 }}><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {status}</div></div>
+        <div style={{ minWidth: 0, flex: 1 }}><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {status}{c.heightCm ? ` · ${(c.heightCm / 100).toFixed(2).replace(".", ",")} m` : ""}{c.startWeight ? ` · empezó con ${String(c.startWeight).replace(".", ",")} kg` : ""}</div><PlanMonthLine c={c} /></div>
         <PlanPicker c={c} plans={plans ?? []} /></div>
       <div className="tab-row">{TABS.map((t) => <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>{t}</button>)}</div>
       {tab === "Hoy" ? <TodayCard clientId={c.id} first={c.name.split(" ")[0]} onGo={setTab} /> : tab === "Resumen" ? (
@@ -49,6 +50,15 @@ export function ClientFicha({ id }: { id: string }) {
 
 // Plan del cliente, arriba junto a su nombre (pedido de Cristian, 27-oct): se ve de primeras y se cambia con dos toques.
 // Asignar un plan activa al cliente (y le llega "Tu plan está activo"); "Sin plan" lo deja pendiente con todo bloqueado.
+// Mes de plan (0038): cuándo vence y botón para renovar otros 30 días.
+function PlanMonthLine({ c }: { c: ClientRow }) {
+  const renew = useRenewPlan(), m = c.status === "active" && c.planId ? planMonth(c.planSince) : null;
+  if (!m) return null;
+  return <div className={`plan-month${m.expired ? " expired" : m.soon ? " soon" : ""}`}>
+    <span>Plan del {shortDate(m.since)} · {planMonthText(m)}</span>
+    {(m.expired || m.soon) && <button type="button" disabled={renew.isPending} onClick={() => renew.mutate(c.id)}>{renew.isPending ? "Renovando…" : "Renovar 30 días"}</button>}
+  </div>;
+}
 function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {
   const setPlan = useSetPlan(), [open, setOpen] = useState(false), box = useRef<HTMLDivElement>(null);
   useEffect(() => {
