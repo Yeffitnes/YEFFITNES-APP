@@ -4,23 +4,6 @@
 -- 2) Respuestas de Jeff a un entrenamiento como aviso aparte en Hoy ("Respuesta a tu entrenamiento de Pierna, martes 27"),
 --    sin poder responder: el cliente solo lo marca como visto (mark_feedback_seen). Si Jeff cambia su respuesta, vuelve a salir.
 --    feedback_targets() le avisa al teléfono del cliente cuando Jeff responde (una vez por respuesta).
--- Notificación al cliente cuando Jeff responde (una por respuesta; si Jeff la cambia, se puede volver a avisar).
-alter table public.workout_logs add column feedback_notified_at timestamptz;
-create function public.feedback_targets(p_log uuid) returns table (day_name text, log_date date, endpoint text, p256dh text, auth text)
-language plpgsql security definer set search_path = public as $$
-declare cid uuid; dn text; ld date;
-begin
-  if public.my_role() is distinct from 'coach' then return; end if;
-  update workout_logs w set feedback_notified_at = now()
-    where w.id = p_log and w.workspace_id = public.my_workspace() and w.coach_seen_at > now() - interval '10 minutes'
-      and (w.coach_comment is not null or w.coach_comment_audio is not null)
-      and (w.feedback_notified_at is null or w.feedback_notified_at < w.coach_seen_at)
-    returning w.client_id, w.log_date into cid, ld;
-  if cid is null then return; end if;
-  select pd.name into dn from workout_logs w left join plan_days pd on pd.id = w.plan_day_id where w.id = p_log;
-  return query select coalesce(dn, 'tu entrenamiento'), ld, s.endpoint, s.p256dh, s.auth from push_subscriptions s join clients c on c.profile_id = s.profile_id where c.id = cid;
-end $$;
-
 -- 3) Plan mensual: clients.plan_since (fecha de inicio del mes de plan). Se pone sola al asignar o cambiar el plan.
 --    A los 30 días el plan cuenta como vencido: Jeff lo ve en su panel y le llega UNA notificación (due_plan_expiry_cron,
 --    en la tarea de la mañana). Jeff renueva (renew_plan) o lo quita a mano.
@@ -63,6 +46,23 @@ begin
   if public.my_role() is distinct from 'client' then raise exception 'not_allowed'; end if;
   update workout_logs set feedback_seen_at = now() where id = p_log and client_id = public.my_client_id();
   if not found then raise exception 'not_found'; end if;
+end $$;
+
+-- Notificación al cliente cuando Jeff responde (una por respuesta; si Jeff la cambia, se puede volver a avisar).
+alter table public.workout_logs add column feedback_notified_at timestamptz;
+create function public.feedback_targets(p_log uuid) returns table (day_name text, log_date date, endpoint text, p256dh text, auth text)
+language plpgsql security definer set search_path = public as $$
+declare cid uuid; dn text; ld date;
+begin
+  if public.my_role() is distinct from 'coach' then return; end if;
+  update workout_logs w set feedback_notified_at = now()
+    where w.id = p_log and w.workspace_id = public.my_workspace() and w.coach_seen_at > now() - interval '10 minutes'
+      and (w.coach_comment is not null or w.coach_comment_audio is not null)
+      and (w.feedback_notified_at is null or w.feedback_notified_at < w.coach_seen_at)
+    returning w.client_id, w.log_date into cid, ld;
+  if cid is null then return; end if;
+  select pd.name into dn from workout_logs w left join plan_days pd on pd.id = w.plan_day_id where w.id = p_log;
+  return query select coalesce(dn, 'tu entrenamiento'), ld, s.endpoint, s.p256dh, s.auth from push_subscriptions s join clients c on c.profile_id = s.profile_id where c.id = cid;
 end $$;
 
 -- 3) Plan mensual
