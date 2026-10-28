@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Personaje guía v2
+- Mezcla del primer personaje con la propuesta de Cristian.
+  - **Se conserva del primero:** la cabeza con solo la cinta, los ojos blancos, las mejillas y la sonrisa fija; al hablar la sonrisa solo se mueve un poco, no se abre.
+  - **Se toma de la propuesta:** ropa deportiva (camiseta con cuello en V, franjas y escudo "Y", jogger con franja), codos y rodillas articulados, tenis blancos y rojos, reloj y accesorios.
+  - **Se quitó:** que siga el ratón, la boca que se abre, el moño de la cinta y los colores fuera de la marca (cian y verde).
+- Poses nuevas además de las anteriores: saca músculo (`flex`), curl con mancuerna (`workout`), toma agua (`hydrate`) y sentadilla (`squat`, con los tenis fijos en el piso). El saludo ahora mueve el antebrazo, y los brazos levantados ya no se esconden detrás de la cabeza.
+- Archivos: `components/portal/Guide.tsx` (reescrito, misma forma de uso) y el bloque "Personaje guía v2" de `portal.css`.
+- Revertir: restaurar ambos del commit `3021d90`.
+
 ## 2026-10-27 (noche) - Tarjetas que se pliegan, plan junto al nombre y SQL de cuentas de prueba
 - **Hoy (cliente):** al terminar el entrenamiento, la tarjeta se pliega en un resumen: rutina completada, series, esfuerzo y el comentario de Jeff si hay. "Ver detalle" la despliega y "Editar" la abre para cambiarla; "Plegar" la vuelve a cerrar. Lo mismo con la nutrición de hoy cuando todas las comidas están marcadas.
 - **Ficha del cliente (Jeff):** el plan ya no está escondido en Resumen. Sale arriba, junto al nombre: un botón "Plan Esencial ▾" que se cambia con dos toques. Si el cliente no tiene plan, el botón sale resaltado como "Asignar plan" y dice cuándo pidió acceso. Resumen queda más corto.

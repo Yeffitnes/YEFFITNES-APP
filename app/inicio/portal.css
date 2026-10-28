@@ -1122,53 +1122,84 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .lk-banner .lk-sent{color:#fff}
 
 /* ───── Primer arranque: notificaciones obligatorias, personaje guía y recorrido por los paneles (27-oct) ───── */
-/* Personaje guía (Guide.tsx): todas las partes giran sobre su articulación (coordenadas del dibujo). */
+/* Personaje guía v2 (Guide.tsx): cada parte gira sobre su articulación, en coordenadas del dibujo (viewBox 0 0 120 160). */
 .gd{display:inline-flex;flex:none;filter:drop-shadow(0 12px 18px rgba(247,37,75,.22))}
 .gd svg{display:block;overflow:visible}
 .gd g{transform-box:view-box}
-.gd-all{transform-origin:60px 150px;animation:gd-breathe 3.2s ease-in-out infinite}
-.gd-head{transform-origin:60px 74px;animation:gd-look 6.5s ease-in-out infinite}
-.gd-face{animation:gd-glance 6.5s ease-in-out infinite}
+.gd-all{transform-origin:60px 150px;animation:gd-breathe 3.4s ease-in-out infinite}
+.gd-head{transform-origin:60px 74px}
+.gd-head-in{transform-origin:60px 74px;animation:gd-look 7s ease-in-out infinite}
+.gd-face{animation:gd-glance 7s ease-in-out infinite}
 .gd-eyes{transform-origin:60px 46px;animation:gd-blink 4.4s infinite}
 .gd-talk .gd-mouth{transform-origin:60px 60px;animation:gd-talk 1.1s ease-in-out infinite}
-.gd-arm-l{transform-origin:41px 86px;transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
-.gd-arm-r{transform-origin:79px 86px;transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
-.gd-arm-l{animation:gd-sway-l 3.2s ease-in-out infinite}.gd-arm-r{animation:gd-sway-r 3.2s ease-in-out infinite}
-/* Saluda: brazo derecho arriba moviendo la mano, cabeza ladeada */
-.gd-wave .gd-arm-r{animation:gd-wave 1s ease-in-out infinite}
-.gd-wave .gd-head{animation:gd-tilt 2s ease-in-out infinite}
+.gd-arm-l{transform-origin:41px 85px;animation:gd-sway-l 3.4s ease-in-out infinite}
+.gd-arm-r{transform-origin:79px 85px;animation:gd-sway-r 3.4s ease-in-out infinite}
+.gd-fore-l{transform-origin:31px 104px}.gd-fore-r{transform-origin:89px 104px}
+.gd-thigh-l{transform-origin:52px 113px}.gd-thigh-r{transform-origin:68px 113px}
+.gd-calf-l{transform-origin:48px 130px}.gd-calf-r{transform-origin:72px 130px}
+.gd-shadow{transform-box:fill-box!important;transform-origin:center}
+/* Saluda: brazo arriba y la mano (antebrazo) se mueve */
+.gd-wave .gd-arm-r{animation:none;transform:rotate(-128deg)}
+.gd-wave .gd-fore-r{animation:gd-wave 1s ease-in-out infinite}
+.gd-wave .gd-head{animation:gd-tilt 2.4s ease-in-out infinite}
 /* Señala */
-.gd-point.gd-to-down .gd-arm-r{animation:gd-point-down 1.1s ease-in-out infinite}
-.gd-point.gd-to-right .gd-arm-r{animation:gd-point-right 1.1s ease-in-out infinite}
-.gd-point.gd-to-up .gd-arm-r{animation:gd-point-up 1.1s ease-in-out infinite}
-.gd-point.gd-to-left .gd-arm-l{animation:gd-point-left 1.1s ease-in-out infinite}
-.gd-point.gd-to-left .gd-head{animation:gd-turn-l 3s ease-in-out infinite}
-.gd-point.gd-to-right .gd-head,.gd-point.gd-to-down .gd-head{animation:gd-turn-r 3s ease-in-out infinite}
-/* Celebra: brazos arriba y salta */
-.gd-cheer .gd-all{animation:gd-jump .9s cubic-bezier(.3,.7,.4,1) infinite}
-.gd-cheer .gd-arm-l{animation:gd-cheer-l .9s ease-in-out infinite}
-.gd-cheer .gd-arm-r{animation:gd-cheer-r .9s ease-in-out infinite}
-.gd-cheer .gd-shadow{transform-box:fill-box;transform-origin:center;animation:gd-shadow .9s cubic-bezier(.3,.7,.4,1) infinite}
-.gd-face-only .gd-head{animation:gd-look 6.5s ease-in-out infinite}
-@keyframes gd-breathe{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-2px) scaleY(1.012)}}
-@keyframes gd-look{0%,40%,100%{transform:rotate(0)}48%,58%{transform:rotate(-7deg)}66%,78%{transform:rotate(6deg)}86%{transform:rotate(0)}}
-@keyframes gd-glance{0%,40%,100%{transform:translateX(0)}48%,58%{transform:translateX(-2.6px)}66%,78%{transform:translateX(2.6px)}86%{transform:translateX(0)}}
-@keyframes gd-blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.08)}}
-@keyframes gd-talk{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.55) translateY(1px)}}
-@keyframes gd-sway-l{0%,100%{transform:rotate(0)}50%{transform:rotate(4deg)}}
-@keyframes gd-sway-r{0%,100%{transform:rotate(0)}50%{transform:rotate(-4deg)}}
-@keyframes gd-wave{0%,100%{transform:rotate(-132deg)}50%{transform:rotate(-166deg)}}
+.gd-point.gd-to-down .gd-arm-r{animation:gd-point-down 1.6s ease-in-out infinite}
+.gd-point.gd-to-right .gd-arm-r{animation:gd-point-right 1.6s ease-in-out infinite}
+.gd-point.gd-to-up .gd-arm-r{animation:gd-point-up 1.6s ease-in-out infinite}
+.gd-point.gd-to-left .gd-arm-l{animation:gd-point-left 1.6s ease-in-out infinite}
+.gd-point.gd-to-left .gd-head{animation:gd-turn-l 3.4s ease-in-out infinite}
+.gd-point:not(.gd-to-left) .gd-head{animation:gd-turn-r 3.4s ease-in-out infinite}
+/* Celebra: brazos arriba y salto (los tenis saltan con él) */
+.gd-cheer .gd-all{animation:gd-jump 1.1s cubic-bezier(.3,.7,.4,1) infinite}
+.gd-cheer .gd-feet{animation:gd-feet-jump 1.1s cubic-bezier(.3,.7,.4,1) infinite}
+.gd-cheer .gd-arm-l{animation:gd-cheer-l 1.1s ease-in-out infinite}.gd-cheer .gd-fore-l{transform:rotate(-18deg)}
+.gd-cheer .gd-arm-r{animation:gd-cheer-r 1.1s ease-in-out infinite}.gd-cheer .gd-fore-r{transform:rotate(18deg)}
+.gd-cheer .gd-shadow{animation:gd-shadow 1.1s cubic-bezier(.3,.7,.4,1) infinite}
+/* Saca músculo */
+.gd-flex .gd-arm-l{animation:none;transform:rotate(62deg)}.gd-flex .gd-fore-l{animation:gd-pump-l 1.1s ease-in-out infinite alternate}
+.gd-flex .gd-arm-r{animation:none;transform:rotate(-62deg)}.gd-flex .gd-fore-r{animation:gd-pump-r 1.1s ease-in-out infinite alternate}
+/* Curl con mancuerna */
+.gd-workout .gd-arm-r{animation:none;transform:rotate(-8deg)}.gd-workout .gd-fore-r{animation:gd-curl 1.8s ease-in-out infinite}
+/* Toma agua */
+.gd-hydrate .gd-arm-r{animation:none;transform:rotate(-24deg)}.gd-hydrate .gd-fore-r{animation:gd-sip 3.6s ease-in-out infinite}
+.gd-hydrate .gd-head{animation:gd-sip-head 3.6s ease-in-out infinite}
+/* Sentadilla: baja el cuerpo, doblan rodillas y los tenis no se mueven */
+.gd-squat .gd-all{animation:gd-sq-body 2.6s ease-in-out infinite}
+.gd-squat .gd-thigh-l{animation:gd-sq-thigh-l 2.6s ease-in-out infinite}.gd-squat .gd-thigh-r{animation:gd-sq-thigh-r 2.6s ease-in-out infinite}
+.gd-squat .gd-calf-l{animation:gd-sq-calf-l 2.6s ease-in-out infinite}.gd-squat .gd-calf-r{animation:gd-sq-calf-r 2.6s ease-in-out infinite}
+.gd-squat .gd-arm-l{animation:gd-sq-arm-l 2.6s ease-in-out infinite}.gd-squat .gd-arm-r{animation:gd-sq-arm-r 2.6s ease-in-out infinite}
+@keyframes gd-breathe{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(-1.6px) scaleY(1.01)}}
+@keyframes gd-look{0%,40%,100%{transform:rotate(0)}48%,58%{transform:rotate(-6deg)}66%,78%{transform:rotate(5deg)}86%{transform:rotate(0)}}
+@keyframes gd-glance{0%,40%,100%{transform:translateX(0)}48%,58%{transform:translateX(-2.4px)}66%,78%{transform:translateX(2.4px)}86%{transform:translateX(0)}}
+@keyframes gd-blink{0%,91%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+@keyframes gd-talk{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.6) translateY(1px)}}
+@keyframes gd-sway-l{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+@keyframes gd-sway-r{0%,100%{transform:rotate(0)}50%{transform:rotate(-3deg)}}
+@keyframes gd-wave{0%,100%{transform:rotate(-34deg)}50%{transform:rotate(8deg)}}
 @keyframes gd-tilt{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(-2deg)}}
-@keyframes gd-point-down{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(-20deg)}}
+@keyframes gd-point-down{0%,100%{transform:rotate(-32deg)}50%{transform:rotate(-24deg)}}
 @keyframes gd-point-right{0%,100%{transform:rotate(-66deg)}50%{transform:rotate(-58deg)}}
-@keyframes gd-point-up{0%,100%{transform:rotate(-142deg)}50%{transform:rotate(-132deg)}}
+@keyframes gd-point-up{0%,100%{transform:rotate(-132deg)}50%{transform:rotate(-124deg)}}
 @keyframes gd-point-left{0%,100%{transform:rotate(66deg)}50%{transform:rotate(58deg)}}
-@keyframes gd-turn-l{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-4deg)}}
-@keyframes gd-turn-r{0%,100%{transform:rotate(8deg)}50%{transform:rotate(4deg)}}
-@keyframes gd-jump{0%,100%{transform:translateY(0)}45%{transform:translateY(-12px)}}
-@keyframes gd-shadow{0%,100%{transform:scaleX(1);opacity:.16}45%{transform:scaleX(.7);opacity:.08}}
-@keyframes gd-cheer-l{0%,100%{transform:rotate(118deg)}50%{transform:rotate(130deg)}}
-@keyframes gd-cheer-r{0%,100%{transform:rotate(-118deg)}50%{transform:rotate(-130deg)}}
+@keyframes gd-turn-l{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(-3deg)}}
+@keyframes gd-turn-r{0%,100%{transform:rotate(7deg)}50%{transform:rotate(3deg)}}
+@keyframes gd-jump{0%,100%{transform:translateY(0)}15%{transform:translateY(2px) scaleY(.98)}45%{transform:translateY(-13px) scaleY(1.02)}70%{transform:translateY(1px)}}
+@keyframes gd-feet-jump{0%,15%,100%{transform:translateY(0)}45%{transform:translateY(-13px)}70%{transform:translateY(0)}}
+@keyframes gd-shadow{0%,15%,100%{transform:scaleX(1);opacity:.16}45%{transform:scaleX(.65);opacity:.07}}
+@keyframes gd-cheer-l{0%,100%{transform:rotate(108deg)}50%{transform:rotate(120deg)}}
+@keyframes gd-cheer-r{0%,100%{transform:rotate(-108deg)}50%{transform:rotate(-120deg)}}
+@keyframes gd-pump-l{from{transform:rotate(100deg)}to{transform:rotate(118deg)}}
+@keyframes gd-pump-r{from{transform:rotate(-100deg)}to{transform:rotate(-118deg)}}
+@keyframes gd-curl{0%,100%{transform:rotate(0)}50%{transform:rotate(-120deg)}}
+@keyframes gd-sip{0%,20%,90%,100%{transform:rotate(-8deg)}40%,70%{transform:rotate(-128deg)}}
+@keyframes gd-sip-head{0%,20%,90%,100%{transform:rotate(0)}40%,70%{transform:rotate(-7deg)}}
+@keyframes gd-sq-body{0%,100%{transform:translateY(0)}45%,55%{transform:translateY(8px)}}
+@keyframes gd-sq-thigh-l{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(38deg)}}
+@keyframes gd-sq-thigh-r{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-38deg)}}
+@keyframes gd-sq-calf-l{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-62deg)}}
+@keyframes gd-sq-calf-r{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(62deg)}}
+@keyframes gd-sq-arm-l{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(70deg)}}
+@keyframes gd-sq-arm-r{0%,100%{transform:rotate(0)}45%,55%{transform:rotate(-70deg)}}
 /* Entrada: aparece de un salto cada vez que cambia de paso */
 .gd-pop{animation:gd-pop .5s cubic-bezier(.3,1.5,.5,1) both}
 @keyframes gd-pop{from{opacity:0;transform:translateY(14px) scale(.85)}to{opacity:1;transform:none}}
