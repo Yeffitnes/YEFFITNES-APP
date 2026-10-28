@@ -36,7 +36,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 3. Notificaciones y app instalada
 - [ ] Desde el 27-oct el cliente **no puede usar la app sin activar las notificaciones** (si el teléfono las admite). Sin `NEXT_PUBLIC_VAPID_PUBLIC_KEY` esa pantalla no aparece: confirma que esté en Netlify antes de fusionar.
 - [ ] Las suscripciones push y la app instalada son **por dirección**: los clientes y Jeff deben activar avisos e instalar la app **desde la dirección de Netlify**. Lo hecho en Vercel no vale.
-- [ ] Mantener las **mismas claves VAPID** en los dos sitios; si se cambian, todos deben reactivar avisos.
+- [x] Claves VAPID: Netlify y Vercel tienen claves DISTINTAS (decidido 28-oct). No es problema: cada suscripción solo sirve con la clave de su sitio; un envío cruzado falla con 403 y no borra nada. Si se cambian las de Netlify, todos deben reactivar avisos.
 - [ ] iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o superior).
 
 ## 3b. Migraciones pendientes antes de fusionar a `main`
@@ -47,7 +47,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
   - `0034_access_request.sql`: "Solicitar acceso" y aviso "Tu plan está activo".
   - `0035_material_private_video.sql`: vídeo privado en Material y vídeo del día o de la semana.
 - [x] **`0036_nudges_activity_objective_video.sql`** (corrida) (27-oct, noche): botón "Avisar", actividad solo de hoy, vídeo del objetivo. El código de `bloque-hoy` la necesita (Clientes y portal leen `objective_video_id`).
-- [ ] **`0037_nudges_in_app.sql`** (27-oct, noche): "Avisar" guarda el aviso aunque falle el push y el cliente lo ve en Hoy. El código de `bloque-hoy` la necesita para "Avisar".
+- [x] **`0037_nudges_in_app.sql`** (corrida, 28-oct) (27-oct, noche): "Avisar" guarda el aviso aunque falle el push y el cliente lo ve en Hoy. El código de `bloque-hoy` la necesita para "Avisar".
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
