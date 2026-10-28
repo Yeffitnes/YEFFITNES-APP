@@ -6,7 +6,7 @@ import { localDate, useUnseenActivity, useClients, useCoachReports, useMe, useMy
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
 import { useProfile, useToast } from "@/components/Providers";
-import { disablePush, enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
+import { enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
 import { QuickSearch } from "@/components/coach/QuickSearch";
 import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
@@ -57,8 +57,9 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
   }, [open]);
   // Cliente: las notificaciones son obligatorias (FirstRun), así que aquí solo se pueden ENCENDER, no apagar.
-  const lockedOn = side === "client" && ps === "on";
-  const togglePush = async () => { if (busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied") return; setBusy(true); try { setPs(ps === "on" ? await disablePush() : await enablePush()); } catch { setPs("off"); toast("No pudimos activar los avisos en este equipo. Inténtalo de nuevo o usa Chrome.", true); } finally { setBusy(false); } };
+  // Pedido de Cristian (28-oct): en la app NO hay botón para desactivar los avisos (ni cliente ni coach). Solo aparece "Activar"
+  // cuando están apagados; si alguien los quiere quitar, lo hace en los ajustes del teléfono o del navegador.
+  const turnOnPush = async () => { if (busy || ps !== "off") return; setBusy(true); try { setPs(await enablePush()); } catch { setPs("off"); toast("No pudimos activar los avisos en este equipo. Inténtalo de nuevo o usa Chrome.", true); } finally { setBusy(false); } };
   const msgHref = side === "coach" ? "/coach/mensajes" : "/inicio/mensajes";
   return (
     <div className="actions-bar" ref={box}>
@@ -77,9 +78,10 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
         {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={(e) => { setOpen(false); const [p, h] = i.href.split("#"); if (h && p === pathname) { e.preventDefault(); focusAnchor(h); } }}>{i.text}<Icon name="chevron" size={14} /></Link>)}
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
-        <button type="button" className="act-push" onClick={togglePush} disabled={busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>
-          <span className={`act-switch${ps === "on" ? " on" : ""}`} aria-hidden />{PUSH_TXT[ps]}
-        </button>
+        {ps === "off" && <button type="button" className="act-push" onClick={() => void turnOnPush()} disabled={busy}>
+          <span className="act-switch" aria-hidden />{busy ? "Activando…" : PUSH_TXT.off}
+        </button>}
+        {ps === "denied" && <p className="act-empty" style={{ margin: "8px 4px 0" }}>{PUSH_TXT.denied}</p>}
       </div>}
     </div>
   );

@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Sin botón de desactivar avisos
+- **Pedido de Cristian:** en la campanita ya no aparece "desactivar avisos" ni el interruptor de "Avisos activados", ni para el cliente ni para el coach. Solo sale **"Activar avisos"** cuando están apagados, y una nota si el navegador los bloqueó. Quien los quiera quitar lo hace en los ajustes del teléfono o del navegador.
+- **Si el cliente los apaga desde los ajustes,** al volver a la app o abrirla le aparece otra vez la pantalla obligatoria de activar. Eso ya lo hacía `FirstRun`: revisa al abrir y cada vez que la app vuelve a primer plano.
+- Archivo: `ActionsBar.tsx`. Revertir: restaurar del commit `7bdfbcd`.
+
 ## 2026-10-28 (noche) - Agenda por días, avisos que se cumplen, vídeo destacado, plan mensual, bienvenida obligatoria, respuestas de Jeff y avisos en computador
 Pedidos de Cristian tras probar producción. Solo en `bloque-hoy` (Vercel); NO en `main`.
 - **Agenda del coach (celular/tableta):** no se podía cambiar de día; se quedaba en el día actual. Había dos fallos de CSS: la clase del día elegido no coincidía y la regla general `.today{display:grid}` dejaba siempre visible el día de hoy. Ahora cada pestaña muestra su día y lleva el número de horarios publicados. Archivos: `coach.css` y `AgendaView.tsx`.
