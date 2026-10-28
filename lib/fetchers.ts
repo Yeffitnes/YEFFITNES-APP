@@ -1,0 +1,19 @@
+// Lecturas compartidas entre el navegador (React Query) y el servidor (el portal las lee al abrir para que Hoy salga sin esperar).
+// Sin "use client": se pueden importar desde el layout del servidor.
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PlanLevel, TrainingPlan, WorkoutLog } from "@/lib/queries";
+type PlanRaw = { id: string; name: string; status: "active" | "finished"; starts_on: string; ends_on: string | null; level: PlanLevel | null; level_reason: string | null; review_on: string | null; coach_note: string | null; plan_days: { id: string; weekday: number; name: string; est_minutes: number | null; category: string | null; video_ref: string | null; video_id: string | null; plan_items: { id: string; position: number; sets: number; reps: string; rest_seconds: number | null; target_weight: number | null; exercises: { name: string; muscle_group: string | null; equipment: string | null; video_ref: string | null; instructions: string | null } | null }[] }[] };
+export const loadTrainingPlans = async (sb: SupabaseClient, clientId: string): Promise<TrainingPlan[]> => {
+  const { data, error } = await sb.from("training_plans").select("id,name,status,starts_on,ends_on,level,level_reason,review_on,coach_note,plan_days(id,weekday,name,est_minutes,category,video_ref,video_id,plan_items(id,position,sets,reps,rest_seconds,target_weight,exercises(name,muscle_group,equipment,video_ref,instructions)))").eq("client_id", clientId).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as PlanRaw[]).map((p) => ({ id: p.id, name: p.name, status: p.status, startsOn: p.starts_on, endsOn: p.ends_on, level: p.level, levelReason: p.level_reason, reviewOn: p.review_on, coachNote: p.coach_note,
+    days: p.plan_days.map((d) => ({ id: d.id, weekday: d.weekday, name: d.name, minutes: d.est_minutes, category: d.category, videoRef: d.video_ref, hasPersonalVideo: !!d.video_id, items: d.plan_items.sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, position: i.position, sets: i.sets, reps: i.reps, rest: i.rest_seconds, weight: i.target_weight, name: i.exercises?.name ?? "—", muscle: i.exercises?.muscle_group ?? null, equipment: i.exercises?.equipment ?? null, videoRef: i.exercises?.video_ref ?? null, instructions: i.exercises?.instructions ?? null })) })) }));
+};
+type LogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; set_logs: { plan_item_id: string | null; set_number: number; reps: number | null; weight: number | null }[] };
+export const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+export const loadLogs = async (sb: SupabaseClient, clientId: string): Promise<WorkoutLog[]> => {
+  const since = new Date(); since.setDate(since.getDate() - 90);
+  const { data, error } = await sb.from("workout_logs").select("id,log_date,effort,note,completed_at,coach_comment,coach_comment_audio,set_logs(plan_item_id,set_number,reps,weight)").eq("client_id", clientId).gte("log_date", localDate(since)).order("log_date", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as LogRaw[]).map((l) => ({ id: l.id, date: l.log_date, effort: l.effort, note: l.note, completed: !!l.completed_at, coachComment: l.coach_comment, coachCommentAudio: l.coach_comment_audio, sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, setNumber: s.set_number, reps: s.reps, weight: s.weight })) }));
+};

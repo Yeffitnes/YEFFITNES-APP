@@ -4,6 +4,7 @@ import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { bogotaDay, type NudgeKind } from "@/lib/nudges";
+import { loadLogs, loadTrainingPlans, localDate } from "@/lib/fetchers";
 
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean };
@@ -107,13 +108,7 @@ export type PlanItem = { id: string; position: number; sets: number; reps: strin
 export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; days: PlanDay[] };
-type PlanRaw = { id: string; name: string; status: "active" | "finished"; starts_on: string; ends_on: string | null; level: PlanLevel | null; level_reason: string | null; review_on: string | null; coach_note: string | null; plan_days: { id: string; weekday: number; name: string; est_minutes: number | null; category: string | null; video_ref: string | null; video_id: string | null; plan_items: { id: string; position: number; sets: number; reps: string; rest_seconds: number | null; target_weight: number | null; exercises: { name: string; muscle_group: string | null; equipment: string | null; video_ref: string | null; instructions: string | null } | null }[] }[] };
-export const fetchTrainingPlans = async (clientId: string): Promise<TrainingPlan[]> => {
-  const { data, error } = await db().from("training_plans").select("id,name,status,starts_on,ends_on,level,level_reason,review_on,coach_note,plan_days(id,weekday,name,est_minutes,category,video_ref,video_id,plan_items(id,position,sets,reps,rest_seconds,target_weight,exercises(name,muscle_group,equipment,video_ref,instructions)))").eq("client_id", clientId).order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data as unknown as PlanRaw[]).map((p) => ({ id: p.id, name: p.name, status: p.status, startsOn: p.starts_on, endsOn: p.ends_on, level: p.level, levelReason: p.level_reason, reviewOn: p.review_on, coachNote: p.coach_note,
-    days: p.plan_days.map((d) => ({ id: d.id, weekday: d.weekday, name: d.name, minutes: d.est_minutes, category: d.category, videoRef: d.video_ref, hasPersonalVideo: !!d.video_id, items: d.plan_items.sort((a, b) => a.position - b.position).map((i) => ({ id: i.id, position: i.position, sets: i.sets, reps: i.reps, rest: i.rest_seconds, weight: i.target_weight, name: i.exercises?.name ?? "—", muscle: i.exercises?.muscle_group ?? null, equipment: i.exercises?.equipment ?? null, videoRef: i.exercises?.video_ref ?? null, instructions: i.exercises?.instructions ?? null })) })) }));
-};
+export const fetchTrainingPlans = (clientId: string): Promise<TrainingPlan[]> => loadTrainingPlans(db(), clientId);
 // Asigna el vídeo personalizado de un día (lo usa la subida en segundo plano, que ya no depende de la pantalla).
 export async function assignDayVideo(qc: QueryClient, clientId: string, dayId: string, videoId: string) { const { error } = await db().rpc("set_day_video", { p_day: dayId, p_video: videoId }); if (error) throw error; await qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); }
 export function useSetDayVideo(clientId: string) {
@@ -192,14 +187,8 @@ export function useRequestAccess(profileId: string) {
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, enabled: !!profileId, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
 export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; sets: SetLog[] };
-type LogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; set_logs: { plan_item_id: string | null; set_number: number; reps: number | null; weight: number | null }[] };
-export const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-export const fetchLogs = async (clientId: string): Promise<WorkoutLog[]> => {
-  const since = new Date(); since.setDate(since.getDate() - 90);
-  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_comment,coach_comment_audio,set_logs(plan_item_id,set_number,reps,weight)").eq("client_id", clientId).gte("log_date", localDate(since)).order("log_date", { ascending: false });
-  if (error) throw error;
-  return (data as unknown as LogRaw[]).map((l) => ({ id: l.id, date: l.log_date, effort: l.effort, note: l.note, completed: !!l.completed_at, coachComment: l.coach_comment, coachCommentAudio: l.coach_comment_audio, sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, setNumber: s.set_number, reps: s.reps, weight: s.weight })) }));
-};
+export { localDate };
+export const fetchLogs = (clientId: string): Promise<WorkoutLog[]> => loadLogs(db(), clientId);
 export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId) });
 export function useLogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];

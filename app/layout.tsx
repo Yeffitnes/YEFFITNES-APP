@@ -12,6 +12,10 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || (VERCEL ? `h
 // Nombre de la app instalada. En el sitio de pruebas (Vercel) se pone NEXT_PUBLIC_APP_NAME="YEFFITNES Test" para distinguirla.
 const SHORT = process.env.NEXT_PUBLIC_APP_NAME || "YEFFITNES";
 const OG = process.env.NEXT_PUBLIC_APP_NAME ? "/og-test.png" : "/og.png"; // en pruebas la imagen lleva la etiqueta TEST
+const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
+// El servidor dibuja la primera pantalla (Hoy) con la fecha de Colombia, igual que el teléfono del cliente.
+// Sin esto, de 7 p. m. a medianoche el servidor (hora UTC) pintaba el día siguiente y el teléfono lo tenía que corregir.
+if (typeof window === "undefined") process.env.TZ = "America/Bogota";
 const DESC = "Tu coaching online, hecho a tu medida. Entrenamiento, nutrición y seguimiento con Jeff González.";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -29,6 +33,8 @@ export const viewport: Viewport = { themeColor: "#0A0910", viewportFit: "cover",
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
+      {/* Abre la conexión con la base desde el primer instante: los datos de la primera pantalla llegan antes. */}
+      {SB && <head><link rel="preconnect" href={SB} crossOrigin="anonymous" /><link rel="dns-prefetch" href={SB} /></head>}
       <body className={`${display.variable} ${body.variable} ${mono.variable} font-sans`}><NoZoom /><InstallGate>{children}</InstallGate></body>
     </html>
   );

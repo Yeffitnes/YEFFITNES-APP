@@ -21,6 +21,8 @@ export function InstallGate({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [mode, setMode] = useState<Mode>(ON ? "check" : "ok");
   const [evt, setEvt] = useState<InstallEvt | null>(null);
+  // El service worker guarda en el teléfono los archivos fijos de la app (código y logos) para abrirla más rápido la próxima vez.
+  useEffect(() => { if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {}); }, []);
   useEffect(() => {
     if (!ON) return;
     setMode(detect());
@@ -30,8 +32,9 @@ export function InstallGate({ children }: { children: React.ReactNode }) {
     window.addEventListener("appinstalled", onInstalled);
     return () => { window.removeEventListener("beforeinstallprompt", onPrompt); window.removeEventListener("appinstalled", onInstalled); };
   }, []);
-  if (!ON || mode === "ok" || path.startsWith("/auth")) return <>{children}</>;
-  if (mode === "check") return <div className="ig" aria-hidden />;
+  // Rapidez: mientras revisa ("check", también en el servidor) se muestra la app de una vez. Antes salía una pantalla vacía
+  // hasta que el teléfono terminaba de cargar todo el código, y eso era buena parte de la espera al abrir.
+  if (!ON || mode === "ok" || mode === "check" || path.startsWith("/auth")) return <>{children}</>;
   return (
     <main className="ig">
       <img src="/brand/logo.svg" alt="YEFFITNES TRAINING" width={190} height={46} className="ig-logo" />

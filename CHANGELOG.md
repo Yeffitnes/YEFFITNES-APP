@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-10-28 - La app abre más rápido
+- **Pedido de Cristian:** la app tardaba unos 10 s en abrir.
+- **Causas y cambios:**
+  - **Pantalla vacía hasta cargar todo el código:** con "obligar a instalar" activo, la app mostraba una pantalla vacía hasta que el teléfono descargaba y arrancaba todo el código. Ahora se ve de una y el aviso de instalar sale encima solo si hace falta (`InstallGate.tsx`).
+  - **Hoy llega ya dibujado:** el servidor lee la rutina y los registros al abrir y "Hoy" llega listo, sin esperar los viajes del teléfono a la base. El perfil y la ficha se piden a la vez (`app/inicio/layout.tsx`, `lib/session.ts`, `lib/fetchers.ts` nuevo, `Providers.tsx`).
+  - **Hora de Colombia en el servidor:** el servidor usa la hora de Colombia para que la fecha coincida con la del teléfono (`app/layout.tsx`).
+  - **Conexión anticipada:** la conexión con la base se abre desde el primer instante (`preconnect`).
+  - **Archivos guardados en el teléfono:** los archivos fijos de la app (código con versión en el nombre, logos e iconos) quedan en el teléfono, así la segunda apertura no los descarga otra vez. Las pantallas y los datos siempre vienen de internet (`public/sw.js`).
+- Sin migración.
+- Revertir: restaurar esos archivos del commit anterior a este; en `sw.js`, quitar el bloque `fetch` y las cachés se borran solas al publicar.
+
 ## 2026-10-27 (noche) - "Avisar" arreglado: el aviso queda guardado y el cliente lo ve en Hoy
 - **Problema que reportó Cristian:** tocaba "Avisar" y al cliente no le llegaba nada; al volver a entrar aparecían otra vez todos los botones. Causa: el aviso solo existía como notificación del teléfono (si el cliente no tenía avisos activos en esa dirección, no llegaba a ningún lado) y dependía de una llamada al servidor; si esa llamada fallaba, no quedaba guardado y el botón volvía.
 - **Ahora:**
