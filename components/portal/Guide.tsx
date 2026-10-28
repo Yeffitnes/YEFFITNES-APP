@@ -1,6 +1,6 @@
 "use client";
 import { useId } from "react";
-// Personaje guía de YEFFITNES (versión 2, 27-oct): mezcla del primero (cabeza con solo la cinta, cara amable con sonrisa fija)
+// Personaje guía de YEFFITNES (versión 3, 27-oct: ropa estilo ilustración): mezcla del primero (cabeza con solo la cinta, cara amable con sonrisa fija)
 // con la propuesta de Cristian (ropa deportiva, codos y rodillas articulados, tenis, accesorios). Sin seguir el ratón y sin abrir la boca:
 // al "hablar" la sonrisa solo se mueve un poco. Todo se anima con CSS (bloque "Personaje guía" en app/inicio/portal.css).
 // Poses: idle · wave · point(dir) · cheer · flex · workout (mancuerna) · hydrate (botella) · squat (sentadilla).
@@ -13,6 +13,7 @@ function Defs({ id }: { id: string }) {
     <defs>
       <radialGradient id={`h${id}`} cx="24%" cy="14%" r="95%"><stop offset="0" stopColor={RED} stopOpacity=".8" /><stop offset=".6" stopColor={RED} stopOpacity="0" /></radialGradient>
       <radialGradient id={`b${id}`} cx="22%" cy="0%" r="110%"><stop offset="0" stopColor={RED} stopOpacity=".5" /><stop offset=".55" stopColor={RED} stopOpacity="0" /></radialGradient>
+      <pattern id="mesh" width="2.4" height="2.4" patternUnits="userSpaceOnUse"><circle cx="1.2" cy="1.2" r=".45" fill="#2E293B" /></pattern>
       <linearGradient id={`r${id}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FF5A78" /><stop offset=".6" stopColor={RED} /><stop offset="1" stopColor="#C8123A" /></linearGradient>
     </defs>
   );
@@ -33,63 +34,94 @@ function Head({ id }: { id: string }) {
     </g></g>
   );
 }
-function Shoe({ x, flip, id }: { x: number; flip?: boolean; id: string }) {
+// ───── Ropa v3 (estilo ilustración: contorno negro, chaqueta abierta con capucha, camiseta con escudo, pantalón ancho de doble franja) ─────
+const OUT = "#050408", JK = "#1B1824", JK2 = "#24202F", PANT = "#1E1A28", RIB = "#2E293B";
+const ol = { stroke: OUT, strokeWidth: 1.1, strokeLinejoin: "round" as const };
+const pipe = (w = 0.9) => ({ stroke: RED, strokeWidth: w, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, fill: "none" });
+// Se dibuja el lado izquierdo y el derecho es su espejo (x → 120 − x). Solo comandos absolutos (M L C Q Z) en estas rutas.
+const mirror = (d: string) => { let i = 0; return d.replace(/-?\d*\.?\d+/g, (n) => (i++ % 2 === 0 ? String(+(120 - Number(n)).toFixed(2)) : n)); };
+function Shoe({ x, flip }: { x: number; flip?: boolean; id: string }) {
   return (
     <g transform={`translate(${x} 148)${flip ? " scale(-1 1)" : ""}`}>
-      <path d="M-9 1.5 Q-9 -4.5 -2 -5 L3 -5 Q8 -4.6 9.5 -1 L10 1.5 Z" fill={`url(#r${id})`} />
-      <rect x="-10" y="1" width="21" height="3.6" rx="1.8" fill="#fff" />
-      <path d="M-2.5 -3.8 L1.5 -1.4" stroke="#fff" strokeWidth="1" strokeLinecap="round" opacity=".9" />
+      <path d="M-10.5 1.2 Q-10.8 -5.2 -3 -6 L3.4 -6 Q9.6 -5.4 11 -0.6 L11.4 1.6 Z" fill={RED} {...ol} />
+      <path d="M-9.6 -1.4 Q-6 -3 -1 -2.4" stroke="#fff" strokeWidth=".9" strokeLinecap="round" fill="none" opacity=".85" />
+      <path d="M2.4 -5.4 L5.6 -2.6 M4.2 -5.6 L7.2 -3" stroke="#fff" strokeWidth=".8" strokeLinecap="round" />
+      <path d="M-11.2 0.8 L11.8 0.8 Q12.4 0.8 12.2 2.4 L11.8 4.4 Q11.6 5.2 10.8 5.2 L-10.4 5.2 Q-11.4 5.2 -11.6 4.2 L-11.8 2.2 Q-11.9 0.8 -11.2 0.8 Z" fill="#fff" {...ol} />
+      <path d="M-10.4 3.2 L11 3.2" stroke="#D9DCE5" strokeWidth=".7" />
     </g>
   );
 }
-// Jogger holgado: muslo ancho que se angosta hacia el tobillo, puño elástico recogido, pliegues, franja lateral y cordón en la cintura.
-// Se dibuja la pierna izquierda y la derecha es su espejo (x → 120 − x). Solo usar comandos absolutos (M L C Q Z) en estas rutas.
-const mirror = (d: string) => { let i = 0; return d.replace(/-?\d*\.?\d+/g, (n) => (i++ % 2 === 0 ? String(+(120 - Number(n)).toFixed(2)) : n)); };
-const JOG = {
-  thigh: "M44 110 C38.6 116.5 37.4 124 39.4 131 Q47.5 135.2 56.4 131 C57.4 124 58.8 117 60 110 Z",
-  thighStripe: "M42.4 113.5 C39.6 119.5 39 125 40.4 130",
-  thighFold1: "M47 118.2 Q50.5 120 54.2 118.4",
-  thighFold2: "M44.6 125 Q49.6 127.4 54.4 125",
-  thighLight: "M56.4 113.5 C55.4 118.5 54.8 123.5 54.6 128.5",
-  calf: "M40.2 129 C39.6 134 40.6 137.6 41.6 140.6 L52 140.6 C52.6 136.8 54.4 133.4 55.8 129 Q48 133.4 40.2 129 Z",
-  calfStripe: "M41.2 131.5 C41 135 41.6 137.4 42.3 139.6",
-  calfFold: "M42.2 136.2 Q47 138.6 52 136",
-  cuff: "M41.4 139.6 L52.4 139.6 Q53.4 139.6 53.2 141 L52.8 143.4 Q52.6 144.4 51.6 144.4 L42.2 144.4 Q41.2 144.4 41 143.4 L40.6 141 Q40.4 139.6 41.4 139.6 Z",
-  cuffRib1: "M43.6 140.6 L43.6 143.4", cuffRib2: "M46.8 140.6 L46.8 143.4", cuffRib3: "M50 140.6 L50 143.4",
+// Pantalón deportivo ancho (recto, cae sobre el tenis) con doble franja roja, pliegues y pretina acanalada con cordón.
+const PT = {
+  thigh: "M43.4 111.5 L60.4 111.5 L57.2 131.5 L39.4 131.5 Z",
+  calf: "M39 129.5 L57.4 129.5 L57.2 147 Q48 148.8 38.2 147 Z",
+  tPipe1: "M44.6 112.5 L40.8 130.5", tPipe2: "M46.4 112.5 L42.6 130.5",
+  cPipe1: "M40.6 130.5 L39.9 146.4", cPipe2: "M42.4 130.5 L41.8 146.6",
+  tFold: "M48.5 121.5 Q52 123 55.4 121.2", kFold: "M45.2 131.4 Q49.6 133.4 54.6 131", hFold: "M44 143 Q48.6 144.6 54 142.6", hFold2: "M51.6 139 Q53.6 140.6 55.6 139.6",
 };
-const JOG_INK = "#141019", JOG_FILL = "#2A2436";
 function Leg({ side }: { side: "l" | "r" }) {
   const m = side === "l" ? (d: string) => d : mirror;
-  const fold = { stroke: JOG_INK, strokeWidth: 1.1, strokeLinecap: "round" as const, fill: "none", opacity: 0.9 };
+  const fold = { stroke: OUT, strokeWidth: 0.9, strokeLinecap: "round" as const, fill: "none", opacity: 0.85 };
   return (
     <g className={`gd-thigh-${side}`}>
       <g className={`gd-calf-${side}`}>
-        <path d={m(JOG.calf)} fill={JOG_FILL} />
-        <path d={m(JOG.calfStripe)} stroke={RED} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-        <path d={m(JOG.calfFold)} {...fold} /><path d={m("M42.8 138.6 Q47 140 51.4 138.4")} {...fold} />
-        <path d={m(JOG.cuff)} fill={INK} />
-        <path d={m(JOG.cuffRib1)} stroke="#2A2536" strokeWidth=".7" /><path d={m(JOG.cuffRib2)} stroke="#2A2536" strokeWidth=".7" /><path d={m(JOG.cuffRib3)} stroke="#2A2536" strokeWidth=".7" />
+        <path d={m(PT.calf)} fill={PANT} {...ol} />
+        <path d={m(PT.cPipe1)} {...pipe(1)} /><path d={m(PT.cPipe2)} {...pipe(1)} />
+        <path d={m(PT.hFold)} {...fold} /><path d={m(PT.hFold2)} {...fold} />
       </g>
-      <path d={m(JOG.thigh)} fill={JOG_FILL} />
-      <path d={m(JOG.thighLight)} stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity=".12" />
-      <path d={m(JOG.thighStripe)} stroke={RED} strokeWidth="1.5" strokeLinecap="round" fill="none" />
-      <path d={m(JOG.thighFold1)} {...fold} /><path d={m(JOG.thighFold2)} {...fold} />
+      <path d={m(PT.thigh)} fill={PANT} />
+      <path d={m("M43.4 111.5 L39.4 131.5 M60.4 111.5 L57.2 131.5")} stroke={OUT} strokeWidth="1.1" strokeLinecap="round" />
+      <path d={m(PT.tPipe1)} {...pipe(1)} /><path d={m(PT.tPipe2)} {...pipe(1)} />
+      <path d={m(PT.tFold)} {...fold} /><path d={m(PT.kFold)} {...fold} />
     </g>
   );
 }
-// Cadera del jogger: tiro un poco bajo (holgado), bolsillos, pretina con cordón.
 function Hips() {
   return (
     <g>
-      <path d="M39.6 111 Q38.4 121.5 45.5 125 Q52.5 127.8 60 126.2 Q67.5 127.8 74.5 125 Q81.6 121.5 80.4 111 Z" fill={JOG_FILL} />
-      <path d="M44 113.6 Q46.8 117.6 46.2 121.4" stroke={JOG_INK} strokeWidth="1.1" strokeLinecap="round" fill="none" />
-      <path d={mirror("M44 113.6 Q46.8 117.6 46.2 121.4")} stroke={JOG_INK} strokeWidth="1.1" strokeLinecap="round" fill="none" />
-      <path d="M60 114.5 L60 125.4" stroke={JOG_INK} strokeWidth="1" strokeLinecap="round" />
-      <rect x="39.3" y="109.2" width="41.4" height="5.4" rx="2.7" fill={INK} />
-      <path d="M41.5 111.9 L78.5 111.9" stroke="#2A2536" strokeWidth=".7" strokeDasharray="1.6 1.4" />
-      <path d="M58.4 113.2 Q57.4 116.8 56.8 120" stroke="#fff" strokeWidth="1" strokeLinecap="round" fill="none" />
-      <path d="M61.6 113.2 Q62.8 116.4 63.8 119.4" stroke="#fff" strokeWidth="1" strokeLinecap="round" fill="none" />
-      <circle cx="56.8" cy="120.4" r="1.05" fill={RED} /><circle cx="63.8" cy="119.8" r="1.05" fill={RED} />
+      <path d="M40.2 112 Q39.4 122 44.6 125.6 L75.4 125.6 Q80.6 122 79.8 112 Z" fill={PANT} {...ol} />
+      <path d="M60 117 L60 125.4" stroke={OUT} strokeWidth=".9" strokeLinecap="round" />
+      <path d="M40.4 113.8 L79.6 113.8" stroke={RIB} strokeWidth="5.2" strokeDasharray=".7 1.1" />
+      <rect x="39.8" y="111.2" width="40.4" height="5.2" rx="2.2" fill="none" {...ol} />
+      <path d="M57.6 114.6 Q56.4 119 55.6 123.4 M62.4 114.6 Q63.8 118.8 64.6 123" stroke="#E9EAF0" strokeWidth=".9" strokeLinecap="round" fill="none" />
+      <circle cx="57.6" cy="114.4" r="1.2" fill={OUT} /><circle cx="62.4" cy="114.4" r="1.2" fill={OUT} />
+      <rect x="54.8" y="123" width="1.6" height="2.6" rx=".6" fill={RED} /><rect x="63.8" y="122.6" width="1.6" height="2.6" rx=".6" fill={RED} />
+    </g>
+  );
+}
+// Torso: camiseta técnica con escudo "Y" debajo de una chaqueta abierta con capucha, cordones y bordes acanalados.
+function Torso() {
+  return (
+    <g className="gd-body">
+      {/* capucha detrás del cuello (asoma a los lados de la cabeza) */}
+      <path d="M41 82 Q38 71 48 68.6 L72 68.6 Q82 71 79 82 Z" fill={JK} {...ol} />
+      <path d="M45 80 Q44 73 51 71.6 L69 71.6 Q76 73 75 80 Z" fill="#3A0E1A" />
+      {/* camiseta interior */}
+      <path d="M47.6 78 L72.4 78 L72 111 L48 111 Z" fill="#121019" {...ol} />
+      <path d="M48.4 80 L71.6 80 L71.4 110 L48.6 110 Z" fill="url(#mesh)" opacity=".55" />
+      <path d="M50.6 78 Q60 87 69.4 78" stroke={RED} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M49.6 92 L53 96 L53 106 M70.4 92 L67 96 L67 106" {...pipe(0.8)} opacity=".8" />
+      <g transform="translate(60 96)"><circle r="5.4" fill="#1D1A28" stroke={RED} strokeWidth="1.1" /><path d="M-2.3 -2.4 L0 0 L2.3 -2.4 M0 0 L0 2.9" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none" /></g>
+      {/* chaqueta: panel izquierdo y su espejo */}
+      {[(d: string) => d, mirror].map((m, i) => (
+        <g key={i}>
+          <path d={m("M39 86 C39 78.6 44 77 49.6 76.6 L53.2 77.4 Q51.6 94 52.4 108.6 L41.4 108.6 Q40.2 97 39 86 Z")} fill={JK} {...ol} />
+          <path d={m("M49.6 76.8 L53 77.6 Q51.4 94 52.2 108.4")} stroke={RED} strokeWidth="1" fill="none" strokeLinecap="round" />
+          <path d={m("M41.6 84 L45.4 89.6 L45.4 100.4 L48.6 104")} {...pipe(0.9)} />
+          <path d={m("M43.4 82 Q46.6 80.2 49.4 80.6")} {...pipe(0.7)} opacity=".7" />
+          <path d={m("M47.8 97.4 L51 97.4")} stroke={OUT} strokeWidth=".9" strokeLinecap="round" />
+          <path d={m("M52.2 79 Q51 86 51.4 93")} stroke="#E9EAF0" strokeWidth=".9" strokeLinecap="round" fill="none" />
+          <rect x={i ? 67.8 : 50.6} y="92.6" width="1.6" height="2.8" rx=".6" fill={RED} />
+        </g>
+      ))}
+      {/* borde acanalado de la chaqueta */}
+      {[(d: string) => d, mirror].map((m, i) => (
+        <g key={`h${i}`}>
+          <path d={m("M41 108.2 L52.6 108.2 L52.6 112.6 L41.4 112.6 Z")} fill={JK} />
+          <path d={m("M41.6 110.4 L52.2 110.4")} stroke={RIB} strokeWidth="4.4" strokeDasharray=".7 1.1" />
+          <path d={m("M41 108.2 L52.6 108.2 L52.6 112.6 L41.4 112.6 Z")} fill="none" {...ol} />
+        </g>
+      ))}
     </g>
   );
 }
@@ -108,16 +140,22 @@ function Accessory({ pose }: { pose: GuidePose }) {
     </g>);
   return null;
 }
+// Brazo con manga de chaqueta (franja roja a lo largo) y puño acanalado.
 function Arm({ side, pose }: { side: "l" | "r"; pose: GuidePose }) {
-  const L = side === "l", sh = L ? 41 : 79, el = L ? 31 : 89, hd = L ? 27 : 93;
+  const L = side === "l", sh = L ? 41 : 79, el = L ? 31 : 89, hd = L ? 27 : 93, o = L ? -3.4 : 3.4;
+  const cx0 = el + (hd - el) * 0.66, cy0 = 104 + 15 * 0.66, cx1 = el + (hd - el) * 0.9, cy1 = 104 + 15 * 0.9;
   return (
     <g className={`gd-arm-${side}`}>
-      <path d={`M${sh} 85 L${el} 104`} stroke={INK} strokeWidth="9.5" strokeLinecap="round" />
+      <path d={`M${sh} 85 L${el} 104`} stroke={OUT} strokeWidth="13.4" strokeLinecap="round" />
+      <path d={`M${sh} 85 L${el} 104`} stroke={JK} strokeWidth="11.2" strokeLinecap="round" />
+      <path d={`M${sh + o} ${85 - 1.4} L${el + o} ${104 - 1.2}`} {...pipe(1)} />
       <g className={`gd-fore-${side}`}>
-        <path d={`M${el} 104 L${hd} 119`} stroke="#14111C" strokeWidth="8.6" strokeLinecap="round" />
-        <path d={`M${el + (hd - el) * 0.62} ${104 + 15 * 0.62} L${el + (hd - el) * 0.8} ${104 + 15 * 0.8}`} stroke={RED} strokeWidth="8.8" strokeLinecap="butt" />
-        {!L && <rect x="90" y="110" width="5.4" height="4.6" rx="1.3" fill="#fff" transform="rotate(14 92.7 112.3)" />}
-        <circle cx={hd} cy="121" r="5.6" fill={INK} />
+        <path d={`M${el} 104 L${cx1} ${cy1}`} stroke={OUT} strokeWidth="12.4" strokeLinecap="round" />
+        <path d={`M${el} 104 L${cx1} ${cy1}`} stroke={JK2} strokeWidth="10.2" strokeLinecap="round" />
+        <path d={`M${el + o * 0.9} ${104 - 0.6} L${cx0 + o * 0.9} ${cy0 - 0.6}`} {...pipe(1)} />
+        <path d={`M${cx0} ${cy0} L${cx1} ${cy1}`} stroke={RIB} strokeWidth="10.2" strokeDasharray=".7 1" />
+        {!L && <g transform={`translate(${hd - 0.6} 115.6) rotate(14)`}><rect x="-3.4" y="-2.8" width="6.8" height="5.6" rx="1.5" fill={OUT} /><rect x="-2.2" y="-1.7" width="4.4" height="3.4" rx=".8" fill={RED} opacity=".9" /></g>}
+        <circle cx={hd} cy="121" r="5.8" fill={INK} {...ol} />
         {!L && <Accessory pose={pose} />}
       </g>
     </g>
@@ -136,14 +174,7 @@ export function Guide({ size = 96, pose = "idle", dir = "down", talking = true, 
         <g className="gd-all">
           <g className="gd-legs"><Leg side="l" /><Leg side="r" /><Hips /></g>
           <Arm side="l" pose={pose} />
-          <g className="gd-body">
-            <path d="M39 86 C39 77 48 76 60 76 C72 76 81 77 81 86 L79 111 C79 114 74 115 60 115 C46 115 41 114 41 111 Z" fill={INK} />
-            <path d="M39 86 C39 77 48 76 60 76 C72 76 81 77 81 86 L79 111 C79 114 74 115 60 115 C46 115 41 114 41 111 Z" fill={`url(#b${id})`} />
-            <path d="M48 76.5 L60 92 L72 76.5" stroke={RED} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" fill="none" />
-            <path d="M43.5 82 Q41 94 43.5 106" stroke={RED} strokeWidth="2" strokeLinecap="round" fill="none" opacity=".9" />
-            <path d="M76.5 82 Q79 94 76.5 106" stroke={RED} strokeWidth="2" strokeLinecap="round" fill="none" opacity=".9" />
-            <g transform="translate(60 101)"><circle r="5" fill="#1D1A28" stroke={RED} strokeWidth="1" /><path d="M-2.1 -2.2 L0 0 L2.1 -2.2 M0 0 L0 2.6" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" /></g>
-          </g>
+          <Torso />
           <Arm side="r" pose={pose} />
           <Head id={id} />
         </g>

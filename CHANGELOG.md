@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Personaje v3: ropa estilo ilustración
+- Siguiendo la imagen de referencia de Cristian:
+  - Contorno negro en toda la ropa.
+  - **Chaqueta** abierta con capucha (forro rojo), franjas rojas técnicas, cordones de capucha con puntas rojas, mangas con franja y puños y borde acanalados.
+  - **Camiseta** interior de malla con escudo "Y" y cuello rojo.
+  - **Pantalón** deportivo ancho y recto, con doble franja roja, pliegues y pretina acanalada con cordón.
+  - **Tenis** más robustos: suela blanca gruesa, capellada roja y cordones.
+  - Reloj rojo.
+- La cabeza y la cara no cambian; todas las poses y animaciones siguen funcionando.
+- Archivo: `components/portal/Guide.tsx` (`Torso`, `Arm`, `Leg`, `Hips`, `Shoe`). Revertir: restaurar `Guide.tsx` del commit `4b0ab93`.
+
 ## 2026-10-27 (noche) - Personaje: jogger holgado
 - Pedido de Cristian: un jogger con más estilo y algo holgado.
   - Muslo ancho que se angosta hacia el tobillo, con tiro un poco bajo.
