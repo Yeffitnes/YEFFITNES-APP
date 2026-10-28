@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Avisar desde Seguimiento, actividad solo de hoy y vídeo en el objetivo
+- **Seguimiento de hoy:** en los filtros "Sin nada hoy", "Sin reporte", "Sin entrenar" y "Sin nutrición" aparece el botón **"Avisar"** junto a Escribir. Un toque le envía al cliente un aviso automático según el filtro; por ejemplo: "Jeff está esperando tu reporte de hoy…". Es una vez por tipo y día, y luego sale "Avisado". En "Por escribir" solo queda Escribir.
+- **Actividad:**
+  - "Tiempo real" muestra solo lo de hoy, y la actividad de más de 24 h se borra sola.
+  - La tarjeta "Reciente" pasa a ser **"Actividad de tus clientes" de hoy**: una fila por cliente que se despliega con lo que hizo (entrenamiento con esfuerzo, nutrición, reporte) y la hora.
+- **Objetivo actual:** Jeff puede subir un vídeo junto al objetivo, en la ficha → Resumen, y verlo, cambiarlo o quitarlo. El cliente lo ve con "Ver el vídeo de tu coach" en Hoy y en Objetivos.
+- **Migración `0036_nudges_activity_objective_video.sql` (correrla ANTES; sin ella fallan Clientes y el portal en Vercel).** Incluye la tabla `nudges`, `nudge_targets()`, el nuevo `activity_feed` y la columna `clients.objective_video_id`; ese vídeo solo puede ser de ese cliente. Prueba nueva: `rls_nudges.sql`. Ruta nueva: `/api/push/nudge`.
+- Revertir: ver la cabecera de la migración; restaurar `FollowUp.tsx`, `DashboardView.tsx`, `ClientFicha.tsx`, `HoySide.tsx`, `lib/queries.ts`, `app/inicio/layout.tsx` y `app/api/video/play` del commit `34ba461`.
+
 ## 2026-10-27 (noche) - Seguimiento de hoy: lo pendiente en gris
 - Pedido de Cristian: en "Seguimiento de hoy" lo que el cliente aún no hace (Entreno, Nutrición, Reporte) ya no va en rojo, que confundía con "hecho". Ahora va en gris suave; lo hecho sigue en negro con chulito.
 - Archivo: `coach.css` (`.fu-pill.missing`). Revertir: color `var(--accent)` y borde `rgba(212,26,64,.4)`.

@@ -2,7 +2,9 @@
 import { Icon } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useClientBookings, useClients, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
+import { useClientBookings, useClients, useObjectiveVideo, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
+import { BunnyModal } from "@/components/ui/BunnyModal";
+import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { ago, initials } from "@/lib/format";
 import type { ClientRow, Plan } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
@@ -37,7 +39,7 @@ export function ClientFicha({ id }: { id: string }) {
             <div className="mini-kpi"><div className="mini-kpi-label">Estado</div><div className="mini-kpi-val">{status}</div></div>
             <div className="mini-kpi"><div className="mini-kpi-label">Registro</div><div className="mini-kpi-val">{new Date(c.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div></div>
           </div>
-          <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} />
+          <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} hasVideo={!!c.objectiveVideo} />
           <RecentWorkouts clientId={c.id} />
         </>
       ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Mensajes" ? <ThreadView clientId={c.id} otherName={c.name.split(" ")[0]} coach /> : tab === "Agenda" ? <AgendaTab clientId={c.id} first={c.name.split(" ")[0]} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
@@ -71,14 +73,25 @@ function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {
   );
 }
 
-function ObjectiveCard({ clientId, value, first }: { clientId: string; value: string; first: string }) {
-  const set = useSetObjective(clientId), [t, setT] = useState<string | null>(null), cur = t ?? value;
+function ObjectiveCard({ clientId, value, first, hasVideo }: { clientId: string; value: string; first: string; hasVideo: boolean }) {
+  const set = useSetObjective(clientId), [t, setT] = useState<string | null>(null), cur = t ?? value, vid = useObjectiveVideo(clientId), fileIn = useRef<HTMLInputElement>(null), [watch, setWatch] = useState(false), [vErr, setVErr] = useState("");
+  const pickVideo = async (f: File | null) => { setVErr(""); if (!f) return; if (!f.type.startsWith("video/")) return setVErr("Elige un archivo de vídeo."); if (f.size > MAX_COACH_VIDEO_MB * 1024 * 1024) return setVErr("El vídeo es muy pesado."); const d = await videoDuration(f); if (d != null && d > MAX_COACH_VIDEO_SECONDS) return setVErr(`El vídeo dura más de ${MAX_COACH_VIDEO_SECONDS / 60} minutos.`); vid.upload(f); };
   return (
     <div className="card" style={{ maxWidth: 560, margin: "18px 0" }}>
       <div className="card-tag">Objetivo actual</div>
-      <p style={{ fontSize: 13, color: "var(--text-dim)", margin: "10px 0" }}>{first} lo ve en su pantalla “Hoy”.</p>
+      <p style={{ fontSize: 13, color: "var(--text-dim)", margin: "10px 0" }}>{first} lo ve en su pantalla “Hoy”. Puedes acompañarlo con un vídeo tuyo explicándolo.</p>
       <textarea aria-label="Objetivo actual" maxLength={500} value={cur} onChange={(e) => setT(e.target.value)} placeholder="Ej. Bajar grasa corporal manteniendo la fuerza en tren superior." style={{ width: "100%", minHeight: 70, border: "1px solid var(--line)", borderRadius: 12, padding: 12, fontSize: 13.5, resize: "vertical" }} />
       <div style={{ marginTop: 10 }}><button className="primary-btn" disabled={set.isPending || cur.trim() === value.trim()} onClick={() => set.mutate(cur, { onSuccess: () => setT(null) })}>{set.isPending ? "Guardando…" : "Guardar objetivo"}</button></div>
+      <div className="obj-video">
+        <input ref={fileIn} type="file" accept="video/*" hidden onChange={(e) => { void pickVideo(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+        {hasVideo ? <>
+          <button type="button" className="ghost-btn" onClick={() => setWatch(true)}><Icon name="play" size={12} /> Ver vídeo</button>
+          <button type="button" className="ghost-btn" onClick={() => fileIn.current?.click()}>Cambiar vídeo</button>
+          <button type="button" className="ghost-btn" disabled={vid.remove.isPending} onClick={() => vid.remove.mutate()}>Quitar</button>
+        </> : <button type="button" className="ghost-btn" onClick={() => fileIn.current?.click()}><Icon name="video" size={13} /> Subir vídeo del objetivo</button>}
+        {vErr && <p role="alert" style={{ color: "var(--accent)", fontSize: 12.5, width: "100%" }}>{vErr}</p>}
+      </div>
+      {watch && <BunnyModal param={`objective=${clientId}`} title="Vídeo del objetivo" onClose={() => setWatch(false)} />}
     </div>
   );
 }

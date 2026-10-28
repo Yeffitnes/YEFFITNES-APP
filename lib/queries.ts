@@ -5,12 +5,12 @@ import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 
 export type Plan = { id: string; name: string; features: string[] };
-export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null };
+export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
-type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; plans: unknown; profiles: unknown };
+type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plans: unknown; profiles: unknown };
 type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
@@ -18,9 +18,9 @@ export const fetchPlans = async (): Promise<Plan[]> => {
   if (error) throw error; return data as Plan[];
 };
 export const fetchClients = async (): Promise<ClientRow[]> => {
-  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
+  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,objective_video_id,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
   if (error) throw error;
-  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null }));
+  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
   const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,template_items(count)").eq("active", true).order("name");
@@ -172,12 +172,12 @@ export function useSetWeight(clientId: string) {
 }
 
 // ---- Portal del cliente ----
-export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null };
+export type Me = { id: string; status: string; planName: string | null; features: string[]; onboarded: boolean; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean };
 export const fetchMe = async (profileId: string): Promise<Me | null> => {
-  const { data, error } = await db().from("clients").select("id,status,onboarded_at,objective,objective_at,access_requested_at,plans(name,features)").eq("profile_id", profileId).maybeSingle();
+  const { data, error } = await db().from("clients").select("id,status,onboarded_at,objective,objective_at,access_requested_at,objective_video_id,plans(name,features)").eq("profile_id", profileId).maybeSingle();
   if (error) throw error; if (!data) return null;
   const p = (data as unknown as { plans: { name: string; features: string[] } | null }).plans;
-  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at, objective: (data as unknown as { objective: string | null }).objective, objectiveAt: (data as unknown as { objective_at: string | null }).objective_at, accessRequestedAt: (data as unknown as { access_requested_at: string | null }).access_requested_at };
+  return { id: data.id, status: data.status, planName: p?.name ?? null, features: p?.features ?? [], onboarded: !!(data as unknown as { onboarded_at: string | null }).onboarded_at, objective: (data as unknown as { objective: string | null }).objective, objectiveAt: (data as unknown as { objective_at: string | null }).objective_at, accessRequestedAt: (data as unknown as { access_requested_at: string | null }).access_requested_at, objectiveVideo: !!(data as unknown as { objective_video_id: string | null }).objective_video_id };
 };
 // El cliente pendiente pide acceso a su coach (0034). Devuelve la hora de la solicitud para pintarla al instante.
 export function useRequestAccess(profileId: string) {
@@ -659,4 +659,35 @@ export function useSetPlanInfo(clientId: string) {
   return useMutation({
     mutationFn: async (v: { planId: string; level: PlanLevel | ""; reason: string; reviewOn: string; note: string }) => { const { error } = await db().rpc("set_plan_info", { p_plan: v.planId, p_level: v.level, p_reason: v.reason, p_review: v.reviewOn || null, p_note: v.note }); if (error) throw error; },
     onSuccess: () => toast("Datos del plan guardados"), onError: () => toast("No pudimos guardar los datos del plan. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }) });
+}
+
+// ---- Avisos rápidos de Jeff (migración 0036) ----
+export type NudgeKind = "nothing" | "train" | "meals" | "report";
+const bogotaDay = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+export const useTodayNudges = () => useQuery({ queryKey: ["nudges"], staleTime: 30_000, queryFn: async (): Promise<string[]> => {
+  const { data, error } = await db().from("nudges").select("client_id,kind").eq("day", bogotaDay()); if (error) throw error;
+  return ((data ?? []) as { client_id: string; kind: string }[]).map((r) => `${r.client_id}:${r.kind}`);
+} });
+export function useNudge() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { clientId: string; kind: NudgeKind }) => {
+      const r = await fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(v) });
+      const j = (await r.json().catch(() => ({}))) as { error?: string; sent?: number };
+      if (!r.ok) throw new Error(j.error ?? "failed"); return j.sent ?? 0;
+    },
+    onMutate: (v) => { qc.setQueryData<string[]>(["nudges"], (l) => [...(l ?? []), `${v.clientId}:${v.kind}`]); },
+    onSuccess: (sent) => toast(sent ? "Aviso enviado" : "Aviso guardado, pero este cliente no tiene los avisos activos en su teléfono."),
+    onError: (e) => { toast((e as Error).message === "already_sent" ? "Ya le avisaste esto hoy." : "No pudimos enviar el aviso.", true); void qc.invalidateQueries({ queryKey: ["nudges"] }); },
+  });
+}
+
+// Vídeo del objetivo (0036): Jeff lo sube para un cliente (se registra como vídeo de ese cliente) y queda en clients.objective_video_id.
+export function useObjectiveVideo(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
+  const set = async (videoId: string | null) => { const { error } = await db().from("clients").update({ objective_video_id: videoId }).eq("id", clientId); if (error) throw error; void qc.invalidateQueries({ queryKey: KEYS.clients }); };
+  return {
+    upload: (file: File) => upload({ file, label: "Vídeo del objetivo", opts: { purpose: "message", clientId }, finish: async (vid) => { await set(vid); } }),
+    remove: useMutation({ mutationFn: () => set(null), onSuccess: () => toast("Vídeo quitado"), onError: () => toast("No pudimos quitar el vídeo.", true) }),
+  };
 }
