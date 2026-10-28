@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon";
 import { useProfile } from "@/components/Providers";
 import { useFirstCall, useMe, useRequestAccess, useTrainingPlans } from "@/lib/queries";
 import { usePathname } from "next/navigation";
-import { Guide, GuideFace } from "./Guide";
+import { Guide } from "./Guide";
 import { ago } from "@/lib/format";
 // Panel bloqueado (diseño del FeatureGate de DaniFit, en la marca): contenido de muestra borroso + candado + qué hacer.
 // El bloqueo visual NO es la seguridad: la base de datos no entrega nada de lo que el plan no incluye.
@@ -76,7 +76,7 @@ export function PlanWait({ kind }: { kind: "training" | "nutrition" | "report" }
     <div className="lk-card lk-wait">
       <div aria-hidden className="lk-ghost"><div className="lk-tag">{w.tag}</div><div className="lk-line w60" /><div className="lk-line" /><div className="lk-line w80" /><div className="lk-line" /></div>
       <div className="lk-over">
-        <GuideFace size={44} />
+        <Guide size={46} pose={kind === "training" ? "workout" : kind === "nutrition" ? "hydrate" : "point"} dir="down" talking={false} />
         <div className="lk-eyebrow">Falta poco</div>
         <div className="lk-title">{w.title}</div>
         <p className="lk-sub">{w.sub}</p>

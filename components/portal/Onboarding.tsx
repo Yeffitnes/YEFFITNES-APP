@@ -10,15 +10,16 @@ import { Guide, type GuideDir, type GuidePose } from "./Guide";
 // El personaje recorre los paneles REALES de la app (los ilumina en el menú) y al final pide punto de partida, permiso de fotos y la llamada.
 // La primera llamada es OBLIGATORIA (decisión de Cristian, 27-oct): no hay "más tarde"; "Saltar" lleva directo a ese paso.
 // Textos = PROPUESTA (el contenido final y el diseño del personaje los define Jeff).
-type Spot = { kind: "spot"; href: string; title: string; text: string };
+// topic: lo que hace el personaje después de señalar el panel (va con lo que el panel es).
+type Spot = { kind: "spot"; href: string; title: string; text: string; topic: GuidePose };
 type Step = { kind: "hello" } | Spot | { kind: "measures" } | { kind: "consent" } | { kind: "call" };
 const TOUR: Spot[] = [
-  { kind: "spot", href: "/inicio", title: "Hoy", text: "Lo primero que ves al abrir: tu rutina del día, tus series y tu reporte diario. Si no sabes qué hacer, empieza aquí." },
-  { kind: "spot", href: "/inicio/plan", title: "Mi plan", text: "Tu semana completa de entrenamiento y tu nutrición, con vídeos de técnica de cada ejercicio." },
-  { kind: "spot", href: "/inicio/agenda", title: "Agenda", text: "Aquí reservas tus llamadas conmigo en los horarios que publico." },
-  { kind: "spot", href: "/inicio/progreso", title: "Progreso", text: "Tu peso, tus medidas y tus fotos. Así vemos juntos cómo cambias semana a semana." },
-  { kind: "spot", href: "/inicio/material", title: "Material", text: "Vídeos y guías que preparo para ti: técnica, consejos y el vídeo de la semana." },
-  { kind: "spot", href: "/inicio/mensajes", title: "Mensajes", text: "Para lo importante: hasta 3 mensajes al día, una foto y un vídeo. Yo te respondo con calma." },
+  { kind: "spot", href: "/inicio", title: "Hoy", text: "Lo primero que ves al abrir: tu rutina del día, tus series y tu reporte diario. Si no sabes qué hacer, empieza aquí.", topic: "workout" },
+  { kind: "spot", href: "/inicio/plan", title: "Mi plan", text: "Tu semana completa de entrenamiento y tu nutrición, con vídeos de técnica de cada ejercicio.", topic: "flex" },
+  { kind: "spot", href: "/inicio/agenda", title: "Agenda", text: "Aquí reservas tus llamadas conmigo en los horarios que publico.", topic: "wave" },
+  { kind: "spot", href: "/inicio/progreso", title: "Progreso", text: "Tu peso, tus medidas y tus fotos. Así vemos juntos cómo cambias semana a semana.", topic: "squat" },
+  { kind: "spot", href: "/inicio/material", title: "Material", text: "Vídeos y guías que preparo para ti: técnica, consejos y el vídeo de la semana.", topic: "point" },
+  { kind: "spot", href: "/inicio/mensajes", title: "Mensajes", text: "Para lo importante: hasta 3 mensajes al día, una foto y un vídeo. Yo te respondo con calma.", topic: "wave" },
 ];
 // Busca el enlace visible en el menú (abajo en el celular, a la izquierda en el computador, o el botón de mensajes de arriba).
 function findTarget(href: string): HTMLElement | null {
@@ -47,7 +48,8 @@ export function Onboarding() {
   const dots = <div className="tour-dots" aria-label={`Paso ${i + 1} de ${steps.length}`}>{steps.map((_, k) => <i key={k} className={k === i ? "on" : k < i ? "done" : ""} />)}</div>;
   const toCall = () => { setErr(""); setI(steps.length - 1); };
   const skip = step.kind === "call" ? null : <button type="button" className="tour-skip" onClick={toCall}>Saltar</button>;
-  const pose: GuidePose = step.kind === "hello" ? "wave" : step.kind === "call" ? "cheer" : "idle";
+  // Cada paso con su gesto: saluda al entrar, saca músculo en el punto de partida, celebra al agendar.
+  const pose: GuidePose = step.kind === "hello" ? "wave" : step.kind === "call" ? "cheer" : step.kind === "measures" ? "flex" : "idle";
   const booked = !!call.data?.any;
 
   if (step.kind === "spot") return <SpotStep key={step.href} step={step} dots={dots} skip={skip} onNext={next} onBack={back} />;
@@ -92,6 +94,9 @@ export function Onboarding() {
 // Paso que ilumina un panel real del menú y pone al personaje al lado, con su explicación.
 function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: React.ReactNode; skip: React.ReactNode; onNext: () => void; onBack: () => void }) {
   const [r, setR] = useState<DOMRect | null>(null);
+  // Primero señala el panel en el menú; un momento después hace el gesto del tema (mancuerna en Hoy, músculo en Mi plan, sentadilla en Progreso…).
+  const [act, setAct] = useState<GuidePose>("point");
+  useEffect(() => { setAct("point"); if (step.topic === "point") return; const t = setTimeout(() => setAct(step.topic), 1800); return () => clearTimeout(t); }, [step]);
   const measure = useCallback(() => { const el = findTarget(step.href); setR(el ? el.getBoundingClientRect() : null); }, [step.href]);
   useLayoutEffect(() => { measure(); }, [measure]);
   useEffect(() => { window.addEventListener("resize", measure); window.addEventListener("scroll", measure, true); const t = setTimeout(measure, 300);
@@ -109,7 +114,7 @@ function SpotStep({ step, dots, skip, onNext, onBack }: { step: Spot; dots: Reac
     <div className="tour-layer" role="dialog" aria-modal="true" aria-label={`Recorrido: ${step.title}`}>
       {r ? <div className="tour-ring" style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} /> : <div className="tour-dim" />}
       <div className="tour-bubble" style={pos}>
-        <div className="tour-bubble-head"><span className="gd-pop tour-guide"><Guide size={58} pose="point" dir={dir} /></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
+        <div className="tour-bubble-head"><span className="gd-pop tour-guide"><Guide size={58} pose={act} dir={dir} /></span><div className="say"><div className="tour-bubble-eyebrow">Panel</div><div className="tour-bubble-title">{step.title}</div></div>{skip}</div>
         <p className="tour-bubble-text say say-2">{step.text}</p>
         <div className="tour-bubble-actions">{dots}<button type="button" className="modal-btn ghost" onClick={onBack}>Atrás</button><button type="button" className="modal-btn primary" onClick={onNext}>Siguiente</button></div>
       </div>

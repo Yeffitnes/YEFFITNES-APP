@@ -1279,3 +1279,6 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .fold-actions{display:flex;gap:8px;padding:0 18px 16px}
 .fold-open{position:relative}
 .fold-close{position:absolute;right:14px;top:14px;display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:9px;border:1px solid var(--line);background:#fff;font:inherit;font-size:12px;font-weight:700;color:var(--text-dim);cursor:pointer;z-index:2}
+/* "Día completado" con el personaje celebrando (27-oct) */
+.dc-guide{align-items:center;gap:14px;padding-top:10px;padding-bottom:10px}
+.dc-guide>.gd-pop{flex:none;display:inline-flex;padding:4px 8px 0;border-radius:14px;background:rgba(255,255,255,.09)}

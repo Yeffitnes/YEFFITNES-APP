@@ -1,4 +1,16 @@
 # CHANGELOG
+## 2026-10-27 (noche) - El personaje reacciona a lo que muestra
+- Pedido de Cristian: que el personaje use el gesto que va con cada momento.
+- **Bienvenida:**
+  - Saluda al entrar, saca músculo en "Tu punto de partida" y celebra en "Agenda tu llamada".
+- **Recorrido:**
+  - En cada panel primero señala el menú y, a los 2 segundos, hace el gesto del tema.
+  - Hoy: curl con mancuerna. Mi plan: saca músculo. Agenda: saluda. Progreso: sentadilla. Material: sigue señalando. Mensajes: saluda.
+- **Resto de la app:**
+  - Paneles "Falta poco": rutina con mancuerna, nutrición tomando agua y reporte señalando el botón.
+  - "Día completado": el personaje celebra.
+- Archivos: `Onboarding.tsx`, `LockedPanel.tsx`, `DayDone.tsx`, bloque "Día completado con el personaje" en `portal.css`. Revertir: restaurar esos archivos del commit `0932f4d`.
+
 ## 2026-10-27 (noche) - Personaje v3: ropa estilo ilustración
 - Siguiendo la imagen de referencia de Cristian:
   - Contorno negro en toda la ropa.
