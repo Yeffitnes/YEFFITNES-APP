@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Respuestas de Jeff guardadas y campanita al día
+- **Campanita:** "Activar avisos" seguía saliendo después de activarlos en la pantalla obligatoria, porque el estado se leía una sola vez al abrir la app. Ahora se revisa otra vez al abrir la campanita y al volver a la app. Si ya están activos, no sale nada. Además el botón ya no parece un interruptor: es un botón con campana. Archivo: `ActionsBar.tsx`.
+- **Las respuestas de Jeff a los entrenamientos quedan guardadas.** Pedido de Cristian: si las marca como vistas, no las debe perder.
+  - **Mensajes:** "Respuestas de Jeff a tus entrenamientos" con las de los últimos 7 días (texto y audio), y "Marcar como visto" en las nuevas. No se responden.
+  - **Rutina de hoy:** cuando vuelve a tocar esa misma rutina, sale "Lo que te dijo Jeff la última vez" (desplegable, hasta 3 semanas atrás).
+  - En la tarjeta de Hoy, el texto avisa que queda guardada en Mensajes.
+  - Los datos no se borran; solo se dejan de mostrar pasados 7 días (o 3 semanas en la rutina), porque Jeff los sigue teniendo en su ficha.
+  - Archivos: `FeedbackHistory.tsx` (nuevo), `HoyView.tsx`, `MessagesClientView.tsx`, `lib/fetchers.ts` (`plan_day_id`) y `portal.css`. Sin migración.
+- Revertir: restaurar esos archivos del commit `9fb7c88` y borrar `FeedbackHistory.tsx`.
+
 ## 2026-10-28 (noche) - Sin botón de desactivar avisos
 - **Pedido de Cristian:** en la campanita ya no aparece "desactivar avisos" ni el interruptor de "Avisos activados", ni para el cliente ni para el coach. Solo sale **"Activar avisos"** cuando están apagados, y una nota si el navegador los bloqueó. Quien los quiera quitar lo hace en los ajustes del teléfono o del navegador.
 - **Si el cliente los apaga desde los ajustes,** al volver a la app o abrirla le aparece otra vez la pantalla obligatoria de activar. Eso ya lo hacía `FirstRun`: revisa al abrir y cada vez que la app vuelve a primer plano.

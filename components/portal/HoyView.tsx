@@ -19,6 +19,7 @@ import { RoutineVideo } from "./RoutineVideo";
 import { PendingSection, PlanWait } from "./LockedPanel";
 import { repRange, setTip } from "@/lib/progression";
 import { NUDGE_TXT } from "@/lib/nudges";
+import { CoachAudio, LastTimeFeedback } from "./FeedbackHistory";
 import { ANCHORS, focusAnchor, useFocusAnchor } from "@/lib/focus";
 import { feedbackUnseen, hasFeedback, useClientNutrition, useMarkFeedbackSeen, useMealLogs, useMyNudges, useTodayReport, type NudgeKind } from "@/lib/queries";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -85,7 +86,7 @@ export function HoyView() {
         {me.data && !me.data.features.includes("training") ? <FeatureGate features={me.data.features} feature="training" name={name}><span /></FeatureGate>
           : !plan ? <PlanWait kind="training" />
           : !day ? <div className="card card-routine"><div className="card-tag">Hoy</div><div className="card-title">Día de descanso</div><p className="empty-note">No tienes rutina hoy. El descanso también es parte del entrenamiento.</p></div>
-          : <Routine key={day.id} cid={cid} day={day} title={day.name} items={day.items} log={logToday} today={today} guide={logList.filter((l) => l.completed).length < 2} />}
+          : <Routine key={day.id} cid={cid} day={day} title={day.name} items={day.items} log={logToday} logs={logList} today={today} guide={logList.filter((l) => l.completed).length < 2} />}
         <SessionCard cid={cid} />
         <ObjectiveCard />
         <NutritionTodayCard cid={cid} features={me.data?.features ?? []} name={name} />
@@ -94,7 +95,7 @@ export function HoyView() {
     </>
   );
 }
-function Routine({ cid, day, title, items, log, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; today: string; guide: boolean }) {
+function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; logs: WorkoutLog[]; today: string; guide: boolean }) {
   const firstTodo = items.find((i) => (log?.sets.filter((x) => x.itemId === i.id).length ?? 0) < i.sets);
   const [open, setOpen] = useState<string | null>(log?.completed ? null : firstTodo?.id ?? null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false);
@@ -120,6 +121,7 @@ function Routine({ cid, day, title, items, log, today, guide }: { cid: string; d
       <div className="card-tag"><span className="live-dot" />Rutina de hoy</div>
       <div className="card-title">{title}</div>
       <div className="card-meta">{[`${items.length} ejercicios`, day.minutes ? `${day.minutes} min aprox.` : null, categoryLabel(day.category) ?? day.category].filter(Boolean).join(" · ")}</div>
+      {!log?.completed && <LastTimeFeedback logs={logs} dayId={day.id} dayName={day.name} today={today} />}
       {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} onOpen={() => setTeaser(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
       {teaser === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setTeaser(null)} />}
       {teaser === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setTeaser(null)} />}
@@ -259,7 +261,7 @@ function CoachFeedback({ cid, logs }: { cid: string; logs: WorkoutLog[] }) {
             sub={`${day}${l.coachCommentAudio ? " · con audio" : ""}`}>
             {l.coachComment && <p className="fb-text">{l.coachComment}</p>}
             {l.coachCommentAudio && <CoachAudio path={l.coachCommentAudio} />}
-            <div className="fb-foot"><span>Es la respuesta de Jeff a ese entrenamiento; no se responde.</span>
+            <div className="fb-foot"><span>No se responde. Queda guardada en Mensajes y te la recuerdo la próxima vez que toque esta rutina.</span>
               <button type="button" className="mini-btn primary" disabled={seen.isPending} onClick={() => seen.mutate(l.id)}>Marcar como visto</button></div>
           </QuickRow>);
       })}
@@ -267,7 +269,3 @@ function CoachFeedback({ cid, logs }: { cid: string; logs: WorkoutLog[] }) {
   );
 }
 
-function CoachAudio({ path }: { path: string }) {
-  const a = useSignedAudio(path);
-  return a.data ? <audio controls src={a.data} style={{ width: "100%", marginTop: 8 }} /> : <div className="sk" style={{ height: 40, marginTop: 8 }} />;
-}

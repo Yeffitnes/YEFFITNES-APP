@@ -49,6 +49,10 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);
   const { profileId } = useProfile(), pathname = usePathname(), toast = useToast();
   useEffect(() => { void pushState().then(setPs); void resyncPush(profileId); }, [profileId]);
+  // Se vuelve a revisar al abrir la campanita y al volver a la app: si se activaron en la pantalla obligatoria (o en Ajustes),
+  // aquí ya no debe salir "Activar" (antes el estado se leía una sola vez y quedaba viejo).
+  useEffect(() => { if (open) void pushState().then(setPs); }, [open]);
+  useEffect(() => { const v = () => { if (document.visibilityState === "visible") void pushState().then(setPs); }; document.addEventListener("visibilitychange", v); return () => document.removeEventListener("visibilitychange", v); }, []);
   useEffect(() => { const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; try { void (unread > 0 ? nav.setAppBadge?.(unread) : nav.clearAppBadge?.()); } catch { /* sin soporte */ } }, [unread]);
   useEffect(() => {
     if (!open) return;
@@ -79,7 +83,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
         {ps === "off" && <button type="button" className="act-push" onClick={() => void turnOnPush()} disabled={busy}>
-          <span className="act-switch" aria-hidden />{busy ? "Activando…" : PUSH_TXT.off}
+          <Icon name="bell" size={16} />{busy ? "Activando…" : PUSH_TXT.off}
         </button>}
         {ps === "denied" && <p className="act-empty" style={{ margin: "8px 4px 0" }}>{PUSH_TXT.denied}</p>}
       </div>}
