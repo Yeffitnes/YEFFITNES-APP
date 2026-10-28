@@ -38,12 +38,12 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 
 ## 3b. Migraciones pendientes antes de fusionar a `main`
 - [x] `0028` a `0031`: corridas (Cristian confirmó la 0031 el 27-oct).
-- [ ] **`0032` a `0035`, en orden** (27-oct). El código de `bloque-hoy` las necesita: sin la 0034 fallan Clientes y el portal del cliente (leen `access_requested_at`); sin la 0035, Material. Las cuatro son compatibles con el código viejo de `main`.
+- [x] **`0032` a `0035`, en orden** (corridas) (27-oct). El código de `bloque-hoy` las necesita: sin la 0034 fallan Clientes y el portal del cliente (leen `access_requested_at`); sin la 0035, Material. Las cuatro son compatibles con el código viejo de `main`.
   - `0032_client_message_quota.sql`: cliente 3 textos, 1 foto, 1 vídeo al día.
   - `0033_report_video_expiry.sql`: vídeos de reporte 32 h / 12 h y funciones de la tarea programada.
   - `0034_access_request.sql`: "Solicitar acceso" y aviso "Tu plan está activo".
   - `0035_material_private_video.sql`: vídeo privado en Material y vídeo del día o de la semana.
-- [ ] **`0036_nudges_activity_objective_video.sql`** (27-oct, noche): botón "Avisar", actividad solo de hoy, vídeo del objetivo. El código de `bloque-hoy` la necesita (Clientes y portal leen `objective_video_id`).
+- [x] **`0036_nudges_activity_objective_video.sql`** (corrida) (27-oct, noche): botón "Avisar", actividad solo de hoy, vídeo del objetivo. El código de `bloque-hoy` la necesita (Clientes y portal leen `objective_video_id`).
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
