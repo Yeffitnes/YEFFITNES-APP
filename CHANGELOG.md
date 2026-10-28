@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-10-27 (noche) - Personaje: jogger holgado
+- Pedido de Cristian: un jogger con más estilo y algo holgado.
+  - Muslo ancho que se angosta hacia el tobillo, con tiro un poco bajo.
+  - Puño elástico acanalado recogido sobre el tenis.
+  - Pliegues en muslo y pantorrilla, franja roja lateral, bolsillos.
+  - Pretina con cordón blanco de puntas rojas.
+- Color gris carbón (antes casi negro, se perdía contra la camiseta).
+- La sentadilla y el salto siguen funcionando: el jogger se dobla con la rodilla.
+- Archivo: `components/portal/Guide.tsx` (`Leg`, `Hips`). Revertir: restaurar `Guide.tsx` del commit `b6d5f54`.
+
 ## 2026-10-27 (noche) - Personaje guía v2
 - Mezcla del primer personaje con la propuesta de Cristian.
   - **Se conserva del primero:** la cabeza con solo la cinta, los ojos blancos, las mejillas y la sonrisa fija; al hablar la sonrisa solo se mueve un poco, no se abre.
