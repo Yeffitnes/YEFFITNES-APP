@@ -49,8 +49,8 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [x] **`0036_nudges_activity_objective_video.sql`** (corrida) (27-oct, noche): botón "Avisar", actividad solo de hoy, vídeo del objetivo. El código de `bloque-hoy` la necesita (Clientes y portal leen `objective_video_id`).
 - [x] **`0037_nudges_in_app.sql`** (corrida, 28-oct) (27-oct, noche): "Avisar" guarda el aviso aunque falle el push y el cliente lo ve en Hoy. El código de `bloque-hoy` la necesita para "Avisar".
 - [x] **`0038_start_point_feedback_plan_month.sql`** (corrida, 28-oct) (28-oct, noche): punto de partida obligatorio, respuestas de Jeff aparte, plan mensual de 30 días y aviso de cita cancelada. El código de `bloque-hoy` la necesita (Hoy y Clientes leen las columnas nuevas).
-- [ ] **`0039_exercise_images.sql`** (28-oct): imagen y series sugeridas de cada ejercicio + bucket `exercise-images`. El código de `bloque-hoy` la necesita (catálogo y rutinas leen las columnas).
-- [ ] **`0040_preset_exercises.sql`** (28-oct): carga los 54 ejercicios precargados con su imagen. Solo datos; correrla cuando Jeff apruebe.
+- [x] **`0039_exercise_images.sql`** (corrida, 28-oct): imagen y series sugeridas de cada ejercicio + bucket `exercise-images`. El código de `bloque-hoy` la necesita (catálogo y rutinas leen las columnas).
+- [x] **`0040_preset_exercises.sql`** (corrida, 28-oct): carga los 54 ejercicios precargados con su imagen. Solo datos; correrla cuando Jeff apruebe.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
