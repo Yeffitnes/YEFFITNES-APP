@@ -5,7 +5,9 @@ import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { CatalogTop } from "./CatalogTop";
 import { youtubeId } from "@/lib/format";
-import { EQUIPMENT, MUSCLES, equipOf, muscleOf, norm, options } from "@/lib/exmeta";
+import { EQUIPMENT, MUSCLES, equipOf, exImage, muscleOf, norm, options } from "@/lib/exmeta";
+import { ExPic } from "@/components/ExPic";
+import { uploadExerciseImage } from "@/lib/exercise-image";
 const CATS: [string, string][] = [["all", "Todos"], ["upper", "Tren superior"], ["lower", "Tren inferior"], ["core", "Core"], ["cardio", "Cardio"], ["video", "Con vídeo"]];
 export function ExercisesView() {
   const { data, isPending, isError, refetch } = useExercises();
@@ -37,7 +39,7 @@ export function ExercisesView() {
       {data && !!items.length && !list.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Ningún ejercicio coincide con ese filtro.</p></div>}
       <div className="ex-grid">{list.map((e) => (
         <div key={e.id} className="ex-card" role="button" tabIndex={0} onClick={() => setEdit(e)} onKeyDown={(k) => k.key === "Enter" && setEdit(e)}>
-          <div className={`ex-thumb${e.videoRef ? "" : " no-video"}`}>{e.videoRef ? <div className="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div> : <svg viewBox="0 0 24 24"><path d="M6 4l11 6-11 6V4z" /></svg>}</div>
+          <div className={`ex-thumb${e.videoRef || e.image ? "" : " no-video"}${e.image ? " has-pic" : ""}`}><ExPic image={e.image} name={e.name} size={180} className="cover" />{e.videoRef ? <div className="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div> : !e.image && <svg viewBox="0 0 24 24"><path d="M6 4l11 6-11 6V4z" /></svg>}</div>
           <div className="ex-body"><div className="ex-name">{e.name}</div><div className="ex-used">{e.used ? `Usado en ${e.used} ${e.used === 1 ? "rutina" : "rutinas"}` : "Sin usar aún"}</div>
             <div className="ex-tags">{e.muscle && <span className="ex-tag">{e.muscle}</span>}{e.equipment && <span className="ex-tag">{e.equipment}</span>}</div>
             <div className="ex-diff">{[1, 2, 3].map((n) => <span key={n} className={n <= e.difficulty ? "filled" : ""} />)}</div></div>
@@ -48,14 +50,17 @@ export function ExercisesView() {
 }
 function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) {
   const save = useSaveExercise(useWorkspaceId()), archive = useArchive("exercises");
-  const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", video: ex?.videoRef ? `https://youtu.be/${ex.videoRef}` : "" });
+  const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", video: ex?.videoRef ? `https://youtu.be/${ex.videoRef}` : "", image: ex?.image ?? null as string | null, sets: ex?.suggSets ? String(ex.suggSets) : "", reps: ex?.suggReps ?? "" });
+  const ws = useWorkspaceId(), [up, setUp] = useState(false);
+  const pickImg = async (f: File | null) => { if (!f) return; setErr(""); setUp(true); try { set({ image: await uploadExerciseImage(ws, f) }); } catch { setErr("No pudimos subir la imagen. Prueba con otra foto (JPG o PNG)."); } finally { setUp(false); } };
   const [err, setErr] = useState(""), [confirm, setConfirm] = useState(false);
   const set = (p: Partial<typeof v>) => setV({ ...v, ...p });
   const submit = () => {
     if (!v.name.trim()) return setErr("Escribe el nombre del ejercicio.");
     const vid = v.video.trim() ? youtubeId(v.video) : null;
     if (v.video.trim() && !vid) return setErr("Ese enlace de YouTube no es válido.");
-    setErr(""); save.mutate({ id: ex?.id, name: v.name.trim(), category: v.category, muscle: v.muscle.trim(), equipment: v.equipment.trim(), difficulty: v.difficulty, instructions: v.instructions.trim(), videoRef: vid }, { onSuccess: onClose });
+    const ss = v.sets.trim() ? Number(v.sets) : null; if (ss != null && !(ss >= 1 && ss <= 10)) return setErr("Las series sugeridas van de 1 a 10.");
+    setErr(""); save.mutate({ id: ex?.id, name: v.name.trim(), category: v.category, muscle: v.muscle.trim(), equipment: v.equipment.trim(), difficulty: v.difficulty, instructions: v.instructions.trim(), videoRef: vid, image: v.image, suggSets: ss, suggReps: v.reps }, { onSuccess: onClose });
   };
   const F = (label: string, node: React.ReactNode) => <div className="modal-field"><label>{label}</label>{node}</div>;
   return (
@@ -69,6 +74,19 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
         {F("Músculo principal", <><input list="ex-muscles" value={v.muscle} onChange={(e) => set({ muscle: e.target.value })} placeholder="Ej. Pecho" /><datalist id="ex-muscles">{MUSCLES.map((m) => <option key={m} value={m} />)}</datalist></>)}
         {F("Equipo", <><input list="ex-equip" value={v.equipment} onChange={(e) => set({ equipment: e.target.value })} placeholder="Ej. Barra" /><datalist id="ex-equip">{EQUIPMENT.map((m) => <option key={m} value={m} />)}</datalist></>)}
       </div>
+      <div className="modal-row2">
+        {F("Series sugeridas", <input inputMode="numeric" value={v.sets} onChange={(e) => set({ sets: e.target.value.replace(/[^0-9]/g, "").slice(0, 2) })} placeholder="Ej. 3" />)}
+        {F("Repeticiones sugeridas", <input value={v.reps} maxLength={24} onChange={(e) => set({ reps: e.target.value })} placeholder="Ej. 8-12 o 30s" />)}
+      </div>
+      <div className="modal-field"><label>Imagen del ejercicio</label>
+        <div className="exm-img">
+          {exImage(v.image) ? <ExPic image={v.image} name={v.name || "Ejercicio"} size={88} className="exm-prev" /> : <div className="exm-empty">Sin imagen</div>}
+          <div className="exm-acts">
+            <label className="filter-chip" style={{ cursor: up ? "wait" : "pointer" }}>{up ? "Subiendo…" : v.image ? "Cambiar imagen" : "Subir imagen"}<input type="file" accept="image/*" hidden disabled={up} onChange={(e) => { void pickImg(e.target.files?.[0] ?? null); e.target.value = ""; }} /></label>
+            {v.image && <button type="button" className="filter-chip" onClick={() => set({ image: null })}>Quitar</button>}
+            <span className="exm-hint">Cuadrada, con el ejercicio bien visible. La app la reduce a 360 px.</span>
+          </div>
+        </div></div>
       {F("Vídeo de YouTube (opcional)", <input value={v.video} onChange={(e) => set({ video: e.target.value })} placeholder="https://youtu.be/..." />)}
       {F("Instrucciones (opcional)", <textarea value={v.instructions} onChange={(e) => set({ instructions: e.target.value })} />)}
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}

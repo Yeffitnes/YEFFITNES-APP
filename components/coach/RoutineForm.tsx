@@ -1,6 +1,6 @@
 "use client";
 import { MUSCLES, muscleOf } from "@/lib/exmeta";
-type Ex = { id: string; name: string; muscle?: string | null };
+type Ex = { id: string; name: string; muscle?: string | null; suggSets?: number | null; suggReps?: string | null };
 // Al armar una rutina los ejercicios salen agrupados por músculo (28-oct), en el orden estándar.
 function groups(exercises: Ex[]) {
   const m = new Map<string, Ex[]>(); exercises.forEach((e) => { const k = muscleOf(e.muscle) ?? "Sin músculo"; m.set(k, [...(m.get(k) ?? []), e]); });
@@ -18,7 +18,7 @@ export function RoutineForm({ exercises, items, onChange }: { exercises: Ex[]; i
       <div className="card-tag" style={{ marginBottom: 10 }}>Ejercicios de la rutina</div>
       {rows.map((it, i) => (
         <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select aria-label="Ejercicio" value={it.exercise_id} onChange={(e) => set(i, { exercise_id: e.target.value })} style={{ ...F, flex: "2 1 160px" }}>
+          <select aria-label="Ejercicio" value={it.exercise_id} onChange={(e) => { const ex = exercises.find((x) => x.id === e.target.value), untouched = it.sets === 3 && it.reps === "10"; set(i, { exercise_id: e.target.value, ...(ex && untouched ? { sets: ex.suggSets ?? 3, reps: ex.suggReps ?? "10" } : {}) }); }} style={{ ...F, flex: "2 1 160px" }}>
             <option value="">Elige un ejercicio…</option>{groups(exercises).map(([g, list]) => <optgroup key={g} label={g}>{list.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</optgroup>)}
           </select>
           <input aria-label="Series" type="number" min={1} value={it.sets} onChange={(e) => set(i, { sets: Number(e.target.value) })} style={{ ...F, width: 64 }} title="Series" />

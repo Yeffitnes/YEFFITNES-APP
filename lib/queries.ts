@@ -8,12 +8,12 @@ import { loadLogs, loadTrainingPlans, localDate } from "@/lib/fetchers";
 
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
-export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
+export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number; image?: string | null; suggSets?: number | null; suggReps?: string | null };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
 type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plan_since?: string | null; height_cm?: number | null; start_weight_kg?: number | null; plans: unknown; profiles: unknown };
-type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
+type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; image?: string | null; sugg_sets?: number | null; sugg_reps?: string | null; template_items: unknown };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
   const { data, error } = await db().from("plans").select("id,name,features").eq("active", true).order("name");
@@ -25,9 +25,9 @@ export const fetchClients = async (): Promise<ClientRow[]> => {
   return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id, planSince: c.plan_since ?? null, heightCm: c.height_cm ?? null, startWeight: c.start_weight_kg ?? null }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
-  const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,template_items(count)").eq("active", true).order("name");
+  const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,image,sugg_sets,sugg_reps,template_items(count)").eq("active", true).order("name");
   if (error) throw error;
-  return (data as unknown as ExRaw[]).map((e) => ({ id: e.id, name: e.name, category: e.category, muscle: e.muscle_group, equipment: e.equipment, difficulty: e.difficulty, instructions: e.instructions, videoRef: e.video_ref, used: (e.template_items as unknown as { count: number }[])?.[0]?.count ?? 0 }));
+  return (data as unknown as ExRaw[]).map((e) => ({ id: e.id, name: e.name, category: e.category, muscle: e.muscle_group, equipment: e.equipment, difficulty: e.difficulty, instructions: e.instructions, videoRef: e.video_ref, image: e.image ?? null, suggSets: e.sugg_sets ?? null, suggReps: e.sugg_reps ?? null, used: (e.template_items as unknown as { count: number }[])?.[0]?.count ?? 0 }));
 };
 export const fetchRoutines = async (): Promise<Routine[]> => {
   const { data, error } = await db().from("routine_templates").select("id,name,category,est_minutes,video_ref,template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref))").eq("active", true).order("created_at", { ascending: false });
@@ -66,12 +66,12 @@ export function useSetPlan() {
   });
 }
 
-export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null };
+export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null; image?: string | null; suggSets?: number | null; suggReps?: string | null };
 export function useSaveExercise(workspaceId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (x: ExerciseInput) => {
-      const row = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, video_provider: x.videoRef ? "youtube" : null, video_ref: x.videoRef };
+      const row = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, video_provider: x.videoRef ? "youtube" : null, video_ref: x.videoRef, image: x.image ?? null, sugg_sets: x.suggSets ?? null, sugg_reps: x.suggReps?.trim() || null };
       const { error } = x.id ? await db().from("exercises").update(row).eq("id", x.id) : await db().from("exercises").insert({ ...row, workspace_id: workspaceId });
       if (error) throw error;
     },
@@ -104,7 +104,7 @@ export function useSaveRoutine() {
 }
 
 // ---- Entrenamiento por días ----
-export type PlanItem = { id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
+export type PlanItem = { image?: string | null; id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
 export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; days: PlanDay[] };

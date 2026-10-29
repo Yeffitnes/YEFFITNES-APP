@@ -1,4 +1,22 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Imagen de cada ejercicio con el personaje y 54 ejercicios precargados
+- **Pedido de Cristian:** cada ejercicio tiene una imagen fija con el personaje en vez de una animación, porque una animación con técnica imperfecta confunde. Las imágenes las generó Cristian con Gemini; Claude las recortó a 360 × 360 en WebP (unos 15 KB cada una, 54 imágenes = 0,8 MB).
+- **Dónde se ven:**
+  - **Mi plan:** en lugar de las letras.
+  - **Hoy:** junto al nombre de cada ejercicio de la rutina.
+  - **Catálogo de Jeff:** en la tarjeta del ejercicio.
+  - Al tocar la miniatura se abre en grande, con el nombre y la indicación de técnica.
+- **Las 54 imágenes base viven dentro de la app** (`public/ex/`), no en Supabase. El service worker las guarda en el teléfono.
+- **Imágenes propias de Jeff:** puede subir una imagen a cualquier ejercicio, en el catálogo, con "Subir imagen". La app la recorta y la reduce a 360 px antes de subirla (unos 20-40 KB) al bucket público `exercise-images`; solo el coach puede escribir en su carpeta.
+- **Series y repeticiones sugeridas por ejercicio:** al armar una rutina, la fila se rellena sola con ellas.
+- **Migraciones:**
+  - **`0039_exercise_images.sql`:** columnas `image`, `sugg_sets` y `sugg_reps`, y el bucket. **Correrla ANTES**, porque el catálogo y la rutina las leen.
+  - **`0040_preset_exercises.sql`:** carga los 54 ejercicios con nombre, músculo, equipo, dificultad, series, repeticiones, indicación e imagen. No duplica: si Jeff ya tiene uno con el mismo nombre, solo le pone la imagen y las sugerencias. **Correrla cuando Jeff apruebe las imágenes.**
+  - Prueba nueva: `rls_eximg.sql`.
+- Pendiente de revisión de Jeff: 01 (barra cerca del cuello), 09 (jalón tras nuca, se dejó por decisión de Cristian), 10 (torso poco inclinado), 49 (dos personajes, se dejó por decisión de Cristian) y 53.
+- Archivos: `public/ex/*.webp`, `components/ExPic.tsx`, `lib/exercise-image.ts`, `lib/exmeta.ts`, `MiPlanView.tsx`, `HoyView.tsx`, `ExercisesView.tsx`, `RoutineForm.tsx`, `lib/fetchers.ts`, `lib/queries.ts`, `public/sw.js` y los estilos.
+- Revertir: ver las cabeceras de 0039 y 0040, borrar `public/ex` y restaurar esos archivos del commit `f342201`.
+
 ## 2026-10-28 (noche) - Catálogo de ejercicios: filtros por músculo y equipo
 - **Pedido de Cristian:** Jeff filtra sus ejercicios según lo que trabajan, para saber rápido qué tiene al armar rutinas.
 - **Filtros:** a la zona (superior, inferior, core, cardio, con vídeo) se suman **Músculo** y **Equipo**, combinables, cada uno con su conteo, más "N de M" y "Quitar filtros". La búsqueda también encuentra por músculo.

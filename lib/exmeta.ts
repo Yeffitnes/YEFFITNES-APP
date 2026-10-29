@@ -38,3 +38,10 @@ export function options(values: (string | null)[], order: readonly string[]): { 
   const rest = Array.from(m.entries()).filter(([k]) => !order.includes(k)).sort((a, b) => a[0].localeCompare(b[0])).map(([v, n]) => ({ v, n }));
   return [...std, ...rest];
 }
+// Imagen del ejercicio (0039): "preset:<archivo>" viene dentro de la app (public/ex); "storage:<ruta>" la subió Jeff (bucket público).
+export function exImage(image: string | null | undefined): string | null {
+  if (!image) return null;
+  if (image.startsWith("preset:")) return `/ex/${image.slice(7)}.webp`;
+  if (image.startsWith("storage:")) return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/exercise-images/${image.slice(8)}`;
+  return null;
+}

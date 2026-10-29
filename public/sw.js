@@ -17,7 +17,7 @@ self.addEventListener("fetch", (e) => {
       const hit = await c.match(req); if (hit) return hit;
       const r = await fetch(req); if (r.ok) { c.put(req, r.clone()).then(() => trim(c)).catch(() => {}); } return r;
     }));
-  } else if (/^\/(brand\/|icon-|apple-touch-icon)/.test(u.pathname)) {
+  } else if (/^\/(brand\/|ex\/|icon-|apple-touch-icon)/.test(u.pathname)) {   // ex/: imágenes de los ejercicios
     e.respondWith(caches.open(ASSETS).then(async (c) => {
       const hit = await c.match(req);
       const net = fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()).catch(() => {}); return r; });
