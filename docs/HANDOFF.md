@@ -117,5 +117,6 @@ Armado con `docs/CONTEXT.md`, `docs/PROJECT_STATE.md` y lo trabajado en esta eta
 - **Lo que Cristian pidió y no está hecho:** ver sección 9, punto 5.
 
 ## 10. Cómo arrancar un chat nuevo
-Pega: *"Asume el rol (Master Role del proyecto). Lee `AGENTS.md`, `docs/HANDOFF.md` (sobre todo §2, §3, §4 y §9), `docs/PASO_A_PRODUCCION.md` y las 15 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame en pocas líneas qué entendiste, qué migraciones están corridas y qué está pendiente de probar. Tienes permiso para subir a `bloque-hoy`; a `main` solo cuando yo diga \"fusiona\"."*
-El blueprint ya está en el repo (`docs/PRODUCT_BLUEPRINT.md`) y el cruce con la app en `docs/BLUEPRINT_GAPS.md`.
+Pega: *"Lee `docs/MASTER_ROLE.md` y asume ese rol. Luego lee `AGENTS.md`, `docs/HANDOFF.md` (sobre todo §2, §3, §4 y §9), `docs/PASO_A_PRODUCCION.md` y las 15 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame en pocas líneas qué entendiste, qué migraciones están corridas y qué está pendiente de probar. Tienes permiso para subir a `bloque-hoy`; a `main` solo cuando yo diga \"fusiona\"."*
+El rol está en `docs/MASTER_ROLE.md`, el blueprint en `docs/PRODUCT_BLUEPRINT.md` y el cruce con la app en `docs/BLUEPRINT_GAPS.md`: no hace falta pegarlos.
+**No se suben al repo** (hoy es público): el zip de DaniFit (material de terceros, ver blueprint §"Propiedad intelectual") ni la propuesta comercial de Jeff (`APROPUESTA-YEFFITNES.html`). Lo útil de ambos ya está resumido en el blueprint y en `CONTEXT.md`; se adjuntan al chat solo si una tarea los necesita (por ejemplo, comparar un diseño de DaniFit).
