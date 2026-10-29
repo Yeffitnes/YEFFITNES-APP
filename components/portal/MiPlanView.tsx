@@ -113,11 +113,13 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}
       {!day.items.length ? <p className="empty-note" style={{ marginTop: 16 }}>Esta rutina todavía no tiene ejercicios.</p> : (
         <div className="exercise-list">{day.items.map((i, k) => (
-          <div key={i.id} className="ex-row" style={{ cursor: "default" }}>
+          // Toda la fila abre la imagen y la indicación del ejercicio (pedido de Cristian, 28-oct); el botón de vídeo sigue aparte.
+          <div key={i.id} className={`ex-row${i.image || i.instructions ? " tap" : ""}`} style={{ cursor: i.image || i.instructions ? "pointer" : "default" }}
+            {...(i.image || i.instructions ? { role: "button", tabIndex: 0, "aria-label": `Ver cómo se hace: ${i.name}`, onClick: () => setPic(i), onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPic(i); } } } : {})}>
             <ExPic image={i.image} name={i.name} size={48} onClick={() => setPic(i)} fallback={<div className="ex-thumb" style={{ background: gradient(k) }}>{initials(i.name)}</div>} />
             <div className="ex-body"><div className="ex-name">{i.name}</div><div className="ex-sub">{[i.muscle, i.equipment].filter(Boolean).join(" · ") || "—"}</div></div>
             <div className="ex-meta">{i.sets}×{i.reps}{i.rest ? <><br />{i.rest}s desc.</> : null}{i.weight ? <><br />{i.weight} kg</> : null}</div>
-            {i.videoRef && <button className="ex-play" aria-label={`Ver técnica: ${i.name}`} onClick={() => onVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></button>}
+            {i.videoRef && <button className="ex-play" aria-label={`Ver técnica: ${i.name}`} onClick={(e) => { e.stopPropagation(); onVideo(i); }}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></button>}
           </div>))}</div>
       )}
     </div>

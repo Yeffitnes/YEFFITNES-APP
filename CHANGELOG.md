@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Mi plan: tocar el ejercicio abre su imagen
+- **Pedido de Cristian:** en el portal → Mi plan, tocar cualquier parte de la fila del ejercicio abre la imagen con el personaje, el nombre y la indicación de técnica. Antes solo reaccionaba el botón de vídeo. El botón de vídeo sigue abriendo el vídeo.
+- Si un ejercicio no tiene imagen pero sí indicación, se abre solo con el texto. Si no tiene ninguna de las dos, la fila no hace nada.
+- Archivos: `MiPlanView.tsx` y `ExPic.tsx`. Revertir: restaurar del commit `12ee25f`.
+
 ## 2026-10-28 (noche) - Rutina de hoy: ejercicios cerrados al entrar
 - **Pedido de Cristian:** al abrir Hoy ya no aparece desplegado el primer ejercicio. Todos salen cerrados y el cliente abre el que va a hacer. Al guardar la última serie de un ejercicio, se sigue abriendo el siguiente, igual que antes.
 - Archivo: `HoyView.tsx` (`Routine`). Revertir: restaurar del commit `684204c`.
