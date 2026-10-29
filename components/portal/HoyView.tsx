@@ -97,8 +97,8 @@ export function HoyView() {
   );
 }
 function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; logs: WorkoutLog[]; today: string; guide: boolean }) {
-  const firstTodo = items.find((i) => (log?.sets.filter((x) => x.itemId === i.id).length ?? 0) < i.sets);
-  const [open, setOpen] = useState<string | null>(log?.completed ? null : firstTodo?.id ?? null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null), [pic, setPic] = useState<PlanItem | null>(null);
+  // Todos los ejercicios empiezan cerrados (pedido de Cristian, 28-oct): el cliente abre el que va a hacer.
+  const [open, setOpen] = useState<string | null>(null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null), [pic, setPic] = useState<PlanItem | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false);
   useFocusAnchor("rutina", () => setUnfold(true));
   const finish = useFinish(cid);

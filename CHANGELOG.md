@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Rutina de hoy: ejercicios cerrados al entrar
+- **Pedido de Cristian:** al abrir Hoy ya no aparece desplegado el primer ejercicio. Todos salen cerrados y el cliente abre el que va a hacer. Al guardar la última serie de un ejercicio, se sigue abriendo el siguiente, igual que antes.
+- Archivo: `HoyView.tsx` (`Routine`). Revertir: restaurar del commit `684204c`.
+
 ## 2026-10-28 (noche) - Imagen de cada ejercicio con el personaje y 54 ejercicios precargados
 - **Pedido de Cristian:** cada ejercicio tiene una imagen fija con el personaje en vez de una animación, porque una animación con técnica imperfecta confunde. Las imágenes las generó Cristian con Gemini; Claude las recortó a 360 × 360 en WebP (unos 15 KB cada una, 54 imágenes = 0,8 MB).
 - **Dónde se ven:**
