@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Imágenes de ejercicios aprobadas
+- Cristian confirma que **se aprobaron las 54 imágenes** tal como están (incluidas 01, 09, 10, 49 y 53, que estaban en revisión). 0039 y 0040 corridas: los ejercicios ya están en el catálogo de Jeff con su imagen.
+- Solo documentación. Revertir: no aplica.
+
 ## 2026-10-28 (noche) - Mi plan: tocar el ejercicio abre su imagen
 - **Pedido de Cristian:** en el portal → Mi plan, tocar cualquier parte de la fila del ejercicio abre la imagen con el personaje, el nombre y la indicación de técnica. Antes solo reaccionaba el botón de vídeo. El botón de vídeo sigue abriendo el vídeo.
 - Si un ejercicio no tiene imagen pero sí indicación, se abre solo con el texto. Si no tiene ninguna de las dos, la fila no hace nada.

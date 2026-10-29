@@ -90,7 +90,7 @@ Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio
 
 ## 9. Pendientes (orden sugerido, al 28-oct noche)
 1. **Cristian está probando en Vercel** lo del 28-oct: arranque rápido, Avisar con cumplido, respuestas de Jeff (Hoy, Mensajes y "la última vez" en la rutina), plan mensual de 30 días, bienvenida sin saltar con peso y estatura, agenda por días, vídeo del día/semana, cancelar cita con aviso, filtros del catálogo, imágenes de ejercicios (Mi plan, Hoy, catálogo) y 54 precargados. Esperar su reporte.
-2. **Jeff revisa las imágenes** 01 (barra cerca del cuello), 10 (torso poco inclinado) y 53. El 09 (jalón tras nuca) y el 49 (dos personajes) se dejaron por decisión de Cristian.
+2. **Imágenes de los 54 ejercicios APROBADAS** (28-oct, noche) por Cristian y Jeff, incluidas 01, 09, 10, 49 y 53 tal como están. Ya están en la app (`public/ex/`) y en el catálogo (0040 corrida). Si Jeff quiere cambiar una, la reemplaza él desde el catálogo con "Cambiar imagen".
 3. **Próximo "fusiona"** (una sola publicación, 15 créditos): seguir `PASO_A_PRODUCCION.md` §10. Después del merge: la notificación de plan vencido sale con la tarea de la mañana (apunta a Netlify).
 4. Cambiar la clave del cron, Supabase Pro, regenerar la clave de Bunny, repositorio privado y revocar el token de GitHub.
 5. Antes de lanzar: WhatsApp y foto de Jeff en la landing, planes y precios, limpiar datos de prueba, restringir el registro en `/login`, landing en su propia dirección. Decidir si se baja Netlify al plan gratis (capacidad estimada: 100-150 clientes; si se agotan los 300 créditos el sitio se apaga hasta el mes siguiente).
