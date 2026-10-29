@@ -1,11 +1,11 @@
 # HANDOFF: léelo primero, antes de tocar nada
 
-Estado al **27-oct-2026, noche** (actualizado; lo nuevo del 27-oct está marcado). Escrito para que un asistente nuevo (o una persona) siga trabajando sin cometer errores. Complementa a `AGENTS.md`, `docs/CONTEXT.md`, `docs/AGENT_PLAYBOOK.md` y `docs/PASO_A_PRODUCCION.md`. El detalle de cada cambio, con cómo revertirlo, está en `CHANGELOG.md` (las primeras entradas son las más recientes). Aquí no hay claves; no pegues ninguna en el repo ni en el chat.
+Estado al **28-oct-2026, noche** (última fusión a `main`: 28-oct, `37970c1`; lo construido después vive solo en `bloque-hoy`). Escrito para que un asistente nuevo (o una persona) siga trabajando sin cometer errores. Complementa a `AGENTS.md`, `docs/CONTEXT.md`, `docs/AGENT_PLAYBOOK.md` y `docs/PASO_A_PRODUCCION.md`. El detalle de cada cambio, con cómo revertirlo, está en `CHANGELOG.md` (las primeras entradas son las más recientes). Aquí no hay claves; no pegues ninguna en el repo ni en el chat.
 
 ## 1. Con quién trabajas
 - **Cristian Santiago Gómez Romero**: líder de producto y desarrollo freelance. **No usa la terminal.** Escribe en **español, dictando por voz**: puede haber frases cortadas o palabras mal transcritas; interpreta la intención y, si algo es ambiguo y barato de rehacer, elige lo más razonable y dilo.
 - **Cliente final: Jefferson González ("Jeff")**, coach. Marca **YEFFITNES TRAINING**. Cristian quiere que Jeff quede feliz y trabaje rápido; todo se mide contra eso.
-- Repositorio: `Yeffitnes/YEFFITNES-APP`. Ruta de trabajo del asistente: `/home/claude/yeffitnes`.
+- Repositorio: `Yeffitnes/YEFFITNES-APP`. Ruta de trabajo del asistente: la carpeta donde se clone el repo (en las últimas sesiones, `/home/claude/yeffitnes-app`; antes `/home/claude/yeffitnes`). Usa la que exista.
 - Responde corto, claro y sin tecnicismos. Di **qué cambió, qué verificaste y qué NO pudiste verificar**. Cristian prueba en su iPhone y en escritorio con Safari y te dice cómo se ve: confía en eso para lo visual.
 
 ## 1b. Dónde está el "plano" del proyecto (blueprint, diseño y contexto)
@@ -22,7 +22,7 @@ Estado al **27-oct-2026, noche** (actualizado; lo nuevo del 27-oct está marcado
 4. **No preguntes si algo se puede mejorar: mejóralo**, pero **no cambies lo que no te piden.** Si algo ya estaba bien y él dice "déjalo como estaba", revierte exactamente eso.
 5. **No inventes datos del coach**: escribe `NO DEFINIDO`.
 6. Cada cambio lleva **entrada en `CHANGELOG.md` con cómo revertirlo**. Cambios de claves, dominios, variables, crons o migraciones: actualiza también `docs/PASO_A_PRODUCCION.md`.
-7. Antes de subir, **siempre** (en `/home/claude/yeffitnes`):
+7. Antes de subir, **siempre** (en la carpeta del repo):
    - `npx tsc --noEmit`
    - `npx next lint` (los errores de lint **rompen el build**; los avisos viejos de `<img>` son normales)
    - `NEXT_PUBLIC_SUPABASE_URL=https://x.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=x npx next build`

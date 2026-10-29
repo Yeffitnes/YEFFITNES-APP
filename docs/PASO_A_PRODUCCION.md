@@ -81,11 +81,20 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Probar en Netlify: login, Hoy, series (marcar y destachar), nutrición, mensaje, reporte con vídeo, agenda y avisos.
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
-## 10. Próxima salida a `main` (preparada el 27-oct; NO fusionar hasta que Cristian diga "fusiona")
+## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
+La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora se construyó el 28-oct en la noche y necesita **0038, 0039 y 0040**, ya corridas en la base compartida (Supabase es la misma para Vercel y Netlify; no hay que correr nada antes de fusionar).
 Orden:
-1. Correr `0032` a `0037` en Supabase (§3b) y probar en Vercel con el cliente de prueba.
-2. En Vercel, de punta a punta: registro nuevo → app con candados → "Solicitar acceso" (a Jeff le llega el aviso) → Jeff asigna plan (al cliente le llega "Tu plan está activo") → activar notificaciones → bienvenida con el personaje → mensajes (3 textos, 1 foto, 1 vídeo; el cuarto texto se rechaza) → reporte con vídeo → Jeff lo marca visto (dice "se borrará en 12 h") → Material: vídeo privado y vídeo del día.
-3. Revisar en Netlify: `BUNNY_*`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+1. Confirmar en Supabase (solo lectura): `select count(*) from public.exercises where image like 'preset:%';` → 54 o más; `select to_regprocedure('public.save_start_point(numeric,numeric)') is not null;` → `true`.
+2. Probar en Vercel con el cliente de prueba:
+   - bienvenida sin "Saltar", con peso y estatura obligatorios;
+   - Avisar → "Jeff te está esperando" se marca y se pliega al cumplir;
+   - respuesta de Jeff a un entrenamiento (Hoy, Mensajes y "Lo que te dijo Jeff la última vez");
+   - plan mensual en el panel de Jeff (renovar y quitar);
+   - agenda del coach en el celular (cambiar de día) y cancelar una cita con aviso al cliente;
+   - vídeo del día o de la semana desde Material;
+   - filtros del catálogo e imágenes de ejercicios (Mi plan, Hoy, catálogo, "Subir imagen");
+   - en el computador, "Seguir sin avisos en este computador".
+3. Variables de Netlify: no hay nuevas desde el 28-oct.
 4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`).
-5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos).
-6. Justo después: programar `yeffitnes-videos` (§2) y probar en Netlify lo de §9.
+5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos). El último commit NO debe llevar `[skip ci]` (Netlify no publicaría).
+6. Después: no hay tareas programadas nuevas. La notificación de **plan vencido** sale sola con la tarea `yeffitnes-buenosdias` (ya apunta a Netlify); `yeffitnes-videos` y `yeffitnes-despierta` ya están programadas. Probar en Netlify lo de §9 y, en el teléfono, que las imágenes de los ejercicios se vean.
