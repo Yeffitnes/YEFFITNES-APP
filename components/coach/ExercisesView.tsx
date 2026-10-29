@@ -5,20 +5,32 @@ import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { CatalogTop } from "./CatalogTop";
 import { youtubeId } from "@/lib/format";
+import { EQUIPMENT, MUSCLES, equipOf, muscleOf, norm, options } from "@/lib/exmeta";
 const CATS: [string, string][] = [["all", "Todos"], ["upper", "Tren superior"], ["lower", "Tren inferior"], ["core", "Core"], ["cardio", "Cardio"], ["video", "Con vídeo"]];
 export function ExercisesView() {
   const { data, isPending, isError, refetch } = useExercises();
-  const [f, setF] = useState("all"), [q, setQ] = useState("");
+  const [f, setF] = useState("all"), [q, setQ] = useState(""), [mu, setMu] = useState(""), [eq, setEq] = useState("");
   const [edit, setEdit] = useState<Ex | "new" | null>(null);
   const items = data ?? [];
-  const list = items.filter((e) => (f === "all" || (f === "video" ? !!e.videoRef : e.category === f)) && e.name.toLowerCase().includes(q.toLowerCase()));
+  // Filtros (28-oct): zona + músculo + equipo + búsqueda, combinables. Así Jeff ve rápido qué tiene para cada grupo al armar rutinas.
+  const byZone = items.filter((e) => f === "all" || (f === "video" ? !!e.videoRef : e.category === f));
+  const muOpts = options(byZone.map((e) => muscleOf(e.muscle)), MUSCLES), eqOpts = options(byZone.map((e) => equipOf(e.equipment)), EQUIPMENT);
+  const list = byZone.filter((e) => (!mu || muscleOf(e.muscle) === mu) && (!eq || equipOf(e.equipment) === eq)
+    && (norm(e.name).includes(norm(q)) || norm(e.muscle).includes(norm(q))));
+  const filtered = f !== "all" || !!mu || !!eq || !!q.trim();
   return (
     <div>
       <CatalogTop tab="ejercicios" sub={`${items.length} ejercicios · contenido reutilizable en todas las rutinas`} addLabel="Nuevo ejercicio" onAdd={() => setEdit("new")} />
       <div className="filter-row">
-        <div className="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" /><line x1="13.2" y1="13.2" x2="17" y2="17" /></svg><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar ejercicio..." aria-label="Buscar ejercicio" /></div>
-        {CATS.map(([k, t]) => <button key={k} onClick={() => setF(k)} className={`filter-chip${f === k ? " active" : ""}`}>{t}</button>)}
+        <div className="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" /><line x1="13.2" y1="13.2" x2="17" y2="17" /></svg><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o músculo..." aria-label="Buscar ejercicio" /></div>
+        {CATS.map(([k, t]) => <button key={k} onClick={() => { setF(k); setMu(""); setEq(""); }} className={`filter-chip${f === k ? " active" : ""}`}>{t}</button>)}
       </div>
+      {!!items.length && <div className="ex-filters">
+        <label className="ex-select"><select aria-label="Filtrar por músculo" value={mu} onChange={(e) => setMu(e.target.value)}><option value="">Todos los músculos</option>{muOpts.map((o) => <option key={o.v} value={o.v}>{o.v} ({o.n})</option>)}</select></label>
+        <label className="ex-select"><select aria-label="Filtrar por equipo" value={eq} onChange={(e) => setEq(e.target.value)}><option value="">Todo el equipo</option>{eqOpts.map((o) => <option key={o.v} value={o.v}>{o.v} ({o.n})</option>)}</select></label>
+        <span className="ex-count">{list.length} de {items.length}</span>
+        {filtered && <button type="button" className="ex-clear" onClick={() => { setF("all"); setMu(""); setEq(""); setQ(""); }}>Quitar filtros</button>}
+      </div>}
       {isPending && <Skeleton />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar los ejercicios. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && !items.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Aún no hay ejercicios. Crea el primero con “Nuevo ejercicio”: después los podrás usar en todas tus rutinas.</p></div>}
@@ -54,8 +66,8 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
         {F("Dificultad", <select value={v.difficulty} onChange={(e) => set({ difficulty: Number(e.target.value) })}><option value={1}>Baja</option><option value={2}>Media</option><option value={3}>Alta</option></select>)}
       </div>
       <div className="modal-row2">
-        {F("Músculo", <input value={v.muscle} onChange={(e) => set({ muscle: e.target.value })} placeholder="Ej. Pecho" />)}
-        {F("Equipo", <input value={v.equipment} onChange={(e) => set({ equipment: e.target.value })} placeholder="Ej. Barra" />)}
+        {F("Músculo principal", <><input list="ex-muscles" value={v.muscle} onChange={(e) => set({ muscle: e.target.value })} placeholder="Ej. Pecho" /><datalist id="ex-muscles">{MUSCLES.map((m) => <option key={m} value={m} />)}</datalist></>)}
+        {F("Equipo", <><input list="ex-equip" value={v.equipment} onChange={(e) => set({ equipment: e.target.value })} placeholder="Ej. Barra" /><datalist id="ex-equip">{EQUIPMENT.map((m) => <option key={m} value={m} />)}</datalist></>)}
       </div>
       {F("Vídeo de YouTube (opcional)", <input value={v.video} onChange={(e) => set({ video: e.target.value })} placeholder="https://youtu.be/..." />)}
       {F("Instrucciones (opcional)", <textarea value={v.instructions} onChange={(e) => set({ instructions: e.target.value })} />)}

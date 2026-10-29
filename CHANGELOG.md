@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-10-28 (noche) - Catálogo de ejercicios: filtros por músculo y equipo
+- **Pedido de Cristian:** Jeff filtra sus ejercicios según lo que trabajan, para saber rápido qué tiene al armar rutinas.
+- **Filtros:** a la zona (superior, inferior, core, cardio, con vídeo) se suman **Músculo** y **Equipo**, combinables, cada uno con su conteo, más "N de M" y "Quitar filtros". La búsqueda también encuentra por músculo.
+- **Normalización:** el músculo y el equipo se normalizan, así "pecho", "Pecho" y "pectorales" cuentan como Pecho, y "Espalda, bíceps" cuenta como Espalda.
+- **Al crear o editar un ejercicio,** los campos sugieren la lista estándar.
+- **Al armar una rutina,** el selector agrupa los ejercicios por músculo.
+- Archivos: `lib/exmeta.ts` (nuevo), `ExercisesView.tsx`, `RoutineForm.tsx` y `coach.css`. Sin migración.
+- La propuesta del personaje animado por ejercicio y los 50 ejercicios precargados quedan **pendientes de aprobación de Cristian**: no se subió nada de eso.
+- Revertir: restaurar esos archivos del commit `84aac89` y borrar `lib/exmeta.ts`.
+
 ## 2026-10-28 (noche) - Respuestas de Jeff guardadas y campanita al día
 - **Campanita:** "Activar avisos" seguía saliendo después de activarlos en la pantalla obligatoria, porque el estado se leía una sola vez al abrir la app. Ahora se revisa otra vez al abrir la campanita y al volver a la app. Si ya están activos, no sale nada. Además el botón ya no parece un interruptor: es un botón con campana. Archivo: `ActionsBar.tsx`.
 - **Las respuestas de Jeff a los entrenamientos quedan guardadas.** Pedido de Cristian: si las marca como vistas, no las debe perder.

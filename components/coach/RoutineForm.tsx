@@ -1,5 +1,12 @@
 "use client";
-type Ex = { id: string; name: string };
+import { MUSCLES, muscleOf } from "@/lib/exmeta";
+type Ex = { id: string; name: string; muscle?: string | null };
+// Al armar una rutina los ejercicios salen agrupados por músculo (28-oct), en el orden estándar.
+function groups(exercises: Ex[]) {
+  const m = new Map<string, Ex[]>(); exercises.forEach((e) => { const k = muscleOf(e.muscle) ?? "Sin músculo"; m.set(k, [...(m.get(k) ?? []), e]); });
+  const order = [...MUSCLES, ...Array.from(m.keys()).filter((k) => !(MUSCLES as readonly string[]).includes(k)).sort()];
+  return order.filter((k) => m.has(k)).map((k) => [k, m.get(k)!.sort((a, b) => a.name.localeCompare(b.name))] as const);
+}
 type Item = { exercise_id: string; sets: number; reps: string; rest_seconds: number | null };
 const F = { height: 38, borderRadius: 10, border: "1px solid var(--line)", padding: "0 10px", fontSize: 13, background: "#fff", minWidth: 0 } as const;
 const blank = (): Item => ({ exercise_id: "", sets: 3, reps: "10", rest_seconds: 60 });
@@ -12,7 +19,7 @@ export function RoutineForm({ exercises, items, onChange }: { exercises: Ex[]; i
       {rows.map((it, i) => (
         <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
           <select aria-label="Ejercicio" value={it.exercise_id} onChange={(e) => set(i, { exercise_id: e.target.value })} style={{ ...F, flex: "2 1 160px" }}>
-            <option value="">Elige un ejercicio…</option>{exercises.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            <option value="">Elige un ejercicio…</option>{groups(exercises).map(([g, list]) => <optgroup key={g} label={g}>{list.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</optgroup>)}
           </select>
           <input aria-label="Series" type="number" min={1} value={it.sets} onChange={(e) => set(i, { sets: Number(e.target.value) })} style={{ ...F, width: 64 }} title="Series" />
           <input aria-label="Repeticiones" value={it.reps} onChange={(e) => set(i, { reps: e.target.value })} style={{ ...F, width: 80 }} title="Repeticiones: un número (10), un tiempo (30s) o un rango (8-12). Con rango, la app le dice al cliente cuándo subir o bajar el peso y a ti te lo recomienda." />
