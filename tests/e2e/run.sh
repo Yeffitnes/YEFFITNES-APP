@@ -24,7 +24,7 @@ if [ "${1:-}" = "setup" ]; then
   exit 0
 fi
 ./postgrest pgrst.conf > pgrst.log 2>&1 & P1=$!
-node proxy.js > proxy.log 2>&1 & P2=$!
+LATENCY=${LATENCY:-0} node proxy.js > proxy.log 2>&1 & P2=$!
 (cd "$REPO" && PORT=3000 npx next start > "$HERE/next.log" 2>&1) & P3=$!
 for i in $(seq 1 60); do curl -s -o /dev/null localhost:3000/login && break; sleep 1; done
 CLIENT_ID=$(runuser -u postgres -- psql -d e2e -At -c "select id from clients where profile_id='00000000-0000-0000-0000-00000000000a'") node "$HERE/$(basename "$1")"; R=$?

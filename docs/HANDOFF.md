@@ -81,7 +81,7 @@ Estado al **29-oct-2026, noche** (última fusión a `main`: 28-oct, `37970c1`; l
 - Blob URLs de vídeo: créalas en `useEffect`, no en `useMemo` (se revocaban en modo estricto y el vídeo salía negro).
 - La reproducción del recortador y la grabación de audio solo se probaron en Chromium simulado.
 - **Desde el 29-oct SÍ se puede abrir la app con datos:** `tests/e2e/` levanta Postgres + PostgREST + un Supabase mínimo y la recorre con Playwright (ver su README). Sin Storage, Realtime, push ni Bunny. Después, recompila normal antes de los chequeos.
-- **Hidratación:** toda página nueva del portal o del coach debe terminar con `<PageReady />` (si no, sus consultas esperan 2,5 s). No leas `localStorage` ni la hora al dibujar por primera vez algo que también pinta el servidor.
+- **Hidratación:** NO pauses React Query con `onlineManager` (se probó el 29-oct y dejaba consultas y acciones en pausa). Las consultas del marco (campanita, precargas) esperan un momento (`useAfterBoot`). No leas `localStorage` ni la hora al dibujar por primera vez algo que también pinta el servidor, y muestra "cargando" (no "vacío") mientras una consulta está pendiente. Prueba con `LATENCY=150` en `tests/e2e`.
 
 - Una regla genérica `.today{display:grid}` (tarjeta de Hoy del coach) pisaba la columna del día actual en la agenda: en el celular la agenda "se quedaba" en hoy. Cuidado con clases genéricas (`.today`, `.active`) que se repiten en otras pantallas; usa selectores con contexto (`.week-grid .day-col`).
 - Al insertar texto en un archivo con `replace(..., 1)` la primera coincidencia puede estar en un **comentario de cabecera** (pasó en la 0038: un bloque quedó arriba). Revisa el resultado.

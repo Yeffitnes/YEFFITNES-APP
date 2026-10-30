@@ -72,8 +72,9 @@ export function NutritionTodayCard({ cid, features, name }: { cid: string; featu
   );
 }
 export function ProgressCard({ cid, features, name }: { cid: string; features: string[]; name: string }) {
-  const has = features.includes("progress"), { data } = useMeasures(has ? cid : "");
+  const has = features.includes("progress"), { data, isPending } = useMeasures(has ? cid : "");
   if (!has) return <div className="card-progress"><FeatureGate features={features} feature="progress" name={name}><span /></FeatureGate></div>;
+  if (isPending && cid) return <div className="card card-progress"><div className="card-tag">Progreso reciente</div><div className="sk" style={{ height: 70, marginTop: 12 }} /></div>;   // cargando (no "aún no registras")
   const last = (k: "weight" | "waist") => { const v = (data ?? []).filter((m) => m[k] != null); return v.length ? { cur: v[v.length - 1][k] as number, prev: v.length > 1 ? (v[v.length - 2][k] as number) : null } : null; };
   const rows = [["Peso", "kg", last("weight")], ["Cintura", "cm", last("waist")]] as const;
   const pts = (data ?? []).filter((m) => m.weight != null).slice(-6).map((m) => m.weight as number);

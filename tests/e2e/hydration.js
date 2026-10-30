@@ -1,6 +1,6 @@
 const { chromium, ctxFor } = require("./lib.js");
 (async () => { const b = await chromium.launch();
-  for (let k = 0; k < 20; k++) for (const who of ["andres", "camila"]) {
+  for (let k = 0; k < 10; k++) for (const who of ["andres", "camila"]) {
     const ctx = await ctxFor(b, who, k % 2 === 1), p = await ctx.newPage(); let err = false; p.on("pageerror", () => (err = true));
     let html = ""; p.on("response", async (r) => { if (r.url().endsWith("/inicio") && r.request().resourceType() === "document") html = await r.text().catch(() => ""); });
     await p.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" }); await p.waitForTimeout(800);

@@ -1,4 +1,3 @@
-import { PageReady } from "@/components/PageReady";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { signOut } from "@/app/login/actions";
@@ -18,7 +17,7 @@ export default async function Pendiente() {
           <h1 className="mt-3 font-display text-2xl font-semibold">Tu plan está en pausa</h1>
           <p className="mx-auto mt-2 max-w-xs text-sm text-white/60">Cuando Jeff lo reactive, aquí aparecerá todo tu contenido. Abajo ves los mensajes que te deje.</p>
         </div>
-        <div className="w-full max-w-md text-left"><PendingThread /><PageReady /></div>
+        <div className="w-full max-w-md text-left"><PendingThread /></div>
         <form action={signOut}><button className="text-sm text-white/50 underline">Salir</button></form>
       </main>
     </Providers>

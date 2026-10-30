@@ -714,12 +714,13 @@ export function useNudge() {
     mutationFn: async (v: { clientId: string; kind: NudgeKind }) => {
       const { data, error } = await db().rpc("send_nudge", { p_client: v.clientId, p_kind: v.kind });
       if (error) throw new Error(/already_sent/.test(error.message) ? "already_sent" : "failed");
-      const r = await fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) }).catch(() => null);
-      const j = r && r.ok ? ((await r.json().catch(() => ({}))) as { sent?: number }) : {};
-      return j.sent ?? 0;
+      // El aviso YA quedó guardado (el cliente lo ve en Hoy). La notificación del teléfono se espera máx. 7 s: si tarda, el botón no se queda quieto.
+      const push = fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) })
+        .then(async (r) => (r.ok ? ((await r.json().catch(() => ({}))) as { sent?: number }).sent ?? 0 : 0)).catch(() => 0);
+      return Promise.race([push, new Promise<number>((res) => setTimeout(() => res(-1), 7000))]);
     },
     onMutate: (v) => { qc.setQueryData<string[]>(["nudges"], (l) => [...(l ?? []), `${v.clientId}:${v.kind}`]); },
-    onSuccess: (sent) => toast(sent ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy." : "Aviso guardado: lo verá en su pantalla Hoy (su teléfono no tiene avisos activos)."),
+    onSuccess: (sent) => toast(sent > 0 ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy." : sent < 0 ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación al teléfono sigue enviándose." : "Aviso guardado: lo verá en su pantalla Hoy (su teléfono no tiene avisos activos)."),
     onError: (e) => { if ((e as Error).message === "already_sent") { toast("Ya le avisaste esto hoy."); return; } toast("No pudimos guardar el aviso. Inténtalo de nuevo.", true); },
     onSettled: () => { void qc.invalidateQueries({ queryKey: ["nudges"] }); },
   });

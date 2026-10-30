@@ -9,7 +9,7 @@ export async function sendPushReport(targets: Target[], payload: { title: string
   webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:contacto@yeffitnes.com", process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!, process.env.VAPID_PRIVATE_KEY!);
   const r: PushReport = { ok: 0, failed: 0, dead: [] };
   await Promise.all(targets.map(async (t) => {
-    try { await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, JSON.stringify(payload), { TTL: 3600, urgency: "high" }); r.ok++; }
+    try { await webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, JSON.stringify(payload), { TTL: 3600, urgency: "high", timeout: 6000 }); r.ok++; }   // máx. 6 s por teléfono: uno que no responde ya no deja colgado el envío
     catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
       if (code === 404 || code === 410) r.dead.push(t.endpoint); else { r.failed++; console.warn(`push ${code ?? "error"} ${new URL(t.endpoint).host}`); }

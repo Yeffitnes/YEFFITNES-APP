@@ -8,10 +8,12 @@ const user = (id) => ({ id, aud: "authenticated", role: "authenticated", email: 
 const session = (id) => { const exp = Math.floor(Date.now() / 1000) + 3600; return { access_token: sign({ sub: id, role: "authenticated", aud: "authenticated", exp, iat: exp - 3600 }), token_type: "bearer", expires_in: 3600, expires_at: exp, refresh_token: id, user: user(id) }; };
 module.exports = { session, sign };
 if (require.main === module) {
-  http.createServer((req, res) => {
+  const LAT = Number(process.env.LATENCY || 0);   // demora artificial por consulta (ms), para parecerse a la red real
+  const handler = (req, res) => {
     const u = new URL(req.url, "http://x"), cors = { "access-control-allow-origin": req.headers.origin || "*", "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-allow-credentials": "true", "access-control-expose-headers": "*" };
     if (req.method === "OPTIONS") { res.writeHead(204, cors); return res.end(); }
     const json = (code, o) => { res.writeHead(code, { ...cors, "content-type": "application/json" }); res.end(JSON.stringify(o)); };
+    if (u.pathname.startsWith("/rest/v1/") && LAT && !req.delayed) { req.delayed = true; req.pause(); return setTimeout(() => { req.resume(); handler(req, res); }, LAT); }
     if (u.pathname.startsWith("/rest/v1/")) {
       const headers = { ...req.headers }; delete headers.host;
       const p = http.request({ host: "127.0.0.1", port: 3001, path: u.pathname.slice(8) + u.search, method: req.method, headers }, (r) => { res.writeHead(r.statusCode, { ...r.headers, ...cors }); r.pipe(res); });
@@ -22,5 +24,6 @@ if (require.main === module) {
     if (u.pathname === "/auth/v1/logout") { res.writeHead(204, cors); return res.end(); }
     if (u.pathname.startsWith("/auth/v1/.well-known")) return json(200, { keys: [] });
     json(404, { message: "not in e2e stub", path: u.pathname });
-  }).listen(54321, () => console.log("proxy 54321"));
+  };
+  http.createServer(handler).listen(54321, () => console.log("proxy 54321"));
 }
