@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MAT_CATS, useCoachMaterials, useDeleteMaterial, useFeatureMaterial, useSaveMaterial, type CoachMaterial, type FeaturedPeriod, type MaterialInput } from "@/lib/queries";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { BunnyModal } from "@/components/ui/BunnyModal";
@@ -7,6 +7,8 @@ import { Icon } from "@/components/ui/Icon";
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { youtubeId } from "@/lib/format";
+import { posterFromVideo, ytThumb } from "@/lib/video-poster";
+import { VideoModal } from "@/components/portal/VideoModal";
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 const STAR = "M10 2.5l2.3 4.9 5.3.7-3.9 3.7.9 5.4-4.6-2.5-4.6 2.5.9-5.4-3.9-3.7 5.3-.7L10 2.5z";
 const PERIOD: Record<FeaturedPeriod, string> = { day: "Vídeo del día", week: "Vídeo de la semana" };
@@ -15,25 +17,33 @@ export function MaterialView() {
   const { data, isPending, isError, refetch } = useCoachMaterials(), feat = useFeatureMaterial(), del = useDeleteMaterial();
   const [q, setQ] = useState(""), [f, setF] = useState<"all" | "article" | "video">("all"), [edit, setEdit] = useState<CoachMaterial | "new" | null>(null), [rm, setRm] = useState<CoachMaterial | null>(null);
   const [star, setStar] = useState<CoachMaterial | null>(null), [watch, setWatch] = useState<CoachMaterial | null>(null), [newFeat, setNewFeat] = useState<FeaturedPeriod | null>(null);
-  const all = data ?? [], featured = all.find((m) => m.featured);
+  const all = data ?? [], [yt, setYt] = useState<CoachMaterial | null>(null);
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   return (
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"}` : "Material educativo"}</h1><p className="greeting-sub">Lo ven tus clientes activos según su plan. Un vídeo puede ser de YouTube (debe permitir “insertar”) o privado: lo subes desde aquí y solo lo ven tus clientes. Destaca uno como vídeo del día o de la semana para que salga en “Hoy”.</p></div>
         <button className="primary-btn" onClick={() => setEdit("new")}>Nuevo contenido</button></div>
-      {/* Vídeo del día / de la semana a la vista (pedido de Cristian, 28-oct): antes solo se podía con la estrella de cada vídeo y no se encontraba. */}
-      <div className="fv-panel">
-        <span className="fv-panel-ic"><svg viewBox="0 0 20 20"><path d={STAR} /></svg></span>
-        <div className="fv-panel-txt">
-          <div className="fv-panel-tag">Vídeo destacado en Hoy</div>
-          {featured ? <><b>{PERIOD[featured.featuredPeriod]}: {featured.title}</b><span>{untilTxt(featured).replace(/^se/, "Se")}.</span></>
-            : <><b>Ahora no hay vídeo del día ni de la semana</b><span>Sube uno y sale arriba en la pantalla Hoy de todos tus clientes.</span></>}
-        </div>
-        <div className="fv-panel-acts">
-          <button className="ghost-btn" onClick={() => setNewFeat("day")}>Subir vídeo del día</button>
-          <button className="primary-btn" onClick={() => setNewFeat("week")}>Subir vídeo de la semana</button>
-          {featured && <button className="ghost-btn" disabled={feat.isPending} onClick={() => feat.mutate({ id: featured.id, on: false })}>Quitar</button>}
-        </div>
+      {/* Vídeo del día y vídeo de la semana (29-oct): dos espacios, cada uno con lo suyo; pueden estar los dos a la vez.
+          Antes era un solo destacado (el segundo quitaba al primero) y en el celular las letras de los botones se montaban. */}
+      <div className="fv-slots">
+        {(["day", "week"] as const).map((p) => { const m = all.find((x) => x.featured && x.featuredPeriod === p), poster = m ? m.poster ?? ytThumb(m.videoRef) : null;
+          return (
+            <div key={p} className={`fv-slot${m ? " on" : ""}`}>
+              <button type="button" className="fv-slot-thumb" disabled={!m} aria-label={m ? `Ver ${m.title}` : undefined} onClick={() => m && (m.privateVideo ? setWatch(m) : m.videoRef && setYt(m))}>
+                {poster && <span className="vposter" aria-hidden style={{ backgroundImage: `url("${poster}")` }} />}
+                <span className="fv-slot-play">{m ? <svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg> : <svg viewBox="0 0 20 20" className="star"><path d={STAR} /></svg>}</span>
+              </button>
+              <div className="fv-slot-txt">
+                <div className="fv-panel-tag">{PERIOD[p]}</div>
+                <b>{m ? m.title : p === "day" ? "Sin vídeo del día" : "Sin vídeo de la semana"}</b>
+                <span>{m ? untilTxt(m).replace(/^se/, "Se") + "." : p === "day" ? "Sale arriba en Hoy de todos tus clientes hasta la medianoche." : "Sale arriba en Hoy de todos tus clientes durante 7 días."}</span>
+              </div>
+              <div className="fv-slot-acts">
+                <button type="button" className={m ? "fv-btn" : "fv-btn primary"} onClick={() => setNewFeat(p)}>{m ? "Cambiar" : "Subir"}</button>
+                {m && <button type="button" className="fv-btn" disabled={feat.isPending} onClick={() => feat.mutate({ id: m.id, on: false })}>Quitar</button>}
+              </div>
+            </div>);
+        })}
       </div>
       <div className="filter-row">
         <div className="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" /><line x1="13.2" y1="13.2" x2="17" y2="17" /></svg><input type="text" placeholder="Buscar contenido..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar contenido" /></div>
@@ -60,7 +70,8 @@ export function MaterialView() {
       {edit && <MaterialForm item={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
       {newFeat && <MaterialForm item={null} feature={newFeat} onClose={() => setNewFeat(null)} />}
       {watch && <BunnyModal param={`material=${watch.id}`} title={watch.title} sub="Vídeo privado" onClose={() => setWatch(null)} />}
-      {star && <Modal title="Destacar en Hoy" sub={`“${star.title}” sale arriba en la pantalla Hoy de todos tus clientes. Solo puede haber uno a la vez.`} onClose={() => setStar(null)}>
+      {yt?.videoRef && <VideoModal ytId={yt.videoRef} title={yt.title} sub="YouTube" onClose={() => setYt(null)} />}
+      {star && <Modal title="Destacar en Hoy" sub={`“${star.title}” sale arriba en la pantalla Hoy de todos tus clientes. Puede haber un vídeo del día y uno de la semana a la vez.`} onClose={() => setStar(null)}>
         <div className="star-opts">
           <button type="button" className="star-opt" disabled={feat.isPending} onClick={() => feat.mutate({ id: star.id, on: true, period: "day" }, { onSuccess: () => setStar(null) })}><b>Vídeo del día</b><span>Se ve solo hoy, hasta la medianoche.</span></button>
           <button type="button" className="star-opt" disabled={feat.isPending} onClick={() => feat.mutate({ id: star.id, on: true, period: "week" }, { onSuccess: () => setStar(null) })}><b>Vídeo de la semana</b><span>Se ve 7 días. Ideal para saludar y contar qué viene esta semana.</span></button>
@@ -72,16 +83,18 @@ export function MaterialView() {
   );
 }
 function MaterialForm({ item, feature, onClose }: { item: CoachMaterial | null; feature?: FeaturedPeriod; onClose: () => void }) {
-  const ws = useWorkspaceId(), save = useSaveMaterial(ws);
+  const ws = useWorkspaceId(), save = useSaveMaterial(ws), fileIn = useRef<HTMLInputElement>(null);
   const [v, setV] = useState({ kind: item?.kind ?? (feature ? "video" : "article"), title: item?.title ?? "", category: item?.category ?? (feature ? "Motivación" : MAT_CATS[0]), body: item?.body ?? "", video: item?.videoRef ? `https://youtu.be/${item.videoRef}` : "", src: (item?.privateVideo || feature ? "private" : "youtube") as "youtube" | "private", tier: item?.tier ?? "basic", published: item?.published ?? true }), [err, setErr] = useState("");
-  const [file, setFile] = useState<File | null>(null), [checking, setChecking] = useState(false);
+  const [file, setFile] = useState<File | null>(null), [checking, setChecking] = useState(false), [poster, setPoster] = useState<string | null>(null), [prev, setPrev] = useState<string | null>(null);
+  // Vista previa del vídeo antes de subirlo (pedido de Cristian, 29-oct): se ve en el formulario y se puede reproducir.
+  useEffect(() => { if (!file) { setPrev(null); return; } const u = URL.createObjectURL(file); setPrev(u); return () => URL.revokeObjectURL(u); }, [file]);
   const set = (p: Partial<typeof v>) => { setV({ ...v, ...p }); setErr(""); };
   const pick = async (f: File | null) => {
     setErr(""); if (!f) return; if (!f.type.startsWith("video/")) return setErr("Elige un archivo de vídeo.");
     if (f.size > MAX_COACH_VIDEO_MB * 1024 * 1024) return setErr(`El vídeo pesa más de ${MAX_COACH_VIDEO_MB / 1000} GB.`);
     setChecking(true); const d = await videoDuration(f); setChecking(false);
     if (d != null && d > MAX_COACH_VIDEO_SECONDS) return setErr(`El vídeo dura más de ${MAX_COACH_VIDEO_SECONDS / 60} minutos.`);
-    setFile(f);
+    setFile(f); setPoster(null); void posterFromVideo(f).then(setPoster);
   };
   const submit = () => {
     if (!v.title.trim()) return setErr("Escribe un título.");
@@ -90,7 +103,8 @@ function MaterialForm({ item, feature, onClose }: { item: CoachMaterial | null; 
     if (v.kind === "video" && !priv && !vid) return setErr("Pega un enlace de YouTube válido.");
     if (priv && !file && !item?.privateVideo) return setErr("Elige el vídeo que vas a subir.");
     if (v.kind === "article" && v.body.trim().length < 20) return setErr("El artículo es muy corto: escribe al menos una frase completa.");
-    const input: MaterialInput = { id: item?.id, kind: v.kind, title: v.title, category: v.category, body: v.body, videoRef: vid ?? "", tier: feature ? "basic" : v.tier, published: feature ? true : v.published, file: priv ? file : null, keepPrivate: priv && !file, feature };
+    const input: MaterialInput = { id: item?.id, kind: v.kind, title: v.title, category: v.category, body: v.body, videoRef: vid ?? "", tier: feature ? "basic" : v.tier, published: feature ? true : v.published, file: priv ? file : null, keepPrivate: priv && !file, feature,
+      poster: priv ? (file ? poster : undefined) : v.kind === "video" ? null : undefined };
     save.mutate(input, { onSuccess: onClose });
   };
   return (
@@ -108,10 +122,14 @@ function MaterialForm({ item, feature, onClose }: { item: CoachMaterial | null; 
             <button type="button" className={v.src === "youtube" ? "on" : ""} onClick={() => set({ src: "youtube" })}>YouTube</button>
             <button type="button" className={v.src === "private" ? "on" : ""} onClick={() => set({ src: "private" })}><Icon name="lock" size={12} stroke={2} /> Privado</button></div></div>
           {v.src === "youtube"
-            ? <div className="modal-field"><label htmlFor="mv">Enlace de YouTube</label><input id="mv" value={v.video} onChange={(e) => set({ video: e.target.value })} placeholder="https://youtu.be/..." /></div>
+            ? <div className="modal-field"><label htmlFor="mv">Enlace de YouTube</label><input id="mv" value={v.video} onChange={(e) => set({ video: e.target.value })} placeholder="https://youtu.be/..." />
+                {youtubeId(v.video) && <div className="vprev"><img src={ytThumb(youtubeId(v.video))!} alt="Vista previa del vídeo de YouTube" /><span className="vprev-tag">Vista previa</span></div>}</div>
             : <div className="modal-field"><label htmlFor="mf">Vídeo privado</label>
-                <input id="mf" type="file" accept="video/*" onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-                <p className="field-hint">{checking ? "Revisando el vídeo…" : file ? `Listo para subir: ${file.name.slice(0, 40)}` : item?.privateVideo ? "Ya tiene un vídeo privado. Elige otro solo si quieres reemplazarlo." : `Hasta ${MAX_COACH_VIDEO_SECONDS / 60} min. Se sube en segundo plano: puedes seguir usando la app y se publica solo al terminar.`}</p></div>}
+                <input ref={fileIn} id="mf" type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                {prev ? <div className="vprev"><video src={prev} controls playsInline preload="metadata" /><span className="vprev-tag">Vista previa · aún no se sube</span></div>
+                  : <button type="button" className="vpick" onClick={() => fileIn.current?.click()} disabled={checking}><Icon name="video" size={18} /><b>{checking ? "Revisando el vídeo…" : item?.privateVideo ? "Elegir otro vídeo" : "Elegir el vídeo"}</b><small>Hasta {MAX_COACH_VIDEO_SECONDS / 60} min. Primero lo ves aquí; se sube al guardar.</small></button>}
+                {prev && <button type="button" className="fv-btn" style={{ marginTop: 8 }} onClick={() => fileIn.current?.click()}>Elegir otro</button>}
+                <p className="field-hint">{file ? `${file.name.slice(0, 40)} · ${(file.size / 1048576).toFixed(0)} MB. Se sube en segundo plano: puedes seguir usando la app y se publica solo al terminar.` : item?.privateVideo ? "Ya tiene un vídeo privado. Elige otro solo si quieres reemplazarlo." : "Se sube en segundo plano: puedes seguir usando la app y se publica solo al terminar."}</p></div>}
         </>}
       {!feature && <><div className="modal-field"><label htmlFor="mx">Quién lo ve</label><select id="mx" value={v.tier} onChange={(e) => set({ tier: e.target.value as "basic" | "full" })}><option value="basic">Todos los planes con material educativo</option><option value="full">Solo plan completo (biblioteca completa)</option></select></div>
       <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, margin: "6px 0 2px" }}><input type="checkbox" checked={v.published} onChange={(e) => set({ published: e.target.checked })} />Publicado (desmárcalo para guardarlo como borrador)</label></>}

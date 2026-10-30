@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import "@/app/messages.css";
-import { localDate, useUnseenActivity, useClients, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
+import { localDate, upcomingOnly, useUnseenActivity, useClients, useCoachAttention, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
+import { needs } from "@/lib/attention";
+import { useLiveSync } from "@/lib/live";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
 import { useProfile, useToast } from "@/components/Providers";
@@ -23,12 +25,13 @@ function useItems(side: "client" | "coach"): Item[] {
   const unread = useUnread(), today = localDate();
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
   const rep = useTodayReport(cid, today, wantsReport), bookings = useMyBookings(cid);
-  const clients = useClients(), reports = useCoachReports(), activity = useUnseenActivity();
+  // Lo del coach solo se pide en el panel del coach (antes el portal del cliente también lo pedía y lo repetía cada minuto).
+  const coach = side === "coach", clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach);
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
     if (wantsReport && rep.data === null) items.push({ key: "rep", text: "Aún no envías tu reporte de hoy", href: "/inicio#reporte" });
-    const next = bookings.data?.[0];
+    const next = upcomingOnly(bookings.data)[0];
     if (next) { const ms = new Date(next.startsAt).getTime() - Date.now(); if (ms < 36 * 3600_000) items.push({ key: "bk", text: `Tu sesión: ${new Date(next.startsAt).toLocaleDateString("es", { weekday: "long" })} a las ${new Date(next.startsAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`, href: "/inicio/agenda" }); }
   } else {
     const unseen = (reports.data ?? []).filter((r) => !r.seen).length, pending = (clients.data ?? []).filter((c) => c.status === "pending").length;
@@ -38,12 +41,19 @@ function useItems(side: "client" | "coach"): Item[] {
     const expired = (clients.data ?? []).filter((c) => c.status === "active" && c.planId && planMonth(c.planSince)?.expired).length;
     if (expired) items.push({ key: "plan", text: `${expired} plan${expired === 1 ? "" : "es"} mensual${expired === 1 ? "" : "es"} vencido${expired === 1 ? "" : "s"}: renueva o quita`, href: "/coach#planes" });
     if (pending) items.push({ key: "pend", text: `${pending} cliente${pending === 1 ? "" : "s"} esperando plan`, href: "/coach/clientes" });
+    // "Necesitan tu atención" (29-oct): urgentes por contactar y lo que falta configurar, también en la campanita.
+    const nd = needs(attn.data ?? [], new Map((clients.data ?? []).map((c) => [c.id, c.name])));
+    const urgent = new Set(nd.filter((x) => x.kind === "urgent").map((x) => x.clientId)).size, setup = new Set(nd.filter((x) => x.kind === "setup").map((x) => x.clientId)).size;
+    if (urgent) items.unshift({ key: "urg", text: `${urgent} cliente${urgent === 1 ? "" : "s"} urgente${urgent === 1 ? "" : "s"} por contactar (2 días o más sin actividad o sin reporte)`, href: "/coach#atencion" });
+    if (setup) items.push({ key: "setup", text: `${setup} cliente${setup === 1 ? "" : "s"} sin rutina o nutrición completa`, href: "/coach#atencion" });
   }
   return items;
 }
 
 export function ActionsBar({ side }: { side: "client" | "coach" }) {
   useMessagesRealtime(side);
+  const { profileId: pid } = useProfile(), meLive = useMe(side === "client" ? pid : "");
+  useLiveSync(side, side === "client" ? meLive.data?.id : undefined);   // tiempo real (29-oct)
   const qc = useQueryClient();
   useEffect(() => { if (side === "client") void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side]);   // "Mensajes" abre al instante
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);

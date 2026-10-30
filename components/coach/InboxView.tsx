@@ -42,7 +42,7 @@ function Inbox() {
         </div>
         <div className="inbox-main">
           {current
-            ? <><button className="filter-chip inbox-back" onClick={() => select(null)}><Icon name="chevronLeft" size={13} /> Bandeja</button><div style={{ fontWeight: 700, marginBottom: 8 }}>{current.name}</div><ThreadView key={current.clientId} clientId={current.clientId} otherName={current.name} coach /></>
+            ? <><button className="filter-chip inbox-back" onClick={() => select(null)}><Icon name="chevronLeft" size={13} /> Bandeja</button><div style={{ fontWeight: 700, marginBottom: 8 }}>{current.name}</div><ThreadView key={current.clientId} clientId={current.clientId} otherName={current.name} coach initialText={sp.get("t")?.slice(0, 600) ?? ""} /></>
             : <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Elige un cliente para ver o escribir sus mensajes.</p></div>}
         </div>
       </div>

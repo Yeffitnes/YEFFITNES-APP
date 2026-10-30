@@ -5,11 +5,15 @@ import { KIND_LABEL, useCancelBooking, useClients, useCoachBook, useCoachSlots, 
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { DAYLONG, DAY3, dayIdx, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
+import { useNow } from "@/lib/use-now";
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export function AgendaView() {
-  const [off, setOff] = useState(0), [sel, setSel] = useState(dayIdx(new Date())), [pub, setPub] = useState<string | null>(null), [assign, setAssign] = useState(false), [cancel, setCancel] = useState<CoachSlot | null>(null);
+  const [off, setOff] = useState(0), [sel, setSel] = useState(dayIdx(new Date())), [pub, setPub] = useState<string | null>(null), [assign, setAssign] = useState(false), [cancel, setCancel] = useState<CancelTarget | null>(null);
   const { data, isPending, isError, refetch } = useCoachSlots(off), remove = useRemoveSlot();
-  const { from } = weekBounds(off), days = weekDays(from), now = new Date();
+  const { from } = weekBounds(off), days = weekDays(from), now = useNow();
+  // Lo que ya terminó se ve como "Ya pasó" y no se puede cancelar (pedido de Cristian, 29-oct): antes seguía como pendiente.
+  const ended = (s: CoachSlot) => new Date(s.startsAt).getTime() + s.duration * 60_000 <= now.getTime();
+  const target = (s: CoachSlot, b: CoachSlot["bookings"][number]): CancelTarget => ({ bookingId: b.id, clientName: b.clientName, startsAt: s.startsAt });
   const slots = data ?? [], conf = slots.reduce((a, s) => a + s.bookings.length, 0), free = slots.filter((s) => s.bookings.length < s.capacity && new Date(s.startsAt) > now).length;
   return (
     <div>
@@ -28,16 +32,17 @@ export function AgendaView() {
               <div key={i} className={`day-col${sameDay(d, now) ? " today" : ""}${sel === i ? " active" : ""}`} data-day={i}>
                 <div className="day-col-head"><div><div className="day-col-name">{DAYLONG[i]}</div><div className="day-col-num">{d.getDate()}</div></div></div>
                 <div className="day-col-body">
-                  {ds.map((s) => s.capacity > 1
-                    ? <div key={s.id} className="slot-card confirmed"><div className="slot-time">{hhmm(s.startsAt)} · {s.bookings.length}/{s.capacity} cupos</div>
-                        {s.bookings.map((b) => <div key={b.id} className="slot-client" style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>{b.clientName}<button title="Quitar de la clase" aria-label={`Quitar a ${b.clientName} de la clase`} style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => setCancel({ ...s, booking: b })}>×</button></div>)}
+                  {ds.map((s) => { const past = ended(s); return s.capacity > 1
+                    ? <div key={s.id} className={`slot-card confirmed${past ? " past" : ""}`}><div className="slot-time">{hhmm(s.startsAt)} · {s.bookings.length}/{s.capacity} cupos{past && <span className="slot-past">Ya pasó</span>}</div>
+                        {s.bookings.map((b) => <div key={b.id} className="slot-client" style={{ display: "flex", justifyContent: "space-between", gap: 6 }}>{b.clientName}{!past && <button title="Quitar de la clase" aria-label={`Quitar a ${b.clientName} de la clase`} style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => setCancel(target(s, b))}>×</button>}</div>)}
                         {!s.bookings.length && <div className="slot-client" style={{ opacity: 0.6 }}>Sin inscritos</div>}
                         <div className="slot-type">Clase grupal · {KIND_LABEL[s.kind]} · {s.duration} min</div>
-                        {!s.bookings.length && <div className="slot-actions"><button aria-label="Quitar horario" disabled={remove.isPending} onClick={() => remove.mutate(s.id)}>×</button></div>}</div>
+                        {!s.bookings.length && !past && <div className="slot-actions"><button aria-label="Quitar horario" disabled={remove.isPending} onClick={() => remove.mutate(s.id)}>×</button></div>}</div>
                     : s.booking
-                    ? <div key={s.id} className="slot-card confirmed"><div className="slot-time">{hhmm(s.startsAt)}</div><div className="slot-client">{s.booking.clientName}</div><div className="slot-type">{KIND_LABEL[s.kind]} · {s.duration} min</div>
-                        <div className="slot-actions"><button title="Cancelar sesión" aria-label={`Cancelar sesión de ${s.booking.clientName}`} onClick={() => setCancel(s)}>×</button></div></div>
-                    : <div key={s.id} className="slot-available">{hhmm(s.startsAt)} · Disponible <button aria-label="Quitar horario" disabled={remove.isPending} onClick={() => remove.mutate(s.id)}>×</button></div>)}
+                    ? <div key={s.id} className={`slot-card confirmed${past ? " past" : ""}`}><div className="slot-time">{hhmm(s.startsAt)}{past && <span className="slot-past">Ya pasó</span>}</div><div className="slot-client">{s.booking.clientName}</div><div className="slot-type">{KIND_LABEL[s.kind]} · {s.duration} min</div>
+                        {!past && <div className="slot-actions"><button title="Cancelar sesión" aria-label={`Cancelar sesión de ${s.booking.clientName}`} onClick={() => setCancel(target(s, s.booking!))}>×</button></div>}</div>
+                    : past ? <div key={s.id} className="slot-available past">{hhmm(s.startsAt)} · Sin reservar</div>
+                    : <div key={s.id} className="slot-available">{hhmm(s.startsAt)} · Disponible <button aria-label="Quitar horario" disabled={remove.isPending} onClick={() => remove.mutate(s.id)}>×</button></div>; })}
                   <button className="add-slot-btn" onClick={() => setPub(ymd(d))}>+ Añadir</button>
                 </div>
               </div>);
@@ -45,7 +50,7 @@ export function AgendaView() {
         </div>)}
       {pub && <PublishModal date={pub} onClose={() => setPub(null)} />}
       {assign && <AssignModal slots={slots.filter((s) => s.bookings.length < s.capacity && new Date(s.startsAt) > now)} onClose={() => setAssign(false)} />}
-      {cancel && <CancelModal s={cancel} onClose={() => setCancel(null)} />}
+      {cancel && <CancelModal t={cancel} onClose={() => setCancel(null)} />}
     </div>
   );
 }
@@ -86,15 +91,17 @@ function AssignModal({ slots, onClose }: { slots: CoachSlot[]; onClose: () => vo
     </Modal>
   );
 }
-function CancelModal({ s, onClose }: { s: CoachSlot; onClose: () => void }) {
-  // Jeff cancela la sesión de un cliente: el horario queda libre otra vez y al cliente le llega una notificación (con el motivo, si lo escribe).
-  const cancel = useCancelBooking(), [why, setWhy] = useState(""), b = s.booking;
-  const go = () => b && cancel.mutate(b.id, { onSuccess: () => {
-    void fetch("/api/push/booking-cancel", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookingId: b.id, reason: why }) }).catch(() => {});
+// Jeff cancela la sesión de un cliente (desde la Agenda o desde la ficha del cliente): el horario queda libre otra vez y al cliente
+// le llega una notificación y un aviso en su pantalla Hoy, con el motivo si Jeff lo escribe (0041: el motivo queda guardado).
+export type CancelTarget = { bookingId: string; clientName: string; startsAt: string };
+export function CancelModal({ t, onClose }: { t: CancelTarget; onClose: () => void }) {
+  const cancel = useCancelBooking(), [why, setWhy] = useState("");
+  const go = () => cancel.mutate({ id: t.bookingId, reason: why }, { onSuccess: () => {
+    void fetch("/api/push/booking-cancel", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookingId: t.bookingId, reason: why }) }).catch(() => {});
     onClose();
   } });
   return (
-    <Modal title="Cancelar sesión" sub={`${b?.clientName} · ${DAYLONG[dayIdx(new Date(s.startsAt))]} ${new Date(s.startsAt).getDate()} a las ${hhmm(s.startsAt)}. El horario queda libre otra vez y a tu cliente le llega un aviso para que reserve otro.`} onClose={onClose}>
+    <Modal title="Cancelar sesión" sub={`${t.clientName} · ${DAYLONG[dayIdx(new Date(t.startsAt))]} ${new Date(t.startsAt).getDate()} a las ${hhmm(t.startsAt)}. El horario queda libre otra vez y a tu cliente le llega un aviso para que reserve otro.`} onClose={onClose}>
       <div className="modal-field"><label htmlFor="cw">Motivo para tu cliente (opcional)</label><input id="cw" maxLength={120} value={why} onChange={(e) => setWhy(e.target.value)} placeholder="Ej. Me surgió un imprevisto, perdona." /></div>
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Conservar</button><button className="modal-btn danger" disabled={cancel.isPending} onClick={go}>{cancel.isPending ? "Cancelando…" : "Sí, cancelar sesión"}</button></div>
     </Modal>

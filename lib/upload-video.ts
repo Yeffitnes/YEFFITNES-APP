@@ -23,7 +23,9 @@ export async function uploadVideo(file: File, onProgress: (pct: number) => void,
   const { Upload } = await import("tus-js-client");
   try { await new Promise<void>((resolve, reject) => {
     const up = new Upload(file, {
-      endpoint: a.endpoint, retryDelays: [0, 3000, 8000, 20000], chunkSize: 5 * 1024 * 1024,
+      // Vídeos grandes (los de Jeff, hasta 1,5 GB): trozos de 25 MB en vez de 5 MB = 5 veces menos viajes de ida y vuelta (29-oct).
+      // Los cortos (reportes de 20 s) siguen en 5 MB: si se corta la señal, se repite menos.
+      endpoint: a.endpoint, retryDelays: [0, 3000, 8000, 20000], chunkSize: (file.size > 60 * 1024 * 1024 ? 25 : 5) * 1024 * 1024,
       headers: { AuthorizationSignature: a.signature, AuthorizationExpire: String(a.expire), VideoId: a.videoId, LibraryId: a.libraryId },
       metadata: { filetype: file.type || "video/mp4", title: `${body.purpose ?? "reporte"}-${a.videoId.slice(0, 8)}` },
       onError: () => reject(new UploadError("upload_failed")),

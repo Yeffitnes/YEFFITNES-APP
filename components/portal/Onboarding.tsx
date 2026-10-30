@@ -29,11 +29,15 @@ function findTarget(href: string): HTMLElement | null {
   return all.find((el) => el.offsetParent !== null && el.getBoundingClientRect().width > 0) ?? null;
 }
 
-// Alterna entre dos (o más) gestos cada `ms` mientras el paso está abierto. Vuelve al primero al cambiar de paso.
-function usePoseCycle(poses: GuidePose[], ms = 2500) {
-  const [k, setK] = useState(0), sig = poses.join("|");
-  useEffect(() => { setK(0); if (poses.length < 2) return; const t = setInterval(() => setK((x) => (x + 1) % poses.length), ms); return () => clearInterval(t); }, [sig, ms]); // eslint-disable-line react-hooks/exhaustive-deps
-  return poses[k % poses.length] ?? poses[0];
+// Alterna entre dos (o más) gestos mientras el paso está abierto. Vuelve al primero al cambiar de paso.
+// Pedido de Cristian (29-oct): el gesto principal (mancuerna, sentadilla, saludo, músculo…) dura 4 s mientras el cliente lee;
+// señalar y quedarse quieto duran 2 s, y vuelve al gesto principal.
+const POSE_MS = (p: GuidePose) => (p === "point" || p === "idle" ? 2000 : 4000);
+function usePoseCycle(poses: GuidePose[]) {
+  const [k, setK] = useState(0), sig = poses.join("|"), cur = poses[k % poses.length] ?? poses[0];
+  useEffect(() => { setK(0); }, [sig]);
+  useEffect(() => { if (poses.length < 2) return; const t = setTimeout(() => setK((x) => (x + 1) % poses.length), POSE_MS(cur)); return () => clearTimeout(t); }, [sig, k]); // eslint-disable-line react-hooks/exhaustive-deps
+  return cur;
 }
 // Acepta "1.75", "1,75" (metros) o "175" (centímetros) y devuelve centímetros.
 const toCm = (v: string) => { const n = Number(v.trim().replace(",", ".")); return !Number.isFinite(n) || n <= 0 ? NaN : n < 3 ? Math.round(n * 1000) / 10 : n; };
@@ -108,7 +112,7 @@ export function Onboarding() {
 function SpotStep({ step, dots, onNext, onBack }: { step: Spot; dots: React.ReactNode; onNext: () => void; onBack: () => void }) {
   const [r, setR] = useState<DOMRect | null>(null);
   // Primero hace el gesto del tema (mancuerna en Hoy, sentadilla en Mi plan, planilla en Agenda…), luego señala el panel en el menú,
-  // y así sigue alternando cada 2,5 s mientras el cliente lee (pedido de Cristian, 28-oct).
+  // y así sigue alternando mientras el cliente lee: el gesto 4 s y señalar 2 s (pedidos de Cristian, 28 y 29-oct).
   const act = usePoseCycle(step.topic === "point" ? ["point"] : [step.topic, "point"]);
   const measure = useCallback(() => { const el = findTarget(step.href); setR(el ? el.getBoundingClientRect() : null); }, [step.href]);
   useLayoutEffect(() => { measure(); }, [measure]);

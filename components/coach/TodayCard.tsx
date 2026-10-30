@@ -56,7 +56,7 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
         {logs.data && !log && <p className="today-empty">{first} aún no ha registrado su entrenamiento de hoy.{lastLog ? ` Último: ${ago(lastLog.date)}.` : ""}</p>}
         {log && <div style={{ marginTop: 8 }}><div className="today-line"><b>{log.routine ?? "Entrenamiento"}</b><span className={`client-status ${log.completed && !log.seen ? "review" : "ok"}`}>{!log.completed ? "En curso" : log.seen ? "Revisado" : "Sin revisar"}</span></div>
           <div className="today-sub">{log.sets.length} series{log.effort ? ` · esfuerzo ${log.effort}/10` : ""}{log.note ? ` · “${log.note}”` : ""}</div>
-          {log.completed && log.seen && <div className="today-done"><Icon name="check" size={13} stroke={2.4} /><span>Ya lo revisaste{log.comment || log.commentAudio ? " y le dejaste tu comentario" : ""}.</span><button type="button" onClick={() => setOpenLog(!logOpen)}>{logOpen ? "Ocultar" : "Ver o editar"}</button></div>}
+          {log.completed && log.seen && <div className="today-done"><Icon name="check" size={13} stroke={2.4} /><span>Ya lo revisaste{log.comment || log.commentAudio || log.commentImage || log.commentVideo ? " y le dejaste tu respuesta" : ""}.</span><button type="button" onClick={() => setOpenLog(!logOpen)}>{logOpen ? "Ocultar" : "Ver o editar"}</button></div>}
           {logOpen && <Detail l={log} clientId={clientId} onSaved={() => setOpenLog(null)} />}</div>}
       </div>
 

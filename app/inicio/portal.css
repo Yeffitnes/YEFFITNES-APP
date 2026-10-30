@@ -1379,3 +1379,20 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .expv-txt b{font-family:var(--font-display),sans-serif;font-size:16px}
 .expv-txt span{font-size:13.5px;line-height:1.5;color:#C9C5D4}
 .expv-close{display:block;width:calc(100% - 32px);margin:12px 16px 16px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+/* ===== 29-oct: vídeo del día y de la semana juntos, con portada difuminada ===== */
+.fv-stack{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.fv-stack .featured-video-card{margin-bottom:0}
+.fv-thumb{overflow:hidden}
+.fv-play{z-index:1}
+.rv .rv-tag,.rv .rv-center,.rv .rv-label{z-index:2}
+.rv.has-poster::after{z-index:1}
+.content-thumb{overflow:hidden}
+.content-thumb .play,.content-thumb .content-new-tag{position:relative;z-index:1}
+.content-thumb .content-new-tag{position:absolute}
+/* ===== 29-oct: respuesta de Jeff con foto o vídeo ===== */
+.fb-img{display:block;margin-top:10px;padding:0;border:0;background:#0A0910;border-radius:12px;overflow:hidden;cursor:zoom-in;max-width:100%}
+.fb-img img{display:block;max-width:100%;max-height:240px;object-fit:contain}
+.fb-vid{display:inline-flex;align-items:center;gap:7px;margin-top:10px;height:36px;padding:0 14px;border-radius:10px;border:0;font:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.fb-big{position:fixed;inset:0;z-index:300;background:rgba(10,9,16,.92);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.fb-big img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+.fb-big button{position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top));width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center}

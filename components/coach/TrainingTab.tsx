@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, assignDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS } from "@/lib/upload-video";
+import { posterFromVideo } from "@/lib/video-poster";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
@@ -99,7 +100,7 @@ function AssignModal({ clientId, planId, weekday, dayLabel, replacing, onClose }
 function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
   const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
   const bg = useBackgroundUpload();
-  const upload = (f: File) => { setErr(""); bg({ file: f, label: `Vídeo para ${clientName.split(" ")[0]}`, opts: { purpose: "message", clientId }, finish: (id, qc) => assignDayVideo(qc, clientId, day.id, id) }); };
+  const upload = (f: File) => { setErr(""); const poster = posterFromVideo(f); bg({ file: f, label: `Vídeo para ${clientName.split(" ")[0]}`, opts: { purpose: "message", clientId }, finish: (id, qc) => assignDayVideo(qc, clientId, day.id, id, poster) }); };
   const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxSourceSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: upload, onError: setErr });
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useArchive, useExercises, useSaveExercise, type Ex } from "@/lib/queries";
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
@@ -7,6 +7,7 @@ import { CatalogTop } from "./CatalogTop";
 import { youtubeId } from "@/lib/format";
 import { EQUIPMENT, MUSCLES, equipOf, exImage, muscleOf, norm, options } from "@/lib/exmeta";
 import { ExPic } from "@/components/ExPic";
+import { Icon } from "@/components/ui/Icon";
 import { uploadExerciseImage } from "@/lib/exercise-image";
 const CATS: [string, string][] = [["all", "Todos"], ["upper", "Tren superior"], ["lower", "Tren inferior"], ["core", "Core"], ["cardio", "Cardio"], ["video", "Con vídeo"]];
 export function ExercisesView() {
@@ -28,8 +29,8 @@ export function ExercisesView() {
         {CATS.map(([k, t]) => <button key={k} onClick={() => { setF(k); setMu(""); setEq(""); }} className={`filter-chip${f === k ? " active" : ""}`}>{t}</button>)}
       </div>
       {!!items.length && <div className="ex-filters">
-        <label className="ex-select"><select aria-label="Filtrar por músculo" value={mu} onChange={(e) => setMu(e.target.value)}><option value="">Todos los músculos</option>{muOpts.map((o) => <option key={o.v} value={o.v}>{o.v} ({o.n})</option>)}</select></label>
-        <label className="ex-select"><select aria-label="Filtrar por equipo" value={eq} onChange={(e) => setEq(e.target.value)}><option value="">Todo el equipo</option>{eqOpts.map((o) => <option key={o.v} value={o.v}>{o.v} ({o.n})</option>)}</select></label>
+        <FilterDrop label="Músculo" value={mu} opts={muOpts} onPick={setMu} />
+        <FilterDrop label="Equipo" value={eq} opts={eqOpts} onPick={setEq} />
         <span className="ex-count">{list.length} de {items.length}</span>
         {filtered && <button type="button" className="ex-clear" onClick={() => { setF("all"); setMu(""); setEq(""); setQ(""); }}>Quitar filtros</button>}
       </div>}
@@ -45,6 +46,32 @@ export function ExercisesView() {
             <div className="ex-diff">{[1, 2, 3].map((n) => <span key={n} className={n <= e.difficulty ? "filled" : ""} />)}</div></div>
         </div>))}</div>
       {edit && <ExerciseModal ex={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
+    </div>
+  );
+}
+// Filtro desplegable con el mismo estilo de los chips (pedido de Cristian, 29-oct: los selectores nativos se veían feos).
+// Cerrado: "Músculo" con flecha. Elegido: "Pecho" en negro con brillo rojo y una × para quitarlo. Abierto: las opciones con su conteo.
+function FilterDrop({ label, value, opts, onPick }: { label: string; value: string; opts: { v: string; n: number }[]; onPick: (v: string) => void }) {
+  const [open, setOpen] = useState(false), box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: MouseEvent | TouchEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); }, esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", away); document.addEventListener("touchstart", away); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("touchstart", away); document.removeEventListener("keydown", esc); };
+  }, [open]);
+  const pick = (v: string) => { onPick(v); setOpen(false); };
+  return (
+    <div className="fdrop" ref={box}>
+      <div className={`fdrop-btn${value ? " on" : ""}`}>
+        <button type="button" className="fdrop-main" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((x) => !x)}><span className="fdrop-lbl">{value || label}</span>{!value && <Icon name="down" size={12} />}</button>
+        {value && <button type="button" className="fdrop-x" aria-label={`Quitar filtro de ${label.toLowerCase()}`} onClick={() => pick("")}><Icon name="close" size={11} stroke={2.4} /></button>}
+      </div>
+      {open && <div className="fdrop-pop" role="listbox" aria-label={label}>
+        <div className="fdrop-head">{label}</div>
+        <button type="button" role="option" aria-selected={!value} className={`fdrop-opt${!value ? " on" : ""}`} onClick={() => pick("")}>Todos</button>
+        {opts.map((o) => <button key={o.v} type="button" role="option" aria-selected={value === o.v} className={`fdrop-opt${value === o.v ? " on" : ""}`} onClick={() => pick(o.v)}>{o.v}<b>{o.n}</b></button>)}
+        {!opts.length && <p className="fdrop-empty">No hay opciones con este filtro.</p>}
+      </div>}
     </div>
   );
 }

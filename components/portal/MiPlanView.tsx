@@ -8,10 +8,11 @@ import {} from "@/lib/features";
 import { DAY_LONG, DAY_SHORT, categoryLabel, todayWeekday, weekDates } from "@/lib/week";
 import { gradient, initials } from "@/lib/format";
 import { ExPic, ExPicViewer } from "@/components/ExPic";
-import { VideoModal, PLAY_PATH } from "./VideoModal";
-import { BunnyModal } from "@/components/ui/BunnyModal";
+import { VideoModal, PLAY_PATH, warmYoutube } from "./VideoModal";
+import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
 import { RoutineVideo } from "./RoutineVideo";
+import { ytThumb } from "@/lib/video-poster";
 
 const LEVELS = [["beginner", "Principiante"], ["intermediate", "Intermedio"], ["advanced", "Avanzado"]] as const;
 function relReview(d: string) {
@@ -107,7 +108,7 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       <div className="card-tag"><span style={{ width: 7, height: 7, borderRadius: "50%", background: isToday ? "var(--accent)" : "#D7DAE3" }} />{DAY_LONG[weekday - 1]}{isToday ? " · Hoy" : ""}</div>
       <div className="card-title">{day.name}</div>
       <div className="card-meta">{meta}</div>
-      {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
+      {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} poster={day.hasPersonalVideo ? day.poster : ytThumb(day.videoRef)} onWarm={() => (day.hasPersonalVideo ? prefetchPlay(`day=${day.id}`) : warmYoutube())} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
       {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setDv(null)} />}
       {pic && <ExPicViewer image={pic.image} name={pic.name} note={pic.instructions} onClose={() => setPic(null)} />}
       {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}

@@ -51,6 +51,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [x] **`0038_start_point_feedback_plan_month.sql`** (corrida, 28-oct) (28-oct, noche): punto de partida obligatorio, respuestas de Jeff aparte, plan mensual de 30 días y aviso de cita cancelada. El código de `bloque-hoy` la necesita (Hoy y Clientes leen las columnas nuevas).
 - [x] **`0039_exercise_images.sql`** (corrida, 28-oct): imagen y series sugeridas de cada ejercicio + bucket `exercise-images`. El código de `bloque-hoy` la necesita (catálogo y rutinas leen las columnas).
 - [x] **`0040_preset_exercises.sql`** (corrida, 28-oct): carga los 54 ejercicios precargados con su imagen. Solo datos; correrla cuando Jeff apruebe.
+- [ ] **`0041_live_feedback_media_agenda_attention.sql`** (29-oct, noche): tiempo real (agrega tablas a la publicación `supabase_realtime`), respuestas con foto/vídeo, cancelar en 10 min con motivo, vídeo del día y de la semana a la vez con portada, panel "Necesitan tu atención" y arranque en un viaje. **Correrla ANTES de probar en Vercel.** Compatible con `main`: lo único que cambia para el código viejo es que el cliente ya no puede cancelar pasados 10 min (verá un mensaje genérico de error).
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
@@ -82,19 +83,18 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
 ## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
-La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora se construyó el 28-oct en la noche y necesita **0038, 0039 y 0040**, ya corridas en la base compartida (Supabase es la misma para Vercel y Netlify; no hay que correr nada antes de fusionar).
+La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita **0038, 0039, 0040 (corridas) y 0041 (por correr)**.
 Orden:
-1. Confirmar en Supabase (solo lectura): `select count(*) from public.exercises where image like 'preset:%';` → 54 o más; `select to_regprocedure('public.save_start_point(numeric,numeric)') is not null;` → `true`.
-2. Probar en Vercel con el cliente de prueba:
-   - bienvenida sin "Saltar", con peso y estatura obligatorios;
-   - Avisar → "Jeff te está esperando" se marca y se pliega al cumplir;
-   - respuesta de Jeff a un entrenamiento (Hoy, Mensajes y "Lo que te dijo Jeff la última vez");
-   - plan mensual en el panel de Jeff (renovar y quitar);
-   - agenda del coach en el celular (cambiar de día) y cancelar una cita con aviso al cliente;
-   - vídeo del día o de la semana desde Material;
-   - filtros del catálogo e imágenes de ejercicios (Mi plan, Hoy, catálogo, "Subir imagen");
-   - en el computador, "Seguir sin avisos en este computador".
-3. Variables de Netlify: no hay nuevas desde el 28-oct.
+1. Correr la **0041** en el SQL Editor. Confirmar (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
+2. Probar en Vercel con el cliente de prueba (lo del 28-oct de la lista anterior y lo del 29-oct):
+   - Necesitan tu atención (urgentes, falta configurar, llamada del mes) y la campanita;
+   - tiempo real: Jeff avisa o responde y el teléfono del cliente lo muestra sin salir de la app;
+   - rutina: marcar solo la última serie NO pasa al siguiente ejercicio;
+   - repeticiones fijas: pedir 10, registrar 8 → consejo al cliente, notificación y tarjeta "Ajustes de peso sugeridos" a Jeff;
+   - respuesta con foto y con vídeo;
+   - agenda: cancelar dentro de 10 min sí, después no; Jeff cancela desde la ficha con motivo; sesiones pasadas como "Ya pasó";
+   - vídeo del día + de la semana a la vez, vista previa y portada difuminada; bienvenida (4 s / 2 s); filtros del catálogo.
+3. Variables de Netlify: no hay nuevas.
 4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`).
 5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos). El último commit NO debe llevar `[skip ci]` (Netlify no publicaría).
-6. Después: no hay tareas programadas nuevas. La notificación de **plan vencido** sale sola con la tarea `yeffitnes-buenosdias` (ya apunta a Netlify); `yeffitnes-videos` y `yeffitnes-despierta` ya están programadas. Probar en Netlify lo de §9 y, en el teléfono, que las imágenes de los ejercicios se vean.
+6. Después: no hay tareas programadas nuevas. Pedir a los clientes que abran la app una vez (si su suscripción de avisos era vieja, se rehace sola). Probar en Netlify lo de §9.

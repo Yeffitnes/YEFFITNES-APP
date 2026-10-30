@@ -916,3 +916,83 @@ html{scroll-behavior:smooth;}
 .exm-empty{width:88px;height:88px;flex:none;border-radius:12px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:11.5px;color:var(--text-faint)}
 .exm-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .exm-hint{flex-basis:100%;font-size:11.5px;color:var(--text-faint)}
+/* ===== 29-oct: "Necesitan tu atención" ===== */
+.attn-card .card-title{font-size:16px}
+.attn-card .fu-chips{margin-top:12px}
+.fu-chips .filter-chip.hot:not(.active) b{color:var(--accent);opacity:1}
+.attn-line .attn-reason+.attn-reason{margin-top:2px}
+.attn-line .fu-acts{flex-wrap:wrap;justify-content:flex-end}
+.attn-ghost{flex:none;font-size:12px;font-weight:700;padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:var(--paper);color:var(--text);text-decoration:none}
+.attn-avatar.sm{width:30px;height:30px;font-size:11px}
+@media (max-width:560px){.attn-line{flex-wrap:wrap}.attn-line .fu-acts{width:100%;justify-content:flex-start;padding-left:48px}}
+/* ===== 29-oct: ajustes de peso sugeridos ===== */
+.wadv-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.wadv-who{flex:1;min-width:200px;display:flex;align-items:flex-start;gap:10px;color:inherit;text-decoration:none}
+.wadv-row .wadv-txt{min-width:0}
+.wadv-row .wadv-txt b{font-size:13.5px}
+.wadv-row .wadv-txt span{display:block}
+.wadv-row .wadv-txt svg{vertical-align:-2px;color:var(--neon)}
+.wadv-row.down .wadv-txt svg{color:var(--text-dim)}
+.wadv-row .wadv-txt i{font-style:normal;color:var(--text-faint);white-space:nowrap}
+.wadv-acts{display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:560px){.wadv-acts{width:100%;padding-left:40px}}
+/* ===== 29-oct: agenda, lo que ya pasó ===== */
+.ag-past-h{margin-top:12px;font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint)}
+.info-list-row.ag-past{color:var(--text-faint)}
+.slot-card.confirmed.past{background:var(--surface);border:1px solid var(--line);color:var(--text);opacity:.75}
+.slot-card.confirmed.past .slot-client{color:var(--text)}.slot-card.confirmed.past .slot-type,.slot-card.confirmed.past .slot-time{color:var(--text-dim)}
+.slot-past{margin-left:6px;font-family:var(--font-mono),monospace;font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:10px;background:var(--paper);border:1px solid var(--line);color:var(--text-dim)}
+.slot-available.past{opacity:.5;cursor:default}.slot-available.past:hover{border-color:var(--line);color:inherit}
+.bk-row{align-items:center;gap:10px;flex-wrap:wrap}
+.bk-row>span:nth-child(2){flex:1}
+.bk-st{font-weight:700;font-size:12px;color:var(--text-faint)}
+.bk-row.confirmed .bk-st{color:var(--text)}
+.bk-row.completed .bk-st{color:var(--text-dim)}
+.bk-cancel{font:inherit;font-size:12px;font-weight:700;padding:5px 11px;border-radius:9px;border:1px solid var(--line);background:var(--paper);color:var(--accent);cursor:pointer}
+/* ===== 29-oct: vídeo del día y de la semana (dos espacios) ===== */
+.fv-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.fv-slot{display:grid;grid-template-columns:96px minmax(0,1fr);grid-template-areas:"thumb txt" "thumb acts";column-gap:14px;row-gap:10px;padding:14px;border-radius:16px;background:var(--paper);border:1px solid var(--line)}
+.fv-slot.on{border-color:rgba(10,9,16,.18);box-shadow:0 0 0 1px rgba(247,37,75,.18)}
+.fv-slot-thumb{grid-area:thumb;position:relative;overflow:hidden;width:96px;height:72px;border:0;padding:0;border-radius:12px;cursor:pointer;background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.42),transparent 60%),var(--ink);display:flex;align-items:center;justify-content:center}
+.fv-slot-thumb:disabled{cursor:default;background:var(--surface);border:1px dashed var(--line)}
+.fv-slot-play{position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3)}
+.fv-slot-play svg{width:12px;height:12px;fill:#fff;margin-left:2px}
+.fv-slot-thumb:disabled .fv-slot-play{background:none;border:0}
+.fv-slot-play svg.star{width:20px;height:20px;fill:none;stroke:var(--text-faint);stroke-width:1.6;margin:0}
+.fv-slot-txt{grid-area:txt;min-width:0;display:flex;flex-direction:column;gap:3px}
+.fv-slot-txt b{font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.fv-slot-txt span{font-size:12px;color:var(--text-dim);line-height:1.45}
+.fv-slot-acts{grid-area:acts;display:flex;gap:8px;flex-wrap:wrap;align-self:end}
+.fv-btn{font:inherit;font-size:12.5px;font-weight:700;min-height:34px;padding:7px 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--text);cursor:pointer;white-space:nowrap;line-height:1.2}
+.fv-btn.primary{color:#fff;border-color:var(--ink);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.fv-btn:disabled{opacity:.6}
+@media (max-width:860px){.fv-slots{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:420px){.fv-slot{grid-template-columns:72px minmax(0,1fr)}.fv-slot-thumb{width:72px;height:56px}.fv-slot-acts{grid-column:1 / -1}.fv-slot{grid-template-areas:"thumb txt" "acts acts"}.fv-slot-acts .fv-btn{flex:1}}
+.vprev{position:relative;margin-top:8px;border-radius:12px;overflow:hidden;background:#0A0910}
+.vprev video,.vprev img{display:block;width:100%;max-height:260px;object-fit:contain;background:#0A0910}
+.vprev-tag{position:absolute;left:10px;top:10px;font-family:var(--font-mono),monospace;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:20px;color:#fff;background:rgba(10,9,16,.6);pointer-events:none}
+.vpick{width:100%;display:flex;flex-direction:column;align-items:center;gap:4px;padding:22px 14px;border-radius:12px;border:1.5px dashed var(--line);background:var(--surface);font:inherit;color:var(--text);cursor:pointer}
+.vpick b{font-size:13.5px}.vpick small{font-size:12px;color:var(--text-dim);text-align:center}
+/* ===== 29-oct: filtros del catálogo (músculo y equipo) con el estilo de los chips ===== */
+.fdrop{position:relative}
+.fdrop-btn{display:inline-flex;align-items:center;height:36px;border-radius:20px;border:1px solid var(--line);background:var(--paper);color:var(--text-dim);overflow:hidden}
+.fdrop-main{display:inline-flex;align-items:center;gap:6px;height:100%;padding:0 12px 0 14px;border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:inherit;cursor:pointer;max-width:200px}
+.fdrop-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fdrop-btn.on{border-color:var(--ink);color:#fff;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.fdrop-btn.on .fdrop-main{padding-right:4px}
+.fdrop-x{display:inline-flex;align-items:center;justify-content:center;width:28px;height:100%;border:0;background:none;color:#fff;cursor:pointer;opacity:.8}
+.fdrop-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:30;width:260px;max-width:calc(100vw - 32px);max-height:320px;overflow-y:auto;padding:10px;border-radius:14px;background:var(--paper);border:1px solid var(--line);box-shadow:0 18px 40px -14px rgba(10,9,16,.28);display:flex;flex-wrap:wrap;gap:6px}
+.fdrop-head{flex-basis:100%;font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);padding:2px 4px 4px}
+.fdrop-opt{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:20px;border:1px solid var(--line);background:var(--paper);color:var(--text);cursor:pointer}
+.fdrop-opt b{font-family:var(--font-mono),monospace;font-size:11px;font-weight:500;color:var(--text-faint)}
+.fdrop-opt.on{border-color:var(--ink);color:#fff;background:var(--ink)}.fdrop-opt.on b{color:rgba(255,255,255,.7)}
+.fdrop-empty{font-size:12.5px;color:var(--text-dim);margin:4px}
+@media (max-width:560px){.ex-filters{position:relative}.ex-filters .fdrop{position:static}.ex-filters .fdrop-pop{left:0;right:0;width:auto;max-width:none}}
+/* ===== 29-oct: respuesta de Jeff con foto o vídeo ===== */
+.fb-att{position:relative;display:inline-flex;margin-top:8px;border-radius:12px;overflow:hidden;background:#0A0910;max-width:100%}
+.fb-att img,.fb-att video{display:block;max-width:100%;max-height:220px;object-fit:contain}
+.fb-att>button[aria-label]{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(10,9,16,.7);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fb-att.fb-att-row{background:none;align-items:center;gap:8px;overflow:visible}
+.fb-att.fb-att-row>button[aria-label]{position:static;background:var(--surface);color:var(--text)}
+.fb-keep-note{font-size:11.5px;color:var(--text-faint);margin:8px 0 0}
+@media (max-width:560px){.bk-row>span:nth-child(2){order:3;flex:1 1 100%;font-size:12px}.bk-row>span:first-child{flex:1}}

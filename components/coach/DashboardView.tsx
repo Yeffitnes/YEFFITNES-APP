@@ -1,5 +1,8 @@
 "use client";
 import { PlansDueCard } from "./PlansDueCard";
+import { AttentionCard } from "./AttentionCard";
+import { WeightAdviceCard } from "./WeightAdviceCard";
+import { useNow } from "@/lib/use-now";
 import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { localDate, useActivePlanClients, useActivityFeed, useClients, useCoachReports, useCoachSlots, useRecentLogs, type CoachReport, type RecentLog } from "@/lib/queries";
@@ -29,7 +32,9 @@ export function DashboardView() {
         <p className="greeting-sub">{sub}{pending ? ` ${pending} cliente${pending > 1 ? "s" : ""} por activar.` : ""}</p></div></div>
       <DashKpis clients={cl} logs={lg} attn={attn} withPlan={new Set(plans.data)} reports={reports.data ?? []} />
       <div className="dash-grid">
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
+          <AttentionCard clients={cl} />
+          <WeightAdviceCard />
           <PlansDueCard clients={cl} />
           <FollowUpCard clients={cl} logs={lg} withPlan={new Set(plans.data)} reports={reports.data ?? []} attn={attn} />
         </div>
@@ -57,16 +62,20 @@ function MessagesCard() {
   );
 }
 // Sesiones reservadas de hoy y aviso si aún no hay horarios publicados para la próxima semana.
+// Lo que ya terminó pasa a "Ya pasaron" (pedido de Cristian, 29-oct): antes una sesión de la mañana seguía como pendiente por la tarde.
 function AgendaTodayCard() {
-  const wk = useCoachSlots(0), nx = useCoachSlots(1), now = new Date();
-  const todays = (wk.data ?? []).filter((s) => s.booking && sameDay(new Date(s.startsAt), now)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const wk = useCoachSlots(0), nx = useCoachSlots(1), now = useNow();
+  const all = (wk.data ?? []).filter((s) => s.booking && sameDay(new Date(s.startsAt), now)).sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const ended = (s: { startsAt: string; duration: number }) => new Date(s.startsAt).getTime() + s.duration * 60_000 <= now.getTime();
+  const todays = all.filter((s) => !ended(s)), past = all.filter(ended);
   const nudge = nx.data && !nx.data.length && (now.getDay() === 0 || now.getDay() >= 4);
   return (
     <div className="card">
       <div className="card-head"><div><div className="card-tag">Agenda</div><div className="card-title" style={{ fontSize: 15 }}>Sesiones de hoy</div></div><Link href="/coach/agenda" className="card-link">Ver agenda <Icon name="arrow" size={12} /></Link></div>
       {wk.isPending && <div className="sk" style={{ height: 48 }} />}
-      {wk.data && !todays.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>No tienes sesiones reservadas hoy.</p>}
+      {wk.data && !todays.length && <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 8 }}>{past.length ? "No te quedan sesiones hoy." : "No tienes sesiones reservadas hoy."}</p>}
       {todays.map((s) => <div key={s.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{hhmm(s.startsAt)}</span><span>{s.capacity > 1 ? `Clase grupal: ${s.bookings.map((b) => b.clientName).join(", ")}` : s.booking!.clientName}</span></div>)}
+      {past.length > 0 && <><div className="ag-past-h">Ya pasaron</div>{past.map((s) => <div key={s.id} className="info-list-row ag-past"><span>{hhmm(s.startsAt)}</span><span>{s.capacity > 1 ? `Clase grupal: ${s.bookings.map((b) => b.clientName).join(", ")}` : s.booking!.clientName}</span></div>)}</>}
       {nudge && <Link href="/coach/agenda" className="attn-row" style={{ marginTop: 10 }}><div className="attn-body"><div className="attn-name">Publica tus horarios de la próxima semana</div><div className="attn-reason urgent">Aún no hay horarios disponibles para tus clientes.</div></div></Link>}
     </div>
   );

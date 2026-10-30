@@ -16,12 +16,14 @@ import { NutritionTab } from "./NutritionTab";
 import { ThreadView } from "@/components/ui/ThreadView";
 import { hhmm } from "@/lib/dates";
 import { TodayCard } from "./TodayCard";
+import { CancelModal, type CancelTarget } from "./AgendaView";
+import { useNow } from "@/lib/use-now";
 import { ProgressPanels } from "@/components/portal/ProgressPanels";
 const TABS = ["Hoy", "Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
 const SOON: Record<string, string> = {};
-export function ClientFicha({ id }: { id: string }) {
+export function ClientFicha({ id, tab: start }: { id: string; tab?: string }) {
   const { data, isPending } = useClients(), { data: plans } = usePlans();
-  const [tab, setTab] = useState("Hoy");
+  const [tab, setTab] = useState(start && TABS.includes(start) ? start : "Hoy");
   const c = data?.find((x) => x.id === id);
   if (isPending) return <Skeleton rows={3} />;
   if (!c) return <div><Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link><div className="card"><p style={{ fontSize: 14 }}>No encontramos a este cliente.</p></div></div>;
@@ -107,15 +109,24 @@ function ObjectiveCard({ clientId, value, first, hasVideo }: { clientId: string;
 }
 
 const BK: Record<string, string> = { confirmed: "Confirmada", cancelled: "Cancelada", completed: "Realizada", no_show: "No asistió" };
+// Sesiones del cliente (pedido de Cristian, 29-oct): Jeff también puede cancelar desde aquí, sin ir a la Agenda. Las que ya pasaron
+// salen como "Realizada" (antes seguían como "Confirmada").
 function AgendaTab({ clientId, first }: { clientId: string; first: string }) {
-  const { data, isPending, isError, refetch } = useClientBookings(clientId);
+  const { data, isPending, isError, refetch } = useClientBookings(clientId), now = useNow(), [cancel, setCancel] = useState<CancelTarget | null>(null), { data: clients } = useClients();
   if (isPending) return <Skeleton rows={2} />;
   if (isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>;
+  const name = clients?.find((c) => c.id === clientId)?.name ?? first;
   return (
     <div className="card" style={{ maxWidth: 620 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div className="card-tag" style={{ marginBottom: 0 }}>Sesiones de {first}</div><Link href="/coach/agenda" className="card-link">Ir a la agenda <Icon name="arrow" size={12} /></Link></div>
       {!data.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 12 }}>{first} aún no tiene sesiones.</p>}
-      {data.map((b) => <div key={b.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{new Date(b.startsAt).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })} · {hhmm(b.startsAt)}</span><span style={{ color: "var(--text-dim)" }}>{b.capacity > 1 ? "Clase grupal" : ""} {b.duration} min</span><span style={{ color: b.status === "confirmed" ? "#1C9A5B" : "var(--text-faint)", fontWeight: 700, fontSize: 12 }}>{BK[b.status] ?? b.status}</span></div>)}
+      {data.map((b) => {
+        const ended = new Date(b.startsAt).getTime() + b.duration * 60_000 <= now.getTime(), st = b.status === "confirmed" && ended ? "completed" : b.status;
+        return <div key={b.id} className={`info-list-row bk-row ${st}`}><span style={{ fontWeight: 700 }}>{new Date(b.startsAt).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })} · {hhmm(b.startsAt)}</span><span style={{ color: "var(--text-dim)" }}>{b.capacity > 1 ? "Clase grupal · " : ""}{b.duration} min{b.bookedBy === "coach" ? " · la agendaste tú" : ""}</span>
+          <span className="bk-st">{BK[st] ?? st}</span>
+          {st === "confirmed" && <button type="button" className="bk-cancel" onClick={() => setCancel({ bookingId: b.id, clientName: name, startsAt: b.startsAt })}>Cancelar</button>}</div>;
+      })}
+      {cancel && <CancelModal t={cancel} onClose={() => setCancel(null)} />}
     </div>
   );
 }

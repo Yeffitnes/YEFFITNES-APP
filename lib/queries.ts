@@ -4,7 +4,7 @@ import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { bogotaDay, type NudgeKind } from "@/lib/nudges";
-import { loadLogs, loadTrainingPlans, localDate } from "@/lib/fetchers";
+import { loadLogs, loadTrainingPlans, localDate, missingColumn } from "@/lib/fetchers";
 
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
@@ -38,7 +38,7 @@ export const fetchRoutines = async (): Promise<Routine[]> => {
 };
 
 export const KEYS = { plans: ["plans"], clients: ["clients"], exercises: ["exercises"], routines: ["routines"] } as const;
-export const useClients = () => useQuery({ queryKey: KEYS.clients, queryFn: fetchClients, staleTime: 15_000, refetchInterval: 45_000 });
+export const useClients = (enabled = true) => useQuery({ queryKey: KEYS.clients, queryFn: fetchClients, staleTime: 15_000, refetchInterval: 45_000, enabled });
 export const usePlans = () => useQuery({ queryKey: KEYS.plans, queryFn: fetchPlans, staleTime: 300_000 });
 export const useExercises = () => useQuery({ queryKey: KEYS.exercises, queryFn: fetchExercises, staleTime: 120_000 });
 export const useRoutines = () => useQuery({ queryKey: KEYS.routines, queryFn: fetchRoutines, staleTime: 120_000 });
@@ -105,12 +105,18 @@ export function useSaveRoutine() {
 
 // ---- Entrenamiento por días ----
 export type PlanItem = { image?: string | null; id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
-export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; items: PlanItem[] };
+export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; poster?: string | null; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; days: PlanDay[] };
 export const fetchTrainingPlans = (clientId: string): Promise<TrainingPlan[]> => loadTrainingPlans(db(), clientId);
 // Asigna el vídeo personalizado de un día (lo usa la subida en segundo plano, que ya no depende de la pantalla).
-export async function assignDayVideo(qc: QueryClient, clientId: string, dayId: string, videoId: string) { const { error } = await db().rpc("set_day_video", { p_day: dayId, p_video: videoId }); if (error) throw error; await qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); }
+export async function assignDayVideo(qc: QueryClient, clientId: string, dayId: string, videoId: string, poster?: Promise<string | null>) {
+  const { error } = await db().rpc("set_day_video", { p_day: dayId, p_video: videoId }); if (error) throw error;
+  // Portada difuminada (0041). Si falla (p. ej. la base aún sin la 0041), el vídeo queda igual, solo sin portada.
+  const p = poster ? await poster.catch(() => null) : null;
+  await db().from("plan_days").update({ video_poster: p }).eq("id", dayId).then(() => undefined, () => undefined);
+  await qc.invalidateQueries({ queryKey: ["plans-of", clientId] });
+}
 export function useSetDayVideo(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
@@ -186,7 +192,7 @@ export function useRequestAccess(profileId: string) {
 }
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, enabled: !!profileId, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
-export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; sets: SetLog[]; routine?: string | null; dayId?: string | null; coachAt?: string | null; feedbackSeenAt?: string | null };
+export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; coachCommentImage?: string | null; coachCommentVideo?: boolean; sets: SetLog[]; routine?: string | null; dayId?: string | null; coachAt?: string | null; feedbackSeenAt?: string | null };
 export { localDate };
 export const fetchLogs = (clientId: string): Promise<WorkoutLog[]> => loadLogs(db(), clientId);
 export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId) });
@@ -246,20 +252,25 @@ export const fetchActivePlanClients = async (): Promise<string[]> => {
   const { data, error } = await db().from("training_plans").select("client_id").eq("status", "active"); if (error) throw error; return (data as unknown as { client_id: string }[]).map((r) => r.client_id);
 };
 export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: fetchActivePlanClients });
-export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; clientSaw?: boolean; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[] };
-type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; feedback_seen_at?: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[] };
+export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; commentImage?: string | null; commentVideo?: string | null; clientSaw?: boolean; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[] };
+type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; coach_comment_image?: string | null; coach_comment_video?: string | null; feedback_seen_at?: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[] };
 export const useClientLogs = (clientId: string) => useQuery({ queryKey: ["client-logs", clientId], staleTime: 30_000, queryFn: async (): Promise<ClientLog[]> => {
-  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio,feedback_seen_at,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)").eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
+  const q = (extra: string) => db().from("workout_logs").select(`id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio${extra},feedback_seen_at,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)`).eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
+  let { data, error } = await q(",coach_comment_image,coach_comment_video");
+  if (error && missingColumn(error)) ({ data, error } = await q(""));   // base sin la 0041
   if (error) throw error;
-  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, clientSaw: !!l.feedback_seen_at && !!l.coach_seen_at && l.feedback_seen_at >= l.coach_seen_at, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })) }));
+  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, commentImage: l.coach_comment_image ?? null, commentVideo: l.coach_comment_video ?? null, clientSaw: !!l.feedback_seen_at && !!l.coach_seen_at && l.feedback_seen_at >= l.coach_seen_at, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })) }));
 } });
+export const notifyFeedback = (logId: string) => { void fetch("/api/push/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId }) }).catch(() => {}); };
 export function useReviewWorkout(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { id: string; comment: string; audio?: string | null }) => {
-      const { error } = await db().rpc("review_workout", { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null }); if (error) throw error;
-      // Si Jeff dejó texto o audio, al cliente le llega la notificación "Jeff respondió a tu entrenamiento" (la base decide si toca).
-      if (v.comment.trim() || v.audio) void fetch("/api/push/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId: v.id }) }).catch(() => {});
+    // 0041: la respuesta también puede llevar foto y vídeo (media = true los guarda; null = quitar). notify = false cuando el vídeo
+    // aún se está subiendo: la notificación sale cuando termina (así al cliente no le llegan dos).
+    mutationFn: async (v: { id: string; comment: string; audio?: string | null; image?: string | null; video?: string | null; media?: boolean; notify?: boolean }) => {
+      const { error } = await db().rpc("review_workout", v.media ? { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null, p_image: v.image ?? null, p_video: v.video ?? null, p_media: true } : { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null }); if (error) throw error;
+      // Si Jeff dejó algo (texto, audio, foto o vídeo), al cliente le llega "Jeff respondió a tu entrenamiento" (la base decide si toca).
+      if (v.notify !== false && (v.comment.trim() || v.audio || v.image || v.video)) notifyFeedback(v.id);
     },
     onSuccess: () => { toast("Revisión guardada"); qc.invalidateQueries({ queryKey: ["client-logs", clientId] }); qc.invalidateQueries({ queryKey: ["recent-logs"] }); },
     onError: () => toast("No pudimos guardar la revisión. Inténtalo de nuevo.", true),
@@ -339,7 +350,8 @@ export const KIND_LABEL: Record<string, string> = { initial: "Llamada inicial", 
 export const KIND_COLOR: Record<string, string> = { initial: "#F7254B", followup: "#B08A3E" };
 const AG_ERR: Record<string, string> = {
   slot_taken: "Ese horario acaba de ser reservado por otra persona. Elige otro.", slot_unavailable: "Ese horario ya no está disponible. Elige otro.",
-  already_has_booking: "Ya tienes una sesión reservada. Cancélala (hasta 24 h antes) si quieres cambiarla.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
+  already_has_booking: "Ya tienes una sesión reservada. Si quieres cambiarla, escríbele a Jeff.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
+  cancel_closed: "Ya pasaron los 10 minutos para cancelar. Escríbele a Jeff para cambiarla.",
   not_active: "Tu cuenta aún no está activa.", has_booking: "Ese hueco tiene una reserva: primero cancela la reserva.",
 };
 export const agendaError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(AG_ERR).find((x) => m.includes(x)); return k ? AG_ERR[k] : "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo."; };
@@ -353,12 +365,30 @@ export const useOpenSlots = (offset: number) => useQuery({ queryKey: ["open-slot
   const { data, error } = await db().rpc("list_open_slots", { p_from: from.toISOString(), p_to: to.toISOString() }); if (error) throw error;
   return (data as { id: string; starts_at: string; duration_min: number; kind: string; taken: boolean; mine: boolean; capacity: number; booked: number }[]).map((s) => ({ id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, taken: s.taken, mine: s.mine, capacity: s.capacity, booked: s.booked }));
 } });
-export type MyBooking = { id: string; startsAt: string; duration: number; kind: string };
+// createdAt y bookedBy (29-oct): el cliente puede cancelar solo en los 10 min siguientes a reservar lo que reservó él.
+export type MyBooking = { id: string; startsAt: string; duration: number; kind: string; createdAt?: string; bookedBy?: string };
+export const CANCEL_WINDOW_MS = 10 * 60_000;
+export const sessionEnded = (b: { startsAt: string; duration: number }, now = new Date()) => new Date(b.startsAt).getTime() + b.duration * 60_000 <= now.getTime();
+// Lo que ya terminó NO es "próxima sesión" aunque la pantalla lleve horas abierta: filtrar con la hora actual (useNow) al pintar.
+export const upcomingOnly = <T extends { startsAt: string; duration: number }>(l: T[] | undefined, now = new Date()) => (l ?? []).filter((b) => !sessionEnded(b, now));
 export const useMyBookings = (clientId: string) => useQuery({ queryKey: ["my-bookings", clientId], staleTime: 20_000, enabled: !!clientId, queryFn: async (): Promise<MyBooking[]> => {
-  const { data, error } = await db().from("bookings").select("id,availability_slots(starts_at,duration_min,kind)").eq("client_id", clientId).eq("status", "confirmed"); if (error) throw error;
-  return (data as unknown as { id: string; availability_slots: { starts_at: string; duration_min: number; kind: string } | null }[])
-    .filter((b) => b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind }))
+  const { data, error } = await db().from("bookings").select("id,created_at,booked_by,availability_slots(starts_at,duration_min,kind)").eq("client_id", clientId).eq("status", "confirmed"); if (error) throw error;
+  return (data as unknown as { id: string; created_at: string; booked_by: string; availability_slots: { starts_at: string; duration_min: number; kind: string } | null }[])
+    .filter((b) => b.availability_slots && !sessionEnded({ startsAt: b.availability_slots.starts_at, duration: b.availability_slots.duration_min }))
+    .map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, createdAt: b.created_at, bookedBy: b.booked_by }))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+} });
+// Sesiones que Jeff le canceló al cliente en los últimos 7 días (aviso en Hoy aunque no le haya llegado la notificación).
+export type CoachCancel = { id: string; startsAt: string; reason: string | null; at: string };
+export const useCoachCancels = (clientId: string) => useQuery({ queryKey: ["coach-cancels", clientId], staleTime: 60_000, enabled: !!clientId, queryFn: async (): Promise<CoachCancel[]> => {
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const q = (cols: string) => db().from("bookings").select(cols).eq("client_id", clientId).eq("status", "cancelled").eq("cancelled_by", "coach").gte("cancelled_at", since).order("cancelled_at", { ascending: false });
+  let { data, error } = await q("id,cancelled_at,cancel_reason,availability_slots(starts_at)");
+  if (error && missingColumn(error)) ({ data, error } = await q("id,cancelled_at,availability_slots(starts_at)"));
+  if (error) throw error;
+  return ((data ?? []) as unknown as { id: string; cancelled_at: string; cancel_reason?: string | null; availability_slots: { starts_at: string } | null }[])
+    .filter((b) => b.availability_slots && new Date(b.availability_slots.starts_at).getTime() > Date.now() - 86_400_000)
+    .map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, reason: b.cancel_reason ?? null, at: b.cancelled_at }));
 } });
 // Primera llamada (decisión de Cristian, 27-oct): todo cliente agenda primero una llamada con Jeff; su rutina y nutrición llegan después.
 // any = ya tuvo o tiene una sesión (confirmada o hecha); next = la próxima confirmada.
@@ -369,7 +399,7 @@ export const useFirstCall = (clientId: string) => useQuery({ queryKey: ["first-c
   const next = rows.filter((b) => b.status === "confirmed" && b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => b.availability_slots!.starts_at).sort()[0];
   return { any: rows.length > 0, next: next ? { startsAt: next } : null };
 } });
-function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "first-call"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
+function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "first-call", "client-bookings", "coach-attention"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
 export function useBookSlot() {
   const toast = useToast(), inv = useAgendaInvalidate();
   return useMutation({ mutationFn: async (slotId: string) => { const { error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; },
@@ -377,14 +407,16 @@ export function useBookSlot() {
 }
 export function useCancelBooking() {
   const toast = useToast(), inv = useAgendaInvalidate();
-  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("cancel_booking", { p_booking: id }); if (error) throw error; },
+  // reason: motivo de Jeff para el cliente (0041); se guarda en la reserva y sale en la notificación y en la pantalla Hoy del cliente.
+  return useMutation({ mutationFn: async (v: string | { id: string; reason?: string }) => { const id = typeof v === "string" ? v : v.id, reason = typeof v === "string" ? "" : v.reason?.trim() ?? "";
+      const { error } = await db().rpc("cancel_booking", reason ? { p_booking: id, p_reason: reason } : { p_booking: id }); if (error) throw error; },
     onSuccess: () => toast("Sesión cancelada"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
-export type ClientBookingRow = { id: string; startsAt: string; duration: number; kind: string; status: string; capacity: number };
+export type ClientBookingRow = { id: string; startsAt: string; duration: number; kind: string; status: string; capacity: number; bookedBy?: string };
 export const useClientBookings = (clientId: string) => useQuery({ queryKey: ["client-bookings", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<ClientBookingRow[]> => {
-  const { data, error } = await db().from("bookings").select("id,status,availability_slots(starts_at,duration_min,kind,capacity)").eq("client_id", clientId); if (error) throw error;
-  return (data as unknown as { id: string; status: string; availability_slots: { starts_at: string; duration_min: number; kind: string; capacity: number } | null }[]).filter((b) => b.availability_slots)
-    .map((b) => ({ id: b.id, status: b.status, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, capacity: b.availability_slots!.capacity })).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  const { data, error } = await db().from("bookings").select("id,status,booked_by,availability_slots(starts_at,duration_min,kind,capacity)").eq("client_id", clientId); if (error) throw error;
+  return (data as unknown as { id: string; status: string; booked_by: string; availability_slots: { starts_at: string; duration_min: number; kind: string; capacity: number } | null }[]).filter((b) => b.availability_slots)
+    .map((b) => ({ id: b.id, status: b.status, bookedBy: b.booked_by, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, capacity: b.availability_slots!.capacity })).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 } });
 export type CoachBooking = { id: string; clientName: string; by: string };
 export type CoachSlot = { id: string; startsAt: string; duration: number; kind: string; capacity: number; bookings: CoachBooking[]; booking: CoachBooking | null };
@@ -415,17 +447,20 @@ export function useCoachBook() {
 // ---- Material educativo ----
 export const MAT_CATS = ["Técnica", "Nutrición", "Movilidad", "Recuperación", "Motivación"];
 export type FeaturedPeriod = "day" | "week";
-export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; tier: "basic" | "full"; featured: boolean; featuredPeriod: FeaturedPeriod; featuredUntil: string | null; published: boolean; date: string; views: number };
+export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; tier: "basic" | "full"; featured: boolean; featuredPeriod: FeaturedPeriod; featuredUntil: string | null; published: boolean; date: string; views: number; poster?: string | null };
 const bogotaToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 export const useCoachMaterials = () => useQuery({ queryKey: ["coach-materials"], staleTime: 30_000, queryFn: async (): Promise<CoachMaterial[]> => {
-  const { data, error } = await db().from("materials").select("id,kind,title,category,body,video_ref,video_id,tier,is_featured,featured_period,featured_until,published,published_on,material_views(count)").order("published_on", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
-  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; video_id: string | null; tier: "basic" | "full"; is_featured: boolean; featured_period: FeaturedPeriod; featured_until: string | null; published: boolean; published_on: string; material_views: { count: number }[] };
+  const q = (extra: string) => db().from("materials").select(`id,kind,title,category,body,video_ref,video_id,tier,is_featured,featured_period,featured_until,published,published_on${extra},material_views(count)`).order("published_on", { ascending: false }).order("created_at", { ascending: false });
+  let { data, error } = await q(",poster");
+  if (error && missingColumn(error)) ({ data, error } = await q(""));   // base sin la 0041
+  if (error) throw error;
+  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; video_id: string | null; tier: "basic" | "full"; is_featured: boolean; featured_period: FeaturedPeriod; featured_until: string | null; published: boolean; published_on: string; poster?: string | null; material_views: { count: number }[] };
   const today = bogotaToday();
   return (data as unknown as Raw[]).map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, privateVideo: !!m.video_id, tier: m.tier,
-    featured: m.is_featured && (!m.featured_until || m.featured_until >= today), featuredPeriod: m.featured_period ?? "week", featuredUntil: m.featured_until, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0 }));
+    featured: m.is_featured && (!m.featured_until || m.featured_until >= today), featuredPeriod: m.featured_period ?? "week", featuredUntil: m.featured_until, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0, poster: m.poster ?? null }));
 } });
 // file: vídeo privado nuevo (Bunny). Se guarda como borrador, se sube en segundo plano y al terminar se engancha y se publica (0035).
-export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean; feature?: FeaturedPeriod };
+export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean; feature?: FeaturedPeriod; poster?: string | null };
 export function useSaveMaterial(workspaceId: string) {
   const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
   return useMutation({
@@ -433,7 +468,11 @@ export function useSaveMaterial(workspaceId: string) {
       const priv = v.kind === "video" && (!!v.file || !!v.keepPrivate);
       const row: Record<string, unknown> = { title: v.title.trim(), kind: v.kind, category: v.category, tier: v.tier, published: v.file ? false : v.published, body: v.kind === "article" ? v.body.trim() : null };
       if (v.kind !== "video" || !priv) { row.video_ref = v.kind === "video" ? v.videoRef : null; row.video_id = null; }
-      const res = v.id ? await db().from("materials").update(row).eq("id", v.id).select("id").single() : await db().from("materials").insert({ ...row, workspace_id: workspaceId }).select("id").single();
+      // Portada difuminada (0041): la del vídeo nuevo; un vídeo de YouTube usa la miniatura de YouTube (no se guarda).
+      if (v.poster !== undefined) row.poster = v.poster;
+      const write = (r: Record<string, unknown>) => (v.id ? db().from("materials").update(r).eq("id", v.id).select("id").single() : db().from("materials").insert({ ...r, workspace_id: workspaceId }).select("id").single());
+      let res = await write(row);
+      if (res.error && "poster" in row && missingColumn(res.error)) { delete row.poster; res = await write(row); }   // base sin la 0041
       if (res.error) throw res.error;
       const id = (res.data as { id: string }).id;
       if (v.file) upload({ file: v.file, label: `Vídeo "${v.title.trim().slice(0, 28)}"`, opts: { purpose: "material" }, finish: async (vid, q) => {
@@ -461,11 +500,11 @@ export function useFeatureMaterial() {
     onError: (e) => toast((e as { message?: string })?.message?.includes("not_featurable") ? "Solo un vídeo publicado y de acceso para todos los planes se puede destacar." : "No pudimos destacarlo. Inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
 }
-export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; featuredPeriod: FeaturedPeriod; privateVideo: boolean; unlocked: boolean; isNew: boolean };
+export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; featuredPeriod: FeaturedPeriod; privateVideo: boolean; unlocked: boolean; isNew: boolean; poster?: string | null; videoRef?: string | null };
 export const useMaterialList = () => useQuery({ queryKey: ["materials"], staleTime: 60_000, queryFn: async (): Promise<MaterialItem[]> => {
   const { data, error } = await db().rpc("list_materials"); if (error) throw error;
-  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean; featured_period?: FeaturedPeriod; private_video?: boolean }[])
-    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, featuredPeriod: m.featured_period ?? "week", privateVideo: !!m.private_video, unlocked: m.unlocked, isNew: m.is_new }));
+  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean; featured_period?: FeaturedPeriod; private_video?: boolean; poster?: string | null; video_ref?: string | null }[])
+    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, featuredPeriod: m.featured_period ?? "week", privateVideo: !!m.private_video, unlocked: m.unlocked, isNew: m.is_new, poster: m.poster ?? null, videoRef: m.video_ref ?? null }));
 } });
 export type MaterialOpen = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; date: string };
 export function useOpenMaterial() {
@@ -545,7 +584,7 @@ export function videoExpiry(r: CoachReport): string | null {
   const when = h <= 1 ? "en menos de 1 h" : `en ${h} h`;
   return r.seen ? `El vídeo se borra ${when}.` : `Si no lo ves, el vídeo se borra solo ${when}.`;
 }
-export const useCoachReports = () => useQuery({ queryKey: ["coach-reports"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<CoachReport[]> => {
+export const useCoachReports = (enabled = true) => useQuery({ queryKey: ["coach-reports"], staleTime: 20_000, refetchInterval: 60_000, enabled, queryFn: async (): Promise<CoachReport[]> => {
   const since = new Date(); since.setDate(since.getDate() - 14);
   const { data, error } = await db().from("daily_reports").select("id,client_id,report_date,comment,video_state,coach_seen_at,created_at,delete_after,clients(profiles(full_name))").gte("report_date", localDate(since)).order("report_date", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
   type Raw = { id: string; client_id: string; report_date: string; comment: string | null; video_state: "none" | "uploaded" | "deleted"; coach_seen_at: string | null; created_at: string; delete_after: string | null; clients: { profiles: { full_name: string } | null } | null };
@@ -646,7 +685,7 @@ export const useActivityFeed = () => useQuery({ queryKey: ["activity"], staleTim
   const { data, error } = await db().rpc("activity_feed", { p_limit: 20 }); if (error) throw error;
   return ((data ?? []) as { id: string; client_id: string; client_name: string; kind: ActivityKind; event_date: string; created_at: string; seen: boolean }[]).map((r) => ({ id: r.id, clientId: r.client_id, clientName: r.client_name, kind: r.kind, date: r.event_date, at: r.created_at, seen: r.seen }));
 } });
-export const useUnseenActivity = () => useQuery({ queryKey: ["activity-unseen"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async () => { const { data, error } = await db().rpc("unseen_activity"); if (error) throw error; return Number(data ?? 0); } });
+export const useUnseenActivity = (enabled = true) => useQuery({ queryKey: ["activity-unseen"], staleTime: 20_000, refetchInterval: 60_000, enabled, queryFn: async () => { const { data, error } = await db().rpc("unseen_activity"); if (error) throw error; return Number(data ?? 0); } });
 export function useMarkActivitySeen() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: async () => { const { error } = await db().rpc("mark_activity_seen"); if (error) throw error; }, onSettled: () => { qc.invalidateQueries({ queryKey: ["activity"] }); qc.invalidateQueries({ queryKey: ["activity-unseen"] }); } });
@@ -720,7 +759,7 @@ export function useSaveStartPoint() {
 
 // ---- Respuesta de Jeff a un entrenamiento (0038) ----
 // Se muestra como aviso aparte en Hoy hasta que el cliente la marca como vista. No se responde.
-export const hasFeedback = (l: WorkoutLog) => !!(l.coachComment || l.coachCommentAudio);
+export const hasFeedback = (l: WorkoutLog) => !!(l.coachComment || l.coachCommentAudio || l.coachCommentImage || l.coachCommentVideo);
 export const feedbackUnseen = (l: WorkoutLog) => hasFeedback(l) && (!l.feedbackSeenAt || (!!l.coachAt && l.feedbackSeenAt < l.coachAt));
 export function useMarkFeedbackSeen(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
@@ -730,5 +769,41 @@ export function useMarkFeedbackSeen(clientId: string) {
       qc.setQueryData<WorkoutLog[]>(key, (l) => l?.map((x) => (x.id === logId ? { ...x, feedbackSeenAt: new Date().toISOString() } : x))); return { prev }; },
     onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast("No pudimos marcarlo como visto. Inténtalo de nuevo.", true); },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  });
+}
+
+// ---- Panel "Necesitan tu atención" (0041) ----
+// La base devuelve los datos de cada cliente activo; las reglas (qué es urgente, qué falta configurar) viven en lib/attention.ts.
+export type AttnData = { clientId: string; features: string[]; planSince: string | null; activatedAt: string | null; createdAt: string; trainingPlan: boolean; planDays: number; emptyDays: number; reviewOn: string | null; nutrition: boolean; lastWorkout: string | null; lastReport: string | null; lastMeal: string | null; lastMessage: string | null; lastCall: string | null; nextCall: string | null };
+export const useCoachAttention = (enabled = true) => useQuery({ queryKey: ["coach-attention"], staleTime: 30_000, refetchInterval: 120_000, enabled, queryFn: async (): Promise<AttnData[]> => {
+  const { data, error } = await db().rpc("coach_attention"); if (error) throw error;
+  type Raw = { client_id: string; features: string[]; plan_since: string | null; activated_at: string | null; created_at: string; training_plan: boolean; plan_days: number; empty_days: number; review_on: string | null; nutrition: boolean; last_workout: string | null; last_report: string | null; last_meal: string | null; last_message: string | null; last_call: string | null; next_call: string | null };
+  return ((data ?? []) as Raw[]).map((r) => ({ clientId: r.client_id, features: r.features ?? [], planSince: r.plan_since, activatedAt: r.activated_at, createdAt: r.created_at, trainingPlan: r.training_plan, planDays: r.plan_days, emptyDays: r.empty_days, reviewOn: r.review_on, nutrition: r.nutrition, lastWorkout: r.last_workout, lastReport: r.last_report, lastMeal: r.last_meal, lastMessage: r.last_message, lastCall: r.last_call, nextCall: r.next_call }));
+} });
+
+// ---- Sugerencias de peso para Jeff (29-oct): entrenamientos de los últimos 7 días donde hizo más o menos repeticiones de las pedidas ----
+export type AdviceFeedRow = { logId: string; clientId: string; clientName: string; date: string; routine: string | null; effort: number | null; seen: boolean;
+  sets: { itemId: string | null; reps: number | null; weight: number | null; warmup: boolean }[]; items: { id: string; name: string; reps: string; weight: number | null }[] };
+export const useAdviceFeed = () => useQuery({ queryKey: ["advice-feed"], staleTime: 30_000, queryFn: async (): Promise<AdviceFeedRow[]> => {
+  const since = new Date(); since.setDate(since.getDate() - 7);
+  const { data, error } = await db().from("workout_logs").select("id,client_id,log_date,effort,coach_seen_at,plan_days(name),clients(profiles(full_name)),set_logs(plan_item_id,reps,weight,kind,plan_items(id,reps,target_weight,exercises(name)))")
+    .not("completed_at", "is", null).gte("log_date", localDate(since)).order("log_date", { ascending: false }).limit(80);
+  if (error) throw error;
+  type Raw = { id: string; client_id: string; log_date: string; effort: number | null; coach_seen_at: string | null; plan_days: { name: string } | null; clients: { profiles: { full_name: string } | null } | null;
+    set_logs: { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string; plan_items: { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null } | null }[] };
+  return (data as unknown as Raw[]).map((l) => {
+    const items = new Map<string, { id: string; name: string; reps: string; weight: number | null }>();
+    l.set_logs.forEach((s) => { if (s.plan_items) items.set(s.plan_items.id, { id: s.plan_items.id, name: s.plan_items.exercises?.name ?? "Ejercicio", reps: s.plan_items.reps, weight: s.plan_items.target_weight }); });
+    return { logId: l.id, clientId: l.client_id, clientName: l.clients?.profiles?.full_name || "Cliente", date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, seen: !!l.coach_seen_at,
+      sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, reps: s.reps, weight: s.weight, warmup: s.kind === "warmup" })), items: Array.from(items.values()) };
+  });
+} });
+// Jeff aplica la sugerencia: cambia el peso de ese ejercicio en el plan del cliente (lo verá en su próxima rutina).
+export function useApplyWeight() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { clientId: string; itemId: string; weight: number }) => { const { error } = await db().from("plan_items").update({ target_weight: v.weight }).eq("id", v.itemId); if (error) throw error; },
+    onSuccess: (_d, v) => { toast(`Plan actualizado: ${String(v.weight).replace(".", ",")} kg`); void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); },
+    onError: () => toast("No pudimos cambiar el peso. Inténtalo de nuevo.", true),
   });
 }

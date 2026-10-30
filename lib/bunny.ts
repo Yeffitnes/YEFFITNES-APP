@@ -18,9 +18,21 @@ export function uploadAuth(videoId: string, ttlSeconds = 3600) {
   return { endpoint: "https://video.bunnycdn.com/tusupload", libraryId: lib(), videoId, expire, signature: sha(lib() + key() + expire + videoId) };
 }
 // Reproductor protegido: si la biblioteca tiene "token authentication", se firma con BUNNY_TOKEN_KEY; si no, enlace normal.
+// autoplay + preload: empieza solo al abrir (menos espera y un toque menos). En iPhone, el autoplay con sonido puede esperar un toque.
 export function embedUrl(videoId: string, ttlSeconds = 7200) {
-  const base = `https://player.mediadelivery.net/embed/${lib()}/${videoId}`;
-  const tk = process.env.BUNNY_TOKEN_KEY; if (!tk) return base;
+  const base = `https://player.mediadelivery.net/embed/${lib()}/${videoId}`, opts = "autoplay=true&preload=true&responsive=true";
+  const tk = process.env.BUNNY_TOKEN_KEY; if (!tk) return `${base}?${opts}`;
   const expires = Math.floor(Date.now() / 1000) + ttlSeconds;
-  return `${base}?token=${sha(tk + videoId + expires)}&expires=${expires}`;
+  return `${base}?token=${sha(tk + videoId + expires)}&expires=${expires}&${opts}`;
+}
+// Estado del vídeo en Bunny: 0-2 = recién creado, subido o procesando (aún no se puede ver); 3 = codificando (se ve, quizá en baja
+// calidad); 4 = listo. Máx. 1,2 s: si Bunny no responde, no estorba.
+export async function videoStatus(videoId: string): Promise<{ processing: boolean; progress: number | null } | null> {
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 1200);
+    const r = await fetch(`https://video.bunnycdn.com/library/${lib()}/videos/${videoId}`, { headers: { AccessKey: key(), accept: "application/json" }, signal: ctl.signal, cache: "no-store" }).finally(() => clearTimeout(t));
+    if (!r.ok) return null;
+    const j = (await r.json()) as { status?: number; encodeProgress?: number };
+    return { processing: j.status != null && j.status <= 2, progress: typeof j.encodeProgress === "number" ? j.encodeProgress : null };
+  } catch { return null; }
 }

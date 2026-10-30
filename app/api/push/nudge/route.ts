@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { pushConfigured, sendPush, type Target } from "@/lib/push";
+import { pushConfigured, sendPushReport, type Target } from "@/lib/push";
 import { NUDGE_TXT, type NudgeKind } from "@/lib/nudges";
 const NUDGE_URL: Record<NudgeKind, string> = { nothing: "/inicio", report: "/inicio#reporte", train: "/inicio#rutina", meals: "/inicio#nutricion" };
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: "failed" }, { status: 400 });
   const rows = (data ?? []) as (Target & { kind: NudgeKind })[];
   if (!rows.length) return NextResponse.json({ ok: true, sent: 0 });
-  const dead = await sendPush(rows.map(({ endpoint, p256dh, auth }) => ({ endpoint, p256dh, auth })), { ...NUDGE_TXT[rows[0].kind], url: NUDGE_URL[rows[0].kind], tag: `nudge-${rows[0].kind}` });
-  if (dead.length) await supabase.rpc("prune_push", { p_endpoints: dead });
-  return NextResponse.json({ ok: true, sent: rows.length - dead.length });
+  const r = await sendPushReport(rows.map(({ endpoint, p256dh, auth }) => ({ endpoint, p256dh, auth })), { ...NUDGE_TXT[rows[0].kind], url: NUDGE_URL[rows[0].kind], tag: `nudge-${rows[0].kind}` });
+  if (r.dead.length) await supabase.rpc("prune_push", { p_endpoints: r.dead });
+  return NextResponse.json({ ok: true, sent: r.ok, failed: r.failed });
 }

@@ -15,8 +15,11 @@ export async function middleware(req: NextRequest) {
       },
     },
   });
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims?.sub;
+  // Rapidez (29-oct): aquí solo hace falta saber SI hay sesión (para mandar a /login) y renovarla si venció. getSession lee la cookie
+  // sin preguntar al servidor de Supabase (y la renueva sola si expiró); getClaims, con claves de firma antiguas, hacía un viaje
+  // extra en CADA pantalla. La sesión se verifica de verdad después: en la base (RLS y portal_boot) y en las páginas (getClaims).
+  const { data } = await supabase.auth.getSession();
+  const user = data?.session?.access_token ? "yes" : null;
   if (!user && PROTECTED.some((p) => req.nextUrl.pathname.startsWith(p))) {
     return NextResponse.redirect(new URL("/login", req.url));
   }

@@ -95,3 +95,8 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 .pm-out:active{background:rgba(0,0,0,.05)}
 
 .upl-stack{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+
+/* ===== 29-oct: portada difuminada de los vídeos (negro con rojo, se alcanza a ver un poquito el vídeo) ===== */
+.vposter { position: absolute; inset: -14px; background-size: cover; background-position: center; filter: blur(9px) saturate(1.15) brightness(.78); transform: scale(1.08); z-index: 0; pointer-events: none; }
+.vposter::after { content: ""; position: absolute; inset: 0; background: radial-gradient(90% 120% at 18% 10%, rgba(247,37,75,.42), transparent 62%), linear-gradient(180deg, rgba(10,9,16,.28), rgba(10,9,16,.66)); }
+.vid-processing { font-size: 14px; line-height: 1.55; padding: 14px; border-radius: 12px; background: #0A0910; color: #fff; }
