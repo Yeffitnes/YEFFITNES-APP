@@ -101,7 +101,7 @@ export function HoyView() {
 function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; logs: WorkoutLog[]; today: string; guide: boolean }) {
   // Todos los ejercicios empiezan cerrados (pedido de Cristian, 28-oct): el cliente abre el que va a hacer.
   const [open, setOpen] = useState<string | null>(null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null), [pic, setPic] = useState<PlanItem | null>(null);
-  const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false);
+  const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false), [just, setJust] = useState<JustSaved | null>(null);
   useFocusAnchor("rutina", () => setUnfold(true));
   const finish = useFinish(cid);
   const saved = (id: string) => log?.sets.filter((s) => s.itemId === id) ?? [];
@@ -148,7 +148,7 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
           <div className={`ex-row${doneNow(i) ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(open === i.id ? null : i.id); } }}>
             <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><ExPic image={i.image} name={i.name} size={40} className="sm" onClick={() => setPic(i)} /><div className="ex-name">{i.name}</div><div className="ex-meta">{saved(i.id).length}/{i.sets} · {i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
-          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} />)}<RepTip item={i} sets={saved(i.id)} /></div>}
+          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onSaved={(setNumber, reps) => setJust({ itemId: i.id, setNumber, reps, at: Date.now() })} />)}<RepTip item={i} just={just} /></div>}
         </div>))}</div>
       {log && hasFeedback(log) && !feedbackUnseen(log) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Respuesta de tu coach</div><FeedbackBody log={log} /></div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
@@ -172,11 +172,14 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
 // Consejo del rango de repeticiones (pedido de Cristian, 28-oct): ya no es un texto fijo (en el teléfono se veía montado).
 // Es un aviso corto que aparece solo un momento: al abrir el ejercicio (una vez al día) y después de guardar una serie fuera del rango.
 // Desde el 29-oct también con repeticiones fijas ("10"): si hizo menos, bajar; si hizo más, subir.
-function RepTip({ item, sets }: { item: PlanItem; sets: SetLog[] }) {
+type JustSaved = { itemId: string; setNumber: number; reps: number; at: number };
+function RepTip({ item, just }: { item: PlanItem; just: JustSaved | null }) {
   const r = repTarget(item.reps);
-  const last = [...sets].filter((x) => x.reps != null).sort((a, b) => b.setNumber - a.setNumber)[0];
-  const tip = r && last ? setTip(r, last.reps!) : null;
-  const key = tip ? `s${last!.setNumber}-${last!.reps}` : "intro";
+  // El consejo es sobre la serie que se ACABA de guardar (29-oct): antes miraba la de número más alto, y si ya estaba la serie 3,
+  // guardar la 1 con menos repeticiones no mostraba nada.
+  const last = just && just.itemId === item.id ? just : null;
+  const tip = r && last ? setTip(r, last.reps) : null;
+  const key = tip ? `s${last!.setNumber}-${last!.reps}-${last!.at}` : "intro";
   // El aviso de entrada sale una vez al día por ejercicio; se decide una sola vez al abrir el ejercicio.
   const [intro] = useState(() => {
     if (!r) return false;
@@ -194,13 +197,13 @@ function RepTip({ item, sets }: { item: PlanItem; sets: SetLog[] }) {
     : `Haz tus ${item.sets} series${w} buscando entre ${r.min} y ${r.max} repeticiones. Si pasas de ${r.max}, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Si tienes dudas, pregúntale a Jeff.`);
   return (
     <button type="button" className={`rep-pop${tip ? " warn" : ""}`} role="status" onClick={() => setShown(null)} aria-label="Cerrar consejo">
-      <Icon name={tip ? (last!.reps! > r.max ? "up" : "down") : "dumbbell"} size={15} />
+      <Icon name={tip ? (last!.reps > r.max ? "up" : "down") : "dumbbell"} size={15} />
       <span>{text}</span>
       <i className="rep-pop-bar" style={{ animationDuration: tip ? "7s" : "9s" }} />
     </button>
   );
 }
-function SetRow({ cid, item, n, today, saved, locked, hint }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean }) {
+function SetRow({ cid, item, n, today, saved, locked, hint, onSaved }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onSaved?: (setNumber: number, reps: number) => void }) {
   const range = repRange(item.reps), target = range ? NaN : parseInt(item.reps, 10);   // con rango, el cliente escribe lo que hizo de verdad
   // Las casillas ya traen lo planeado (editable y visible): "✓" guarda exactamente lo que se ve, nunca algo oculto.
   const log = useLogSet(cid), unlog = useUnlogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
@@ -209,7 +212,7 @@ function SetRow({ cid, item, n, today, saved, locked, hint }: { hint?: boolean; 
   const ok = repsVal >= 0 && (wVal == null || wVal >= 0) && !Number.isNaN(repsVal);
   const dirty = !!saved && ((saved.reps ?? null) !== (repsVal ?? null) || (saved.weight ?? null) !== (wVal ?? null));
   const toggle = () => { if (saved && !dirty) { if (!locked && !unlog.isPending) unlog.mutate({ date: today, itemId: item.id, setNumber: n }); return; } save(); };
-  const save = () => { if (!ok || locked || log.isPending) return; log.mutate({ date: today, itemId: item.id, setNumber: n, reps: repsVal, weight: wVal ?? null }); };
+  const save = () => { if (!ok || locked || log.isPending) return; log.mutate({ date: today, itemId: item.id, setNumber: n, reps: repsVal, weight: wVal ?? null }); onSaved?.(n, repsVal); };
   const onKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") { e.preventDefault(); save(); } };
   return (
     <div className="set-row">

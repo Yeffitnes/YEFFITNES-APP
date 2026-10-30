@@ -45,9 +45,11 @@ export function ObjectiveCard() {
   );
 }
 export function NutritionTodayCard({ cid, features, name }: { cid: string; features: string[]; name: string }) {
-  const has = features.includes("nutrition"), { data } = useClientNutrition(has ? cid : ""), wd = todayWeekday(), logs = useMealLogs(has ? cid : "", localDate()), [unfold, setUnfold] = useState(false);
+  const has = features.includes("nutrition"), { data, isPending } = useClientNutrition(has ? cid : ""), wd = todayWeekday(), logs = useMealLogs(has ? cid : "", localDate()), [unfold, setUnfold] = useState(false);
   useFocusAnchor("nutricion", () => setUnfold(true));
   if (!has) return <div className="card-nutrition"><FeatureGate features={features} feature="nutrition" name={name}><span /></FeatureGate></div>;
+  // Cargando: esqueleto (antes decía "Tu coach todavía no publica tu plan de nutrición" mientras cargaba, aunque sí lo tuviera).
+  if (isPending && cid) return <div id="nutricion" className="card card-nutrition"><div className="card-tag">Tu plan de hoy</div><div className="card-title" style={{ fontSize: 15 }}>Nutrición</div><div className="sk" style={{ height: 90, marginTop: 12 }} /></div>;
   const meals = data ? [...data.meals.filter((m) => m.weekday === null), ...data.meals.filter((m) => m.weekday === wd)] : [];
   if (data === null) return <div className="card-nutrition"><PlanWait kind="nutrition" /></div>;
   // Todas las comidas marcadas: se pliega en un resumen y se despliega con un toque (pedido de Cristian, 27-oct).

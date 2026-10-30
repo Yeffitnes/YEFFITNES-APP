@@ -80,7 +80,8 @@ Estado al **29-oct-2026, noche** (última fusión a `main`: 28-oct, `37970c1`; l
 - `Permissions-Policy` controla el micrófono (`next.config.mjs`: `microphone=(self)`).
 - Blob URLs de vídeo: créalas en `useEffect`, no en `useMemo` (se revocaban en modo estricto y el vídeo salía negro).
 - La reproducción del recortador y la grabación de audio solo se probaron en Chromium simulado.
-- Las capturas de comprobación se pueden hacer con Playwright sobre una página estática que cargue el CSS compilado de `.next/static/css`; no hay Supabase local completo, así que **no se pueden abrir las pantallas con datos reales**.
+- **Desde el 29-oct SÍ se puede abrir la app con datos:** `tests/e2e/` levanta Postgres + PostgREST + un Supabase mínimo y la recorre con Playwright (ver su README). Sin Storage, Realtime, push ni Bunny. Después, recompila normal antes de los chequeos.
+- **Hidratación:** toda página nueva del portal o del coach debe terminar con `<PageReady />` (si no, sus consultas esperan 2,5 s). No leas `localStorage` ni la hora al dibujar por primera vez algo que también pinta el servidor.
 
 - Una regla genérica `.today{display:grid}` (tarjeta de Hoy del coach) pisaba la columna del día actual en la agenda: en el celular la agenda "se quedaba" en hoy. Cuidado con clases genéricas (`.today`, `.active`) que se repiten en otras pantallas; usa selectores con contexto (`.week-grid .day-col`).
 - Al insertar texto en un archivo con `replace(..., 1)` la primera coincidencia puede estar en un **comentario de cabecera** (pasó en la 0038: un bloque quedó arriba). Revisa el resultado.

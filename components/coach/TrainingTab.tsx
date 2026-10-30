@@ -27,7 +27,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, flexWrap: "wrap", gap: 12 }}>
           <div>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 16 }}>{active ? active.name : "Sin plan de entrenamiento"}</div>
-            <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>{active ? <>Activo desde {fmt(active.startsOn)} · <span style={{ color: "#1C9A5B", fontWeight: 700 }}>● En curso</span></> : `Crea un plan para ${clientName} y asígnale rutinas por día.`}</div>
+            <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>{active ? <>Activo desde {fmt(active.startsOn)} · <span style={{ color: "var(--text)", fontWeight: 700 }}>● En curso</span></> : `Crea un plan para ${clientName} y asígnale rutinas por día.`}</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {!!past.length && <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setHist(!hist)}>Ver planes anteriores</button>}
@@ -72,7 +72,7 @@ function NewPlan({ clientId, hasActive, onClose }: { clientId: string; hasActive
   const go = () => { if (!name.trim()) return setErr("Ponle un nombre al plan."); create.mutate(name.trim(), { onSuccess: onClose }); };
   return (
     <Modal title="Crear nuevo plan" sub={hasActive ? "El plan actual pasará a “Finalizado” y este será el activo. Las rutinas se asignan después, día por día." : "Después le asignas una rutina a cada día de la semana."} onClose={onClose}>
-      <div className="modal-field"><label>Nombre del plan</label><input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="Ej. Fuerza — semana 1" /></div>
+      <div className="modal-field"><label>Nombre del plan</label><input aria-label="Nombre del plan" autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="Ej. Fuerza — semana 1" /></div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={create.isPending} onClick={go}>{create.isPending ? "Creando…" : "Crear plan"}</button></div>
     </Modal>

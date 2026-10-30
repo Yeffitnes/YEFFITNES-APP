@@ -5,6 +5,7 @@ import "@/app/messages.css";
 import { localDate, upcomingOnly, useUnseenActivity, useClients, useCoachAttention, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
 import { needs } from "@/lib/attention";
 import { useLiveSync } from "@/lib/live";
+import { useAfterBoot } from "@/lib/use-now";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
 import { useProfile, useToast } from "@/components/Providers";
@@ -21,10 +22,10 @@ type Item = { key: string; text: string; href: string };
 const PUSH_TXT: Record<PushState, string> = { unsupported: "Tu navegador no permite avisos. Instala la app en la pantalla de inicio e inténtalo de nuevo.", not_configured: "Los avisos aún no están configurados.", denied: "Bloqueaste los avisos. Actívalos en los ajustes del navegador o del teléfono.", off: "Activar avisos en este teléfono", on: "Avisos activados en este teléfono" };
 
 function useItems(side: "client" | "coach"): Item[] {
-  const { profileId } = useProfile(), me = useMe(side === "client" ? profileId : ""), cid = side === "client" ? me.data?.id ?? "" : "";
+  const boot = useAfterBoot(), { profileId } = useProfile(), me = useMe(side === "client" ? profileId : ""), cid = side === "client" && boot ? me.data?.id ?? "" : "";
   const unread = useUnread(), today = localDate();
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
-  const rep = useTodayReport(cid, today, wantsReport), bookings = useMyBookings(cid);
+  const rep = useTodayReport(cid, today, wantsReport && boot), bookings = useMyBookings(cid);
   // Lo del coach solo se pide en el panel del coach (antes el portal del cliente también lo pedía y lo repetía cada minuto).
   const coach = side === "coach", clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach);
   const items: Item[] = [], n = unread.data ?? 0;
@@ -55,7 +56,8 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
   const { profileId: pid } = useProfile(), meLive = useMe(side === "client" ? pid : "");
   useLiveSync(side, side === "client" ? meLive.data?.id : undefined);   // tiempo real (29-oct)
   const qc = useQueryClient();
-  useEffect(() => { if (side === "client") void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side]);   // "Mensajes" abre al instante
+  const boot = useAfterBoot(1500);
+  useEffect(() => { if (side === "client" && boot) void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side, boot]);   // "Mensajes" abre al instante
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);
   const { profileId } = useProfile(), pathname = usePathname(), toast = useToast();
   useEffect(() => { void pushState().then(setPs); void resyncPush(profileId); }, [profileId]);

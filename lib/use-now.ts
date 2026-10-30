@@ -12,3 +12,11 @@ export function useNow(everyMs = 60_000): Date {
   }, [everyMs]);
   return now;
 }
+// true un momento DESPUÉS de abrir la pantalla (29-oct). Las consultas que no son urgentes (campanita, mensajes sin leer) esperan a esto:
+// si llegaban antes de que la pantalla terminara de "despertar" (hidratar), Hoy se dibujaba distinto a lo que mandó el servidor
+// y React tenía que redibujarla entera (error 418), justo al abrir la app.
+export function useAfterBoot(ms = 900): boolean {
+  const [ok, setOk] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setOk(true), ms); return () => clearTimeout(t); }, [ms]);
+  return ok;
+}

@@ -60,7 +60,7 @@ function MeasureModal({ clientId, onClose }: { clientId: string; onClose: () => 
   };
   return (
     <Modal title="Registrar medición" sub="Se guardará con la etiqueta “Tú”. Si ya registraste hoy, se actualiza." onClose={onClose}>
-      <div className="modal-row2">{M.map((m) => <div key={m.id} className="modal-field"><label>{m.label} ({m.unit})</label><input inputMode="decimal" value={v[m.id] ?? ""} onChange={(e) => setV({ ...v, [m.id]: e.target.value })} placeholder="—" /></div>)}</div>
+      <div className="modal-row2">{M.map((m) => <div key={m.id} className="modal-field"><label htmlFor={`mm-${m.id}`}>{m.label} ({m.unit})</label><input id={`mm-${m.id}`} inputMode="decimal" value={v[m.id] ?? ""} onChange={(e) => setV({ ...v, [m.id]: e.target.value })} placeholder="—" /></div>)}</div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : "Guardar"}</button></div>
     </Modal>

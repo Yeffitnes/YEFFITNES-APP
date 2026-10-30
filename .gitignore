@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+tests/e2e/postgrest
+tests/e2e/*.tar.xz
+tests/e2e/shots/
+tests/e2e/*.log

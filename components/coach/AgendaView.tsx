@@ -65,11 +65,11 @@ function PublishModal({ date, onClose }: { date: string; onClose: () => void }) 
   };
   return (
     <Modal title="Publicar disponibilidad" sub="Estos huecos quedarán visibles para que tus clientes activos los reserven." onClose={onClose}>
-      <div className="modal-field"><label>Fecha</label><input type="date" value={d} onChange={(e) => setD(e.target.value)} /></div>
-      <div className="modal-row2"><div className="modal-field"><label>Desde</label><input type="time" value={a} onChange={(e) => setA(e.target.value)} /></div><div className="modal-field"><label>Hasta</label><input type="time" value={b} onChange={(e) => setB(e.target.value)} /></div></div>
-      <div className="modal-row2"><div className="modal-field"><label>Duración de cada hueco</label><select value={dur} onChange={(e) => setDur(Number(e.target.value))}><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
-        <div className="modal-field"><label>Tipo</label><select value={kind} onChange={(e) => setKind(e.target.value)}><option value="initial">Llamada inicial</option><option value="followup">Seguimiento</option></select></div></div>
-      <div className="modal-field"><label>Cupos por hueco (1 = sesión individual; más de 1 = clase grupal)</label><input type="number" min={1} max={30} value={cap} onChange={(e) => setCap(Math.min(30, Math.max(1, Number(e.target.value) || 1)))} /></div>
+      <div className="modal-field"><label>Fecha</label><input aria-label="Fecha" type="date" value={d} onChange={(e) => setD(e.target.value)} /></div>
+      <div className="modal-row2"><div className="modal-field"><label>Desde</label><input aria-label="Desde" type="time" value={a} onChange={(e) => setA(e.target.value)} /></div><div className="modal-field"><label>Hasta</label><input type="time" value={b} onChange={(e) => setB(e.target.value)} /></div></div>
+      <div className="modal-row2"><div className="modal-field"><label>Duración de cada hueco</label><select aria-label="Duración de cada hueco" value={dur} onChange={(e) => setDur(Number(e.target.value))}><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
+        <div className="modal-field"><label>Tipo</label><select aria-label="Tipo" value={kind} onChange={(e) => setKind(e.target.value)}><option value="initial">Llamada inicial</option><option value="followup">Seguimiento</option></select></div></div>
+      <div className="modal-field"><label>Cupos por hueco (1 = sesión individual; más de 1 = clase grupal)</label><input aria-label="Cupos por hueco" type="number" min={1} max={30} value={cap} onChange={(e) => setCap(Math.min(30, Math.max(1, Number(e.target.value) || 1)))} /></div>
       <div className="modal-cap-hint">Se crearán {starts.length} hueco{starts.length === 1 ? "" : "s"} {cap > 1 ? `de clase grupal (${cap} cupos cada uno)` : "individuales"}. Los horarios que ya existan se respetan.</div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={pub.isPending} onClick={go}>{pub.isPending ? "Publicando…" : "Publicar"}</button></div>
@@ -83,8 +83,8 @@ function AssignModal({ slots, onClose }: { slots: CoachSlot[]; onClose: () => vo
     <Modal title="Agendar cliente" sub="Se reserva directamente en su nombre, sin pasar por el portal. Queda confirmada de inmediato." onClose={onClose}>
       {!slots.length ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>No hay huecos libres esta semana. Publica disponibilidad primero.</p> : (
         <>
-          <div className="modal-field"><label>Cliente</label><select value={c} onChange={(e) => setC(e.target.value)}><option value="">Elige un cliente…</option>{act.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
-          <div className="modal-field"><label>Horario</label><select value={s} onChange={(e) => setS(e.target.value)}><option value="">Elige un hueco libre…</option>{slots.map((x) => <option key={x.id} value={x.id}>{DAYLONG[dayIdx(new Date(x.startsAt))]} {new Date(x.startsAt).getDate()} · {hhmm(x.startsAt)} · {KIND_LABEL[x.kind]}</option>)}</select></div>
+          <div className="modal-field"><label>Cliente</label><select aria-label="Cliente" value={c} onChange={(e) => setC(e.target.value)}><option value="">Elige un cliente…</option>{act.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
+          <div className="modal-field"><label>Horario</label><select aria-label="Horario" value={s} onChange={(e) => setS(e.target.value)}><option value="">Elige un hueco libre…</option>{slots.map((x) => <option key={x.id} value={x.id}>{DAYLONG[dayIdx(new Date(x.startsAt))]} {new Date(x.startsAt).getDate()} · {hhmm(x.startsAt)} · {KIND_LABEL[x.kind]}</option>)}</select></div>
           {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
           <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={book.isPending} onClick={() => (c && s ? book.mutate({ slotId: s, clientId: c }, { onSuccess: onClose }) : setErr("Elige un cliente y un horario."))}>{book.isPending ? "Agendando…" : "Agendar sesión"}</button></div>
         </>)}

@@ -1018,3 +1018,8 @@ html{scroll-behavior:smooth;}
 .wadv-group .wadv-txt{flex:1;min-width:200px}
 .wadv-group .wadv-txt b{font-size:13.5px;display:flex;align-items:center;gap:6px}
 @media (max-width:560px){.wadv-group .wadv-row{padding-left:0}.wadv-group .wadv-acts{padding-left:0}}
+/* 29-oct (revisión de punta a punta): botones con icono (Audio, Foto, Vídeo…) — el icono salía arriba a la izquierda y el texto debajo,
+   porque la base de estilos pone los svg como bloque. */
+.modal-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;padding:0 12px}
+.modal-btn svg{display:inline-block;flex:none}
+.wadv>svg{display:inline-block}

@@ -51,8 +51,8 @@ function WeightAdvice({ clientId, sets, effort }: { clientId: string; sets: Clie
     <div className={`wadv ${a.kind}`}>
       <Icon name={a.kind === "up" ? "up" : "down"} size={14} />
       <div className="wadv-txt"><b>{a.kind === "up" ? "Recomendado: subir el peso" : "Recomendado: bajar el peso"}</b><span>{a.reason} {range.fixed ? "Pedido" : "Rango"}: {rangeText(range)} repeticiones.{item.weight != null ? ` En el plan: ${item.weight} kg.` : ""}</span></div>
-      {done != null ? <span className="wadv-ok">Plan actualizado: {done} kg</span>
-        : next != null && <button type="button" className="mini-btn" disabled={setW.isPending} onClick={() => setW.mutate({ itemId: item.id, weight: next }, { onSuccess: () => setDone(next) })}>{a.kind === "up" ? "Subir" : "Bajar"} a {next} kg</button>}
+      {done != null ? <span className="wadv-ok">Plan actualizado: {String(done).replace(".", ",")} kg</span>
+        : next != null && <button type="button" className="pd-btn primary" disabled={setW.isPending} onClick={() => setW.mutate({ itemId: item.id, weight: next }, { onSuccess: () => setDone(next) })}>{a.kind === "up" ? "Subir" : "Bajar"} a {String(next).replace(".", ",")} kg</button>}
     </div>
   );
 }

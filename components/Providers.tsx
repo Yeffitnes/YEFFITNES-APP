@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { UploadProvider } from "@/lib/upload-manager";
+import { pauseUntilReady, resumeNetwork } from "@/components/PageReady";
 import { fetchActivePlanClients, fetchClients, fetchExercises, fetchMeasures, fetchPlans, fetchRecentLogs, fetchRoutines, fetchTrainingPlans, fetchLogs, KEYS, type Me, type TrainingPlan, type WorkoutLog } from "@/lib/queries";
 const Toast = createContext<(msg: string, err?: boolean) => void>(() => {});
 export const useToast = () => useContext(Toast);
@@ -12,6 +13,7 @@ export const useWorkspaceId = () => useContext(Ws);
 export function Providers({ workspaceId, profileId = "", name = "", prefetch = true, me, seed, children }: { workspaceId: string; profileId?: string; name?: string; prefetch?: boolean; me?: Me | null; seed?: { plans: TrainingPlan[] | null; logs: WorkoutLog[] | null }; children: React.ReactNode }) {
   const [qc] = useState(() => {
     const c = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 30_000, gcTime: 10 * 60_000 } } });
+    pauseUntilReady();   // ver components/PageReady.tsx: nada sale a la red hasta que la página terminó de despertar
     if (me) c.setQueryData(["me", profileId], me); // el servidor ya lo leyó: la primera pantalla no espera ese viaje
     if (me?.id && seed?.plans) c.setQueryData(["plans-of", me.id], seed.plans); // igual la rutina y los registros: Hoy sale de una
     if (me?.id && seed?.logs) c.setQueryData(["logs", me.id], seed.logs);
@@ -21,6 +23,7 @@ export function Providers({ workspaceId, profileId = "", name = "", prefetch = t
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const show = useCallback((msg: string, err = false) => { setToast({ msg, err }); clearTimeout(timer.current); timer.current = setTimeout(() => setToast(null), 3200); }, []);
   useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => { const t = setTimeout(resumeNetwork, 2500); return () => clearTimeout(t); }, []);   // seguro por si una página no trae PageReady
   // Al entrar al panel se precargan los datos principales: después, cada pantalla abre al instante.
   useEffect(() => { if (!prefetch) return; void Promise.all([
     qc.prefetchQuery({ queryKey: KEYS.clients, queryFn: fetchClients }), qc.prefetchQuery({ queryKey: KEYS.plans, queryFn: fetchPlans }),

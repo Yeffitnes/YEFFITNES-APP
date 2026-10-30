@@ -41,10 +41,10 @@ function RoutineModal({ r, exercises, noExercises, onClose }: { r: Routine | nul
     <Modal wide title={r ? "Editar rutina" : "Nueva rutina"} sub="Junta ejercicios de tu catálogo con sus series y repeticiones." onClose={onClose}>
       {noExercises ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 16 }}>Primero crea algunos ejercicios en el catálogo. <Link href="/coach/catalogo/ejercicios" onClick={onClose} style={{ color: "var(--accent)", fontWeight: 700 }}>Ir a ejercicios</Link></p> : (
         <>
-          <div className="modal-field"><label>Nombre</label><input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Tren superior completo" /></div>
-          <div className="modal-row2"><div className="modal-field"><label>Tipo</label><input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Fuerza, HIIT…" /></div>
-            <div className="modal-field"><label>Duración (min)</label><input type="number" min={1} value={min} onChange={(e) => setMin(e.target.value)} /></div></div>
-          <div className="modal-field"><label>Vídeo de la rutina (YouTube, opcional)</label><input value={video} onChange={(e) => setVideo(e.target.value)} placeholder="https://youtu.be/…" /><p className="modal-cap-hint">Lo ven todos los clientes con esta rutina. Para un cliente puedes subir uno propio desde su ficha.</p></div>
+          <div className="modal-field"><label>Nombre</label><input aria-label="Nombre" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Tren superior completo" /></div>
+          <div className="modal-row2"><div className="modal-field"><label>Tipo</label><input aria-label="Tipo" value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Fuerza, HIIT…" /></div>
+            <div className="modal-field"><label>Duración (min)</label><input aria-label="Duración" type="number" min={1} value={min} onChange={(e) => setMin(e.target.value)} /></div></div>
+          <div className="modal-field"><label>Vídeo de la rutina (YouTube, opcional)</label><input aria-label="Vídeo de la rutina" value={video} onChange={(e) => setVideo(e.target.value)} placeholder="https://youtu.be/…" /><p className="modal-cap-hint">Lo ven todos los clientes con esta rutina. Para un cliente puedes subir uno propio desde su ficha.</p></div>
           <RoutineForm exercises={exercises} items={items} onChange={setItems} />
           {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}
           <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : "Guardar"}</button></div>
