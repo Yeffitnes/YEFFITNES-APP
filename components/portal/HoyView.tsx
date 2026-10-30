@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSignedAudio, useThread } from "@/lib/messages";
 import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
+import { workoutEditState, type EditState } from "@/lib/queries";
+import { GuideFace } from "./Guide";
 import { localDate, useFinish, useLogs, useLogSet, useUnlogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
@@ -25,6 +27,8 @@ import { ExPic, ExPicViewer } from "@/components/ExPic";
 import { ANCHORS, focusAnchor, useFocusAnchor } from "@/lib/focus";
 import { feedbackUnseen, hasFeedback, useClientNutrition, useCoachCancels, useMarkFeedbackSeen, useMealLogs, useMyNudges, useTodayReport, type NudgeKind } from "@/lib/queries";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+// Corregir UNA vez (30-oct): después de terminar, una sola corrección y nunca si Jeff ya lo revisó.
+const EDIT_NOTE: Record<EditState, string> = { open: "", once: "Puedes corregirlo una vez mientras Jeff no lo revise.", used: "Ya usaste tu corrección.", reviewed: "Jeff ya lo revisó: queda así." };
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
 // Un día pasado sin registro NO se pinta en rojo: puede ser anterior al plan o un día sin entrenar. Solo se marca lo hecho.
@@ -106,7 +110,7 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
   const finish = useFinish(cid);
   const saved = (id: string) => log?.sets.filter((s) => s.itemId === id) ?? [];
   const doneCount = items.filter((i) => new Set(saved(i.id).filter((s) => s.setNumber <= i.sets).map((s) => s.setNumber)).size >= i.sets).length;
-  const anySet = (log?.sets.length ?? 0) > 0, closed = !!log?.completed && !editing;
+  const anySet = (log?.sets.length ?? 0) > 0, closed = !!log?.completed && !editing, edit = workoutEditState(log);
   // Pasa al siguiente ejercicio SOLO cuando el que está abierto tiene TODAS sus series marcadas (pedido de Cristian, 29-oct).
   // Antes bastaba con marcar la última serie: si se tocaba por error, el ejercicio se plegaba y saltaba al otro aunque faltaran series.
   const doneNow = (i: PlanItem) => new Set(saved(i.id).filter((s) => s.setNumber <= i.sets).map((s) => s.setNumber)).size >= i.sets;
@@ -124,11 +128,13 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
     <div id="rutina" className="card card-routine fold-card">
       <button type="button" className="fold-head" aria-expanded={false} onClick={() => setUnfold(true)}>
         <span className="fold-ok"><Icon name="check" size={16} stroke={2.4} /></span>
-        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Rutina de hoy · completada</span><b>{title}</b><small>{log?.sets.length ?? 0} series registradas{log?.effort ? ` · esfuerzo ${log.effort}/10` : ""}</small></span>
+        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Rutina de hoy · completada</span><b>{title}</b><small>{log?.sets.length ?? 0} series registradas{log?.effort ? ` · esfuerzo ${log.effort}/10` : ""}{(log?.edits ?? 0) > 0 ? " · corregida" : ""}</small></span>
+        <span className="fold-face gd-pop" aria-hidden><GuideFace size={34} /></span>
         <Icon name="down" size={16} />
       </button>
       {log && hasFeedback(log) && !feedbackUnseen(log) && <div className="fold-coach"><div className="card-tag">Respuesta de tu coach</div><FeedbackBody log={log} /></div>}
-      <div className="fold-actions"><button type="button" className="mini-btn ghost" onClick={() => setUnfold(true)}>Ver detalle</button><button type="button" className="mini-btn ghost" onClick={() => { setUnfold(true); setEditing(true); }}>Editar</button></div>
+      <div className="fold-actions"><button type="button" className="mini-btn ghost" onClick={() => setUnfold(true)}>Ver detalle</button>{edit === "once" && <button type="button" className="mini-btn ghost" onClick={() => { setUnfold(true); setEditing(true); }}>Corregir (1 vez)</button>}</div>
+      <p className="fold-note">{EDIT_NOTE[edit]}</p>
     </div>);
   return (
     <div id="rutina" className={`card card-routine${log?.completed ? " fold-open" : ""}`}>
@@ -155,13 +161,14 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
       {pic && <ExPicViewer image={pic.image} name={pic.name} note={pic.instructions} onClose={() => setPic(null)} />}
       <Link href="/inicio/plan" className="tech-link" style={{ marginTop: 14, display: "inline-flex" }}>Ver rutina completa <Icon name="arrow" size={13} /></Link>
       <div style={{ marginTop: 18 }}>
-        {closed ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><span className="pill-done">COMPLETADO · ESFUERZO {log?.effort}/10</span><button className="mini-btn ghost" onClick={() => setEditing(true)}>Editar</button></div> : (
+        {closed ? <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}><span className="pill-done">COMPLETADO · ESFUERZO {log?.effort}/10</span>{edit === "once" && <button className="mini-btn ghost" onClick={() => setEditing(true)}>Corregir (1 vez)</button>}<span className="fold-note" style={{ padding: 0 }}>{EDIT_NOTE[edit]}</span></div> : (
           <>
             <div className="card-tag" style={{ marginBottom: 0 }}>¿Qué tan exigente fue? (1 = suave, 10 = máximo)</div>
             <div className="effort-row">{Array.from({ length: 10 }, (_, k) => <button key={k} className={`effort-btn${effort === k + 1 ? " on" : ""}`} aria-label={`Esfuerzo ${k + 1}`} onClick={() => setEffort(k + 1)}>{k + 1}</button>)}</div>
             <textarea className="set-input" style={{ height: 70, padding: 10, resize: "vertical" }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario para Jeff (opcional)" aria-label="Comentario para tu coach" />
             <button className="mini-btn primary" style={{ marginTop: 12, width: "100%", height: 44 }} disabled={!anySet || !effort || finish.isPending}
-              onClick={() => finish.mutate({ date: today, effort, note }, { onSuccess: () => { setEditing(false); setUnfold(false); } })}>{finish.isPending ? "Guardando…" : "Terminar entrenamiento"}</button>
+              onClick={() => finish.mutate({ date: today, effort, note }, { onSuccess: () => { setEditing(false); setUnfold(false); } })}>{finish.isPending ? "Guardando…" : editing ? "Guardar corrección" : "Terminar entrenamiento"}</button>
+            {editing && <p className="routine-progress-count">Es tu única corrección: después ya no se podrá cambiar.</p>}
             {!anySet && <p className="routine-progress-count">Registra al menos una serie para poder terminar.</p>}
           </>)}
       </div>

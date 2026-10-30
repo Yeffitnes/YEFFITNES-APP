@@ -25,6 +25,13 @@ const step = async (name, fn) => { try { const r = await fn(); log("OK  ", name,
     await c.getByRole("button", { name: "Esfuerzo 8" }).click(); await c.getByRole("button", { name: "Terminar entrenamiento" }).click(); await c.waitForTimeout(1500);
     if (!(await c.locator(".fold-card").count())) throw new Error("no se plegó"); return "plegada";
   });
+  await step("corregir: cabecita del guía y botón 1 vez", async () => {
+    if (!(await c.locator(".fold-card .fold-face").count())) throw new Error("sin cabecita");
+    await c.locator(".fold-card").screenshot({ path: `${S}/f_fold_face.png` });
+    await c.getByRole("button", { name: /Corregir \(1 vez\)/ }).click(); await c.waitForTimeout(800);
+    await c.getByRole("button", { name: "Guardar corrección" }).click(); await c.waitForTimeout(1500);
+    if (await c.getByRole("button", { name: /Corregir/ }).count()) throw new Error("sigue ofreciendo corregir"); return (await c.locator(".fold-card").innerText()).replace(/\n/g, " | ").slice(0, 140);
+  });
   await step("nutrición: marcar Desayuno", async () => { await c.locator(".meal-row", { hasText: "Desayuno" }).first().click(); await c.waitForTimeout(1000); });
   await c.screenshot({ path: `${S}/f_camila_hoy.png`, fullPage: true });
   // Agenda: reservar y cancelar dentro de los 10 min
@@ -85,8 +92,9 @@ const step = async (name, fn) => { try { const r = await fn(); log("OK  ", name,
   // ---------- De vuelta al cliente: ve lo de Jeff ----------
   await c.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" }); await c.waitForTimeout(1200);
   await step("cliente: ve la respuesta de Jeff", async () => { const t = await c.locator("body").innerText(); if (!/Jeff respondió/.test(t)) throw new Error("no"); });
+  await step("cliente: revisado por Jeff ya no se puede corregir", async () => { if (await c.getByRole("button", { name: /Corregir/ }).count()) throw new Error("ofrece corregir"); });
   await step("cliente: ve la sesión cancelada con motivo", async () => { const t = await c.locator("body").innerText(); if (!/Jeff canceló tu sesión/.test(t) || !/imprevisto/.test(t)) throw new Error("no"); });
-  await step("cliente: ve vídeo del día y de la semana", async () => { const t = await c.locator(".fv-stack").innerText().catch(() => ""); if (!/Vídeo de la semana/.test(t)) throw new Error(t.slice(0, 80)); });
+  await step("cliente: ve vídeo del día y de la semana", async () => { const t = await c.locator(".fv-stack").innerText().catch(() => ""); if (!/Vídeo de la semana/i.test(t)) throw new Error(t.slice(0, 80)); });
   await c.screenshot({ path: `${S}/f_camila_hoy2.png`, fullPage: true });
   const ac = await ctxFor(b, "andres", true), a = await ac.newPage(); watch(a, "andres", errs);
   await a.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" });

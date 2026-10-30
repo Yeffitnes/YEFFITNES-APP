@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-10-30 (tarde) - Corregir una sola vez, reporte visible en la ficha, vídeos horizontales y cabecita del guía
+Pedido de Cristian (30-oct, 18:30).
+- **Corregir lo terminado (MIGRACIÓN 0042, PROPUESTA por validar con Jeff):** al terminar el entrenamiento, el reporte del día o la nutrición del día, el cliente puede corregir **una sola vez**, y **nunca** después de que Jeff lo revisó. Lo impone la base de datos (no solo la pantalla): una segunda corrección o una después de la revisión se rechaza con un mensaje claro. Al corregir se actualiza la misma fila (no se crea un comentario nuevo), así que Jeff no recibe duplicados; en su panel sale "· corregido por el cliente". `0042_edit_once.sql`, `rls_editonce.sql`, `lib/queries.ts`, `HoyView.tsx`, `ReportCard.tsx`, `MealChecklist.tsx`, `RecentWorkouts.tsx`, `TodayCard.tsx`.
+- **Ficha de Jeff → Hoy → Reporte diario solo mostraba "Marcar visto":** el texto era blanco sobre fondo blanco. Ahora la tarjeta es negra con brillo rojo y el comentario se lee. `coach.css`.
+- **Vídeos horizontales se veían en cuadros verticales:** el reproductor usa la forma real del vídeo (Bunny dice ancho y alto): horizontal ocupa el ancho, vertical queda centrado. También el recorte de vídeo al enviar el reporte y la miniatura del vídeo elegido. `lib/bunny.ts`, `api/video/play`, `BunnyModal.tsx` (`VideoFrame`), `TodayCard.tsx`, `ReportsView.tsx`, `VideoTrimmer.tsx`, `ReportCard.tsx`, `portal.css`.
+- **Cabecita del guía** a un lado cuando algo queda completado/plegado (entreno, nutrición, reporte). Revisada en captura: se ve pequeña y no tapa nada. Si no gusta, se quita la clase `fold-face` de `HoyView.tsx`, `QuickRow.tsx`, `ReportCard.tsx`, `HoySide.tsx`.
+- **Lección del atasco anotada** en `HANDOFF.md` §7 y `AGENT_PLAYBOOK.md` §3 y §7: nunca pausar red/consultas/acciones de forma global; probar el arranque con red lenta (`LATENCY=150`).
+- **Verificado en local con red lenta (150 ms):** todos los flujos OK (incluye: corregir una vez, que no deje una segunda, que no deje tras la revisión de Jeff), reporte visible en la ficha, 0 pantallas atascadas, aperturas sin redibujar, sin errores de consola. Pruebas de ataque: `TODO OK` con 42 migraciones.
+- **NO verificado:** vídeos reales de Bunny (la forma horizontal/vertical depende de que Bunny devuelva ancho y alto; si no, se usa 16:9 como antes), celular real.
+- Revertir: código, restaurar del commit `7a37a6c`. Base: los pasos están en la cabecera de `0042_edit_once.sql` (el código viejo funciona con la 0042 corrida).
+
 ## 2026-10-30 - URGENTE: la app se quedaba quieta (consultas y "Avisar" sin responder)
 Reporte de Cristian tras correr la 0041: muchas cosas no cargaban, "Avisar" se quedaba quieto y al refrescar tardaba muchísimo.
 - **Causa (error mío del 29-oct, noche 3):** para evitar que Hoy se redibujara al abrir, React Query arrancaba "sin red" y cada página daba la señal de seguir. Pero esa señal puede llegar ANTES de que React Query esté escuchando: entonces lo que ya estaba en espera se quedaba en pausa (unas cosas cargaban y otras no, y las acciones podían no salir). No tiene que ver con la 0041.

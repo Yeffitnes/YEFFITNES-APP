@@ -1023,3 +1023,7 @@ html{scroll-behavior:smooth;}
 .modal-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;padding:0 12px}
 .modal-btn svg{display:inline-block;flex:none}
 .wadv>svg{display:inline-block}
+/* 30-oct: el reporte diario en la ficha (pestaña Hoy) no se veía: el texto era blanco, pero el fondo oscuro de la tarjeta lo pisaba
+   otra regla y quedaba blanco sobre blanco (solo se veía "Marcar visto"). */
+.card.today-sec.today-dark{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.42),transparent 60%),var(--ink)!important;border-color:var(--ink)!important;color:#fff}
+.card.today-sec.today-dark .card-tag{color:rgba(255,255,255,.75)}

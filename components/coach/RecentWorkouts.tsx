@@ -29,7 +29,7 @@ export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", s
         <div key={l.id} style={{ borderTop: "1px solid var(--line)", marginTop: 12, paddingTop: 12 }}>
           <button onClick={() => setOpen(open === l.id ? null : l.id)} aria-expanded={open === l.id} style={{ all: "unset", cursor: "pointer", display: "flex", gap: 10, alignItems: "center", width: "100%", flexWrap: "wrap" }}>
             <span style={{ fontWeight: 700, fontSize: 13.5, flex: 1 }}>{when(l.date)} · {l.routine ?? "Entrenamiento"}</span>
-            <span style={{ fontSize: 12, color: "var(--text-dim)" }}>{l.sets.length} series{l.effort ? ` · esfuerzo ${l.effort}/10` : ""}</span>
+            <span style={{ fontSize: 12, color: "var(--text-dim)" }}>{l.sets.length} series{l.effort ? ` · esfuerzo ${l.effort}/10` : ""}{(l.edits ?? 0) > 0 ? " · corregido por el cliente" : ""}</span>
             <span className={`client-status ${l.completed && !l.seen ? "review" : "ok"}`}>{!l.completed ? "En curso" : l.seen ? "Revisado" : "Sin revisar"}</span>
           </button>
           {open === l.id && <Detail l={l} clientId={clientId} />}

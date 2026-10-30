@@ -48,5 +48,5 @@ export async function GET(req: NextRequest) {
 // quedarse cargando sin explicación. Si Bunny tarda en responder, se entrega el enlace igual.
 async function playable(videoId: string) {
   const st = await videoStatus(videoId);
-  return { url: embedUrl(videoId), processing: st?.processing ?? false, progress: st?.progress ?? null };
+  return { url: embedUrl(videoId), processing: st?.processing ?? false, progress: st?.progress ?? null, width: st?.width ?? null, height: st?.height ?? null };
 }

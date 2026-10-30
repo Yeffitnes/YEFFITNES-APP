@@ -1,9 +1,10 @@
 "use client";
+import { VideoFrame } from "@/components/ui/BunnyModal";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Modal } from "@/components/ui/Modal";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { fetchReportVideoUrl, localDate, useClientLogs, useClientNutrition, useCoachReports, useMealLogs, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
+import { fetchReportVideo, localDate, useClientLogs, useClientNutrition, useCoachReports, useMealLogs, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
 import { useThread, type Msg } from "@/lib/messages";
 import { ago } from "@/lib/format";
 import { hhmm } from "@/lib/dates";
@@ -16,7 +17,7 @@ const msgKind = (m: Msg) => (m.hasVideo || m.youtubeId ? "Vídeo" : m.audioPath 
 // Lo primero que Jeff necesita al abrir un cliente: qué hizo hoy (entreno, nutrición, reporte, mensajes y vídeos).
 export function TodayCard({ clientId, first, onGo }: { clientId: string; first: string; onGo: (tab: string) => void }) {
   const today = localDate(), logs = useClientLogs(clientId), nut = useClientNutrition(clientId), meals = useMealLogs(clientId, today), reports = useCoachReports(), thread = useThread(clientId), review = useReviewReport();
-  const [openLog, setOpenLog] = useState<boolean | null>(null), [openOld, setOpenOld] = useState<string | null>(null), [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean } | null>(null), [msgVideo, setMsgVideo] = useState<string | null>(null);
+  const [openLog, setOpenLog] = useState<boolean | null>(null), [openOld, setOpenOld] = useState<string | null>(null), [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean; width?: number | null; height?: number | null } | null>(null), [msgVideo, setMsgVideo] = useState<string | null>(null);
   const log = (logs.data ?? []).find((l) => l.date === today), lastLog = (logs.data ?? []).find((l) => l.completed);
   const dow = isoDow(new Date()), todays = (nut.data?.meals ?? []).filter((m) => m.weekday === null || m.weekday === dow), done = todays.filter((m) => m.id && (meals.data ?? []).includes(m.id)).length;
   const report = (reports.data ?? []).find((r) => r.clientId === clientId && r.date === today);
@@ -24,7 +25,7 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
   const oldPending = (logs.data ?? []).filter((l) => l.completed && !l.seen && l.date !== today);
   const logOpen = openLog ?? (!!log && !log.seen);
   const trained = !!log?.completed, nutOk = todays.length > 0 && done >= todays.length;
-  const openVideo = async (r: CoachReport) => { setPlay({ r, url: null, err: false }); try { setPlay({ r, url: await fetchReportVideoUrl(r.id), err: false }); } catch { setPlay({ r, url: null, err: true }); } };
+  const openVideo = async (r: CoachReport) => { setPlay({ r, url: null, err: false }); try { setPlay({ r, ...(await fetchReportVideo(r.id)), err: false }); } catch { setPlay({ r, url: null, err: true }); } };
   const Chip = ({ ok, label, val }: { ok: boolean; label: string; val: string }) => <div className={`today-chip${ok ? " ok" : ""}`}><span className="today-dot">{ok && <Icon name="check" size={11} stroke={2.6} />}</span><div><b>{label}</b><span>{val}</span></div></div>;
   return (
     <section className="today" aria-label={`Hoy con ${first}`}>
@@ -55,7 +56,7 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
         {logs.isPending && <div className="sk" style={{ height: 48, marginTop: 10 }} />}
         {logs.data && !log && <p className="today-empty">{first} aún no ha registrado su entrenamiento de hoy.{lastLog ? ` Último: ${ago(lastLog.date)}.` : ""}</p>}
         {log && <div style={{ marginTop: 8 }}><div className="today-line"><b>{log.routine ?? "Entrenamiento"}</b><span className={`client-status ${log.completed && !log.seen ? "review" : "ok"}`}>{!log.completed ? "En curso" : log.seen ? "Revisado" : "Sin revisar"}</span></div>
-          <div className="today-sub">{log.sets.length} series{log.effort ? ` · esfuerzo ${log.effort}/10` : ""}{log.note ? ` · “${log.note}”` : ""}</div>
+          <div className="today-sub">{log.sets.length} series{log.effort ? ` · esfuerzo ${log.effort}/10` : ""}{(log.edits ?? 0) > 0 ? " · corregido por el cliente" : ""}{log.note ? ` · “${log.note}”` : ""}</div>
           {log.completed && log.seen && <div className="today-done"><Icon name="check" size={13} stroke={2.4} /><span>Ya lo revisaste{log.comment || log.commentAudio || log.commentImage || log.commentVideo ? " y le dejaste tu respuesta" : ""}.</span><button type="button" onClick={() => setOpenLog(!logOpen)}>{logOpen ? "Ocultar" : "Ver o editar"}</button></div>}
           {logOpen && <Detail l={log} clientId={clientId} onSaved={() => setOpenLog(null)} />}</div>}
       </div>
@@ -91,7 +92,7 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
       {play && <Modal title={`Reporte de ${first}`} sub={play.r.comment ?? "Vídeo de verificación"} onClose={() => setPlay(null)} wide>
         {!play.url && !play.err && <div className="sk" style={{ height: 240 }} />}
         {play.err && <p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el vídeo (puede que ya se haya borrado o que aún se esté procesando; prueba en un minuto).</p>}
-        {play.url && <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: 12, overflow: "hidden", background: "#000" }}><iframe src={play.url} title={`Vídeo de ${first}`} allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }} /></div>}
+        {play.url && <VideoFrame url={play.url} title={`Vídeo de ${first}`} width={play.width} height={play.height} />}
         {!play.r.seen && <div className="modal-actions"><button className="modal-btn primary" onClick={() => { review.mutate(play.r.id); setPlay(null); }}>Marcar visto y cerrar</button></div>}
       </Modal>}
     </section>

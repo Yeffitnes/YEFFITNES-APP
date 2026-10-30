@@ -1,7 +1,7 @@
 "use client";
 import { useFocusAnchor } from "@/lib/focus";
 import { useState } from "react";
-import { Guide } from "./Guide";
+import { Guide, GuideFace } from "./Guide";
 import { PlanWait } from "./LockedPanel";
 import Link from "next/link";
 import { localDate, upcomingOnly, useClientNutrition, useMaterialList, useMealLogs, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialItem } from "@/lib/queries";
@@ -58,7 +58,8 @@ export function NutritionTodayCard({ cid, features, name }: { cid: string; featu
     <div id="nutricion" className="card card-nutrition fold-card">
       <button type="button" className="fold-head" aria-expanded={false} onClick={() => setUnfold(true)}>
         <span className="fold-ok"><Icon name="check" size={16} stroke={2.4} /></span>
-        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Nutrición de hoy · completada</span><b>{meals.length} de {meals.length} comidas</b><small>Toca para ver o cambiar</small></span>
+        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Nutrición de hoy · completada</span><b>{meals.length} de {meals.length} comidas</b><small>Toca para verla</small></span>
+        <span className="fold-face gd-pop" aria-hidden><GuideFace size={34} /></span>
         <Icon name="down" size={16} />
       </button>
     </div>);

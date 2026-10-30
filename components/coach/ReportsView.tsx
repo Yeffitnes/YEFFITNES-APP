@@ -1,17 +1,18 @@
 "use client";
+import { VideoFrame } from "@/components/ui/BunnyModal";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchReportVideoUrl, useCoachReports, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
+import { fetchReportVideo, useCoachReports, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { ago, gradient, initials } from "@/lib/format";
 import { Icon } from "@/components/ui/Icon";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function ReportsView() {
-  const { data, isPending, isError, refetch } = useCoachReports(), review = useReviewReport(), [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean } | null>(null);
+  const { data, isPending, isError, refetch } = useCoachReports(), review = useReviewReport(), [play, setPlay] = useState<{ r: CoachReport; url: string | null; err: boolean; width?: number | null; height?: number | null } | null>(null);
   useEffect(() => { void fetch("/api/video/purge", { method: "POST" }).catch(() => {}); }, []);   // borra de Bunny los vídeos vencidos
   const open = async (r: CoachReport) => {
     setPlay({ r, url: null, err: false });
-    try { setPlay({ r, url: await fetchReportVideoUrl(r.id), err: false }); } catch { setPlay({ r, url: null, err: true }); }
+    try { setPlay({ r, ...(await fetchReportVideo(r.id)), err: false }); } catch { setPlay({ r, url: null, err: true }); }
   };
   const all = data ?? [], pending = all.filter((r) => !r.seen), done = all.filter((r) => r.seen);
   const row = (r: CoachReport, i: number) => (
@@ -40,7 +41,7 @@ export function ReportsView() {
       {play && <Modal title={play.r.clientName} sub={play.r.comment ?? "Vídeo de verificación"} onClose={() => setPlay(null)} wide>
         {!play.url && !play.err && <div className="sk" style={{ height: 240 }} />}
         {play.err && <p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el vídeo (puede que ya se haya borrado o que aún se esté procesando; prueba en un minuto).</p>}
-        {play.url && <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: 12, overflow: "hidden", background: "#000" }}><iframe src={play.url} title={`Vídeo de ${play.r.clientName}`} allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }} /></div>}
+        {play.url && <VideoFrame url={play.url} title={`Vídeo de ${play.r.clientName}`} width={play.width} height={play.height} />}
         {!play.r.seen && <div className="modal-actions"><button className="modal-btn primary" onClick={() => { review.mutate(play.r.id); setPlay(null); }}>Marcar visto y cerrar</button></div>}
       </Modal>}
     </div>

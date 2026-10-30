@@ -24,7 +24,8 @@ Para cualquier agente (Claude u otro) o persona que continúe. Léelo junto con 
 1. `npx tsc --noEmit` y `npx next lint` sin errores (el `next build` completo no corre en el sandbox: las fuentes de Google están bloqueadas; lo valida Netlify).
 2. **Pruebas de ataque RLS:** `bash supabase/tests/run_local.sh` (aplica las migraciones desde cero y corre las suites; debe terminar en `TODO OK`). Requiere Postgres 16 local. En el sandbox de Claude: `apt-get update && apt-get install -y --no-install-recommends postgresql postgresql-client` (como root) y el script arranca el clúster y usa `runuser -u postgres`.
 3. Si agregaste tablas con datos del cliente: añade casos a `supabase/tests/` (cada suite usa los usuarios y datos de la anterior; el orden es `rls` → `rls_progress` → `rls_agenda` → `rls_material` → `rls_notes` → `rls_reports` → `rls_nutrition` → `rls_onboarding` → `rls_objective` → `rls_messages` → `rls_dayvideo` → `rls_reminders` → `rls_groups`; añade la nueva al final y a `run_local.sh`).
-4. Di con claridad qué NO pudiste verificar (pantallas reales, cámara del celular, Supabase real, Netlify).
+4. Si tocaste el arranque, React Query, `Providers.tsx`, el service worker o algo que espere/retrase datos: corre `tests/e2e` con red lenta (`LATENCY=150`, ver su README) y `stuck.js`. Con red instantánea los atascos no se ven.
+5. Di con claridad qué NO pudiste verificar (pantallas reales, cámara del celular, Supabase real, Netlify).
 
 ## 4. Patrón para construir una pantalla
 1. Abre su mockup en `design/mockups/` y cópialo: estructura, clases, textos y comportamiento. `design/README.md` dice qué mockup corresponde a qué ruta.
@@ -57,6 +58,7 @@ Para cualquier agente (Claude u otro) o persona que continúe. Léelo junto con 
 | Tres archivos truncados al integrar un parche | Regex `re.S` codiciosa | Resolver línea por línea y revisar `--stat` |
 | Código desplegado antes que su SQL | Despliegue automático | Avisar el orden: SQL primero |
 | Mockup copiado solo en estilo | Se ignoró el flujo (filtros instantáneos, modales, pestañas) | Copiar también la interacción |
+| **La app se quedó quieta tras subir (29-30 oct):** unas cosas cargaban y otras no; "Avisar" no respondía | Para quitar un redibujado se puso React Query "sin red" (`onlineManager.setOnline(false)`) hasta que la página diera la señal; la señal podía llegar antes de que React Query escuchara y todo quedaba en pausa para siempre. Se probó solo con red instantánea | **Nunca un interruptor global que pause red, consultas o acciones** (ni "esperar a que X avise"). Si algo debe esperar, que sea local, con tiempo máximo y sin poder bloquear lo demás (`useAfterBoot`). **Toda prueba de arranque se corre con red lenta:** `LATENCY=150 bash tests/e2e/run.sh stuck.js` (y `flows.js`, `hydration.js`) |
 
 ## Créditos de Netlify (plan gratuito: 300/mes, tope duro)
 - Cada push a `main` = 1 despliegue a producción = **15 créditos** (≈ 20 al mes). Si se acaban, **todos los sitios se pausan** ("Site not available") hasta el siguiente ciclo y el plan gratuito no permite comprar más.
