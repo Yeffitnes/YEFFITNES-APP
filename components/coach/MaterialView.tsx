@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MAT_CATS, useCoachMaterials, useDeleteMaterial, useFeatureMaterial, useSaveMaterial, type CoachMaterial, type FeaturedPeriod, type MaterialInput } from "@/lib/queries";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
-import { BunnyModal } from "@/components/ui/BunnyModal";
+import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { Icon } from "@/components/ui/Icon";
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
@@ -59,9 +59,16 @@ export function MaterialView() {
             <button aria-label={`Editar ${m.title}`} onClick={() => setEdit(m)}><svg viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z" /></svg></button>
             <button aria-label={`Eliminar ${m.title}`} onClick={() => setRm(m)}><svg viewBox="0 0 20 20"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" /></svg></button>
           </div>
+          {/* Toda la miniatura se puede tocar (29-oct): antes solo los vídeos privados tenían botón; los de YouTube eran un dibujo
+              sin acción y por eso "unos abrían y otros no". Sin vídeo (la subida falló o sigue en curso) abre la edición para subirlo. */}
           <div className={`content-thumb ${m.kind === "video" ? "video" : "articulo"}`}>
-            {m.kind === "video" ? (m.privateVideo ? <button type="button" className="play" aria-label={`Ver ${m.title}`} style={{ border: 0, cursor: "pointer" }} onClick={() => setWatch(m)}><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></button> : <div className="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div>) : <svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z" /></svg>}
-            {m.kind === "video" && <span className="mat-src">{m.privateVideo ? <><Icon name="lock" size={10} stroke={2} /> Privado</> : m.videoRef ? "YouTube" : "Sin vídeo aún"}</span>}
+            {m.kind === "video" && (m.poster || m.videoRef) && <span className="vposter" aria-hidden style={{ backgroundImage: `url("${m.poster ?? ytThumb(m.videoRef)}")` }} />}
+            <button type="button" className="content-open" aria-label={m.kind === "video" ? (m.privateVideo || m.videoRef ? `Ver ${m.title}` : `Subir el vídeo de ${m.title}`) : `Abrir ${m.title}`}
+              onPointerDown={() => m.privateVideo && prefetchPlay(`material=${m.id}`)}
+              onClick={() => (m.kind !== "video" ? setEdit(m) : m.privateVideo ? setWatch(m) : m.videoRef ? setYt(m) : setEdit(m))}>
+              {m.kind === "video" ? <span className="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></span> : <svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z" /></svg>}
+            </button>
+            {m.kind === "video" && <span className="mat-src">{m.privateVideo ? <><Icon name="lock" size={10} stroke={2} /> Privado</> : m.videoRef ? "YouTube" : "Sin vídeo aún: toca para subirlo"}</span>}
             {m.kind === "video" && m.tier === "basic" && m.published && (m.privateVideo || m.videoRef) && <button className={`featured-toggle${m.featured ? " active" : ""}`} disabled={feat.isPending} title="Destacar en Hoy" aria-pressed={m.featured} aria-label={m.featured ? PERIOD[m.featuredPeriod] : "Destacar en Hoy"} onClick={() => setStar(m)}><svg viewBox="0 0 20 20"><path d={STAR} /></svg></button>}
           </div>
           <div className="content-body"><div className="content-title">{m.title}</div><div className="content-cat">{m.category}{m.tier === "full" ? " · Plan completo" : ""}{m.published ? "" : m.kind === "video" && !m.privateVideo && !m.videoRef ? " · Subiendo o sin vídeo" : " · Borrador"}{m.featured ? ` · ${PERIOD[m.featuredPeriod]}` : ""}</div>
@@ -77,7 +84,7 @@ export function MaterialView() {
           <button type="button" className="star-opt" disabled={feat.isPending} onClick={() => feat.mutate({ id: star.id, on: true, period: "week" }, { onSuccess: () => setStar(null) })}><b>Vídeo de la semana</b><span>Se ve 7 días. Ideal para saludar y contar qué viene esta semana.</span></button>
         </div>
         <div className="modal-actions">{star.featured && <button className="modal-btn ghost" disabled={feat.isPending} onClick={() => feat.mutate({ id: star.id, on: false }, { onSuccess: () => setStar(null) })}>Quitar destacado</button>}<button className="modal-btn ghost" onClick={() => setStar(null)}>Cancelar</button></div></Modal>}
-      {rm && <Modal title="Eliminar contenido" sub={`“${rm.title}” dejará de verse y se borrará su conteo de vistas.`} onClose={() => setRm(null)}>
+      {rm && <Modal title="Eliminar contenido" sub={`“${rm.title}” dejará de verse para tus clientes y se borrará su conteo de vistas.${rm.privateVideo ? " El vídeo privado se borra de Bunny en las próximas horas." : ""}${rm.featured ? " También deja de estar destacado en Hoy." : ""}`} onClose={() => setRm(null)}>
         <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setRm(null)}>Cancelar</button><button className="modal-btn primary" disabled={del.isPending} onClick={() => del.mutate(rm.id, { onSuccess: () => setRm(null) })}>{del.isPending ? "Eliminando…" : "Eliminar"}</button></div></Modal>}
     </div>
   );

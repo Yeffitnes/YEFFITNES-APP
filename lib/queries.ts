@@ -490,8 +490,11 @@ export function useSaveMaterial(workspaceId: string) {
 }
 export function useDeleteMaterial() {
   const qc = useQueryClient(), toast = useToast();
-  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("materials").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => toast("Contenido eliminado"), onError: () => toast("No pudimos eliminarlo. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
+  // Se confirma que de verdad se borró (antes, si la base no borraba nada, igual decía "eliminado").
+  return useMutation({ mutationFn: async (id: string) => { const { data, error } = await db().from("materials").delete().eq("id", id).select("id"); if (error) throw error; if (!data?.length) throw new Error("not_deleted"); },
+    onMutate: async (id) => { await qc.cancelQueries({ queryKey: ["coach-materials"] }); const prev = qc.getQueryData<CoachMaterial[]>(["coach-materials"]); qc.setQueryData<CoachMaterial[]>(["coach-materials"], (l) => l?.filter((m) => m.id !== id)); return { prev }; },
+    onSuccess: () => toast("Contenido eliminado"), onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(["coach-materials"], ctx.prev); toast("No pudimos eliminarlo. Inténtalo de nuevo.", true); },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["coach-materials"] }); void qc.invalidateQueries({ queryKey: ["materials"] }); } });
 }
 export function useFeatureMaterial() {
   const qc = useQueryClient(), toast = useToast();

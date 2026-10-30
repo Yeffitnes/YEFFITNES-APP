@@ -29,23 +29,39 @@ export function WeightAdviceCard() {
     .filter((x, i, all) => all.findIndex((y) => y.l.clientId === x.l.clientId && y.a.itemId === x.a.itemId) === i), [feed.data, off]);
   if (!rows.length) return null;
   const hide = (k: string) => { const n = [...off, k].slice(-300); setOff(n); try { localStorage.setItem(KEY, JSON.stringify(n)); } catch { /* sin almacenamiento */ } };
+  // Agrupadas por entrenamiento (29-oct, noche): antes salía una fila suelta por ejercicio y el nombre del cliente se repetía.
+  const groups = Array.from(rows.slice(0, 20).reduce((m, r) => m.set(r.l.logId, [...(m.get(r.l.logId) ?? []), r]), new Map<string, typeof rows>()).values());
   return (
     <div className="card wadv-card" id="ajustes">
       <div className="card-head"><div><div className="card-tag">Ajustes de peso sugeridos</div>
         <div className="card-title" style={{ fontSize: 15 }}>{rows.length} sugerencia{rows.length === 1 ? "" : "s"} de tus clientes</div></div></div>
       <p className="plans-due-sub">Según las repeticiones que hicieron frente a las que pediste. Tú decides: un toque cambia el peso en su plan.</p>
-      {rows.slice(0, 12).map(({ l, a, key }) => (
-        <div key={key} className={`wadv-row ${a.kind}`}>
-          <Link href={`/coach/clientes/${l.clientId}?tab=Entrenamiento`} className="wadv-who">
-            <span className="attn-avatar sm">{initials(l.clientName)}</span>
-            <span className="wadv-txt"><b>{l.clientName} · {a.name}</b>
-              <span><Icon name={a.kind === "up" ? "up" : "down"} size={12} /> {a.kind === "up" ? "Subir el peso" : "Bajar el peso"}. {a.reason} {a.range.fixed ? "Pedido" : "Rango"}: {rangeText(a.range)}.{a.base != null ? ` Usó ${kg(a.base)}.` : ""} <i>{dayTxt(l.date)}{l.routine ? ` · ${l.routine}` : ""}</i></span></span>
-          </Link>
-          <div className="wadv-acts">
-            {a.next != null && <button type="button" className="pd-btn primary" disabled={apply.isPending} onClick={() => apply.mutate({ clientId: l.clientId, itemId: a.itemId, weight: a.next! })}>{a.kind === "up" ? "Subir" : "Bajar"} a {kg(a.next)}</button>}
-            <button type="button" className="pd-btn" onClick={() => hide(key)}>Descartar</button>
-          </div>
-        </div>))}
+      {groups.map((g) => { const l = g[0].l;
+        return (
+          <div key={l.logId} className="wadv-group">
+            <Link href={`/coach/clientes/${l.clientId}?tab=Entrenamiento`} className="wadv-who">
+              <span className="attn-avatar sm">{initials(l.clientName)}</span>
+              <span className="wadv-head"><b>{l.clientName}</b><small>{dayTxt(l.date)}{l.routine ? ` · ${l.routine}` : ""}{l.effort ? ` · esfuerzo ${l.effort}/10` : ""}</small></span>
+            </Link>
+            {g.map(({ a, key }) => {
+              const done = l.sets.filter((x) => x.itemId === a.itemId && !x.warmup).map((x) => x.reps).filter((x): x is number => x != null);
+              return (
+                <div key={key} className={`wadv-row ${a.kind}`}>
+                  <span className="wadv-txt">
+                    <b><Icon name={a.kind === "up" ? "up" : "down"} size={13} /> {a.name}: {a.kind === "up" ? "subir el peso" : "bajar el peso"}</b>
+                    <span>{a.range.fixed ? `Pediste ${a.range.min} repeticiones` : `Rango ${rangeText(a.range)} repeticiones`}; hizo {done.join(", ") || "—"}{a.base != null ? ` con ${kg(a.base)}` : ""}.</span>
+                    {a.next == null && <span className="wadv-noweight">No hay peso en su plan ni registrado: ajústalo en su plan.</span>}
+                  </span>
+                  <div className="wadv-acts">
+                    {a.next != null
+                      ? <button type="button" className="pd-btn primary" disabled={apply.isPending} onClick={() => apply.mutate({ clientId: l.clientId, itemId: a.itemId, weight: a.next! })}>{a.kind === "up" ? "Subir" : "Bajar"} a {kg(a.next)}</button>
+                      : <Link className="pd-btn primary" style={{ textDecoration: "none" }} href={`/coach/clientes/${l.clientId}?tab=Entrenamiento`}>Ajustar en su plan</Link>}
+                    <button type="button" className="pd-btn" onClick={() => hide(key)}>Descartar</button>
+                  </div>
+                </div>);
+            })}
+          </div>);
+      })}
     </div>
   );
 }
