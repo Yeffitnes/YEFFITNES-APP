@@ -54,7 +54,7 @@ export function ExercisesView() {
         <div key={e.id} className="ex-card" role="button" tabIndex={0} onClick={() => setEdit(e)} onKeyDown={(k) => k.key === "Enter" && setEdit(e)}>
           <div className={`ex-thumb${e.videoRef || e.image ? "" : " no-video"}${e.image ? " has-pic" : ""}`}><ExPic image={e.image} name={e.name} size={180} className="cover" />{e.videoRef ? <div className="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div> : !e.image && <svg viewBox="0 0 24 24"><path d="M6 4l11 6-11 6V4z" /></svg>}</div>
           <div className="ex-body"><div className="ex-name">{e.name}</div><div className="ex-used">{e.used ? `Usado en ${e.used} ${e.used === 1 ? "rutina" : "rutinas"}` : "Sin usar aún"}</div>
-            <div className="ex-tags">{e.muscle && <span className="ex-tag">{e.muscle}</span>}{e.equipment && <span className="ex-tag">{e.equipment}</span>}</div>
+            <div className="ex-tags">{e.muscle && <span className="ex-tag">{e.muscle}</span>}{e.equipment && <span className="ex-tag">{e.equipment}</span>}{!!e.alts?.length && <span className="ex-tag alt" title="Sustitutos aprobados"><Icon name="swap" size={11} />{e.alts.length} {e.alts.length === 1 ? "sustituto" : "sustitutos"}</span>}</div>
             <div className="ex-diff">{[1, 2, 3].map((n) => <span key={n} className={n <= e.difficulty ? "filled" : ""} />)}</div></div>
         </div>))}</div>
       {edit && <ExerciseModal ex={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
@@ -88,7 +88,9 @@ function FilterDrop({ label, value, opts, onPick }: { label: string; value: stri
   );
 }
 function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) {
-  const save = useSaveExercise(useWorkspaceId()), archive = useArchive("exercises");
+  const save = useSaveExercise(useWorkspaceId()), archive = useArchive("exercises"), all = useExercises().data ?? [];
+  // Sustitutos (0044): hasta 2 ejercicios que el cliente puede usar si la máquina está ocupada. Sin la 0044 corrida, el campo no sale.
+  const altsOn = all.some((e) => e.alts !== undefined), [alts, setAlts] = useState<string[]>(ex?.alts ?? []);
   const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", video: ex?.videoRef ? `https://youtu.be/${ex.videoRef}` : "", image: ex?.image ?? null as string | null, sets: ex?.suggSets ? String(ex.suggSets) : "", reps: ex?.suggReps ?? "" });
   const ws = useWorkspaceId(), [up, setUp] = useState(false);
   const pickImg = async (f: File | null) => { if (!f) return; setErr(""); setUp(true); try { set({ image: await uploadExerciseImage(ws, f) }); } catch { setErr("No pudimos subir la imagen. Prueba con otra foto (JPG o PNG)."); } finally { setUp(false); } };
@@ -99,7 +101,7 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
     const vid = v.video.trim() ? youtubeId(v.video) : null;
     if (v.video.trim() && !vid) return setErr("Ese enlace de YouTube no es válido.");
     const ss = v.sets.trim() ? Number(v.sets) : null; if (ss != null && !(ss >= 1 && ss <= 10)) return setErr("Las series sugeridas van de 1 a 10.");
-    setErr(""); save.mutate({ id: ex?.id, name: v.name.trim(), category: v.category, muscle: v.muscle.trim(), equipment: v.equipment.trim(), difficulty: v.difficulty, instructions: v.instructions.trim(), videoRef: vid, image: v.image, suggSets: ss, suggReps: v.reps }, { onSuccess: onClose });
+    setErr(""); save.mutate({ id: ex?.id, name: v.name.trim(), category: v.category, muscle: v.muscle.trim(), equipment: v.equipment.trim(), difficulty: v.difficulty, instructions: v.instructions.trim(), videoRef: vid, image: v.image, suggSets: ss, suggReps: v.reps, alts: altsOn ? alts : undefined }, { onSuccess: onClose });
   };
   const F = (label: string, node: React.ReactNode) => <div className="modal-field"><label>{label}</label>{node}</div>;
   return (
@@ -126,6 +128,9 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
             <span className="exm-hint">Cuadrada, con el ejercicio bien visible. La app la reduce a 360 px.</span>
           </div>
         </div></div>
+      {altsOn && <div className="modal-field"><label>Sustitutos si la máquina está ocupada (hasta 2)</label>
+        <AltPicker all={all} self={ex?.id ?? null} muscle={v.muscle} value={alts} onChange={setAlts} />
+        <span className="exm-hint">El cliente lo cambia él mismo en su rutina de hoy y tú ves que lo cambió.</span></div>}
       {F("Vídeo de YouTube (opcional)", <input value={v.video} onChange={(e) => set({ video: e.target.value })} placeholder="https://youtu.be/..." />)}
       {F("Instrucciones (opcional)", <textarea value={v.instructions} onChange={(e) => set({ instructions: e.target.value })} />)}
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}
@@ -134,5 +139,21 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
         ? <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setConfirm(false)}>No archivar</button><button className="modal-btn danger" disabled={archive.isPending} onClick={() => archive.mutate(ex.id, { onSuccess: onClose })}>Sí, archivar</button></div>
         : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Archivar este ejercicio</button>)}
     </Modal>
+  );
+}
+// Elegir 1 o 2 sustitutos: primero los del mismo músculo. Elegidos: chips en negro con brillo rojo y una × para quitarlos.
+function AltPicker({ all, self, muscle, value, onChange }: { all: Ex[]; self: string | null; muscle: string; value: string[]; onChange: (v: string[]) => void }) {
+  const name = (id: string) => all.find((e) => e.id === id)?.name ?? "Ejercicio archivado";
+  const rest = all.filter((e) => e.id !== self && !value.includes(e.id)), mu = muscleOf(muscle);
+  const same = mu ? rest.filter((e) => muscleOf(e.muscle) === mu) : [], other = rest.filter((e) => !same.includes(e));
+  return (
+    <div className="exm-alts">
+      {value.map((id) => <span key={id} className="exm-alt">{name(id)}<button type="button" aria-label={`Quitar ${name(id)}`} onClick={() => onChange(value.filter((x) => x !== id))}><Icon name="close" size={10} stroke={2.4} /></button></span>)}
+      {value.length < 2 && <select className="exm-alt-pick" value="" aria-label="Agregar sustituto" onChange={(e) => e.target.value && onChange([...value, e.target.value])}>
+        <option value="">{value.length ? "Agregar otro" : "Agregar sustituto"}</option>
+        {!!same.length && <optgroup label={`Mismo músculo (${mu})`}>{same.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</optgroup>}
+        <optgroup label={same.length ? "Otros" : "Ejercicios"}>{other.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</optgroup>
+      </select>}
+    </div>
   );
 }

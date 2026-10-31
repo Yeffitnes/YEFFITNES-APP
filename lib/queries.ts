@@ -6,16 +6,16 @@ import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { bogotaDay, type NudgeKind } from "@/lib/nudges";
-import { loadLogs, loadTrainingPlans, localDate, missingColumn } from "@/lib/fetchers";
+import { loadLogs, loadTrainingPlans, localDate, missingColumn, missingTable } from "@/lib/fetchers";
 
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
-export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number; image?: string | null; suggSets?: number | null; suggReps?: string | null };
+export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
 type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plan_since?: string | null; height_cm?: number | null; start_weight_kg?: number | null; plans: unknown; profiles: unknown };
-type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; image?: string | null; sugg_sets?: number | null; sugg_reps?: string | null; template_items: unknown };
+type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; image?: string | null; sugg_sets?: number | null; sugg_reps?: string | null; template_items: unknown; exercise_alternatives?: { alt_exercise_id: string; position: number }[] };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
   const { data, error } = await db().from("plans").select("id,name,features").eq("active", true).order("name");
@@ -27,9 +27,13 @@ export const fetchClients = async (): Promise<ClientRow[]> => {
   return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id, planSince: c.plan_since ?? null, heightCm: c.height_cm ?? null, startWeight: c.start_weight_kg ?? null }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
-  const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,image,sugg_sets,sugg_reps,template_items(count)").eq("active", true).order("name");
+  // Con los sustitutos aprobados (0044); si la base aún no la tiene, se lee como antes.
+  const q = (extra: string) => db().from("exercises").select(`id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,image,sugg_sets,sugg_reps,template_items(count)${extra}`).eq("active", true).order("name");
+  let { data, error } = await q(",exercise_alternatives!exercise_alternatives_exercise_id_fkey(alt_exercise_id,position)");
+  if (error && missingTable(error)) ({ data, error } = await q(""));
   if (error) throw error;
-  return (data as unknown as ExRaw[]).map((e) => ({ id: e.id, name: e.name, category: e.category, muscle: e.muscle_group, equipment: e.equipment, difficulty: e.difficulty, instructions: e.instructions, videoRef: e.video_ref, image: e.image ?? null, suggSets: e.sugg_sets ?? null, suggReps: e.sugg_reps ?? null, used: (e.template_items as unknown as { count: number }[])?.[0]?.count ?? 0 }));
+  return (data as unknown as ExRaw[]).map((e) => ({ id: e.id, name: e.name, category: e.category, muscle: e.muscle_group, equipment: e.equipment, difficulty: e.difficulty, instructions: e.instructions, videoRef: e.video_ref, image: e.image ?? null, suggSets: e.sugg_sets ?? null, suggReps: e.sugg_reps ?? null, used: (e.template_items as unknown as { count: number }[])?.[0]?.count ?? 0,
+    alts: e.exercise_alternatives ? [...e.exercise_alternatives].sort((a, b) => a.position - b.position).map((a) => a.alt_exercise_id) : undefined }));
 };
 export const fetchRoutines = async (): Promise<Routine[]> => {
   const { data, error } = await db().from("routine_templates").select("id,name,category,est_minutes,video_ref,template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref))").eq("active", true).order("created_at", { ascending: false });
@@ -68,14 +72,16 @@ export function useSetPlan() {
   });
 }
 
-export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null; image?: string | null; suggSets?: number | null; suggReps?: string | null };
+export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
 export function useSaveExercise(workspaceId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (x: ExerciseInput) => {
       const row = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, video_provider: x.videoRef ? "youtube" : null, video_ref: x.videoRef, image: x.image ?? null, sugg_sets: x.suggSets ?? null, sugg_reps: x.suggReps?.trim() || null };
-      const { error } = x.id ? await db().from("exercises").update(row).eq("id", x.id) : await db().from("exercises").insert({ ...row, workspace_id: workspaceId });
+      const { data, error } = x.id ? await db().from("exercises").update(row).eq("id", x.id).select("id").single() : await db().from("exercises").insert({ ...row, workspace_id: workspaceId }).select("id").single();
       if (error) throw error;
+      // Sustitutos aprobados (0044): solo si Jeff los tocó en el formulario.
+      if (x.alts) { const { error: e2 } = await db().rpc("set_alternatives", { p_exercise: (data as { id: string }).id, p_alts: x.alts }); if (e2) throw e2; }
     },
     onSuccess: () => { toast("Ejercicio guardado"); qc.invalidateQueries({ queryKey: KEYS.exercises }); qc.invalidateQueries({ queryKey: KEYS.routines }); },
     onError: () => toast("No pudimos guardar el ejercicio. Revisa tu conexión e inténtalo de nuevo.", true),
@@ -230,6 +236,46 @@ export function useLogSet(clientId: string) {
     onSuccess: (r) => { if (r === "sent" && qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
   });
 }
+// ---- Ejercicios alternativos (0044) ----
+// El cliente cambia un ejercicio de hoy por un sustituto que aprobó Jeff ("la máquina está ocupada"). Necesita señal: no entra en la cola.
+export type SwapAlt = { id: string; name: string; image: string | null; muscle: string | null; equipment: string | null; instructions: string | null; videoRef: string | null };
+export type SwapOptions = { alts: Record<string, SwapAlt[]>; swaps: Record<string, { toId: string | null; to: string; from: string }> };
+export const useSwapOptions = (clientId: string, date: string) => useQuery({ queryKey: ["swap-options", clientId, date], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<SwapOptions> => {
+  const { data, error } = await db().rpc("my_swap_options", { p_date: date });
+  if (error && (error.code === "PGRST202" || error.code === "42883")) return { alts: {}, swaps: {} };   // base sin la 0044: sin botón de cambiar (todo lo demás igual)
+  if (error) throw error;   // sin señal u otro fallo: se queda con lo último que tenía y lo reintenta
+  type Raw = { alts: { item_id: string; alts: { id: string; name: string; image: string | null; muscle_group: string | null; equipment: string | null; instructions: string | null; video_ref: string | null }[] }[]; swaps: { item_id: string; to_id: string | null; to_name: string; from_name: string }[] };
+  const r = (data ?? { alts: [], swaps: [] }) as Raw, out: SwapOptions = { alts: {}, swaps: {} };
+  r.alts.forEach((x) => { out.alts[x.item_id] = x.alts.map((e) => ({ id: e.id, name: e.name, image: e.image, muscle: e.muscle_group, equipment: e.equipment, instructions: e.instructions, videoRef: e.video_ref })); });
+  r.swaps.forEach((x) => { out.swaps[x.item_id] = { toId: x.to_id, to: x.to_name, from: x.from_name }; });
+  return out;
+} });
+const SWAP_ERR: Record<string, string> = {
+  has_sets: "Ya registraste series de este ejercicio. Para cambiarlo, primero deshaz esas series.",
+  locked: "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Jeff ya lo revisó.",
+  not_alternative: "Ese ejercicio ya no está entre los sustitutos que aprobó Jeff.",
+};
+export function useSwapExercise(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { date: string; itemId: string; alt: SwapAlt | null; from: string }) => {
+      if (offlineNow()) throw new Error("offline");
+      const { error } = await db().rpc("swap_exercise", { p_date: v.date, p_item: v.itemId, p_alt: v.alt?.id ?? null }); if (error) throw error;
+    },
+    onMutate: async (v) => {
+      const key = ["swap-options", clientId, v.date]; await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<SwapOptions>(key);
+      qc.setQueryData<SwapOptions>(key, (o) => { if (!o) return o; const swaps = { ...o.swaps }; if (v.alt) swaps[v.itemId] = { toId: v.alt.id, to: v.alt.name, from: v.from }; else delete swaps[v.itemId]; return { ...o, swaps }; });
+      return { prev, key };
+    },
+    onError: (e, _v, ctx) => {
+      if (ctx) qc.setQueryData(ctx.key, ctx.prev);
+      const m = (e as { message?: string })?.message ?? "", k = Object.keys(SWAP_ERR).find((x) => m.includes(x));
+      toast(m === "offline" ? "Sin señal no se puede cambiar el ejercicio. Inténtalo cuando vuelva la señal." : k ? SWAP_ERR[k] : "No pudimos cambiar el ejercicio. Revisa tu conexión e inténtalo de nuevo.", true);
+    },
+    onSuccess: (_d, v) => toast(v.alt ? `Cambiado: hoy haces ${v.alt.name}. Jeff lo verá.` : `Volviste a ${v.from}.`),
+    onSettled: (_d, _e, v) => { void qc.invalidateQueries({ queryKey: ["swap-options", clientId, v.date] }); void qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
+  });
+}
 export function useUnlogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
   return useMutation({
@@ -270,15 +316,20 @@ export const fetchActivePlanClients = async (): Promise<string[]> => {
   const { data, error } = await db().from("training_plans").select("client_id").eq("status", "active"); if (error) throw error; return (data as unknown as { client_id: string }[]).map((r) => r.client_id);
 };
 export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: fetchActivePlanClients });
-export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; commentImage?: string | null; commentVideo?: string | null; edits?: number; clientSaw?: boolean; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[] };
-type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; coach_comment_image?: string | null; coach_comment_video?: string | null; feedback_seen_at?: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[] };
+export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; commentImage?: string | null; commentVideo?: string | null; edits?: number; clientSaw?: boolean; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[]; swaps?: Swap[] };
+// Cambio de ejercicio que hizo el cliente ese día (0044): en lugar de "from" hizo "to".
+export type Swap = { itemId: string; from: string; to: string };
+type SwapRaw = { plan_item_id: string; from_name: string; to_name: string };
+const mapSwaps = (r?: SwapRaw[] | null): Swap[] => (r ?? []).map((x) => ({ itemId: x.plan_item_id, from: x.from_name, to: x.to_name }));
+type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; coach_comment_image?: string | null; coach_comment_video?: string | null; feedback_seen_at?: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[]; exercise_swaps?: SwapRaw[] };
 export const useClientLogs = (clientId: string) => useQuery({ queryKey: ["client-logs", clientId], staleTime: 30_000, queryFn: async (): Promise<ClientLog[]> => {
   const q = (extra: string) => db().from("workout_logs").select(`id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio${extra},feedback_seen_at,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)`).eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
-  let { data, error } = await q(",coach_comment_image,coach_comment_video,edits");
+  let { data, error } = await q(",coach_comment_image,coach_comment_video,edits,exercise_swaps(plan_item_id,from_name,to_name)");
+  if (error && missingTable(error)) ({ data, error } = await q(",coach_comment_image,coach_comment_video,edits"));   // base sin la 0044
   if (error && missingColumn(error)) ({ data, error } = await q(",coach_comment_image,coach_comment_video"));
   if (error && missingColumn(error)) ({ data, error } = await q(""));   // base sin la 0041
   if (error) throw error;
-  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, commentImage: l.coach_comment_image ?? null, commentVideo: l.coach_comment_video ?? null, edits: (l as { edits?: number }).edits ?? 0, clientSaw: !!l.feedback_seen_at && !!l.coach_seen_at && l.feedback_seen_at >= l.coach_seen_at, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })) }));
+  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, commentImage: l.coach_comment_image ?? null, commentVideo: l.coach_comment_video ?? null, edits: (l as { edits?: number }).edits ?? 0, clientSaw: !!l.feedback_seen_at && !!l.coach_seen_at && l.feedback_seen_at >= l.coach_seen_at, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })), swaps: mapSwaps(l.exercise_swaps) }));
 } });
 export const notifyFeedback = (logId: string) => { void fetch("/api/push/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId }) }).catch(() => {}); };
 export function useReviewWorkout(clientId: string) {
@@ -829,12 +880,16 @@ export type AdviceFeedRow = { logId: string; clientId: string; clientName: strin
   sets: { itemId: string | null; reps: number | null; weight: number | null; warmup: boolean }[]; items: { id: string; name: string; reps: string; weight: number | null }[] };
 export const useAdviceFeed = () => useQuery({ queryKey: ["advice-feed"], staleTime: 30_000, queryFn: async (): Promise<AdviceFeedRow[]> => {
   const since = new Date(); since.setDate(since.getDate() - 7);
-  const { data, error } = await db().from("workout_logs").select("id,client_id,log_date,effort,coach_seen_at,plan_days(name),clients(profiles(full_name)),set_logs(plan_item_id,reps,weight,kind,plan_items(id,reps,target_weight,exercises(name)))")
+  const q = (extra: string) => db().from("workout_logs").select(`id,client_id,log_date,effort,coach_seen_at,plan_days(name),clients(profiles(full_name)),set_logs(plan_item_id,reps,weight,kind,plan_items(id,reps,target_weight,exercises(name)))${extra}`)
     .not("completed_at", "is", null).gte("log_date", localDate(since)).order("log_date", { ascending: false }).limit(80);
+  let { data, error } = await q(",exercise_swaps(plan_item_id)");
+  if (error && missingTable(error)) ({ data, error } = await q(""));   // base sin la 0044
   if (error) throw error;
   type Raw = { id: string; client_id: string; log_date: string; effort: number | null; coach_seen_at: string | null; plan_days: { name: string } | null; clients: { profiles: { full_name: string } | null } | null;
-    set_logs: { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string; plan_items: { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null } | null }[] };
+    set_logs: { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string; plan_items: { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null } | null }[]; exercise_swaps?: { plan_item_id: string }[] };
   return (data as unknown as Raw[]).map((l) => {
+    // Un ejercicio que el cliente cambió por un sustituto no se compara con el peso del original (0044).
+    const swapped = new Set((l.exercise_swaps ?? []).map((x) => x.plan_item_id)); l.set_logs = l.set_logs.filter((s) => !s.plan_item_id || !swapped.has(s.plan_item_id));
     const items = new Map<string, { id: string; name: string; reps: string; weight: number | null }>();
     l.set_logs.forEach((s) => { if (s.plan_items) items.set(s.plan_items.id, { id: s.plan_items.id, name: s.plan_items.exercises?.name ?? "Ejercicio", reps: s.plan_items.reps, weight: s.plan_items.target_weight }); });
     return { logId: l.id, clientId: l.client_id, clientName: l.clients?.profiles?.full_name || "Cliente", date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, seen: !!l.coach_seen_at,

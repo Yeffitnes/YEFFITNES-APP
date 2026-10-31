@@ -10,7 +10,7 @@ import { useToast } from "@/components/Providers";
 import { useOfflineSync } from "@/lib/offline";
 import { bestBefore, useRecords } from "@/lib/extras";
 import { HabitsCard, OfflineBanner, RecordPop, RestTimer, primeSound, type RecordHit, type Rest } from "./WorkoutExtras";
-import { localDate, useFinish, useLogs, useLogSet, useUnlogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
+import { localDate, useFinish, useLogs, useLogSet, useUnlogSet, useMe, useMyAnnouncements, useSwapExercise, useSwapOptions, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type SwapAlt, type SwapOptions, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { ReportCard } from "./ReportCard";
@@ -114,7 +114,15 @@ export function HoyView() {
     </>
   );
 }
-function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; logs: WorkoutLog[]; today: string; guide: boolean }) {
+// Ejercicio que de verdad hace hoy (0044): si lo cambió por un sustituto, nombre, imagen, técnica y vídeo del sustituto.
+// El peso del plan era para el original: con el sustituto la casilla de peso queda vacía para que escriba el suyo.
+const effective = (i: PlanItem, o?: SwapOptions): PlanItem & { from?: string } => {
+  const s = o?.swaps[i.id]; if (!s) return i;
+  const a = o?.alts[i.id]?.find((x) => x.id === s.toId);
+  return { ...i, name: s.to, image: a?.image ?? null, instructions: a?.instructions ?? null, videoRef: a?.videoRef ?? null, muscle: a?.muscle ?? null, equipment: a?.equipment ?? null, weight: null, from: s.from };
+};
+function Routine({ cid, day, title, items: planned, log, logs, today, guide }: { cid: string; day: PlanDay; title: string; items: PlanItem[]; log?: WorkoutLog; logs: WorkoutLog[]; today: string; guide: boolean }) {
+  const swapOpts = useSwapOptions(cid, today), items = planned.map((i) => effective(i, swapOpts.data));
   // Todos los ejercicios empiezan cerrados (pedido de Cristian, 28-oct): el cliente abre el que va a hacer.
   const [open, setOpen] = useState<string | null>(null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null), [pic, setPic] = useState<PlanItem | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false), [just, setJust] = useState<JustSaved | null>(null);
@@ -176,9 +184,9 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
       <div className="exercise-list">{items.map((i) => (
         <div key={i.id}>
           <div className={`ex-row${doneNow(i) ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(open === i.id ? null : i.id); } }}>
-            <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><ExPic image={i.image} name={i.name} size={40} className="sm" onClick={() => setPic(i)} /><div className="ex-name">{i.name}</div><div className="ex-meta">{saved(i.id).length}/{i.sets} · {i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
+            <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><ExPic image={i.image} name={i.name} size={40} className="sm" onClick={() => setPic(i)} /><div className="ex-name">{i.name}{i.from && <small className="ex-swapped"><Icon name="swap" size={11} />en lugar de {i.from}</small>}</div><div className="ex-meta">{saved(i.id).length}/{i.sets} · {i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
-          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onSaved={(setNumber, reps, weight) => onSetSaved(i, setNumber, reps, weight)} />)}<RepTip item={i} just={just} /></div>}
+          {open === i.id && <div className="ex-panel"><SwapBar cid={cid} item={i} alts={swapOpts.data?.alts[i.id] ?? []} today={today} locked={closed} hasSets={saved(i.id).length > 0} />{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={`${k}-${i.name}`} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onSaved={(setNumber, reps, weight) => onSetSaved(i, setNumber, reps, weight)} />)}<RepTip item={i} just={just} /></div>}
         </div>))}</div>
       {log && hasFeedback(log) && !feedbackUnseen(log) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Respuesta de tu coach</div><FeedbackBody log={log} /></div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
@@ -198,6 +206,28 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
       </div>
     </div>
   );
+}
+// Cambiar el ejercicio por un sustituto que aprobó Jeff (0044, "la máquina está ocupada"). Solo antes de registrar series de ese
+// ejercicio (así cada serie queda con un solo nombre). Jeff ve el cambio en su revisión. Si Jeff no aprobó sustitutos, no aparece.
+function SwapBar({ cid, item, alts, today, locked, hasSets }: { cid: string; item: PlanItem & { from?: string }; alts: SwapAlt[]; today: string; locked: boolean; hasSets: boolean }) {
+  const swap = useSwapExercise(cid), [open, setOpen] = useState(false);
+  if (!alts.length || locked) return null;
+  if (item.from) return (
+    <div className="swap-bar on">
+      <span className="swap-txt"><Icon name="swap" size={14} /><span>Hoy haces <b>{item.name}</b> en lugar de {item.from}.</span></span>
+      {!hasSets && <button type="button" className="mini-btn ghost" disabled={swap.isPending} onClick={() => swap.mutate({ date: today, itemId: item.id, alt: null, from: item.from! })}>Volver a {item.from}</button>}
+    </div>);
+  if (hasSets) return null;   // ya empezó este ejercicio: se queda como está
+  return (
+    <div className="swap-bar">
+      {!open ? <button type="button" className="tech-link swap-open" onClick={() => setOpen(true)}><Icon name="swap" size={13} />¿Máquina ocupada? Cambiar ejercicio</button> : <>
+        <p className="swap-txt">Jeff aprobó {alts.length === 1 ? "este cambio" : "estos cambios"} para {item.name}. Él verá que lo cambiaste.</p>
+        <div className="swap-list">{alts.map((a) => (
+          <button key={a.id} type="button" className="swap-opt" disabled={swap.isPending} onClick={() => swap.mutate({ date: today, itemId: item.id, alt: a, from: item.name }, { onSuccess: () => setOpen(false) })}>
+            <ExPic image={a.image} name={a.name} size={40} className="sm" fallback={<span className="swap-ph" aria-hidden><Icon name="dumbbell" size={17} /></span>} /><span><b>{a.name}</b><small>{[a.muscle, a.equipment].filter(Boolean).join(" · ") || "Sustituto aprobado"}</small></span><Icon name="arrow" size={13} />
+          </button>))}</div>
+        <button type="button" className="mini-btn ghost" onClick={() => setOpen(false)}>No cambiar</button></>}
+    </div>);
 }
 // Rango de repeticiones (p. ej. 8-12): explica la regla y, tras la última serie guardada, aconseja subir o bajar el peso. No bloquea nada.
 // Consejo del rango de repeticiones (pedido de Cristian, 28-oct): ya no es un texto fijo (en el teléfono se veía montado).

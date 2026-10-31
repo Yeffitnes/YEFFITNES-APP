@@ -97,12 +97,13 @@ export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: strin
   return (
     <div style={{ marginTop: 10 }}>
       {!byEx.size && <p style={{ fontSize: 13, color: "var(--text-dim)" }}>No registró series.</p>}
-      {Array.from(byEx.entries()).map(([ex, ss]) => (
+      {Array.from(byEx.entries()).map(([ex, ss]) => { const sw = l.swaps?.find((x) => ss.some((y) => y.itemId === x.itemId)); return (
         <div key={ex}>
-          <div className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13, flex: 1, fontWeight: 600 }}>{ex}</span>
+          <div className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13, flex: 1, fontWeight: 600 }}>{ex}{sw && <span className="swap-tag" title="El cliente lo cambió por un sustituto que aprobaste"><Icon name="swap" size={11} />en lugar de {sw.from}</span>}</span>
             <span style={{ fontSize: 12.5, color: "var(--text-dim)" }}>{ss.sort((a, b) => a.n - b.n).map((s) => `${s.reps ?? "–"}${s.weight != null ? `×${s.weight} kg` : ""}`).join(" · ")}</span></div>
-          <WeightAdvice clientId={clientId} sets={ss} effort={l.effort} />
-        </div>))}
+          {!sw && <WeightAdvice clientId={clientId} sets={ss} effort={l.effort} />}
+        </div>); })}
+      {l.swaps?.filter((x) => !l.sets.some((y) => y.itemId === x.itemId)).map((x) => <p key={x.itemId} className="swap-note"><Icon name="swap" size={12} />Cambió {x.from} por {x.to} (aún sin series).</p>)}
       {l.note && <p style={{ fontSize: 13, margin: "12px 0 0", padding: 10, background: "var(--surface)", borderRadius: 10 }}><b>Comentario del cliente:</b> {l.note}</p>}
       {l.completed && (
         <div className="modal-field"><label>Tu respuesta para el cliente{has && <span style={{ fontWeight: 600, marginLeft: 8, color: l.clientSaw ? "var(--text)" : "var(--text-faint)" }}>{l.clientSaw ? "· El cliente ya la vio" : "· El cliente aún no la ve"}</span>}</label>

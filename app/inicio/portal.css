@@ -1439,3 +1439,25 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .hab-glasses i.on{border-color:var(--ink);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
 .hab-week{font-size:12px;color:var(--text-dim);margin:6px 0 0}
 .has-rest .main{padding-bottom:190px}
+
+/* Ejercicios alternativos (0044): cambiar por un sustituto aprobado por Jeff */
+.ex-swapped{display:flex; align-items:center; gap:4px; margin-top:2px; font-size:11px; font-weight:600; color:var(--text-dim); text-decoration:none}
+.ex-row.done .ex-swapped{text-decoration:none}
+.swap-bar{margin:4px 0 8px}
+.swap-bar.on{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 12px; border-radius:12px; color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%, rgba(247,37,75,.5), transparent 62%), var(--ink)}
+.swap-bar.on .mini-btn.ghost{background:#fff; color:var(--ink); border-color:#fff}
+.swap-txt{display:flex; align-items:flex-start; gap:7px; margin:0 0 8px; font-size:12.5px; line-height:1.45; color:var(--text-dim)}
+.swap-bar.on .swap-txt{margin:0; color:#fff; flex:1 1 200px}
+.swap-txt svg{flex:0 0 auto; margin-top:2px}
+.swap-txt b{font-weight:700}
+.swap-open svg{width:13px; height:13px; fill:none; stroke:var(--accent)}
+.swap-list{display:grid; gap:8px; margin-bottom:10px}
+.swap-opt{display:flex; align-items:center; gap:10px; width:100%; min-width:0; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:var(--paper); text-align:left; cursor:pointer; font:inherit; color:inherit}
+.swap-opt:hover{border-color:var(--accent)}
+.swap-opt:disabled{opacity:.6; cursor:wait}
+.swap-opt>span:not(.swap-ph){flex:1; min-width:0; display:flex; flex-direction:column}
+.swap-opt b{font-size:13.5px; font-weight:700; overflow-wrap:anywhere}
+.swap-opt small{font-size:11.5px; color:var(--text-dim)}
+.swap-ph{flex:0 0 40px; width:40px; height:40px; border-radius:10px; display:grid; place-items:center; color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%, rgba(247,37,75,.5), transparent 62%), var(--ink)}

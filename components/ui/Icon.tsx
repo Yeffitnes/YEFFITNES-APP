@@ -4,6 +4,7 @@ const PATHS = {
   rows: <><rect x="4" y="3.8" width="12" height="5.4" rx="1.4" /><rect x="4" y="10.8" width="12" height="5.4" rx="1.4" /></>,
   grid: <><rect x="3.8" y="3.8" width="5.4" height="5.4" rx="1.3" /><rect x="10.8" y="3.8" width="5.4" height="5.4" rx="1.3" /><rect x="3.8" y="10.8" width="5.4" height="5.4" rx="1.3" /><rect x="10.8" y="10.8" width="5.4" height="5.4" rx="1.3" /></>,
   check: <path d="M4.5 10.5l3.7 3.7L15.5 6.3" />,
+  swap: <><path d="M4 7.2h11M12.2 4.4L15 7.2l-2.8 2.8" /><path d="M16 12.8H5M7.8 10l-2.8 2.8 2.8 2.8" /></>,
   close: <path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />,
   lock: <><rect x="4.5" y="9" width="11" height="7.5" rx="2" /><path d="M7 9V6.8a3 3 0 0 1 6 0V9" /></>,
   camera: <><path d="M3.5 7.2A1.7 1.7 0 0 1 5.2 5.5h1.1l.9-1.4h5.6l.9 1.4h1.1a1.7 1.7 0 0 1 1.7 1.7v6.6a1.7 1.7 0 0 1-1.7 1.7H5.2a1.7 1.7 0 0 1-1.7-1.7V7.2z" /><circle cx="10" cy="10.4" r="2.7" /></>,

@@ -33,8 +33,11 @@ export async function POST(req: NextRequest) {
 
 // Lee el entrenamiento de ese día CON LA SESIÓN DEL CLIENTE (la base solo le deja ver lo suyo) y arma la sugerencia en una frase.
 async function adviceText(supabase: ReturnType<typeof createClient>, date: string): Promise<string | null> {
-  const { data: log } = await supabase.from("workout_logs").select("effort,set_logs(plan_item_id,reps,weight,kind)").eq("log_date", date).maybeSingle();
-  const sets = ((log?.set_logs ?? []) as { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string }[]).map((x) => ({ itemId: x.plan_item_id, reps: x.reps, weight: x.weight, warmup: x.kind === "warmup" }));
+  // Con la 0044, los ejercicios que el cliente cambió por un sustituto no se comparan con el peso del original.
+  const first = await supabase.from("workout_logs").select("effort,set_logs(plan_item_id,reps,weight,kind),exercise_swaps(plan_item_id)").eq("log_date", date).maybeSingle();
+  const log = first.error ? (await supabase.from("workout_logs").select("effort,set_logs(plan_item_id,reps,weight,kind)").eq("log_date", date).maybeSingle()).data : first.data;
+  const swapped = new Set(((log as { exercise_swaps?: { plan_item_id: string }[] } | null)?.exercise_swaps ?? []).map((x) => x.plan_item_id));
+  const sets = ((log?.set_logs ?? []) as { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string }[]).filter((x) => !x.plan_item_id || !swapped.has(x.plan_item_id)).map((x) => ({ itemId: x.plan_item_id, reps: x.reps, weight: x.weight, warmup: x.kind === "warmup" }));
   const ids = Array.from(new Set(sets.map((x) => x.itemId).filter((x): x is string => !!x))); if (!ids.length) return null;
   const { data: items } = await supabase.from("plan_items").select("id,reps,target_weight,exercises(name)").in("id", ids);
   const list = ((items ?? []) as unknown as { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null }[]).map((i) => ({ id: i.id, name: i.exercises?.name ?? "un ejercicio", reps: i.reps, weight: i.target_weight }));
