@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-10-31 (tarde, 3) - Se quitan 15 ejercicios nuevos que repetían otros
+Pedido de Cristian: "veo muchos repetidos que no tienen sentido; los que no son necesarios, quítalos".
+- Revisada la lista completa (54 de la 0040 + 104 de la 0045). Ningún nombre estaba repetido (Extensión de cuádriceps está una sola vez, viene de las 54), pero sí había ejercicios casi iguales a otros. Se quitaron de la 0045 (aún sin correr) y se borraron sus imágenes:
+  - Iguales a uno que ya existía: Zancadas caminando (= Zancadas con mancuernas), Puente de glúteo con barra (= Hip thrust / Puente de glúteo), Encogimientos con barra (= Encogimientos), Remo Pendlay y Remo con barra agarre supino (= Remo con barra), Prensa a una pierna (= Prensa de piernas), Press francés con mancuernas (= Press francés), Aperturas inclinadas con mancuernas (= Aperturas con mancuernas).
+  - Solo cambia el agarre o el accesorio (Jeff lo indica en la nota): Extensión de tríceps con cuerda, Curl martillo con cuerda en polea, Flexiones de agarre cerrado.
+  - Poco útiles y sin imagen buena: Cruce de poleas desde abajo, Press de pecho con banda, Elevación de talones en prensa. También Peso muerto con kettlebell (lo cubren Peso muerto, Swing y Sentadilla goblet).
+- Se dejaron a propósito variantes en otra máquina o con otro equipo (p. ej. Press de hombro en máquina, Elevaciones laterales en polea, Jalón con agarre cerrado): sirven como **sustitutos** cuando la máquina está ocupada (0044) y para clientes que entrenan en casa (banda, peso corporal).
+- Resultado: 89 nuevos, **todos con imagen**; el catálogo queda en 143. Verificado: `run_local.sh` TODO OK, cada imagen de la 0045 existe en `public/ex/`.
+- Revertir: restaurar `0045_more_preset_exercises.sql`, `docs/EJERCICIOS_NUEVOS.md` y las imágenes borradas del commit `43bc22d`.
+
 ## 2026-10-31 (tarde, 2) - Imágenes de 101 de los 104 ejercicios nuevos
 - Cristian generó las imágenes con el personaje (12 cuadrículas). Revisadas una por una: se rehicieron 56, 59, 63, 71, 122, 131, 136 y 153. **Sin imagen** (3 intentos fallidos, se ven con la portada de marca): 59 Cruce de poleas desde abajo, 63 Press de pecho con banda, 131 Elevación de talones en prensa.
 - Recortadas a 360 × 360 WebP (unos 19 KB cada una, 1,9 MB en total) en `public/ex/55-…` a `158-…`. Las celdas no cuadradas (cuadrícula del 118 al 127 y la de rehechos) se rellenaron con el color del fondo en vez de cortarse.
