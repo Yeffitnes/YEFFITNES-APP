@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-10-31 (tarde, 2) - Imágenes de 101 de los 104 ejercicios nuevos
+- Cristian generó las imágenes con el personaje (12 cuadrículas). Revisadas una por una: se rehicieron 56, 59, 63, 71, 122, 131, 136 y 153. **Sin imagen** (3 intentos fallidos, se ven con la portada de marca): 59 Cruce de poleas desde abajo, 63 Press de pecho con banda, 131 Elevación de talones en prensa.
+- Recortadas a 360 × 360 WebP (unos 19 KB cada una, 1,9 MB en total) en `public/ex/55-…` a `158-…`. Las celdas no cuadradas (cuadrícula del 118 al 127 y la de rehechos) se rellenaron con el color del fondo en vez de cortarse.
+- La **0045** (aún sin correr) ahora también pone la imagen: a los nuevos y a uno que Jeff ya tenga con el mismo nombre solo si no tenía imagen. El service worker ya guarda todo lo de `/ex/` en el teléfono (sin cambios).
+- Verificado: hoja de contactos con número y nombre (cada imagen en su ejercicio, nada cortado); `run_local.sh` TODO OK; la 0045 se corre dos veces sin duplicar. NO verificado: verlas en el teléfono.
+- Revertir: borrar `public/ex/` del 55 al 158 y restaurar `0045_more_preset_exercises.sql` del commit `5010ff8` (si ya se corrió: `update public.exercises set image = null where image like 'preset:%' and split_part(substr(image,8),'-',1)::int >= 55;`).
+
 ## 2026-10-31 (tarde) - Textos para las imágenes de los 104 ejercicios nuevos
 - `docs/EJERCICIOS_NUEVOS.md`: los textos para Gemini/ChatGPT ahora siguen el mismo formato que los de las 54 (número 55 a 158, nombre en inglés y la pose del personaje). Solo documentación. Revertir: restaurar el archivo del commit `106f863`.
 

@@ -1,7 +1,7 @@
 # Ejercicios precargados nuevos (0045): 104 más, de 54 a 158
 
 Preparado el 31-oct para el pedido de Cristian ("más ejercicios precargados, 100 a 200"). Los datos ya están en la migración `0045_more_preset_exercises.sql` (sin imagen).
-Mientras no haya imagen, cada uno se ve con la portada de marca. Series, repeticiones e indicaciones son **PROPUESTA**: Jeff las puede cambiar en el catálogo.
+**Imágenes (31-oct):** 101 listas en `public/ex/` y ya incluidas en la 0045. Sin imagen (la IA falló 3 veces; se ven con la portada de marca, Jeff puede subirles una): **59 Cruce de poleas desde abajo, 63 Press de pecho con banda, 131 Elevación de talones en prensa**. Las celdas no cuadradas se rellenaron con el color del fondo en vez de recortarse (para no cortar cabezas ni discos). Series, repeticiones e indicaciones son **PROPUESTA**: Jeff las puede cambiar en el catálogo.
 
 ## Cómo poner las imágenes cuando existan
 1. Generarlas en tandas de 9 (cuadrícula 3×3), con el mismo estilo y personaje de las 54 (sin números al inicio de cada línea, sin frases "NOT ..."; "side view" en lo acostado). Abajo va el texto de cada tanda, en el orden de la cuadrícula (izquierda a derecha, arriba a abajo).
