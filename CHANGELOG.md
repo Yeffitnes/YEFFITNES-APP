@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-10-31 (tarde, 4) - MIGRACIÓN 0046: imágenes de los ejercicios nuevos en la base real y quitar los 15 repetidos
+- Cristian corrió la **primera versión** de la 0045 (sin imágenes y con los 15 repetidos), por eso en Vercel los nuevos salían sin imagen y aparecía, p. ej., "Aperturas inclinadas con mancuernas". Las imágenes ya estaban en la app (`public/ex/`), pero la base no las tenía asignadas.
+- `0046_fix_preset_images.sql`: pone la imagen a los 89 nuevos (solo si no tienen; no pisa la de Jeff) y quita los 15 repetidos (los que ya estén en una rutina o un plan se **archivan**, no se borran). Solo toca ejercicios precargados.
+- Verificado simulando la base real (todo hasta 0044 + la 0045 vieja + una rutina con "Remo Pendlay"): quedan 143 activos, todos con imagen; Remo Pendlay archivado; correrla dos veces no cambia nada; `run_local.sh` TODO OK.
+- Los ejercicios que Jeff creó él mismo ("abdominales", "Abducción externos", "Abducción Internos", "abducción opcional"…) no se tocan.
+- Revertir: ver la cabecera de la 0046.
+
 ## 2026-10-31 (tarde, 3) - Se quitan 15 ejercicios nuevos que repetían otros
 Pedido de Cristian: "veo muchos repetidos que no tienen sentido; los que no son necesarios, quítalos".
 - Revisada la lista completa (54 de la 0040 + 104 de la 0045). Ningún nombre estaba repetido (Extensión de cuádriceps está una sola vez, viene de las 54), pero sí había ejercicios casi iguales a otros. Se quitaron de la 0045 (aún sin correr) y se borraron sus imágenes:
