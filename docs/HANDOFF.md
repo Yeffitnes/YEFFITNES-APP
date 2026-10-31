@@ -1,6 +1,6 @@
 # HANDOFF: léelo primero, antes de tocar nada
 
-Estado al **29-oct-2026, noche** (última fusión a `main`: 28-oct, `37970c1`; lo construido después vive solo en `bloque-hoy`). Escrito para que un asistente nuevo (o una persona) siga trabajando sin cometer errores. Complementa a `AGENTS.md`, `docs/CONTEXT.md`, `docs/AGENT_PLAYBOOK.md` y `docs/PASO_A_PRODUCCION.md`. El detalle de cada cambio, con cómo revertirlo, está en `CHANGELOG.md` (las primeras entradas son las más recientes). Aquí no hay claves; no pegues ninguna en el repo ni en el chat.
+Estado al **30-oct-2026, 22:40** (última fusión a `main`: 28-oct, `37970c1`; lo construido después vive solo en `bloque-hoy`, último commit `a106e9c` o posterior). Escrito para que un asistente nuevo (o una persona) siga trabajando sin cometer errores. Complementa a `AGENTS.md`, `docs/CONTEXT.md`, `docs/AGENT_PLAYBOOK.md` y `docs/PASO_A_PRODUCCION.md`. El detalle de cada cambio, con cómo revertirlo, está en `CHANGELOG.md` (las primeras entradas son las más recientes). Aquí no hay claves; no pegues ninguna en el repo ni en el chat.
 
 ## 1. Con quién trabajas
 - **Cristian Santiago Gómez Romero**: líder de producto y desarrollo freelance. **No usa la terminal.** Escribe en **español, dictando por voz**: puede haber frases cortadas o palabras mal transcritas; interpreta la intención y, si algo es ambiguo y barato de rehacer, elige lo más razonable y dilo.
@@ -95,7 +95,19 @@ Estado al **29-oct-2026, noche** (última fusión a `main`: 28-oct, `37970c1`; l
 Selector de galería sin conversión en iPhone (`accept` con tipos concretos, experimento en `ReportCard`: ¿entra rápido? ¿el recorte aguanta vídeos 4K?); recortador en Safari/iPhone y Android; grabación de audio; subida en segundo plano y pantalla encendida (Wake Lock); cabecera y zona segura del iPhone; vídeo largo de Jeff (10 min) de punta a punta; `:where(.main *){min-width:0}` en Plan, Nutrición y Agenda con datos reales; todo en Android.
 Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio iPhone** antes de que la app reciba el archivo; la app no puede acelerarlo. Recomendación para clientes: "Grabar ahora" dentro de la app, o ajustes de cámara 1080p/30 y formato "Más compatible".
 
-## 9. Pendientes (orden sugerido, al 29-oct noche)
+## 8b. Dónde quedamos (30-oct, 22:40): LEE ESTO PRIMERO en un chat nuevo
+**Lo que Cristian tiene que hacer / está haciendo:**
+- Correr en el SQL Editor de Supabase la **0042** y luego la **0043** (la 0041 ya está corrida). Sin la 0043, las tarjetas nuevas no aparecen (el resto funciona).
+- Copiar las 3 claves VAPID de Netlify a Vercel y redesplegar Vercel (por qué: §7 "Avisos push"; pasos en `PASO_A_PRODUCCION.md` §3). Hasta entonces "Avisar" desde Vercel no llega a teléfonos que activaron avisos en Netlify.
+- Probar en Vercel (celular real) lo del 30-oct; él dijo "lo veo bien" a todo salvo fotos y sin señal, que se arreglaron después (`a106e9c`). Esperar su reporte.
+**Construido el 30-oct (detalle y cómo revertir en las 5 primeras entradas de `CHANGELOG.md`):** corregir una sola vez (0042), reporte visible en la ficha, vídeos horizontales, cabecita del guía (quitada en "Reporte enviado"), galería de ejercicios compacta por defecto, aviso claro de Avisar, programas, respuestas guardadas, revisar pendientes (`/coach/revisar`), resumen semanal, récords y logros, temporizador de descanso, sin señal (cola local + copia de pantallas en `sw.js`), hábitos (agua, pasos, sueño), antes/después deslizable, fotos que no subían en iPhone.
+**Siguiente trabajo pedido por Cristian (para este chat nuevo):**
+1. **Ejercicios alternativos:** cada ejercicio con 1-2 sustitutos aprobados por Jeff; el cliente lo cambia él mismo en Hoy ("la máquina está ocupada") y Jeff ve que lo cambió. Necesita migración 0044 (tabla de alternativas por ejercicio + registro del cambio) y prueba de ataque.
+2. **Más ejercicios precargados (de 54 a 100-200):** Claude prepara los datos (nombre, músculo, equipo, series/reps sugeridas, instrucciones en español). Las imágenes del muñequito NO las puede dibujar Claude: hasta tenerlas, el ejercicio usa la portada de marca. Preguntar a Cristian cómo hicieron las 54 (`public/ex/`).
+3. Después (idea aprobada, sin empezar): figura hombre/mujer del muñequito por ejercicio, elegida por el cliente en la bienvenida (necesita el doble de imágenes).
+**Decisiones de Jeff pendientes (PROPUESTA hasta que confirme):** 1 corrección tras terminar; umbrales de subir/bajar peso; 3 días "sin primera llamada"; 2 días sin actividad = urgente; metas de hábitos (NO DEFINIDO).
+
+## 9. Pendientes (orden sugerido; lo más nuevo está en §8b)
 0. **30-oct, noche:** falta correr la **0043** y probar en Vercel lo nuevo (ver primera entrada de `CHANGELOG.md`). Pendiente para la próxima sesión (pedido de Cristian): **ejercicios alternativos** y **más ejercicios precargados (100-200)**; luego, figura hombre/mujer del muñequito por ejercicio (necesita imágenes). Metas de hábitos: NO DEFINIDO (Jeff).
 0a. **30-oct:** falta que Cristian corra la **0042** (corregir una vez) y pruebe en Vercel: reporte visible en la ficha, vídeos horizontales, cabecita del guía en lo terminado. Regla PROPUESTA por validar con Jeff: 1 sola corrección tras terminar (entreno, reporte, nutrición) y ninguna después de que Jeff revise.
 0b. **29-oct, noche:** se atendió el reporte de pruebas de Cristian (ver la primera entrada de `CHANGELOG.md`). Falta: que corra la **0041** y vuelva a probar en Vercel. Reglas PROPUESTA por validar con Jeff: 3 días para alertar "sin primera llamada", 2 días sin actividad/sin reporte = urgente, umbrales de subir/bajar peso.
@@ -104,7 +116,7 @@ Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio
 3. **Próximo "fusiona"** (una sola publicación, 15 créditos): seguir `PASO_A_PRODUCCION.md` §10. Después del merge: la notificación de plan vencido sale con la tarea de la mañana (apunta a Netlify).
 4. Cambiar la clave del cron, Supabase Pro, regenerar la clave de Bunny, repositorio privado y revocar el token de GitHub.
 5. Antes de lanzar: WhatsApp y foto de Jeff en la landing, planes y precios, limpiar datos de prueba, restringir el registro en `/login`, landing en su propia dirección. Decidir si se baja Netlify al plan gratis (capacidad estimada: 100-150 clientes; si se agotan los 300 créditos el sitio se apaga hasta el mes siguiente).
-6. Ideas aprobadas y **no construidas**: "escribir a todos los de este filtro", racha por cliente, PDFs en Material, modo sin conexión, apps de tienda, cruzar "sin entrenar hoy" con el día de descanso.
+6. Ideas aprobadas y **no construidas**: "escribir a todos los de este filtro", racha por cliente, PDFs en Material, apps de tienda, cruzar "sin entrenar hoy" con el día de descanso. (El modo sin conexión para la rutina ya se hizo el 30-oct.)
 7. La propuesta de personaje **animado** por ejercicio se descartó (técnica imperfecta confunde); quedó la imagen fija.
 
 ## 9b. Qué está construido y qué falta (inventario al 26-oct)
@@ -127,6 +139,7 @@ Armado con `docs/CONTEXT.md`, `docs/PROJECT_STATE.md` y lo trabajado en esta eta
 - **Lo que Cristian pidió y no está hecho:** ver sección 9, punto 5.
 
 ## 10. Cómo arrancar un chat nuevo
-Pega: *"Lee `docs/MASTER_ROLE.md` y asume ese rol. Luego lee `AGENTS.md`, `docs/HANDOFF.md` (sobre todo §2, §3, §4 y §9), `docs/PASO_A_PRODUCCION.md` y las 15 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame en pocas líneas qué entendiste, qué migraciones están corridas y qué está pendiente de probar. Tienes permiso para subir a `bloque-hoy`; a `main` solo cuando yo diga \"fusiona\"."*
+Pega: *"Lee `docs/MASTER_ROLE.md` y asume ese rol. Luego lee `AGENTS.md`, `docs/HANDOFF.md` (sobre todo §2, §3, §4, §7, §8b y §9), `docs/PASO_A_PRODUCCION.md` y las 15 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame en pocas líneas qué entendiste, qué migraciones están corridas y qué está pendiente de probar. Tienes permiso para subir a `bloque-hoy`; a `main` solo cuando yo diga \"fusiona\"."*
+**Pruebas en un chat nuevo:** `bash supabase/tests/run_local.sh` (instala Postgres si falta, ver `AGENT_PLAYBOOK.md` §3) y `tests/e2e` (README: `run.sh setup` baja PostgREST solo, compila contra la base local; luego `LATENCY=150 bash tests/e2e/run.sh flows.js`, `extras.js`, `photos.js`, `offline.js`, `stuck.js`, `hydration.js`, `catalog.js`). Varias pruebas cambian los datos: corre `setup` antes de `flows.js`, `extras.js`, `photos.js` y `offline.js`. Antes de subir, borra `tests/e2e/postgrest` y vuelve a compilar normal.
 El rol está en `docs/MASTER_ROLE.md`, el blueprint en `docs/PRODUCT_BLUEPRINT.md` y el cruce con la app en `docs/BLUEPRINT_GAPS.md`: no hace falta pegarlos.
 **No se suben al repo** (hoy es público): el zip de DaniFit (material de terceros, ver blueprint §"Propiedad intelectual") ni la propuesta comercial de Jeff (`APROPUESTA-YEFFITNES.html`). Lo útil de ambos ya está resumido en el blueprint y en `CONTEXT.md`; se adjuntan al chat solo si una tarea los necesita (por ejemplo, comparar un diseño de DaniFit).
