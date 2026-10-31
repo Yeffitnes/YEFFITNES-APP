@@ -10,7 +10,8 @@ import { ExPic } from "@/components/ExPic";
 import { Icon } from "@/components/ui/Icon";
 import { uploadExerciseImage } from "@/lib/exercise-image";
 // Vista compacta por filtro (pedido de Cristian, 30-oct): en el celular salía un ejercicio por pantalla. Jeff puede compactar
-// cada filtro (Todos, Tren superior…) por separado; siempre arranca "Normal" y la elección se recuerda en ESTE navegador.
+// cada filtro (Todos, Tren superior…) por separado. Desde el 30-oct (noche) arranca COMPACTA (a Cristian le gustó más en el celular);
+// si Jeff pone "Normal" en un filtro, eso se recuerda en ESTE navegador.
 const VIEW_KEY = "yf-ex-view";
 const readViews = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(VIEW_KEY) ?? "{}") as Record<string, boolean>; } catch { return {}; } };
 const CATS: [string, string][] = [["all", "Todos"], ["upper", "Tren superior"], ["lower", "Tren inferior"], ["core", "Core"], ["cardio", "Cardio"], ["video", "Con vídeo"]];
@@ -19,7 +20,7 @@ export function ExercisesView() {
   const [f, setF] = useState("all"), [q, setQ] = useState(""), [mu, setMu] = useState(""), [eq, setEq] = useState("");
   const [edit, setEdit] = useState<Ex | "new" | null>(null), [views, setViews] = useState<Record<string, boolean>>({});
   useEffect(() => setViews(readViews()), []);   // después de abrir (no al dibujar en el servidor)
-  const compact = !!views[f];
+  const compact = views[f] ?? true;
   const setCompact = (on: boolean) => { const n = { ...views, [f]: on }; setViews(n); try { localStorage.setItem(VIEW_KEY, JSON.stringify(n)); } catch { /* sin almacenamiento */ } };
   const items = data ?? [];
   // Filtros (28-oct): zona + músculo + equipo + búsqueda, combinables. Así Jeff ve rápido qué tiene para cada grupo al armar rutinas.

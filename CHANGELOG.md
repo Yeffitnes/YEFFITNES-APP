@@ -1,4 +1,7 @@
 # CHANGELOG
+## 2026-10-30 (noche, 2) - La galería de ejercicios arranca Compacta
+Pedido de Cristian: "preestablecido todas compactas". Cada filtro arranca en Compacta; si Jeff pone Normal en uno, se recuerda en ese navegador. Verificado con `tests/e2e/catalog.js` (celular y computador). Revertir: en `ExercisesView.tsx`, `views[f] ?? true` → `!!views[f]`.
+
 ## 2026-10-30 (noche) - Galería de ejercicios compacta, sin carita en "Reporte enviado" y avisos más claros
 Pedido de Cristian (30-oct, 19:54).
 - **Galería de ejercicios Normal / Compacta:** en el catálogo de Jeff hay un selector "Normal | Compacta". Compacta pone 2 ejercicios por fila en el celular (y más por fila en el computador) sin cortar el nombre ni quitar etiquetas, dificultad o uso. Se elige **por filtro** (Todos, Tren superior, Tren inferior…): siempre arranca Normal y lo que Jeff elija se recuerda en ese navegador. `ExercisesView.tsx`, `coach.css`, `Icon.tsx` (iconos `rows` y `grid`).
