@@ -74,7 +74,7 @@ function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; p
   const [a, setA] = useState<string>(""), [b, setB] = useState<string>(""), [ask, setAsk] = useState(false), file = useRef<HTMLInputElement>(null);
   const ph = photos.data ?? [], before = ph.find((p) => p.id === (a || ph[0]?.id)), after = ph.find((p) => p.id === (b || ph[ph.length - 1]?.id));
   const [prep, setPrep] = useState(false), [view, setView] = useState<"pair" | "slide">("pair"), [cut, setCut] = useState(50);
-  const pick = async (f?: File) => { if (!f) return; setPrep(true); try { up.mutate(await compressImage(f)); } catch { toast("No pudimos procesar esa imagen. Prueba con otra foto.", true); } finally { setPrep(false); } if (file.current) file.current.value = ""; };
+  const pick = async (f?: File) => { if (!f) return; setAsk(false); setPrep(true); try { const blob = await compressImage(f); if (give.isPending) await new Promise((r) => setTimeout(r, 1200)); up.mutate(blob); } catch { toast("No pudimos procesar esa imagen. Prueba con otra foto.", true); } finally { setPrep(false); } if (file.current) file.current.value = ""; };
   const frame = (p?: typeof ph[number]) => <div className="photo-frame">{p?.url ? <img src={p.url} alt={`Foto del ${day(p.date)}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 12, color: "var(--text-faint)" }}>Sin foto</span>}{p && <div className="photo-frame-tag">{day(p.date)}</div>}</div>;
   return (
     <div className="card">
@@ -98,14 +98,16 @@ function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; p
             {mine && after && <button className="filter-chip" style={{ marginTop: 10 }} onClick={() => setRm(after)}>Eliminar la foto “Después” ({day(after.date)})</button>}
             <div className="photo-gallery">{ph.map((p) => <button key={p.id} className={`photo-thumb${after?.id === p.id ? " selected" : ""}`} onClick={() => setB(p.id)} aria-label={`Usar foto del ${day(p.date)}`}>{p.url && <img src={p.url} alt="" loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}<div className="photo-thumb-date">{day(p.date)}</div></button>)}</div>
           </>)}
-      {mine && <><input ref={file} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
+      {mine && <><input ref={file} id="ph-file" type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
         <button className="upload-btn" disabled={up.isPending || prep || consent.isPending} onClick={() => (consent.data ? file.current?.click() : setAsk(true))}>{prep ? "Preparando…" : up.isPending ? "Subiendo…" : "Subir foto de hoy"}</button></>}
       <div className="photo-privacy-note">Solo {mine ? "tú y tu coach" : "el cliente y tú"} pueden ver estas fotos.</div>
       {rm && <Modal title="¿Eliminar esta foto?" sub={`Foto del ${day(rm.date, true)}. Se borra para siempre y tu coach ya no podrá verla.`} onClose={() => setRm(null)}>
         <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setRm(null)}>Conservar</button><button className="modal-btn danger" disabled={del.isPending} onClick={() => { del.mutate({ id: rm.id, path: rm.path }); setRm(null); setB(""); }}>Sí, eliminar</button></div></Modal>}
       {ask && <Modal title="Antes de subir tu primera foto" sub="Tus fotos son privadas: solo tú y tu coach las ven, y puedes borrarlas cuando quieras." onClose={() => setAsk(false)}>
         <p style={{ fontSize: 13.5, lineHeight: 1.6, marginTop: 14 }}>Al continuar, aceptas que tu coach vea tus fotos de progreso para dar seguimiento a tu proceso.</p>
-        <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setAsk(false)}>Ahora no</button><button className="modal-btn primary" disabled={give.isPending} onClick={() => give.mutate(undefined, { onSuccess: () => { setAsk(false); setTimeout(() => file.current?.click(), 50); } })}>Acepto y continuar</button></div></Modal>}
+        <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setAsk(false)}>Ahora no</button>{/* Es una etiqueta del selector de fotos: el toque abre el selector DIRECTAMENTE (30-oct: en iPhone, abrirlo por código
+            después de guardar el permiso no hacía nada). El permiso se guarda a la vez, mientras la persona elige la foto. */}
+          <label htmlFor="ph-file" className="modal-btn primary" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} onClick={() => { if (!give.isPending && !give.isSuccess) give.mutate(undefined); }}>Acepto y elegir foto</label></div></Modal>}
     </div>
   );
 }

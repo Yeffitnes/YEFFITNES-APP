@@ -339,7 +339,9 @@ export function useUploadPhoto(clientId: string, workspaceId: string) {
     // La foto aparece al instante (vista previa local) mientras sube; al terminar se reemplaza por la guardada.
     onMutate: async (blob) => { const key = ["photos", clientId]; await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<unknown[]>(key); qc.setQueryData<unknown[]>(key, (l = []) => [...l, { id: "tmp-upload", date: localDate(), url: URL.createObjectURL(blob), path: "" }]); return { prev }; },
     onSuccess: () => { toast("Foto guardada"); },
-    onError: (_e, _b, ctx) => { if (ctx) qc.setQueryData(["photos", clientId], ctx.prev); toast("No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true); },
+    // Dice el motivo real (30-oct: "no me deja subir ninguna foto" y el aviso solo hablaba de la conexión).
+    onError: (e, _b, ctx) => { if (ctx) qc.setQueryData(["photos", clientId], ctx.prev); const m = `${(e as { message?: string })?.message ?? ""} ${(e as { statusCode?: string })?.statusCode ?? ""}`;
+      toast(/mime|415/i.test(m) ? "Ese formato de foto no se puede subir. Prueba con otra (JPG)." : /size|exceed|413|too large/i.test(m) ? "La foto es muy pesada. Prueba con otra." : /row-level|security|403|unauthor|policy/i.test(m) ? "No se pudo guardar: acepta el permiso de fotos o revisa que tu plan incluya Progreso." : "No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true); },
     onSettled: () => qc.invalidateQueries({ queryKey: ["photos", clientId] }),
   });
 }

@@ -11,6 +11,8 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `bash tests/e2e/run.sh ficha.js`: el reporte del día se lee en la ficha de Jeff (necesita un reporte de hoy, ver el archivo).
 - `bash tests/e2e/run.sh extras.js`: programas, respuestas guardadas, revisar pendientes, resumen semanal, récords, descanso, sin señal (cortándola de verdad), hábitos. Correr sobre base recién creada (`setup`).
 - `PAGE=/inicio/progreso bash tests/e2e/run.sh hydration.js`: la prueba de redibujado en otra pantalla.
+- `bash tests/e2e/run.sh photos.js`: fotos de progreso (permiso, selector, subir, deslizar). Base recién creada.
+- `bash tests/e2e/run.sh offline.js`: abrir la app sin señal, registrar, cerrar, volver a abrir y que se envíe al volver la señal. Base recién creada.
 - `bash tests/e2e/run.sh catalog.js`: galería de ejercicios (arranca Compacta; Normal se recuerda por filtro) en celular y computador.
 Límites: `proxy.js` simula solo lo mínimo de Supabase (sesión y /rest). No hay Storage (fotos, audios), Realtime, avisos push ni Bunny.
 **Después de usarlo, vuelve a compilar normal** (`npx next build` con las variables de siempre) antes de los chequeos para subir.

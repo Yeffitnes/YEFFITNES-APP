@@ -1,4 +1,16 @@
 # CHANGELOG
+## 2026-10-30 (noche, 4) - Fotos de progreso que no subían y app que abre sin señal
+Reporte de Cristian (22:13): "el antes y después no me deja subir ninguna foto"; y lo de la señal: "que entre o salga se quede guardado así no tenga señal".
+- **Fotos (dos fallas, sobre todo en iPhone):**
+  1. Al aceptar el permiso de fotos, la app abría el selector "por código" después de guardar el permiso; el iPhone lo bloquea (solo abre con un toque directo) y no pasaba nada. Ahora el botón "Acepto y elegir foto" ES el selector: el toque lo abre directo y el permiso se guarda a la vez.
+  2. Safari ignora la opción de reducir la foto al leerla: la foto salía del tamaño original (4-5 MB) y Supabase la rechaza (máx. 5 MB). Ahora siempre se dibuja reducida (1400 px) y, si aun así pesa más de 4 MB, se comprime más. `lib/image.ts`.
+  - El aviso de error ahora dice el motivo (formato, peso, permiso o conexión) en vez de siempre "revisa tu conexión".
+- **Abrir la app sin señal:** antes solo funcionaba si la app ya estaba abierta. Ahora cada vez que el cliente abre sus pantallas con señal, el teléfono guarda una copia (solo `/inicio`, nunca las del coach). Sin señal (o si tarda más de 8 s y hay copia) se abre la copia con su rutina; puede registrar, cerrar la app, volver a entrar y lo registrado sigue ahí; al volver la señal se envía solo. Con señal siempre se usa lo nuevo, y los datos de la copia se marcan como viejos para pedirlos de nuevo. Al cerrar sesión se borran las copias. `public/sw.js`, `Providers.tsx`, `SignOutButton.tsx`, `app/inicio/layout.tsx`.
+  - Límite: se necesita haber abierto la app con señal al menos una vez (después de esta versión). Sin señal funcionan rutina y registro; nutrición, mensajes y lo demás esperan a la señal.
+- Pruebas nuevas: `tests/e2e/photos.js` (permiso + selector + 2 fotos + deslizar; el proxy de pruebas ahora tiene un Storage en memoria) y `tests/e2e/offline.js` (abre sin señal desde la copia, registra, cierra, vuelve a abrir, vuelve la señal y queda en la base).
+- **Verificado en local con red lenta:** photos 4/4, offline 4/4, extras 15/15, flows sin fallos, sin atascos, Hoy y Progreso 20/20 sin redibujar, catálogo OK. **NO verificado:** iPhone real (el selector de fotos y la cámara solo se pueden probar en el teléfono) y señal real en un gimnasio.
+- Sin migración. Revertir: restaurar del commit `fb65bd6`. Si se revierte `sw.js`, las copias guardadas quedan en los teléfonos hasta cerrar sesión (no se usan si `sw.js` ya no las pide).
+
 ## 2026-10-30 (noche, 3) - Programas, respuestas guardadas, revisar pendientes, resumen semanal, récords, descanso, sin señal, hábitos y antes/después (MIGRACIÓN 0043)
 Pedido de Cristian (30-oct, 21:03): puntos 3 a 6 para Jeff y 1 a 5 para el cliente. Quedan para otra sesión: ejercicios alternativos y más ejercicios precargados.
 **Jeff**

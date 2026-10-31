@@ -1,4 +1,5 @@
-// Supabase de mentira para probar la app de punta a punta: /rest → PostgREST real; /auth → mínimo; storage y realtime ausentes.
+// Supabase de mentira para probar la app de punta a punta: /rest → PostgREST real; /auth → mínimo; storage en memoria (30-oct:
+// sube, firma enlaces y borra, con el tipo y tamaño permitidos de cada bucket); realtime ausente.
 const http = require("http"), crypto = require("crypto");
 const SECRET = "super-secret-jwt-token-with-at-least-32-characters-long";
 const b64u = (b) => Buffer.from(b).toString("base64url");
@@ -23,7 +24,32 @@ if (require.main === module) {
     if (u.pathname === "/auth/v1/token") { let b = ""; req.on("data", (c) => (b += c)); return req.on("end", () => { const j = JSON.parse(b || "{}"); return j.refresh_token ? json(200, session(j.refresh_token)) : json(400, { error: "invalid_grant" }); }); }
     if (u.pathname === "/auth/v1/logout") { res.writeHead(204, cors); return res.end(); }
     if (u.pathname.startsWith("/auth/v1/.well-known")) return json(200, { keys: [] });
+    if (u.pathname.startsWith("/storage/v1/")) return globalThis.storage(req, res, u, json);
     json(404, { message: "not in e2e stub", path: u.pathname });
+  };
+  // Storage mínimo: lo justo para probar fotos de progreso y de mensajes. No valida las políticas de Storage (eso lo hacen las pruebas RLS de la tabla).
+  const files = new Map(), RULES = { "progress-photos": { max: 5242880, types: ["image/jpeg", "image/webp"] } };
+  const body = (req) => new Promise((ok) => { const ch = []; req.on("data", (c) => ch.push(c)); req.on("end", () => ok(Buffer.concat(ch))); });
+  globalThis.storage = async (req, res, u, json) => {
+    let m;
+    if (req.method === "GET" && (m = u.pathname.match(/^\/storage\/v1\/object\/sign\/(.+)$/))) { const f = files.get(decodeURIComponent(m[1])); if (!f) return json(404, { message: "not found" }); res.writeHead(200, { "content-type": f.type, "access-control-allow-origin": "*" }); return res.end(f.data); }   // enlace firmado: sin sesión, como en Supabase
+    const tok = (req.headers.authorization || "").replace(/^Bearer /, ""); if (!verify(tok)) return json(401, { statusCode: "401", error: "Unauthorized", message: "jwt" });
+    if (req.method === "POST" && (m = u.pathname.match(/^\/storage\/v1\/object\/sign\/([^/]+)$/))) { const j = JSON.parse((await body(req)).toString() || "{}"); return json(200, (j.paths || []).map((p) => ({ path: p, signedURL: `/object/sign/${m[1]}/${p}?token=x`, error: files.has(`${m[1]}/${p}`) ? null : "not found" }))); }
+    if (req.method === "GET" && (m = u.pathname.match(/^\/storage\/v1\/object\/(?:sign|public|authenticated)\/(.+)$/))) { const f = files.get(decodeURIComponent(m[1])); if (!f) return json(404, { message: "not found" }); res.writeHead(200, { "content-type": f.type, "access-control-allow-origin": "*" }); return res.end(f.data); }
+    if ((req.method === "POST" || req.method === "PUT") && (m = u.pathname.match(/^\/storage\/v1\/object\/([^/]+)\/(.+)$/))) {
+      let data = await body(req), type = (req.headers["content-type"] || "").split(";")[0]; const r = RULES[m[1]];
+      if (type === "multipart/form-data") {   // supabase-js manda el archivo dentro de un formulario: se toma la parte que trae el archivo
+        const bnd = "--" + /boundary=([^;]+)/.exec(req.headers["content-type"])[1], raw = data.toString("latin1");
+        const part = raw.split(bnd).find((x) => /filename=|name=""/.test(x) && /Content-Type:/i.test(x)) || "";
+        type = (/Content-Type:\s*([^\r\n]+)/i.exec(part) || [])[1] || "application/octet-stream";
+        const start = part.indexOf("\r\n\r\n") + 4; data = Buffer.from(part.slice(start, part.length - 2), "latin1");
+      }
+      if (r && !r.types.includes(type)) return json(400, { statusCode: "415", error: "invalid_mime_type", message: `mime type ${type} is not supported` });
+      if (r && data.length > r.max) return json(400, { statusCode: "413", error: "Payload too large", message: "The object exceeded the maximum allowed size" });
+      files.set(`${m[1]}/${decodeURIComponent(m[2])}`, { data, type }); console.log("storage put", m[1], m[2], type, data.length); return json(200, { Key: `${m[1]}/${m[2]}`, Id: m[2] });
+    }
+    if (req.method === "DELETE" && (m = u.pathname.match(/^\/storage\/v1\/object\/([^/]+)$/))) { const j = JSON.parse((await body(req)).toString() || "{}"); (j.prefixes || []).forEach((p) => files.delete(`${m[1]}/${p}`)); return json(200, (j.prefixes || []).map((name) => ({ name }))); }
+    return json(404, { message: "storage path not in stub", path: u.pathname });
   };
   http.createServer(handler).listen(54321, () => console.log("proxy 54321"));
 }

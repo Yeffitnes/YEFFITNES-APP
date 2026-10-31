@@ -45,7 +45,7 @@ export default async function PortalLayout({ children }: { children: React.React
   // Sin plan (pendiente) también entra: ve la app con todo bloqueado y puede pedir acceso. Pausado o sin ficha: pantalla aparte.
   if (!client || (client.status !== "active" && client.status !== "pending")) redirect("/pendiente");
   return (
-    <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name} prefetch={false} seed={{ plans, logs }} me={{ id: client.id, status: client.status, planName: client.plans?.name ?? null, features: client.plans?.features ?? [], onboarded: !!client.onboarded_at, objective: client.objective, objectiveAt: client.objective_at, accessRequestedAt: client.access_requested_at, objectiveVideo: !!client.objective_video_id }}>
+    <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name} prefetch={false} seed={{ plans, logs, at: Date.now() }} me={{ id: client.id, status: client.status, planName: client.plans?.name ?? null, features: client.plans?.features ?? [], onboarded: !!client.onboarded_at, objective: client.objective, objectiveAt: client.objective_at, accessRequestedAt: client.access_requested_at, objectiveVideo: !!client.objective_video_id }}>
       <div className="shell">
         <PortalSide />
         <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Cliente" /></div></div><ActionsBar side="client" /><PendingBanner /><FirstCallBanner />{children}</main>

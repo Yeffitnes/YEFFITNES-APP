@@ -10,6 +10,7 @@ export function SignOutButton({ className, style, label = "Cerrar sesión", role
     await Promise.race([db().auth.signOut({ scope: "local" }).catch(() => {}), new Promise((r) => setTimeout(r, 1200))]);
     try { document.cookie.split(";").map((c) => c.split("=")[0].trim()).filter((n) => n.startsWith("sb-")).forEach((n) => { document.cookie = `${n}=; Max-Age=0; path=/`; }); } catch { /* nada */ }
     try { localStorage.removeItem("yf-push-sync"); } catch { /* nada */ }
+    try { await caches.delete("yf-pages-v1"); } catch { /* nada */ }   // las pantallas guardadas para usar sin señal (sw.js) son de esta cuenta
     window.location.replace("/login");
   };
   return <button type="button" className={className} style={style} role={role} disabled={busy} onClick={() => void out()}>{busy ? "Saliendo…" : label}</button>;
