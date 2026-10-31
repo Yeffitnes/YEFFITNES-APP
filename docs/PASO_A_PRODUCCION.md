@@ -36,7 +36,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 3. Notificaciones y app instalada
 - [ ] Desde el 27-oct el cliente **no puede usar la app sin activar las notificaciones** (si el teléfono las admite). Sin `NEXT_PUBLIC_VAPID_PUBLIC_KEY` esa pantalla no aparece: confirma que esté en Netlify antes de fusionar.
 - [ ] Las suscripciones push y la app instalada son **por dirección**: los clientes y Jeff deben activar avisos e instalar la app **desde la dirección de Netlify**. Lo hecho en Vercel no vale.
-- [x] Claves VAPID: Netlify y Vercel tienen claves DISTINTAS (decidido 28-oct). No es problema: cada suscripción solo sirve con la clave de su sitio; un envío cruzado falla con 403 y no borra nada. Si se cambian las de Netlify, todos deben reactivar avisos.
+- [ ] **Claves VAPID: RECOMENDADO (30-oct) poner en Vercel las MISMAS 3 claves de Netlify** (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) y volver a desplegar Vercel. Hasta el 28-oct se dejaron distintas, pero eso causó la confusión del 30-oct: "Avisar" desde Vercel no llega a los teléfonos que activaron avisos en Netlify (falla con 403) y la app lo mostraba como "no tiene avisos activos". Con las mismas claves, un aviso desde cualquiera de los dos llega a cualquier teléfono. Los teléfonos que activaron avisos en Vercel se reajustan solos al abrir la app (`resyncPush`). **NO cambies las de Netlify** (producción): copia las de Netlify a Vercel, no al revés.
 - [ ] iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o superior).
 
 ## 3b. Migraciones pendientes antes de fusionar a `main`

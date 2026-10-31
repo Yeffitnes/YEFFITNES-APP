@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-10-30 (noche) - Galería de ejercicios compacta, sin carita en "Reporte enviado" y avisos más claros
+Pedido de Cristian (30-oct, 19:54).
+- **Galería de ejercicios Normal / Compacta:** en el catálogo de Jeff hay un selector "Normal | Compacta". Compacta pone 2 ejercicios por fila en el celular (y más por fila en el computador) sin cortar el nombre ni quitar etiquetas, dificultad o uso. Se elige **por filtro** (Todos, Tren superior, Tren inferior…): siempre arranca Normal y lo que Jeff elija se recuerda en ese navegador. `ExercisesView.tsx`, `coach.css`, `Icon.tsx` (iconos `rows` y `grid`).
+- **Se quitó la cabecita del guía en "Reporte enviado"** (no se veía bien). Sigue en el entreno y la nutrición completados. `ReportCard.tsx`.
+- **"Avisar" ya no dice "no tiene avisos activos" cuando sí los tiene:** si el cliente tiene avisos pero la notificación no salió (caso típico: los activó en Netlify y Jeff avisa desde Vercel, que hoy tiene otras claves), ahora lo dice así. `lib/queries.ts` (`useNudge`).
+- **Causa de las notificaciones que no llegan en las pruebas:** Netlify y Vercel tienen claves de avisos distintas (decisión del 28-oct). Recomendado: copiar las 3 claves VAPID de Netlify a Vercel (ver `PASO_A_PRODUCCION.md` §3). Lo hace Cristian en el panel de Vercel; no requiere código.
+- Verificado en local (red lenta): la galería arranca Normal, compacta muestra 2 por fila en celular, ningún nombre cortado, sin desborde, otro filtro arranca Normal y la elección se recuerda al recargar (`tests/e2e/catalog.js`). NO verificado: notificaciones reales (no hay teléfonos ni claves en local).
+- Sin migración. Revertir: restaurar del commit `08c0f87`.
+
 ## 2026-10-30 (tarde) - Corregir una sola vez, reporte visible en la ficha, vídeos horizontales y cabecita del guía
 Pedido de Cristian (30-oct, 18:30).
 - **Corregir lo terminado (MIGRACIÓN 0042, PROPUESTA por validar con Jeff):** al terminar el entrenamiento, el reporte del día o la nutrición del día, el cliente puede corregir **una sola vez**, y **nunca** después de que Jeff lo revisó. Lo impone la base de datos (no solo la pantalla): una segunda corrección o una después de la revisión se rechaza con un mensaje claro. Al corregir se actualiza la misma fila (no se crea un comentario nuevo), así que Jeff no recibe duplicados; en su panel sale "· corregido por el cliente". `0042_edit_once.sql`, `rls_editonce.sql`, `lib/queries.ts`, `HoyView.tsx`, `ReportCard.tsx`, `MealChecklist.tsx`, `RecentWorkouts.tsx`, `TodayCard.tsx`.

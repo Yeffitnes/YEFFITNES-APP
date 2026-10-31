@@ -1,6 +1,8 @@
 // Iconos de marca (trazo fino, 20×20, color heredado). Sustituyen a los emojis del sistema,
 // que cambian de aspecto en cada teléfono y rompen el estilo premium de la app.
 const PATHS = {
+  rows: <><rect x="4" y="3.8" width="12" height="5.4" rx="1.4" /><rect x="4" y="10.8" width="12" height="5.4" rx="1.4" /></>,
+  grid: <><rect x="3.8" y="3.8" width="5.4" height="5.4" rx="1.3" /><rect x="10.8" y="3.8" width="5.4" height="5.4" rx="1.3" /><rect x="3.8" y="10.8" width="5.4" height="5.4" rx="1.3" /><rect x="10.8" y="10.8" width="5.4" height="5.4" rx="1.3" /></>,
   check: <path d="M4.5 10.5l3.7 3.7L15.5 6.3" />,
   close: <path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />,
   lock: <><rect x="4.5" y="9" width="11" height="7.5" rx="2" /><path d="M7 9V6.8a3 3 0 0 1 6 0V9" /></>,

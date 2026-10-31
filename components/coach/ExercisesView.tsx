@@ -9,11 +9,18 @@ import { EQUIPMENT, MUSCLES, equipOf, exImage, muscleOf, norm, options } from "@
 import { ExPic } from "@/components/ExPic";
 import { Icon } from "@/components/ui/Icon";
 import { uploadExerciseImage } from "@/lib/exercise-image";
+// Vista compacta por filtro (pedido de Cristian, 30-oct): en el celular salía un ejercicio por pantalla. Jeff puede compactar
+// cada filtro (Todos, Tren superior…) por separado; siempre arranca "Normal" y la elección se recuerda en ESTE navegador.
+const VIEW_KEY = "yf-ex-view";
+const readViews = (): Record<string, boolean> => { try { return JSON.parse(localStorage.getItem(VIEW_KEY) ?? "{}") as Record<string, boolean>; } catch { return {}; } };
 const CATS: [string, string][] = [["all", "Todos"], ["upper", "Tren superior"], ["lower", "Tren inferior"], ["core", "Core"], ["cardio", "Cardio"], ["video", "Con vídeo"]];
 export function ExercisesView() {
   const { data, isPending, isError, refetch } = useExercises();
   const [f, setF] = useState("all"), [q, setQ] = useState(""), [mu, setMu] = useState(""), [eq, setEq] = useState("");
-  const [edit, setEdit] = useState<Ex | "new" | null>(null);
+  const [edit, setEdit] = useState<Ex | "new" | null>(null), [views, setViews] = useState<Record<string, boolean>>({});
+  useEffect(() => setViews(readViews()), []);   // después de abrir (no al dibujar en el servidor)
+  const compact = !!views[f];
+  const setCompact = (on: boolean) => { const n = { ...views, [f]: on }; setViews(n); try { localStorage.setItem(VIEW_KEY, JSON.stringify(n)); } catch { /* sin almacenamiento */ } };
   const items = data ?? [];
   // Filtros (28-oct): zona + músculo + equipo + búsqueda, combinables. Así Jeff ve rápido qué tiene para cada grupo al armar rutinas.
   const byZone = items.filter((e) => f === "all" || (f === "video" ? !!e.videoRef : e.category === f));
@@ -33,12 +40,16 @@ export function ExercisesView() {
         <FilterDrop label="Equipo" value={eq} opts={eqOpts} onPick={setEq} />
         <span className="ex-count">{list.length} de {items.length}</span>
         {filtered && <button type="button" className="ex-clear" onClick={() => { setF("all"); setMu(""); setEq(""); setQ(""); }}>Quitar filtros</button>}
+        <div className="ex-view" role="group" aria-label="Tamaño de la galería">
+          <button type="button" aria-pressed={!compact} className={!compact ? "on" : ""} onClick={() => setCompact(false)}><Icon name="rows" size={13} />Normal</button>
+          <button type="button" aria-pressed={compact} className={compact ? "on" : ""} onClick={() => setCompact(true)}><Icon name="grid" size={13} />Compacta</button>
+        </div>
       </div>}
       {isPending && <Skeleton />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar los ejercicios. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && !items.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Aún no hay ejercicios. Crea el primero con “Nuevo ejercicio”: después los podrás usar en todas tus rutinas.</p></div>}
       {data && !!items.length && !list.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Ningún ejercicio coincide con ese filtro.</p></div>}
-      <div className="ex-grid">{list.map((e) => (
+      <div className={`ex-grid${compact ? " compact" : ""}`}>{list.map((e) => (
         <div key={e.id} className="ex-card" role="button" tabIndex={0} onClick={() => setEdit(e)} onKeyDown={(k) => k.key === "Enter" && setEdit(e)}>
           <div className={`ex-thumb${e.videoRef || e.image ? "" : " no-video"}${e.image ? " has-pic" : ""}`}><ExPic image={e.image} name={e.name} size={180} className="cover" />{e.videoRef ? <div className="ex-thumb-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div> : !e.image && <svg viewBox="0 0 24 24"><path d="M6 4l11 6-11 6V4z" /></svg>}</div>
           <div className="ex-body"><div className="ex-name">{e.name}</div><div className="ex-used">{e.used ? `Usado en ${e.used} ${e.used === 1 ? "rutina" : "rutinas"}` : "Sin usar aún"}</div>

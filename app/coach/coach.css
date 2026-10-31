@@ -1027,3 +1027,22 @@ html{scroll-behavior:smooth;}
    otra regla y quedaba blanco sobre blanco (solo se veía "Marcar visto"). */
 .card.today-sec.today-dark{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.42),transparent 60%),var(--ink)!important;border-color:var(--ink)!important;color:#fff}
 .card.today-sec.today-dark .card-tag{color:rgba(255,255,255,.75)}
+
+/* Galería de ejercicios compacta (30-oct): 2 por fila en celular, más por fila en computador. Nombre y etiquetas completos. */
+.ex-view{display:inline-flex;margin-left:auto;padding:3px;border:1px solid var(--line);border-radius:22px;background:var(--paper)}
+.ex-view button{display:inline-flex;align-items:center;gap:5px;border:0;background:none;font:inherit;font-size:12px;font-weight:700;padding:6px 11px;border-radius:18px;color:var(--text-dim);cursor:pointer}
+.ex-view button.on{background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);color:#fff}
+.ex-grid.compact{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.ex-grid.compact .ex-card{border-radius:12px}
+.ex-grid.compact .ex-body{padding:8px 10px 10px}
+.ex-grid.compact .ex-name{font-size:12.5px;line-height:1.25}
+.ex-grid.compact .ex-used{font-size:9.5px}
+.ex-grid.compact .ex-tags{gap:4px;margin-top:6px}
+.ex-grid.compact .ex-tag{font-size:9.5px;padding:2px 6px}
+.ex-grid.compact .ex-diff{margin-top:6px}
+.ex-grid.compact .ex-diff span{width:10px;height:3px}
+.ex-grid.compact .ex-thumb-play{width:26px;height:26px}
+.ex-grid.compact .ex-thumb.has-pic .ex-thumb-play{right:6px;bottom:6px;width:24px;height:24px}
+.ex-grid.compact .ex-thumb-play svg{width:10px;height:10px}
+@media (max-width:640px){.ex-grid.compact{grid-template-columns:1fr 1fr;gap:8px}}
+@media (max-width:520px){.ex-view{margin-left:0}}

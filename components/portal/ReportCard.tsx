@@ -59,7 +59,7 @@ function ReportSent({ clientId, today, r }: { clientId: string; today: string; r
   const submit = useSubmitReport(clientId, today), [edit, setEdit] = useState(false), [txt, setTxt] = useState(r.comment ?? "");
   const can = !r.seen && (r.edits ?? 0) < 1;
   return (
-    <QuickRow anchor="reporte" icon="check" tone="ok" face title="Reporte enviado" sub={r.seen ? "Tu coach ya lo vio" : (r.edits ?? 0) > 0 ? "Corregido · tu coach lo verá pronto" : "Tu coach lo verá pronto"}>
+    <QuickRow anchor="reporte" icon="check" tone="ok" title="Reporte enviado" sub={r.seen ? "Tu coach ya lo vio" : (r.edits ?? 0) > 0 ? "Corregido · tu coach lo verá pronto" : "Tu coach lo verá pronto"}>
       {!edit && r.comment && <p className="qrow-quote">“{r.comment}”</p>}
       {edit ? <>
         <textarea aria-label="Corregir el comentario" maxLength={1000} value={txt} onChange={(e) => setTxt(e.target.value)} style={{ width: "100%", minHeight: 70, marginTop: 8, border: "1px solid var(--line)", borderRadius: 12, padding: 12, fontSize: 13.5, resize: "vertical" }} />

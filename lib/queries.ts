@@ -724,12 +724,17 @@ export function useNudge() {
       const { data, error } = await db().rpc("send_nudge", { p_client: v.clientId, p_kind: v.kind });
       if (error) throw new Error(/already_sent/.test(error.message) ? "already_sent" : "failed");
       // El aviso YA quedó guardado (el cliente lo ve en Hoy). La notificación del teléfono se espera máx. 7 s: si tarda, el botón no se queda quieto.
+      // Resultado: >0 llegó; 0 sin avisos activos; -1 todavía enviándose; -2 tiene avisos pero NO llegó (p. ej. los activó en la
+      // otra versión de la app: Netlify y Vercel usan claves distintas). Antes -2 se mostraba como "no tiene avisos" y confundía (30-oct).
       const push = fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) })
-        .then(async (r) => (r.ok ? ((await r.json().catch(() => ({}))) as { sent?: number }).sent ?? 0 : 0)).catch(() => 0);
+        .then(async (r) => { if (!r.ok) return -2; const j = (await r.json().catch(() => ({}))) as { sent?: number; failed?: number }; return (j.sent ?? 0) > 0 ? j.sent! : (j.failed ?? 0) > 0 ? -2 : 0; }).catch(() => -2);
       return Promise.race([push, new Promise<number>((res) => setTimeout(() => res(-1), 7000))]);
     },
     onMutate: (v) => { qc.setQueryData<string[]>(["nudges"], (l) => [...(l ?? []), `${v.clientId}:${v.kind}`]); },
-    onSuccess: (sent) => toast(sent > 0 ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy." : sent < 0 ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación al teléfono sigue enviándose." : "Aviso guardado: lo verá en su pantalla Hoy (su teléfono no tiene avisos activos)."),
+    onSuccess: (sent) => toast(sent > 0 ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy."
+      : sent === -1 ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación al teléfono sigue enviándose."
+      : sent === -2 ? "Aviso guardado: lo ve en su pantalla Hoy. Tiene avisos activos, pero la notificación no salió (puede que los activara en la otra versión de la app)."
+      : "Aviso guardado: lo verá en su pantalla Hoy (no ha activado los avisos en ningún teléfono)."),
     onError: (e) => { if ((e as Error).message === "already_sent") { toast("Ya le avisaste esto hoy."); return; } toast("No pudimos guardar el aviso. Inténtalo de nuevo.", true); },
     onSettled: () => { void qc.invalidateQueries({ queryKey: ["nudges"] }); },
   });
