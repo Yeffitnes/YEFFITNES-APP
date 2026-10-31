@@ -4,7 +4,7 @@ Preparado el 31-oct para el pedido de Cristian ("más ejercicios precargados, 10
 Mientras no haya imagen, cada uno se ve con la portada de marca. Series, repeticiones e indicaciones son **PROPUESTA**: Jeff las puede cambiar en el catálogo.
 
 ## Cómo poner las imágenes cuando existan
-1. Generarlas en tandas de 9 (cuadrícula 3×3), con el mismo estilo y personaje de las 54 (sin números al inicio de cada línea, sin frases "NOT ..."; "side view" en lo acostado). Abajo va el texto en inglés de cada tanda, en el orden de la cuadrícula (izquierda a derecha, arriba a abajo).
+1. Generarlas en tandas de 9 (cuadrícula 3×3), con el mismo estilo y personaje de las 54 (sin números al inicio de cada línea, sin frases "NOT ..."; "side view" en lo acostado). Abajo va el texto de cada tanda, en el orden de la cuadrícula (izquierda a derecha, arriba a abajo).
 2. Recortar a 360 px WebP con el nombre de archivo de la tabla y ponerlas en `public/ex/`.
 3. Una migración nueva pone la imagen: `update public.exercises set image = 'preset:<archivo sin .webp>' where lower(name) = lower('<nombre>') and image is null;` (no pisa la imagen que Jeff ya haya subido).
 
@@ -117,156 +117,158 @@ Mientras no haya imagen, cada uno se ve con la portada de marca. Series, repetic
 | 157 | Elíptica | Cuerpo completo | Máquina | 1 × 15-20 min | `157-eliptica.webp` |
 | 158 | Escaladora | Cuerpo completo | Máquina | 1 × 10-15 min | `158-escaladora.webp` |
 
-## Textos para generar las imágenes (tandas de 9)
+## Textos para generar las imágenes
+
+Mismo formato que las 54 (número, nombre en inglés y la pose). Se entregaron a Cristian el 31-oct en `ejercicios_55_a_158.txt`. Tandas de 9 (cuadrícula 3×3):
 
 **Tanda 1** (#55 a #63)
 ```
-incline barbell bench press on a 30 degree bench
-decline barbell bench press, side view
-incline chest press machine, seated
-incline dumbbell fly on a 30 degree bench, side view
-low-to-high cable crossover
-incline push-up with hands on a bench, side view
-decline push-up with feet on a bench, side view
-dumbbell floor press, lying on the floor, side view
-standing resistance band chest press
+55 Incline barbell bench press: lying on a bench inclined 30 degrees, feet flat on the floor, bar held over the upper chest with arms almost straight.
+56 Decline barbell bench press: lying on a decline bench with the feet hooked under the pads, bar lowered to the lower chest, elbows at about 45 degrees.
+57 Incline chest press machine: seated in the machine with the back against the pad, handles pushed up and forward, arms almost straight.
+58 Incline dumbbell flyes: lying on a bench inclined 30 degrees, arms open wide with a slight bend in the elbows, dumbbells at chest height.
+59 Low-to-high cable crossover: standing between two cable towers with the pulleys low, one foot forward, hands raised and meeting in front of the upper chest.
+60 Incline push-up: hands on the edge of a flat bench, body in a straight line from head to heels, chest close to the bench.
+61 Decline push-up: feet up on a flat bench, hands on the floor, body in a straight line, chest close to the floor.
+62 Dumbbell floor press: lying on the back on the floor, knees bent, dumbbells pressed up over the chest, arms almost straight.
+63 Resistance band chest press: standing, band wrapped behind the upper back, both arms pushed straight forward at chest height.
 ```
 
 **Tanda 2** (#64 a #72)
 ```
-chin-up with underhand grip
-assisted pull-up machine, kneeling on the pad
-close-grip lat pulldown with V handle
-seated row machine with chest pad
-T-bar row, side view
-inverted row under a low bar, side view
-chest-supported dumbbell row on an incline bench, side view
-underhand barbell bent-over row, side view
-Pendlay row, torso parallel to the floor, side view
+64 Chin-up: hanging from a pull-up bar with an underhand grip, palms facing the body, chin above the bar, legs straight and still.
+65 Assisted pull-up machine: kneeling on the assist pad, hands on the handles above, chin pulled up to the handles.
+66 Close-grip lat pulldown: seated at the machine, thighs under the pads, V handle pulled down to the upper chest, elbows close to the body, chest up.
+67 Seated row machine: seated with the chest against the pad, handles pulled back to the torso, shoulder blades squeezed.
+68 T-bar row: standing over a T-bar, knees slightly bent, torso bent forward at 45 degrees, flat back, handle pulled to the stomach.
+69 Inverted row: lying under a low bar at waist height, heels on the floor, body straight, chest pulled up to the bar.
+70 Chest-supported dumbbell row: chest resting on a bench inclined 30 degrees, one dumbbell in each hand pulled up to the sides of the torso.
+71 Underhand barbell row: standing, hips back, torso bent forward at 45 degrees, flat back, palms facing up, bar pulled to the belly button.
+72 Pendlay row: standing, torso parallel to the floor, flat back, barbell pulled from the floor up to the lower chest.
 ```
 
 **Tanda 3** (#73 a #81)
 ```
-single-arm seated cable row
-standing resistance band row
-dumbbell pullover lying on a bench, side view
-superman exercise lying face down, side view
-barbell shrug, front view
-seated Arnold press with dumbbells
-shoulder press machine, seated
-single-arm cable lateral raise
-lateral raise machine, seated
+73 Single-arm seated cable row: seated at the low row machine, upright torso, one hand pulling a single handle to the side of the waist, the other hand on the knee.
+74 Resistance band row: standing, band anchored in front at waist height, both hands pulled back to the stomach, elbows close to the body.
+75 Dumbbell pullover: lying flat on a bench, one dumbbell held with both hands behind the head, arms almost straight.
+76 Superman: lying face down on the floor, arms and legs straight and lifted off the floor at the same time.
+77 Barbell shrug: standing, barbell held in front of the thighs, arms straight, shoulders raised toward the ears.
+78 Arnold press: seated on a bench with back support, dumbbells pressed overhead, palms rotating to face forward at the top.
+79 Shoulder press machine: seated in the machine with the back against the pad, handles pressed overhead, arms almost straight.
+80 Single-arm cable lateral raise: standing beside a low pulley, one arm raised out to the side to shoulder height, the other hand on the hip.
+81 Lateral raise machine: seated in the machine, elbows against the pads, arms raised to the sides to shoulder height.
 ```
 
 **Tanda 4** (#82 a #90)
 ```
-bent-over dumbbell reverse fly, side view
-reverse pec deck machine, rear delt fly
-barbell upright row, front view
-single-arm landmine press, standing
-resistance band pull-apart, front view
-pike push-up, side view
-seated dumbbell concentration curl
-EZ-bar preacher curl on a preacher bench
-preacher curl machine, seated
+82 Bent-over dumbbell reverse fly: standing, hips back, torso bent forward almost parallel to the floor, arms opened out to the sides with dumbbells in hands.
+83 Reverse pec deck: seated facing the machine with the chest against the pad, arms almost straight and opened back to the sides.
+84 Barbell upright row: standing, narrow grip, bar pulled up to chest height, elbows high and pointing out.
+85 Landmine press: standing, one end of a barbell anchored in a corner, one hand pressing the other end up and forward from the shoulder.
+86 Resistance band pull-apart: standing, arms straight in front at chest height, band stretched apart to the sides of the chest.
+87 Pike push-up: hands and feet on the floor, hips high in an inverted V, head lowered toward the floor between the hands.
+88 Concentration curl: seated on a bench, elbow resting on the inside of the thigh, one dumbbell curled up toward the shoulder.
+89 EZ-bar preacher curl: seated at a preacher bench, upper arms resting on the pad, EZ bar curled up toward the shoulders.
+90 Preacher curl machine: seated in the machine, upper arms on the pad, handles curled up toward the shoulders.
 ```
 
 **Tanda 5** (#91 a #99)
 ```
-incline dumbbell curl on a 45 degree bench, side view
-cable rope hammer curl
-resistance band biceps curl, standing
-spider curl, chest on incline bench, side view
-cable rope triceps pushdown
-overhead cable triceps extension with rope
-close-grip barbell bench press, side view
-dumbbell triceps kickback, side view
-seated dip machine
+91 Incline dumbbell curl: seated on a bench inclined 45 degrees, arms hanging straight down, one dumbbell curled up with the palm facing up.
+92 Cable rope hammer curl: standing facing a low pulley, rope held with thumbs up, curled up to chest height, elbows at the sides.
+93 Resistance band curl: standing on the middle of a band, elbows at the sides, both handles curled up to chest height.
+94 Spider curl: lying chest down on a bench inclined 45 degrees, arms hanging straight down, dumbbells curled up toward the shoulders.
+95 Cable rope triceps pushdown: standing at a high pulley, elbows tight to the body, rope pushed down and spread apart at the bottom, arms straight.
+96 Overhead cable triceps extension: standing with the back to a high pulley, one foot forward, rope held behind the head and extended overhead, elbows pointing forward.
+97 Close-grip bench press: lying flat on a bench, hands at shoulder width, bar lowered to the lower chest, elbows close to the body.
+98 Dumbbell triceps kickback: torso bent forward with one hand and knee on a bench, upper arm parallel to the floor, forearm extended straight back.
+99 Seated dip machine: seated in the machine, hands on the handles at the sides, handles pushed down until the arms are straight.
 ```
 
 **Tanda 6** (#100 a #108)
 ```
-lying dumbbell skull crusher, side view
-close-grip push-up, side view
-resistance band triceps pushdown
-barbell front squat, side view
-bodyweight squat, side view
-Smith machine squat, side view
-walking lunges with dumbbells, side view
-reverse lunge with dumbbells, side view
-dumbbell step-up onto a box, side view
+100 Lying dumbbell skull crusher: lying on a flat bench, two dumbbells lowered beside the head, upper arms vertical, palms facing each other.
+101 Close-grip push-up: hands under the shoulders, body in a straight line, chest close to the floor, elbows tight to the body.
+102 Resistance band triceps pushdown: standing, band anchored high, elbows at the sides, band pushed down until the arms are straight.
+103 Barbell front squat: bar resting on the front of the shoulders, elbows high, squatting down to parallel, torso upright.
+104 Bodyweight squat: feet shoulder-width apart, squatting down to parallel, arms straight in front, heels flat, chest up.
+105 Smith machine squat: bar of the Smith machine on the upper back, feet slightly in front of the body, squatting down to parallel.
+106 Walking lunges: long step forward, back knee almost touching the floor, upright torso, dumbbells at the sides, the body moving forward.
+107 Reverse lunge: one leg stepped back, back knee almost touching the floor, front knee over the foot, upright torso, dumbbells at the sides.
+108 Dumbbell step-up: one foot on a box, stepping up with the other leg rising, upright torso, dumbbells at the sides.
 ```
 
 **Tanda 7** (#109 a #117)
 ```
-wall sit, side view
-single-leg leg press machine, side view
-resistance band squat, front view
-jump squat in mid-air, side view
-box jump landing on a box, side view
-seated leg curl machine, side view
-standing single-leg curl machine, side view
-dumbbell Romanian deadlift, side view
-single-leg dumbbell Romanian deadlift, side view
+109 Wall sit: back flat against a wall, knees bent at 90 degrees, thighs parallel to the floor, arms crossed on the chest.
+110 Single-leg leg press: seated in the leg press machine, one foot in the center of the platform, knee bent at 90 degrees, the other leg resting.
+111 Resistance band squat: standing on a band, band handles held at the shoulders, squatting down to parallel.
+112 Jump squat: in the air after jumping from a squat, arms swung back, legs straight.
+113 Box jump: landing on top of a box in a half squat, arms forward.
+114 Seated leg curl: seated in the leg curl machine, thigh pad on the legs, heels curled down and back under the seat.
+115 Standing leg curl machine: standing at the machine, hands on the handles, one heel curled up toward the glutes.
+116 Dumbbell Romanian deadlift: standing, knees slightly bent, hips pushed back, flat back, dumbbells lowered to mid-shin close to the legs.
+117 Single-leg Romanian deadlift: standing on one leg, torso tipped forward and the other leg extended straight back in one line, dumbbell in the opposite hand near the shin.
 ```
 
 **Tanda 8** (#118 a #126)
 ```
-barbell good morning, side view
-Nordic hamstring curl, kneeling, side view
-kettlebell deadlift, side view
-sumo barbell deadlift, front view
-hip thrust machine, side view
-single-leg hip thrust with back on a bench, side view
-barbell glute bridge on the floor, side view
-quadruped donkey kick, side view
-glute kickback machine, side view
+118 Barbell good morning: standing, bar on the upper back, knees slightly bent, hips pushed back, torso bent forward almost parallel to the floor, flat back.
+119 Nordic hamstring curl: kneeling on a pad with the ankles held down, body straight from knees to head, leaning forward toward the floor, hands ready in front.
+120 Kettlebell deadlift: standing over a kettlebell, hips back, flat back, arms straight, both hands gripping the handle just before lifting.
+121 Sumo deadlift: very wide stance with toes pointed out, barbell on the floor, hips low, flat back, hands gripping the bar inside the knees.
+122 Hip thrust machine: seated in the machine, upper back against the pad, hips pushed up fully extended, torso and thighs in a straight line.
+123 Single-leg hip thrust: upper back on a bench, one foot on the floor, the other leg raised, hips fully extended in a straight line.
+124 Barbell glute bridge: lying on the floor, knees bent, barbell with a pad across the hips, hips lifted so the body is straight from knees to shoulders.
+125 Quadruped donkey kick: on hands and knees, one leg kicked up with the knee bent at 90 degrees and the sole facing the ceiling.
+126 Glute kickback machine: torso resting on the machine pad, one leg pushing the platform straight back, back flat.
 ```
 
 **Tanda 9** (#127 a #135)
 ```
-lateral band walk in half squat, front view
-standing cable hip abduction, front view
-dumbbell sumo squat, front view
-side-lying clamshell with resistance band
-calf press on leg press machine, side view
-single-leg calf raise on a step, side view
-standing dumbbell calf raise, side view
-kneeling cable crunch, side view
-hanging leg raise from a pull-up bar
+127 Lateral band walk: band around the knees, half squat, stepping sideways with the feet wide apart.
+128 Standing cable hip abduction: standing side-on to a low pulley with an ankle strap, outside leg raised out to the side, holding the machine.
+129 Dumbbell sumo squat: very wide stance with toes pointed out, deep squat, one dumbbell held with both hands hanging between the legs.
+130 Clamshell with band: lying on one side, knees bent, band around the knees, top knee opened upward, feet together.
+131 Calf press on leg press: seated in the leg press machine, balls of the feet on the edge of the platform, legs straight, toes pushing the platform.
+132 Single-leg calf raise: standing on one foot on the edge of a step, raised high on the toes, one hand on a wall for balance.
+133 Standing dumbbell calf raise: standing, dumbbells at the sides, raised high on the toes.
+134 Kneeling cable crunch: kneeling facing a high pulley, rope held beside the head, torso curled down with the elbows toward the thighs.
+135 Hanging leg raise: hanging from a pull-up bar with straight arms, straight legs raised to hip height.
 ```
 
 **Tanda 10** (#136 a #144)
 ```
-captain's chair knee raise
-Russian twist, seated, side view
-ab wheel rollout from knees, side view
-Pallof press with cable, standing sideways
-cable woodchopper, high to low
-reverse crunch lying on the floor, side view
-bicycle crunch lying on the floor, side view
-hollow body hold, side view
-high plank shoulder tap, side view
+136 Captain's chair knee raise: forearms on the pads of the station, back against the pad, knees raised to the chest.
+137 Russian twist: seated on the floor, torso leaning back, feet lifted, hands together rotated to one side of the hips.
+138 Ab wheel rollout: kneeling on the floor, both hands on an ab wheel rolled forward, body almost straight from knees to head.
+139 Pallof press: standing side-on to a cable at chest height, handle held with both hands and pressed straight out in front of the chest.
+140 Cable woodchopper: standing side-on to a high pulley, torso rotated, handle pulled diagonally down across the body to the opposite hip.
+141 Reverse crunch: lying on the back, knees bent, hips curled up off the floor, knees pulled toward the chest.
+142 Bicycle crunch: lying on the back, shoulders lifted, one elbow touching the opposite knee, the other leg extended.
+143 Hollow body hold: lying on the back, lower back pressed to the floor, arms and legs straight and lifted off the floor.
+144 Plank shoulder tap: high plank with straight arms, one hand lifted to touch the opposite shoulder, hips level.
 ```
 
 **Tanda 11** (#145 a #153)
 ```
-bird dog exercise on all fours, side view
-flutter kicks lying on the back, side view
-farmer's walk carrying heavy dumbbells
-jumping jacks, front view
-high knees running in place, side view
-jumping rope
-dumbbell thruster, squat to overhead press
-bear crawl, side view
-jumping lunges in mid-air, side view
+145 Bird dog: on hands and knees, one arm and the opposite leg extended straight out, back flat.
+146 Flutter kicks: lying on the back, hands under the hips, straight legs lifted slightly off the floor, one leg higher than the other.
+147 Farmer's walk: walking upright with a heavy dumbbell in each hand at the sides, short steps.
+148 Jumping jacks: in the air with arms raised overhead and legs spread apart.
+149 High knees: running in place, one knee driven up to hip height, arms pumping.
+150 Jump rope: jumping on the balls of the feet, rope passing under the feet, wrists turning the rope.
+151 Dumbbell thruster: standing up from a squat, dumbbells pressed overhead, arms straight.
+152 Bear crawl: on hands and feet, knees just above the floor, flat back, one hand and the opposite foot moving forward.
+153 Jumping lunge: in the air between lunges, one leg forward and one leg back, arms swinging.
 ```
 
 **Tanda 12** (#154 a #158)
 ```
-rowing machine (ergometer), side view
-stationary bike, side view
-incline treadmill walk, side view
-elliptical trainer, side view
-stair climber machine, side view
+154 Rowing machine: seated on the rower, legs extended, handle pulled to the lower chest, torso leaning slightly back.
+155 Stationary bike: seated on an exercise bike, hands on the handlebars, upright torso, pedaling.
+156 Incline treadmill walk: walking on a treadmill set to an incline, upright posture, not holding the handrails.
+157 Elliptical trainer: standing on the pedals of an elliptical machine, hands on the moving handles, upright torso.
+158 Stair climber: stepping up on a stair climber machine, upright torso, light hands on the rails.
 ```

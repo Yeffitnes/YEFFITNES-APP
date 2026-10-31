@@ -1,4 +1,7 @@
 # CHANGELOG
+## 2026-10-31 (tarde) - Textos para las imágenes de los 104 ejercicios nuevos
+- `docs/EJERCICIOS_NUEVOS.md`: los textos para Gemini/ChatGPT ahora siguen el mismo formato que los de las 54 (número 55 a 158, nombre en inglés y la pose del personaje). Solo documentación. Revertir: restaurar el archivo del commit `106f863`.
+
 ## 2026-10-31 - Ejercicios alternativos (MIGRACIÓN 0044) y 104 ejercicios precargados más (MIGRACIÓN 0045)
 Pedido de Cristian (30-oct, 22:40): "seguimos con los ejercicios alternativos y con más ejercicios precargados".
 **Ejercicios alternativos (0044)**
