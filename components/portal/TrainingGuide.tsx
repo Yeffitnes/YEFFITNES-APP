@@ -1,12 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 const KEY = "yt-guide-training";
 const read = () => { try { return localStorage.getItem(KEY) === "1"; } catch { return false; } };
 // Guía para clientes nuevos (hasta que terminen 2 entrenamientos): cómo se registra una serie. Se puede cerrar.
 export function TrainingGuide() {
-  const [hidden, setHidden] = useState(read);
-  if (hidden) return null;
+  // Se decide DESPUÉS de abrir (30-oct): leer el teléfono al dibujar la primera vez hacía que React redibujara toda Hoy (error 418)
+  // a quien ya había tocado "Entendido".
+  const [hidden, setHidden] = useState<boolean | null>(null);
+  useEffect(() => setHidden(read()), []);
+  if (hidden !== false) return null;
   const steps = ["Toca un ejercicio para abrir sus series.", "Anota las repeticiones y el peso que levantaste. Ya vienen con lo que planeó tu coach: cámbialos si hiciste otra cosa o si no pudiste con ese peso.", "Toca el check de cada serie para guardarla. Así llevas tu avance.", "Al terminar, dinos qué tan exigente fue y pulsa «Terminar entrenamiento»."];
   return (
     <div className="guide-card" role="note">

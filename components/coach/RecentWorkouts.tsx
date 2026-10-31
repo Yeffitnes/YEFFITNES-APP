@@ -14,6 +14,7 @@ import { BunnyModal } from "@/components/ui/BunnyModal";
 import { notifyFeedback, useClientLogs, useReviewWorkout, useSetWeight, useTrainingPlans, type ClientLog } from "@/lib/queries";
 import { advise, nextWeight, rangeText, repTarget } from "@/lib/progression";
 import { Skeleton } from "@/components/ui/Modal";
+import { Snippets } from "./Snippets";
 const when = (iso: string) => { const d = Math.round((new Date(new Date().toDateString()).getTime() - new Date(iso + "T00:00:00").getTime()) / 86400000); return d <= 0 ? "Hoy" : d === 1 ? "Ayer" : new Date(iso + "T00:00:00").toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" }); };
 export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", skipDate, collapsible }: { clientId: string; title?: string; skipDate?: string; collapsible?: boolean }) {
   const all = useClientLogs(clientId), { isPending, isError, refetch } = all, data = all.data?.filter((l) => l.date !== skipDate);
@@ -106,6 +107,7 @@ export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: strin
       {l.completed && (
         <div className="modal-field"><label>Tu respuesta para el cliente{has && <span style={{ fontWeight: 600, marginLeft: 8, color: l.clientSaw ? "var(--text)" : "var(--text-faint)" }}>{l.clientSaw ? "· El cliente ya la vio" : "· El cliente aún no la ve"}</span>}</label>
           <textarea value={c} onChange={(e) => setC(e.target.value)} placeholder="Ej. Muy bien. Sube 2,5 kg en press banca la próxima semana." />
+          <Snippets text={c} onPick={setC} />
           <input ref={imgIn} type="file" accept="image/*" hidden onChange={(e) => { pickImg(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           <input ref={vidIn} type="file" accept="video/*" hidden onChange={(e) => { void pickVid(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           {rec.recording && <div className="mb-rec" role="status"><i aria-hidden /><b>Grabando</b><span>{Math.floor(rec.secs / 60)}:{String(rec.secs % 60).padStart(2, "0")} / {Math.floor(MAX_AUDIO_SECONDS / 60)}:00</span><button type="button" onClick={() => rec.stop(true)}>Cancelar</button><button type="button" className="go" onClick={() => rec.stop()}><Icon name="stop" size={13} /> Terminar</button></div>}

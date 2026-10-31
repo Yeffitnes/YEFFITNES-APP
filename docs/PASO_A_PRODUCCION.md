@@ -54,6 +54,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] **`0041_live_feedback_media_agenda_attention.sql`** (29-oct, noche): tiempo real (agrega tablas a la publicación `supabase_realtime`), respuestas con foto/vídeo, cancelar en 10 min con motivo, vídeo del día y de la semana a la vez con portada, panel "Necesitan tu atención" y arranque en un viaje. **Correrla ANTES de probar en Vercel.** Compatible con `main`: lo único que cambia para el código viejo es que el cliente ya no puede cancelar pasados 10 min (verá un mensaje genérico de error).
 
 - [ ] **`0042_edit_once.sql`** (30-oct): lo terminado (entreno, reporte del día, nutrición del día) se puede corregir **una sola vez** y nunca después de que Jeff lo revisó; lo impone la base de datos. Añade columnas `edits`/`edited_at` y la tabla `meal_day_locks`. **Correrla ANTES de probar en Vercel.** Compatible con `main`: el código viejo, en un segundo intento de corregir, verá un mensaje genérico de error. Confirmar (solo lectura): `select to_regclass('public.meal_day_locks') is not null;` → `true`.
+- [ ] **`0043_programs_snippets_habits_records.sql`** (30-oct, noche): programas, respuestas guardadas, hábitos del día y récords. **Correrla ANTES de probar en Vercel** (sin ella esas tarjetas no aparecen; el resto funciona igual). Compatible con `main`. Confirmar (solo lectura): `select to_regclass('public.habit_logs') is not null and to_regprocedure('public.apply_program(uuid,uuid)') is not null;` → `true`.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
@@ -85,9 +86,9 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
 ## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
-La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita **0038, 0039, 0040, 0041 (corridas) y 0042 (por correr)**.
+La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita **0038, 0039, 0040, 0041 (corridas), 0042 y 0043 (por correr)**.
 Orden:
-1. Correr la **0042** en el SQL Editor (la 0041 ya está corrida). Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
+1. Correr la **0042** y luego la **0043** en el SQL Editor (la 0041 ya está corrida). Confirmar 0043: ver §3b. Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
 2. Probar en Vercel con el cliente de prueba (lo del 28-oct de la lista anterior y lo del 29-oct):
    - Necesitan tu atención (urgentes, falta configurar, llamada del mes) y la campanita;
    - tiempo real: Jeff avisa o responde y el teléfono del cliente lo muestra sin salir de la app;

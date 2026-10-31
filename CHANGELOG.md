@@ -1,4 +1,25 @@
 # CHANGELOG
+## 2026-10-30 (noche, 3) - Programas, respuestas guardadas, revisar pendientes, resumen semanal, récords, descanso, sin señal, hábitos y antes/después (MIGRACIÓN 0043)
+Pedido de Cristian (30-oct, 21:03): puntos 3 a 6 para Jeff y 1 a 5 para el cliente. Quedan para otra sesión: ejercicios alternativos y más ejercicios precargados.
+**Jeff**
+- **Programas** (Catálogo → Programas): una semana completa (qué rutina va cada día) con duración de 1 a 16 semanas. En la ficha → Entrenamiento → "Asignar programa": se crea el plan con toda la semana y la "próxima revisión" queda al final del programa (sale en "Planes por revisar"). El plan anterior pasa a finalizado con su historial. Es una semana que se repite; no cambia sola de semana a semana. `ProgramsView.tsx`, `TrainingTab.tsx`, `save_program`/`apply_program`.
+- **Respuestas guardadas**: debajo de la respuesta a un entrenamiento y en Mensajes. "Guardar esta" guarda lo escrito; un toque la agrega; "Editar" para borrar. Solo las ve Jeff. `Snippets.tsx`, tabla `coach_snippets`.
+- **Revisar pendientes** (menú y tarjeta en el panel): entrenamientos sin revisar y reportes sin ver, uno tras otro; al guardar o marcar visto pasa solo al siguiente. `ReviewQueue.tsx`, `/coach/revisar`.
+- **Resumen de la semana** en la ficha (Resumen): entrenos hechos/planificados y esfuerzo, días de nutrición completos, reportes, agua, pasos, sueño, peso y récords. "Enviarle el resumen" abre Mensajes con el texto listo para que Jeff agregue su comentario. `WeekSummary.tsx`.
+**Cliente**
+- **Récords y logros**: al guardar una serie con más peso que su mejor marca anterior sale "Nuevo récord" con la cabecita del guía (la primera vez que hace un ejercicio no cuenta). En Progreso: su mejor marca por ejercicio y logros por entrenamientos completados (1, 5, 10, 25, 50, 100, 200). Jeff ve lo mismo en la ficha. `exercise_records()`.
+- **Temporizador de descanso**: al guardar una serie arranca con el descanso que puso Jeff en la rutina (+15 s, Saltar); al terminar vibra y suena. Sigue bien con la pantalla bloqueada un rato (se calcula con la hora de fin). Sin descanso en la rutina, no aparece.
+- **Entrenar sin señal**: si no hay señal, las series, deshacer y terminar se guardan en el teléfono, en orden, y se envían solas al volver la señal (aviso "Sin señal… N pendientes"). Lo que la base rechace al volver (p. ej. Jeff ya lo revisó) se descarta con aviso. **Límite:** funciona con la app ya abierta; si se cierra la app sin señal, no vuelve a abrir hasta tener señal (las pantallas siempre vienen de internet). `lib/offline.ts`.
+- **Hábitos de hoy** en Hoy: vasos de agua, pasos y horas de sueño, con un toque. Se pueden registrar hoy y hasta 2 días atrás. Sin metas: las metas de Jeff están NO DEFINIDO. Tabla `habit_logs`, `log_habit()`.
+- **Antes/después deslizable** en Progreso: "A la par" o "Deslizar" (una línea que se arrastra sobre las dos fotos). También en la ficha de Jeff.
+- **Tu semana** en Progreso (el mismo resumen que ve Jeff).
+**Arreglos encontrados al probar**
+- La guía "Cómo registrar tu entrenamiento" leía el teléfono al dibujar por primera vez: a quien ya tocó "Entendido", React le redibujaba toda Hoy al abrir (error 418) durante sus 2 primeros entrenamientos. `TrainingGuide.tsx`.
+- Temporizador y aviso de récord se dibujan sobre la página (no dentro de la tarjeta), si no quedaban pegados a la tarjeta y no a la pantalla.
+**Verificado en local con red lenta (150 ms):** `tests/e2e/extras.js` 15 de 15 (incluye cortar la señal a mitad de rutina, recargar con cosas en espera sin error 418, y que Camila vea la respuesta que Jeff armó con una frase guardada), `flows.js` todo OK, `stuck.js` sin atascos, `hydration.js` 20 de 20 en Hoy y en Progreso, `catalog.js` OK, sin errores de consola ni de red. Pruebas de ataque `rls_programs`: ninguno (clientes y otro coach no ven ni tocan programas, respuestas ni hábitos ajenos; récords solo propios).
+**NO verificado:** vibración y sonido en un teléfono real (en iPhone el navegador no vibra), señal real en un gimnasio, notificaciones.
+- Revertir: código, restaurar del commit `d10865c`; base, pasos en la cabecera de `0043_programs_snippets_habits_records.sql` (el código viejo no usa nada de la 0043).
+
 ## 2026-10-30 (noche, 2) - La galería de ejercicios arranca Compacta
 Pedido de Cristian: "preestablecido todas compactas". Cada filtro arranca en Compacta; si Jeff pone Normal en uno, se recuerda en ese navegador. Verificado con `tests/e2e/catalog.js` (celular y computador). Revertir: en `ExercisesView.tsx`, `views[f] ?? true` → `!!views[f]`.
 

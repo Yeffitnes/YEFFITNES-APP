@@ -11,8 +11,8 @@ import type { WorkoutLog } from "@/lib/queries";
 // cada persona lo que sus políticas RLS le dejan ver. Como respaldo, al volver a la app (celular desbloqueado, pestaña al frente)
 // se vuelve a leer todo lo que cambia seguido, por si la conexión en vivo se cortó mientras estaba en segundo plano.
 type Row = Record<string, unknown>;
-const CLIENT_KEYS = [["my-nudges"], ["logs"], ["my-bookings"], ["first-call"], ["coach-cancels"], ["materials"], ["announcements"], ["thread"], ["unread"], ["report"], ["me"]];
-const COACH_KEYS = [["recent-logs"], ["client-logs"], ["coach-reports"], ["activity"], ["activity-today"], ["activity-unseen"], ["coach-attention"], ["advice-feed"], ["coach-slots"], ["client-bookings"], ["nudges"], ["threads"], ["unread"], ["clients"]];
+const CLIENT_KEYS = [["my-nudges"], ["logs"], ["my-bookings"], ["first-call"], ["coach-cancels"], ["materials"], ["announcements"], ["thread"], ["unread"], ["report"], ["me"], ["records"], ["workout-count"], ["habits"]];
+const COACH_KEYS = [["recent-logs"], ["client-logs"], ["coach-reports"], ["activity"], ["activity-today"], ["activity-unseen"], ["coach-attention"], ["advice-feed"], ["coach-slots"], ["client-bookings"], ["nudges"], ["threads"], ["unread"], ["clients"], ["records"], ["habits"], ["meal-logs-range"], ["report-days"], ["workout-count"]];
 
 function batcher(qc: QueryClient, ms: number) {
   const pending = new Set<string>(); let t: ReturnType<typeof setTimeout> | null = null;
@@ -49,8 +49,8 @@ export function useLiveSync(side: "client" | "coach", clientId?: string) {
     } else {
       ch = c.channel("live-coach")
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "activity_events" }, () => inv(["activity"], ["activity-today"], ["activity-unseen"], ["coach-attention"], ["recent-logs"]))
-        .on("postgres_changes", { event: "*", schema: "public", table: "workout_logs" }, (p: { new: Row }) => inv(["recent-logs"], ["client-logs", String(p.new?.client_id ?? "")], ["advice-feed"], ["coach-attention"]))
-        .on("postgres_changes", { event: "*", schema: "public", table: "daily_reports" }, () => inv(["coach-reports"], ["coach-attention"]))
+        .on("postgres_changes", { event: "*", schema: "public", table: "workout_logs" }, (p: { new: Row }) => { const c = String(p.new?.client_id ?? ""); inv(["recent-logs"], ["client-logs", c], ["advice-feed"], ["coach-attention"], ["records", c], ["workout-count", c]); })
+        .on("postgres_changes", { event: "*", schema: "public", table: "daily_reports" }, () => inv(["coach-reports"], ["coach-attention"], ["report-days"]))
         .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, (p: { new: Row }) => inv(["coach-slots"], ["client-bookings", String(p.new?.client_id ?? "")], ["coach-attention"]))
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "nudges" }, () => inv(["nudges"]))
         .subscribe();

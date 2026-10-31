@@ -9,11 +9,14 @@ import { posterFromVideo } from "@/lib/video-poster";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
+import Link from "next/link";
+import { useApplyProgram, usePrograms } from "@/lib/extras";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function TrainingTab({ clientId, clientName }: { clientId: string; clientName: string }) {
   const { data, isPending, isError, refetch } = useTrainingPlans(clientId);
   const [day, setDay] = useState((new Date().getDay() + 6) % 7 + 1);
+  const [prog, setProg] = useState(false);
   const [hist, setHist] = useState(false), [newPlan, setNewPlan] = useState(false), [assign, setAssign] = useState(false), [confirm, setConfirm] = useState(false);
   const setWeight = useSetWeight(clientId), clear = useClearDay(clientId);
   if (isPending) return <Skeleton rows={2} />;
@@ -31,6 +34,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {!!past.length && <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setHist(!hist)}>Ver planes anteriores</button>}
+            <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setProg(true)}>Asignar programa</button>
             <button className="primary-btn" style={{ height: 34, fontSize: 11.5 }} onClick={() => setNewPlan(true)}>Crear nuevo plan</button>
           </div>
         </div>
@@ -62,6 +66,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
             </>
           ) : <p style={{ fontSize: 13.5, color: "var(--text-dim)", margin: "6px 0 2px" }}>Este día aún no tiene rutina. Si lo dejas libre, {clientName} lo verá como día de descanso.</p>}
         </div>)}
+      {prog && <ProgramModal clientId={clientId} first={clientName.split(" ")[0]} hasActive={!!active} onClose={() => setProg(false)} onDone={() => setDay((new Date().getDay() + 6) % 7 + 1)} />}
       {newPlan && <NewPlan clientId={clientId} hasActive={!!active} onClose={() => setNewPlan(false)} />}
       {assign && active && <AssignModal clientId={clientId} planId={active.id} weekday={day} dayLabel={DAYS[day - 1]} replacing={!!d} onClose={() => setAssign(false)} />}
     </div>
@@ -117,5 +122,22 @@ function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientNa
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{err}</p>}
       {play && <BunnyModal param={`day=${day.id}`} title={`Vídeo para ${clientName}`} sub={day.name} onClose={() => setPlay(false)} />}
     </div>
+  );
+}
+
+// Asignar un programa completo (30-oct, noche): crea su plan nuevo con la semana armada y la revisión al final del programa.
+function ProgramModal({ clientId, first, hasActive, onClose, onDone }: { clientId: string; first: string; hasActive: boolean; onClose: () => void; onDone: () => void }) {
+  const q = usePrograms(), apply = useApplyProgram(clientId), [sel, setSel] = useState("");
+  const p = q.data?.find((x) => x.id === sel);
+  return (
+    <Modal title={`Asignar programa a ${first}`} sub={hasActive ? "Se crea un plan nuevo con toda la semana; el plan actual pasa a “Finalizado” (su historial no se pierde)." : "Se crea su plan con toda la semana armada."} onClose={onClose}>
+      {q.isPending ? <Skeleton rows={2} /> : q.data === null ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Los programas se activan cuando se corra la migración 0043.</p>
+        : !q.data?.length ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Aún no tienes programas. <Link href="/coach/catalogo/programas" style={{ color: "var(--accent)", fontWeight: 700 }}>Crear uno en Catálogo → Programas</Link></p>
+        : <div style={{ marginTop: 14, maxHeight: 320, overflowY: "auto" }}>{q.data.map((x) => (
+          <label key={x.id} className="info-list-row" style={{ cursor: "pointer", gap: 10, justifyContent: "flex-start" }}>
+            <input type="radio" name="prg" checked={sel === x.id} onChange={() => setSel(x.id)} /><span style={{ fontWeight: 700 }}>{x.name}</span><span style={{ color: "var(--text-faint)", fontSize: 12 }}>{x.weeks} sem · {x.days.length} días</span></label>))}</div>}
+      {p && <p className="modal-cap-hint">{p.days.map((d) => `${DAYS[d.weekday - 1]}: ${d.routine}`).join(" · ")}. Revisión del plan en {p.weeks} semana{p.weeks === 1 ? "" : "s"}.</p>}
+      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={!sel || apply.isPending} onClick={() => apply.mutate(sel, { onSuccess: () => { onDone(); onClose(); } })}>{apply.isPending ? "Asignando…" : "Asignar programa"}</button></div>
+    </Modal>
   );
 }

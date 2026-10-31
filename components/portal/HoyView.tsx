@@ -5,6 +5,11 @@ import { useSignedAudio, useThread } from "@/lib/messages";
 import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { workoutEditState, type EditState } from "@/lib/queries";
 import { GuideFace } from "./Guide";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/Providers";
+import { useOfflineSync } from "@/lib/offline";
+import { bestBefore, useRecords } from "@/lib/extras";
+import { HabitsCard, OfflineBanner, RecordPop, RestTimer, primeSound, type RecordHit, type Rest } from "./WorkoutExtras";
 import { localDate, useFinish, useLogs, useLogSet, useUnlogSet, useMe, useMyAnnouncements, useTrainingPlans, type PlanDay, type PlanItem, type SetLog, type WorkoutLog } from "@/lib/queries";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
@@ -51,9 +56,15 @@ function streak(days: number[], logs: WorkoutLog[]) {
 }
 export function HoyView() {
   const { profileId, name } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "", ann = useMyAnnouncements(!!me.data?.features.includes("announcements"));
-  const plans = useTrainingPlans(cid), logs = useLogs(cid);
+  const plans = useTrainingPlans(cid), logs = useLogs(cid), qc = useQueryClient(), toast = useToast();
+  // Lo guardado sin señal se envía solo al volver la señal (lib/offline.ts).
+  useOfflineSync(cid, qc, (r) => {
+    if (r.finished.length) { r.finished.forEach((d) => void fetch("/api/push/activity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: d }) }).catch(() => {})); void qc.invalidateQueries({ queryKey: ["records", cid] }); }
+    if (r.dropped) toast("Algo de lo que guardaste sin señal ya no se pudo enviar (por ejemplo, Jeff ya lo había revisado).", true);
+    else if (r.sent) toast("Volvió la señal: tu entrenamiento quedó enviado.");
+  });
   if (me.isPending || (cid && (plans.isPending || logs.isPending))) return <div aria-busy="true"><div className="sk" style={{ height: 30, width: 200, marginBottom: 22 }} /><div className="sk" style={{ height: 80, marginBottom: 18 }} /><div className="sk" style={{ height: 260 }} /></div>;
-  if (me.isError || plans.isError || logs.isError) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu día. Revisa tu conexión e inténtalo de nuevo.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => { me.refetch(); plans.refetch(); logs.refetch(); }}>Reintentar</button></div>;
+  if ((me.isError && !me.data) || (plans.isError && !plans.data) || (logs.isError && !logs.data)) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu día. Revisa tu conexión e inténtalo de nuevo.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => { me.refetch(); plans.refetch(); logs.refetch(); }}>Reintentar</button></div>;
   if (me.data?.status === "pending") return <PendingSection eyebrow={cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))} title={`Hola, ${name.split(" ")[0] || ""}`} panels={[
     { tag: "Hoy", title: "Tu entrenamiento del día", sub: "Rutina, series y peso de cada ejercicio, armados por Jeff para ti." },
     { tag: "Reporte", title: "Reporte diario", sub: "Un vídeo corto y un comentario para que Jeff vea cómo vas." },
@@ -97,6 +108,7 @@ export function HoyView() {
         <SessionCard cid={cid} />
         <ObjectiveCard />
         <NutritionTodayCard cid={cid} features={me.data?.features ?? []} name={name} />
+        {plan && me.data?.status === "active" && <HabitsCard cid={cid} />}
         <ProgressCard cid={cid} features={me.data?.features ?? []} name={name} />
       </div>
     </>
@@ -106,6 +118,15 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
   // Todos los ejercicios empiezan cerrados (pedido de Cristian, 28-oct): el cliente abre el que va a hacer.
   const [open, setOpen] = useState<string | null>(null), [editing, setEditing] = useState(false), [video, setVideo] = useState<PlanItem | null>(null), [teaser, setTeaser] = useState<"yt" | "personal" | null>(null), [pic, setPic] = useState<PlanItem | null>(null);
   const [effort, setEffort] = useState(log?.effort ?? 0), [note, setNote] = useState(log?.note ?? ""), [unfold, setUnfold] = useState(false), [just, setJust] = useState<JustSaved | null>(null);
+  // Descanso y récords (30-oct, noche). El récord se compara con el mejor peso ANTES de hoy; en la misma sesión solo se celebra si lo vuelve a superar.
+  const [rest, setRest] = useState<Rest | null>(null), [hit, setHit] = useState<RecordHit | null>(null), recs = useRecords(cid), cheered = useRef<Record<string, number>>({});
+  const onSetSaved = (i: PlanItem, setNumber: number, reps: number, weight: number | null) => {
+    setJust({ itemId: i.id, setNumber, reps, at: Date.now() });
+    const totalSets = items.reduce((a, x) => a + x.sets, 0), doneSets = new Set((log?.sets ?? []).map((x) => `${x.itemId}:${x.setNumber}`)); doneSets.add(`${i.id}:${setNumber}`);
+    if (i.rest && i.rest > 0 && doneSets.size < totalSets) { primeSound(); setRest({ end: Date.now() + i.rest * 1000, total: i.rest, label: i.name }); }
+    const prev = bestBefore(recs.data, i.name, today);
+    if (weight != null && prev != null && prev > 0 && weight > Math.max(prev, cheered.current[i.name] ?? 0)) { cheered.current[i.name] = weight; setHit({ exercise: i.name, weight, prev, at: Date.now() }); }
+  };
   useFocusAnchor("rutina", () => setUnfold(true));
   const finish = useFinish(cid);
   const saved = (id: string) => log?.sets.filter((s) => s.itemId === id) ?? [];
@@ -139,6 +160,9 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
   return (
     <div id="rutina" className={`card card-routine${log?.completed ? " fold-open" : ""}`}>
       {log?.completed && !editing && <button type="button" className="fold-close" onClick={() => setUnfold(false)}>Plegar <Icon name="up" size={13} /></button>}
+      <OfflineBanner cid={cid} />
+      <RestTimer rest={rest} onChange={setRest} />
+      <RecordPop hit={hit} onClose={() => setHit(null)} />
       <div className="card-tag"><span className="live-dot" />Rutina de hoy</div>
       <div className="card-title">{title}</div>
       <div className="card-meta">{[`${items.length} ejercicios`, day.minutes ? `${day.minutes} min aprox.` : null, categoryLabel(day.category) ?? day.category].filter(Boolean).join(" · ")}</div>
@@ -154,7 +178,7 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
           <div className={`ex-row${doneNow(i) ? " done" : ""}`} role="button" tabIndex={0} aria-expanded={open === i.id} onClick={() => setOpen(open === i.id ? null : i.id)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(open === i.id ? null : i.id); } }}>
             <div className="ex-check" dangerouslySetInnerHTML={{ __html: CHECK_ICON }} /><ExPic image={i.image} name={i.name} size={40} className="sm" onClick={() => setPic(i)} /><div className="ex-name">{i.name}</div><div className="ex-meta">{saved(i.id).length}/{i.sets} · {i.sets}×{i.reps}{i.weight ? ` · ${i.weight} kg` : ""}</div>
           </div>
-          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onSaved={(setNumber, reps) => setJust({ itemId: i.id, setNumber, reps, at: Date.now() })} />)}<RepTip item={i} just={just} /></div>}
+          {open === i.id && <div className="ex-panel">{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={k} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onSaved={(setNumber, reps, weight) => onSetSaved(i, setNumber, reps, weight)} />)}<RepTip item={i} just={just} /></div>}
         </div>))}</div>
       {log && hasFeedback(log) && !feedbackUnseen(log) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Respuesta de tu coach</div><FeedbackBody log={log} /></div>}
       {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
@@ -167,7 +191,7 @@ function Routine({ cid, day, title, items, log, logs, today, guide }: { cid: str
             <div className="effort-row">{Array.from({ length: 10 }, (_, k) => <button key={k} className={`effort-btn${effort === k + 1 ? " on" : ""}`} aria-label={`Esfuerzo ${k + 1}`} onClick={() => setEffort(k + 1)}>{k + 1}</button>)}</div>
             <textarea className="set-input" style={{ height: 70, padding: 10, resize: "vertical" }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario para Jeff (opcional)" aria-label="Comentario para tu coach" />
             <button className="mini-btn primary" style={{ marginTop: 12, width: "100%", height: 44 }} disabled={!anySet || !effort || finish.isPending}
-              onClick={() => finish.mutate({ date: today, effort, note }, { onSuccess: () => { setEditing(false); setUnfold(false); } })}>{finish.isPending ? "Guardando…" : editing ? "Guardar corrección" : "Terminar entrenamiento"}</button>
+              onClick={() => { setRest(null); finish.mutate({ date: today, effort, note, editing }, { onSuccess: () => { setEditing(false); setUnfold(false); } }); }}>{finish.isPending ? "Guardando…" : editing ? "Guardar corrección" : "Terminar entrenamiento"}</button>
             {editing && <p className="routine-progress-count">Es tu única corrección: después ya no se podrá cambiar.</p>}
             {!anySet && <p className="routine-progress-count">Registra al menos una serie para poder terminar.</p>}
           </>)}
@@ -210,7 +234,7 @@ function RepTip({ item, just }: { item: PlanItem; just: JustSaved | null }) {
     </button>
   );
 }
-function SetRow({ cid, item, n, today, saved, locked, hint, onSaved }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onSaved?: (setNumber: number, reps: number) => void }) {
+function SetRow({ cid, item, n, today, saved, locked, hint, onSaved }: { hint?: boolean; cid: string; item: PlanItem; n: number; today: string; saved?: SetLog; locked: boolean; onSaved?: (setNumber: number, reps: number, weight: number | null) => void }) {
   const range = repRange(item.reps), target = range ? NaN : parseInt(item.reps, 10);   // con rango, el cliente escribe lo que hizo de verdad
   // Las casillas ya traen lo planeado (editable y visible): "✓" guarda exactamente lo que se ve, nunca algo oculto.
   const log = useLogSet(cid), unlog = useUnlogSet(cid), [reps, setReps] = useState(saved?.reps != null ? String(saved.reps) : Number.isNaN(target) ? "" : String(target)), [w, setW] = useState(saved?.weight != null ? String(saved.weight) : item.weight != null ? String(item.weight) : "");
@@ -219,7 +243,7 @@ function SetRow({ cid, item, n, today, saved, locked, hint, onSaved }: { hint?: 
   const ok = repsVal >= 0 && (wVal == null || wVal >= 0) && !Number.isNaN(repsVal);
   const dirty = !!saved && ((saved.reps ?? null) !== (repsVal ?? null) || (saved.weight ?? null) !== (wVal ?? null));
   const toggle = () => { if (saved && !dirty) { if (!locked && !unlog.isPending) unlog.mutate({ date: today, itemId: item.id, setNumber: n }); return; } save(); };
-  const save = () => { if (!ok || locked || log.isPending) return; log.mutate({ date: today, itemId: item.id, setNumber: n, reps: repsVal, weight: wVal ?? null }); onSaved?.(n, repsVal); };
+  const save = () => { if (!ok || locked || log.isPending) return; log.mutate({ date: today, itemId: item.id, setNumber: n, reps: repsVal, weight: wVal ?? null }); onSaved?.(n, repsVal, wVal ?? null); };
   const onKey = (e: React.KeyboardEvent) => { if (e.key === "Enter") { e.preventDefault(); save(); } };
   return (
     <div className="set-row">

@@ -39,7 +39,7 @@ export function DashboardView() {
           <FollowUpCard clients={cl} logs={lg} withPlan={new Set(plans.data)} reports={reports.data ?? []} attn={attn} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {unseenReports > 0 && <Link href="/coach/reportes" className="card card-dark" style={{ display: "block" }}><div className="card-tag">Reportes diarios</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports} por revisar <Icon name="arrow" size={13} /></div></Link>}
+          {unseenReports + unreviewed > 0 && <Link href="/coach/revisar" className="card card-dark rv-cta" style={{ display: "block" }}><div className="card-tag">Revisar pendientes</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports + unreviewed} por revisar, uno tras otro <Icon name="arrow" size={13} /></div><div className="card-meta" style={{ color: "rgba(255,255,255,.75)" }}>{[unreviewed ? `${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""}` : null, unseenReports ? `${unseenReports} reporte${unseenReports > 1 ? "s" : ""}` : null].filter(Boolean).join(" · ")}</div></Link>}
           <MessagesCard />
           <AgendaTodayCard />
           <ActivityCard />

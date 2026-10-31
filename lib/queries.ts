@@ -1,4 +1,6 @@
 "use client";
+import { useCallback } from "react";
+import { applyQueue, enqueue, hasQueue, isNetErr, offlineNow, useQueueVersion, type Op } from "@/lib/offline";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
@@ -195,13 +197,24 @@ export type SetLog = { itemId: string | null; setNumber: number; reps: number | 
 export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; coachCommentImage?: string | null; coachCommentVideo?: boolean; edits?: number; sets: SetLog[]; routine?: string | null; dayId?: string | null; coachAt?: string | null; feedbackSeenAt?: string | null };
 export { localDate };
 export const fetchLogs = (clientId: string): Promise<WorkoutLog[]> => loadLogs(db(), clientId);
-export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId) });
+// Con lo guardado sin señal aplicado encima (lib/offline.ts): una relectura no "borra" las series que aún esperan señal.
+export function useLogs(clientId: string) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: WorkoutLog[]) => (v > 0 ? applyQueue(clientId, d) : d), [clientId, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId), select });
+}
+/** Ejecuta la acción; sin señal (o con cosas ya en espera, para no desordenarlas) la deja en la cola del teléfono. */
+async function viaQueue(clientId: string, op: Op, run: () => PromiseLike<{ error: unknown }>): Promise<"sent" | "queued"> {
+  if (offlineNow() || hasQueue(clientId)) { enqueue(clientId, op); return "queued"; }
+  try { const { error } = await run(); if (error) { if (isNetErr(error)) { enqueue(clientId, op); return "queued"; } throw error; } return "sent"; }
+  catch (e) { if (isNetErr(e)) { enqueue(clientId, op); return "queued"; } throw e; }
+}
 export function useLogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
   return useMutation({
-    mutationFn: async (v: { date: string; itemId: string; setNumber: number; reps: number; weight: number | null }) => {
-      const { error } = await db().rpc("log_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber, p_reps: v.reps, p_weight: v.weight }); if (error) throw error;
-    },
+    networkMode: "always",
+    mutationFn: (v: { date: string; itemId: string; setNumber: number; reps: number; weight: number | null }) =>
+      viaQueue(clientId, { t: "set", ...v }, () => db().rpc("log_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber, p_reps: v.reps, p_weight: v.weight })),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
       qc.setQueryData<WorkoutLog[]>(key, (l = []) => {
@@ -214,13 +227,14 @@ export function useLogSet(clientId: string) {
     },
     onError: (e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast(isLock(e) ? LOCK_TXT : "No pudimos guardar la serie. Revisa tu conexión e inténtalo de nuevo.", true); if (isLock(e)) void qc.invalidateQueries({ queryKey: key }); },
     // Sin releer todo tras cada serie (más rápido). Solo se vuelve a leer si falló o si el registro aún es provisional.
-    onSuccess: () => { if (qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
+    onSuccess: (r) => { if (r === "sent" && qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
   });
 }
 export function useUnlogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
   return useMutation({
-    mutationFn: async (v: { date: string; itemId: string; setNumber: number }) => { const { error } = await db().rpc("unlog_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber }); if (error) throw error; },
+    networkMode: "always",
+    mutationFn: (v: { date: string; itemId: string; setNumber: number }) => viaQueue(clientId, { t: "unset", ...v }, () => db().rpc("unlog_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber })),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
       qc.setQueryData<WorkoutLog[]>(key, (l = []) => l.map((x) => (x.date === v.date ? { ...x, sets: x.sets.filter((y) => !(y.itemId === v.itemId && y.setNumber === v.setNumber)) } : x)));
@@ -232,8 +246,12 @@ export function useUnlogSet(clientId: string) {
 export function useFinish(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { date: string; effort: number; note: string }) => { const { error } = await db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note }); if (error) throw error; },
-    onSuccess: (_d, v) => { toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); notifyActivity(v.date); },
+    networkMode: "always",
+    mutationFn: (v: { date: string; effort: number; note: string; editing?: boolean }) => viaQueue(clientId, { t: "finish", date: v.date, effort: v.effort, note: v.note, editing: !!v.editing }, () => db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note })),
+    onSuccess: (r, v) => {
+      if (r === "queued") { toast("Guardado en tu teléfono. Se le envía a Jeff solo cuando vuelva la señal."); return; }   // la cola ya lo muestra como terminado
+      toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); qc.invalidateQueries({ queryKey: ["records", clientId] }); qc.invalidateQueries({ queryKey: ["workout-count", clientId] }); notifyActivity(v.date);
+    },
     onError: (e) => { toast(isLock(e) ? LOCK_TXT : "No pudimos guardar tu entrenamiento. Revisa tu conexión e inténtalo de nuevo.", true); if (isLock(e)) void qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
   });
 }
