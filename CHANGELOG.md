@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-11-02 (noche, 6) - Hora de los reportes y "Ayer" falso desde las 7 p. m.
+Pedido de Cristian: que se vea a qué hora se envió cada reporte, sin cambiar nada más.
+- La hora de envío se ve en **Reportes** ("Camila · Hoy a las 20:42"), en la **ficha → Hoy → Reporte diario** ("enviado a las 20:42", a la derecha del título) y en **Revisar pendientes** ("Reporte de hoy · a las 20:42"). Es la hora del primer envío (una corrección no la cambia). `ReportsView.tsx`, `TodayCard.tsx`, `ReviewQueue.tsx`, `coach.css`.
+- **Error encontrado al probar:** "Hoy / Ayer / Hace N días" leía las fechas en hora UTC, así que desde las 7 p. m. (hora Colombia) un reporte o entrenamiento de HOY salía como "Ayer" (Reportes, ficha, panel). Ahora compara días del calendario. `lib/format.ts` (`ago`).
+- Verificado en local: `tests/e2e/report_time.js` (nuevo) en las tres pantallas, a las 21:46 dice "Hoy"; `flows.js` 27/27. Sin migración. Revertir: restaurar esos archivos del commit `0b4e64b`.
+
 ## 2026-11-02 (noche, 5) - "Jeff estuvo pendiente de ti" más compacto
 Pedido de Cristian: ocupaba mucho espacio y los tres botones repetían lo que ya está abajo en Hoy.
 - Ahora es una fila plegada como las demás de Hoy ("Te escribió mientras no entrabas (sáb 31, dom 1)", chip "2 días"). Al abrirla: una línea corta por día ("Sáb 31 · esperaba tu entrenamiento"), lo que quedó sin hacer en una frase y un solo botón, "Entendido". Se quitaron "Ir a mi rutina de hoy", "Escribirle a Jeff" y la frase "Hoy toca…" (ya están en la misma pantalla). `HoyView.tsx` (`WhileAway`), `portal.css`.

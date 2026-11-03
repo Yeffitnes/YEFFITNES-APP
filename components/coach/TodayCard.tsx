@@ -62,7 +62,7 @@ export function TodayCard({ clientId, first, onGo }: { clientId: string; first: 
       </div>
 
       <div className={`card today-sec${report ? " card-dark today-dark" : ""}`}>
-        <div className="today-head"><span className="today-ico"><Icon name="video" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Reporte diario</div></div>
+        <div className="today-head"><span className="today-ico"><Icon name="video" size={15} /></span><div className="card-tag" style={{ marginBottom: 0 }}>Reporte diario</div>{report && <span className="today-time">enviado a las {hhmm(report.sentAt)}</span>}</div>
         {!report && <p className="today-empty">{first} aún no ha enviado el reporte de hoy.</p>}
         {report && <div style={{ marginTop: 8 }}>
           {report.comment ? <p className="today-quote">“{report.comment}”</p> : <p className="today-empty">Sin comentario.</p>}

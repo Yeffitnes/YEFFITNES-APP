@@ -9,6 +9,7 @@ import { Detail } from "./RecentWorkouts";
 import { Skeleton } from "@/components/ui/Modal";
 import { Icon } from "@/components/ui/Icon";
 import { initials } from "@/lib/format";
+import { hhmm } from "@/lib/dates";
 
 type Item = { kind: "workout"; id: string; clientId: string; name: string; date: string; title: string } | { kind: "report"; id: string; clientId: string; name: string; date: string; title: string; r: CoachReport };
 const dayTxt = (ymd: string) => { const d = Math.round((Date.parse(new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }) + "T12:00:00Z") - Date.parse(`${ymd}T12:00:00Z`)) / 86_400_000); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
@@ -21,7 +22,7 @@ export function ReviewQueue() {
   const [f, setF] = useState<"all" | "workout" | "report">("all");
   const build = (l: RecentLog[], r: CoachReport[]): Item[] => [
     ...l.filter((x) => x.completed && !x.seen).map((x): Item => ({ kind: "workout", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Entrenamiento de ${dayTxt(x.date)}${x.routine ? ` · ${x.routine}` : ""}` })),
-    ...r.filter((x) => !x.seen).map((x): Item => ({ kind: "report", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Reporte de ${dayTxt(x.date)}`, r: x })),
+    ...r.filter((x) => !x.seen).map((x): Item => ({ kind: "report", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Reporte de ${dayTxt(x.date)} · a las ${hhmm(x.sentAt)}`, r: x })),
   ].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
   useEffect(() => { if (!queue && logs.data && reports.data) setQueue(build(logs.data, reports.data)); }, [logs.data, reports.data, queue]);
   const reload = () => { void Promise.all([logs.refetch(), reports.refetch()]).then(([a, b]) => { if (a.data && b.data) { setQueue(build(a.data, b.data)); setI(0); setDone([]); } }); };   // conserva el filtro elegido

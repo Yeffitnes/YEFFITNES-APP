@@ -1091,3 +1091,5 @@ html{scroll-behavior:smooth;}
 .rv-filter{margin-bottom:14px}
 .rv-filter .rv-n{font-family:var(--font-mono),monospace; font-weight:600; margin-left:4px; opacity:.8}
 .rv-who .card-link{white-space:nowrap; flex:none}
+/* Hora del reporte en la ficha (2-nov) */
+.today-head .today-time{margin-left:auto;font-family:var(--font-mono),monospace;font-size:11.5px;opacity:.75}

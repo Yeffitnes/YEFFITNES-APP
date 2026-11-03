@@ -5,6 +5,7 @@ import Link from "next/link";
 import { fetchReportVideo, useCoachReports, useReviewReport, videoExpiry, type CoachReport } from "@/lib/queries";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { ago, gradient, initials } from "@/lib/format";
+import { hhmm } from "@/lib/dates";
 import { Icon } from "@/components/ui/Icon";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function ReportsView() {
@@ -19,7 +20,7 @@ export function ReportsView() {
     <div key={r.id} className="note-item" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
       <div className="attn-avatar" style={{ background: gradient(i), flexShrink: 0 }}>{initials(r.clientName)}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="attn-name"><Link href={`/coach/clientes/${r.clientId}`}>{r.clientName}</Link> <span className="note-date">· {cap(ago(r.date))}</span></div>
+        <div className="attn-name"><Link href={`/coach/clientes/${r.clientId}`}>{r.clientName}</Link> <span className="note-date">· {cap(ago(r.date))} a las {hhmm(r.sentAt)}</span></div>
         {r.comment ? <div className="note-text" style={{ whiteSpace: "pre-wrap" }}>{r.comment}</div> : <div className="note-text" style={{ color: "var(--text-faint)" }}>Sin comentario.</div>}
         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           {r.videoState === "uploaded" && <button className="ghost-btn" onClick={() => open(r)}><Icon name="play" size={12} /> Ver vídeo</button>}
