@@ -19,7 +19,7 @@ type Item = { href?: string; label: string; icon: keyof typeof I; sub?: boolean;
 const GROUPS: { label?: string; items: Item[] }[] = [
   { items: [{ href: "/coach", label: "Dashboard", icon: "dash", exact: true }, { href: "/coach/clientes", label: "Clientes", icon: "cli" }] },
   { label: "Catálogo", items: [{ href: "/coach/catalogo/ejercicios", label: "Ejercicios", icon: "ex", sub: true }, { href: "/coach/catalogo/rutinas", label: "Rutinas", icon: "rut", sub: true }, { href: "/coach/catalogo/programas", label: "Programas", icon: "prg", sub: true }, { href: "/coach/catalogo/nutricion", label: "Nutrición", icon: "nut", sub: true }] },
-  { label: "Operación", items: [{ href: "/coach/revisar", label: "Revisar pendientes", icon: "rev" }, { href: "/coach/mensajes", label: "Mensajes", icon: "msg" }, { href: "/coach/reportes", label: "Reportes diarios", icon: "rep" }, { href: "/coach/agenda", label: "Agenda", icon: "ag" }, { href: "/coach/material", label: "Material educativo", icon: "mat" }] },
+  { label: "Operación", items: [{ href: "/coach/revisar", label: "Revisar", icon: "rev" }, { href: "/coach/mensajes", label: "Mensajes", icon: "msg" }, { href: "/coach/reportes", label: "Reportes diarios", icon: "rep" }, { href: "/coach/agenda", label: "Agenda", icon: "ag" }, { href: "/coach/material", label: "Material educativo", icon: "mat" }] },
 ];
 export function SideNav({ clientCount }: { clientCount: number }) {
   const path = usePathname(), unread = useUnread().data ?? 0;
@@ -43,6 +43,6 @@ export function SideNav({ clientCount }: { clientCount: number }) {
 }
 export function MobileNav() {
   const path = usePathname(), unread = useUnread().data ?? 0;
-  const L = [["/coach", "Dashboard"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"], ["/coach/catalogo/programas", "Programas"], ["/coach/revisar", "Revisar"], ["/coach/mensajes", "Mensajes"], ["/coach/reportes", "Reportes"], ["/coach/agenda", "Agenda"], ["/coach/material", "Material"]];
+  const L = [["/coach", "Dashboard"], ["/coach/revisar", "Revisar"], ["/coach/clientes", "Clientes"], ["/coach/catalogo/ejercicios", "Ejercicios"], ["/coach/catalogo/rutinas", "Rutinas"], ["/coach/catalogo/programas", "Programas"], ["/coach/mensajes", "Mensajes"], ["/coach/reportes", "Reportes"], ["/coach/agenda", "Agenda"], ["/coach/material", "Material"]];
   return <nav className="mobile-nav">{L.map(([h, t]) => <Link key={h} href={h} prefetch className={(h === "/coach" ? path === h : path.startsWith(h)) ? "active" : ""}>{t}{t === "Mensajes" && unread > 0 ? ` (${unread})` : ""}</Link>)}</nav>;
 }

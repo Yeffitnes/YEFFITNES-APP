@@ -11,50 +11,66 @@ import { Icon } from "@/components/ui/Icon";
 import { initials } from "@/lib/format";
 import { hhmm } from "@/lib/dates";
 
-type Item = { kind: "workout"; id: string; clientId: string; name: string; date: string; title: string } | { kind: "report"; id: string; clientId: string; name: string; date: string; title: string; r: CoachReport };
+type Item = { kind: "workout"; id: string; clientId: string; name: string; date: string; title: string; seen: boolean } | { kind: "report"; id: string; clientId: string; name: string; date: string; title: string; seen: boolean; r: CoachReport };
 const dayTxt = (ymd: string) => { const d = Math.round((Date.parse(new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" }) + "T12:00:00Z") - Date.parse(`${ymd}T12:00:00Z`)) / 86_400_000); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
 
+// 2-nov: dos modos. "Pendientes" (lo de siempre) y "Todo lo de hoy": todos los entrenamientos terminados y reportes de HOY, revisados
+// o no, para pasar por todo el día con Anterior / Siguiente y comentar ahí mismo, sin entrar cliente por cliente.
+const todayYmd = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 export function ReviewQueue() {
   const logs = useRecentLogs(), reports = useCoachReports();
-  // La lista se arma UNA vez al abrir (así no salta mientras Jeff revisa); "Volver a cargar" la rehace.
+  // La lista se arma UNA vez al abrir o al cambiar de modo (así no salta mientras Jeff revisa); "Volver a cargar" la rehace.
+  const [mode, setMode] = useState<"pending" | "today">("pending");
   const [queue, setQueue] = useState<Item[] | null>(null), [i, setI] = useState(0), [done, setDone] = useState<string[]>([]);
-  // Filtro (pedido de Cristian, 2-nov): todo, solo entrenamientos o solo reportes, para pasar rápido por uno solo de los dos.
+  // Filtro (pedido de Cristian, 2-nov): todo, solo entrenamientos o solo reportes.
   const [f, setF] = useState<"all" | "workout" | "report">("all");
-  const build = (l: RecentLog[], r: CoachReport[]): Item[] => [
-    ...l.filter((x) => x.completed && !x.seen).map((x): Item => ({ kind: "workout", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Entrenamiento de ${dayTxt(x.date)}${x.routine ? ` · ${x.routine}` : ""}` })),
-    ...r.filter((x) => !x.seen).map((x): Item => ({ kind: "report", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Reporte de ${dayTxt(x.date)} · a las ${hhmm(x.sentAt)}`, r: x })),
-  ].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
-  useEffect(() => { if (!queue && logs.data && reports.data) setQueue(build(logs.data, reports.data)); }, [logs.data, reports.data, queue]);
-  const reload = () => { void Promise.all([logs.refetch(), reports.refetch()]).then(([a, b]) => { if (a.data && b.data) { setQueue(build(a.data, b.data)); setI(0); setDone([]); } }); };   // conserva el filtro elegido
+  const build = (l: RecentLog[], r: CoachReport[], m: typeof mode): Item[] => { const t = todayYmd(); return [
+    ...l.filter((x) => x.completed && (m === "today" ? x.date === t : !x.seen)).map((x): Item => ({ kind: "workout", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, seen: x.seen, title: `Entrenamiento de ${dayTxt(x.date)}${x.routine ? ` · ${x.routine}` : ""}` })),
+    ...r.filter((x) => (m === "today" ? x.date === t : !x.seen)).map((x): Item => ({ kind: "report", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, seen: x.seen, title: `Reporte de ${dayTxt(x.date)} · a las ${hhmm(x.sentAt)}`, r: x })),
+  ].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name) || a.kind.localeCompare(b.kind)); };
+  useEffect(() => { if (!queue && logs.data && reports.data) setQueue(build(logs.data, reports.data, mode)); }, [logs.data, reports.data, queue, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  const reload = (m = mode) => { void Promise.all([logs.refetch(), reports.refetch()]).then(([a, b]) => { if (a.data && b.data) { setQueue(build(a.data, b.data, m)); setI(0); setDone([]); } }); };
+  const switchMode = (m: typeof mode) => { if (m === mode) return; setMode(m); setF("all"); setI(0); setDone([]); if (logs.data && reports.data) setQueue(build(logs.data, reports.data, m)); };
+  // /coach/revisar?modo=hoy abre directo en "Todo lo de hoy" (enlace del panel). Se lee después de abrir, no al dibujar.
+  useEffect(() => { if (new URLSearchParams(location.search).get("modo") === "hoy") switchMode("today"); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const all = queue ?? [], q = useMemo(() => all.filter((x) => f === "all" || x.kind === f), [all, f]);
-  const left = useMemo(() => q.filter((x) => !done.includes(x.id)).length, [q, done]);
-  const pend = (k: "workout" | "report") => all.filter((x) => x.kind === k && !done.includes(x.id)).length;
-  const pick = (v: typeof f) => { setF(v); const l = all.filter((x) => v === "all" || x.kind === v); setI(Math.max(0, l.findIndex((x) => !done.includes(x.id)))); };
-  const next = (id: string) => { const nd = [...done, id]; setDone(nd); const k = q.findIndex((x, j) => j > i && !nd.includes(x.id)); setI(k >= 0 ? k : Math.max(0, q.findIndex((x) => !nd.includes(x.id)))); };
+  const isDone = (x: Item) => done.includes(x.id) || (mode === "today" && x.seen);
+  const left = useMemo(() => q.filter((x) => !isDone(x)).length, [q, done, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = (k: "workout" | "report") => all.filter((x) => x.kind === k && (mode === "today" || !done.includes(x.id))).length;
+  const pick = (v: typeof f) => { setF(v); const l = all.filter((x) => v === "all" || x.kind === v); setI(Math.max(0, mode === "today" ? 0 : l.findIndex((x) => !done.includes(x.id)))); };
+  // Al guardar: en Pendientes salta al siguiente sin revisar; en Todo lo de hoy, simplemente al siguiente.
+  const next = (id: string) => { const nd = [...done, id]; setDone(nd);
+    if (mode === "today") { setI((x) => Math.min(x + 1, q.length - 1)); return; }
+    const k = q.findIndex((x, j) => j > i && !nd.includes(x.id)); setI(k >= 0 ? k : Math.max(0, q.findIndex((x) => !nd.includes(x.id)))); };
 
   if ((logs.isPending || reports.isPending) && !queue) return <div><div className="sk" style={{ height: 30, width: 220, marginBottom: 22 }} /><Skeleton rows={3} /></div>;
-  if ((logs.isError || reports.isError) && !queue) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar lo pendiente. <button className="filter-chip" onClick={reload}>Reintentar</button></p></div>;
-  const cur = q[i], allDone = !q.length || left === 0;
+  if ((logs.isError || reports.isError) && !queue) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar lo pendiente. <button className="filter-chip" onClick={() => reload()}>Reintentar</button></p></div>;
+  const cur = q[i], today = mode === "today", empty = !q.length || (!today && left === 0);
+  const what = f === "workout" ? "entrenamientos" : f === "report" ? "reportes" : null;
   return (
     <div>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Revisar pendientes</div><h1>{allDone ? (f === "all" ? "Todo revisado" : "Listo por aquí") : `${left} por revisar`}</h1>
-        <p className="greeting-sub">Entrenamientos terminados y reportes del día, uno detrás de otro. Al guardar o marcar visto pasa solo al siguiente.</p></div></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Revisar</div>
+        <h1>{today ? (q.length ? `Hoy: ${q.length} ${q.length === 1 ? "registro" : "registros"}` : "Hoy aún no hay nada") : empty ? (f === "all" ? "Todo revisado" : "Listo por aquí") : `${left} por revisar`}</h1>
+        <p className="greeting-sub">{today ? "Todos los entrenamientos terminados y reportes de hoy, revisados o no. Pasa con Anterior y Siguiente y responde ahí mismo." : "Lo que falta revisar, uno detrás de otro. Al guardar o marcar visto pasa solo al siguiente."}</p></div></div>
+      <div className="rv-modes" role="tablist" aria-label="Qué ver">
+        {([["pending", "Pendientes"], ["today", "Todo lo de hoy"]] as const).map(([k, t]) => <button key={k} type="button" role="tab" aria-selected={mode === k} className={mode === k ? "on" : ""} onClick={() => switchMode(k)}>{t}</button>)}
+      </div>
       {!!all.length && <div className="filter-row rv-filter" role="group" aria-label="Qué revisar">
-        {([["all", "Todo", pend("workout") + pend("report")], ["workout", "Entrenamientos", pend("workout")], ["report", "Reportes", pend("report")]] as const).map(([k, t, n]) =>
+        {([["all", "Todo", count("workout") + count("report")], ["workout", "Entrenamientos", count("workout")], ["report", "Reportes", count("report")]] as const).map(([k, t, n]) =>
           <button key={k} type="button" aria-pressed={f === k} className={`filter-chip${f === k ? " active" : ""}`} onClick={() => pick(k)}>{t} <b className="rv-n">{n}</b></button>)}
       </div>}
-      {allDone ? <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)", lineHeight: 1.6 }}>{q.length ? (f === "workout" ? "Revisaste todos los entrenamientos pendientes." : f === "report" ? "Revisaste todos los reportes pendientes." : "Revisaste todo lo pendiente. Buen trabajo.") : f === "workout" ? "No hay entrenamientos pendientes por revisar." : f === "report" ? "No hay reportes pendientes por revisar." : "No hay nada pendiente por revisar ahora mismo."}</p>
-        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}><button className="ghost-btn" onClick={reload}>Volver a cargar</button><Link href="/coach" className="primary-btn" style={{ textDecoration: "none" }}>Ir al panel</Link></div></div> : (
+      {empty ? <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)", lineHeight: 1.6 }}>{today ? `Hoy todavía no hay ${what ?? "entrenamientos terminados ni reportes"}.` : q.length ? (what ? `Revisaste todos los ${what} pendientes.` : "Revisaste todo lo pendiente. Buen trabajo.") : what ? `No hay ${what} pendientes por revisar.` : "No hay nada pendiente por revisar ahora mismo."}</p>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}><button className="ghost-btn" onClick={() => reload()}>Volver a cargar</button>{!today && <button className="ghost-btn" onClick={() => switchMode("today")}>Ver todo lo de hoy</button>}<Link href="/coach" className="primary-btn" style={{ textDecoration: "none" }}>Ir al panel</Link></div></div> : (
         <>
-          <div className="rv-top"><span className="rv-count">{q.length - left + 1} de {q.length}</span>
-            <div className="rv-nav"><button className="ghost-btn" disabled={i === 0} onClick={() => setI(i - 1)}>Anterior</button><button className="ghost-btn" disabled={i >= q.length - 1} onClick={() => setI(i + 1)}>Saltar</button></div></div>
-          <div className="rv-bar"><i style={{ width: `${((q.length - left) / q.length) * 100}%` }} /></div>
+          <div className="rv-top"><span className="rv-count">{i + 1} de {q.length}{today && left ? ` · ${left} sin revisar` : ""}</span>
+            <div className="rv-nav"><button className="ghost-btn" disabled={i === 0} onClick={() => setI(i - 1)}><Icon name="back" size={13} /> Anterior</button><button className="ghost-btn" disabled={i >= q.length - 1} onClick={() => setI(i + 1)}>Siguiente <Icon name="arrow" size={13} /></button></div></div>
+          <div className="rv-bar"><i style={{ width: `${((i + 1) / q.length) * 100}%` }} /></div>
           {cur && <div className="card" key={cur.id}>
-            <div className="rv-who"><span className="attn-avatar sm">{initials(cur.name)}</span><div><b>{cur.name}</b><div className="card-meta">{cur.title}</div></div>
+            <div className="rv-who"><span className="attn-avatar sm">{initials(cur.name)}</span><div><b>{cur.name}</b><div className="card-meta">{cur.title}{isDone(cur) ? " · revisado" : ""}</div></div>
               <Link href={`/coach/clientes/${cur.clientId}`} className="card-link" style={{ marginLeft: "auto" }}>Ver ficha <Icon name="arrow" size={12} /></Link></div>
-            {done.includes(cur.id) ? <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 10 }}>Ya revisado.</p>
+            {!today && done.includes(cur.id) ? <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 10 }}>Ya revisado.</p>
               : cur.kind === "workout" ? <WorkoutItem id={cur.id} clientId={cur.clientId} onDone={() => next(cur.id)} />
-              : <ReportItem r={cur.r} onDone={() => next(cur.id)} />}
+              : <ReportItem r={cur.r} seen={cur.seen || done.includes(cur.id)} onDone={() => next(cur.id)} />}
           </div>}
         </>)}
     </div>
@@ -66,7 +82,7 @@ function WorkoutItem({ id, clientId, onDone }: { id: string; clientId: string; o
   if (!l) return <p style={{ fontSize: 13.5, color: "var(--text-dim)", marginTop: 10 }}>No encontramos este entrenamiento entre los recientes. Ábrelo desde su ficha.</p>;
   return <Detail l={l} clientId={clientId} onSaved={onDone} />;
 }
-function ReportItem({ r, onDone }: { r: CoachReport; onDone: () => void }) {
+function ReportItem({ r, seen, onDone }: { r: CoachReport; seen: boolean; onDone: () => void }) {
   const review = useReviewReport(), [v, setV] = useState<{ url: string; width: number | null; height: number | null } | null>(null), [err, setErr] = useState(false);
   useEffect(() => { if (r.videoState !== "uploaded") return; let off = false; fetchReportVideo(r.id).then((x) => { if (!off) setV(x); }).catch(() => { if (!off) setErr(true); }); return () => { off = true; }; }, [r.id, r.videoState]);
   return (
@@ -76,7 +92,7 @@ function ReportItem({ r, onDone }: { r: CoachReport; onDone: () => void }) {
       {r.videoState === "deleted" && <p className="note-date">El vídeo ya se borró automáticamente.</p>}
       <div className="modal-actions" style={{ flexWrap: "wrap" }}>
         <Link href={`/coach/mensajes?c=${r.clientId}`} className="modal-btn ghost" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>Responder por mensaje</Link>
-        <button className="modal-btn primary" disabled={review.isPending} onClick={() => review.mutate(r.id, { onSuccess: onDone })}>Marcar visto y seguir</button>
+        {seen ? <button className="modal-btn primary" onClick={onDone}>Ya lo viste · Siguiente</button> : <button className="modal-btn primary" disabled={review.isPending} onClick={() => review.mutate(r.id, { onSuccess: onDone })}>Marcar visto y seguir</button>}
       </div>
     </div>
   );

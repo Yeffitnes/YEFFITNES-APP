@@ -30,6 +30,12 @@ export function DashboardView() {
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Panel — {new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}</div><h1>Hola, {name.split(" ")[0] || "Coach"}</h1>
         <p className="greeting-sub">{sub}{pending ? ` ${pending} cliente${pending > 1 ? "s" : ""} por activar.` : ""}</p></div></div>
+      {/* Revisar (2-nov): siempre arriba, para encontrarlo rápido: lo pendiente uno tras otro, o todo lo de hoy. */}
+      <div className="card card-dark rv-cta">
+        <div className="rv-cta-txt"><div className="card-tag">Revisar</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports + unreviewed ? `${unseenReports + unreviewed} por revisar` : "Todo revisado"}</div>
+          <div className="card-meta" style={{ color: "rgba(255,255,255,.75)" }}>{[unreviewed ? `${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""}` : null, unseenReports ? `${unseenReports} reporte${unseenReports > 1 ? "s" : ""}` : null].filter(Boolean).join(" · ") || "Entrenamientos y reportes, uno tras otro"}</div></div>
+        <div className="rv-cta-btns">{unseenReports + unreviewed > 0 && <Link href="/coach/revisar" className="rv-cta-btn main">Pendientes <Icon name="arrow" size={13} /></Link>}<Link href="/coach/revisar?modo=hoy" className="rv-cta-btn">Todo lo de hoy</Link></div>
+      </div>
       <DashKpis clients={cl} logs={lg} attn={attn} withPlan={new Set(plans.data)} reports={reports.data ?? []} />
       <div className="dash-grid">
         <div style={{ display: "flex", flexDirection: "column", gap: 18, minWidth: 0 }}>
@@ -39,7 +45,6 @@ export function DashboardView() {
           <FollowUpCard clients={cl} logs={lg} withPlan={new Set(plans.data)} reports={reports.data ?? []} attn={attn} />
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {unseenReports + unreviewed > 0 && <Link href="/coach/revisar" className="card card-dark rv-cta" style={{ display: "block" }}><div className="card-tag">Revisar pendientes</div><div className="card-title" style={{ fontSize: 15 }}>{unseenReports + unreviewed} por revisar, uno tras otro <Icon name="arrow" size={13} /></div><div className="card-meta" style={{ color: "rgba(255,255,255,.75)" }}>{[unreviewed ? `${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""}` : null, unseenReports ? `${unseenReports} reporte${unseenReports > 1 ? "s" : ""}` : null].filter(Boolean).join(" · ")}</div></Link>}
           <MessagesCard />
           <AgendaTodayCard />
           <ActivityCard />

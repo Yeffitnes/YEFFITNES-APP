@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-02 (noche, 7) - "Revisar": fácil de encontrar y con "Todo lo de hoy"
+Reporte de Cristian: no encontraba la sección de revisar uno tras otro, y quiere pasar por TODOS los entrenamientos y reportes del día (no solo lo pendiente) con izquierda/derecha, comentando ahí mismo.
+- **Dónde estaba:** `/coach/revisar` existía (menú "Operación" en computador, chip "Revisar" en sexto lugar en el celular y una tarjeta del panel que solo salía con pendientes y, en el celular, muy abajo). Ahora: tarjeta **"Revisar"** siempre arriba del panel con "Pendientes" y "Todo lo de hoy"; en el celular "Revisar" es el segundo del menú. `DashboardView.tsx`, `CoachNav.tsx`, `coach.css`.
+- **Dos modos en Revisar:** "Pendientes" (como antes) y **"Todo lo de hoy"**: todos los entrenamientos terminados y reportes de hoy, revisados o no; "← Anterior" / "Siguiente →" pasa entre ellos; en lo ya revisado se puede editar la respuesta ("Actualizar") o seguir ("Ya lo viste · Siguiente"). Los filtros Todo / Entrenamientos / Reportes valen en los dos. `/coach/revisar?modo=hoy` abre directo en "Todo lo de hoy". `ReviewQueue.tsx`.
+- Verificado en local (celular, red lenta): `tests/e2e/review3.js` (nuevo) 4/4; `review2.js` 4/4, `extras.js` 15/15, `flows.js` 27/27, `stuck.js` sin atascos. NO verificado: iPhone real. Sin gesto de deslizar con el dedo (se usan los botones; deslizar chocaría con escribir la respuesta).
+- Sin migración. Revertir: restaurar `ReviewQueue.tsx`, `DashboardView.tsx`, `CoachNav.tsx` y `coach.css` del commit `c5eb024`.
+
 ## 2026-11-02 (noche, 6) - Hora de los reportes y "Ayer" falso desde las 7 p. m.
 Pedido de Cristian: que se vea a qué hora se envió cada reporte, sin cambiar nada más.
 - La hora de envío se ve en **Reportes** ("Camila · Hoy a las 20:42"), en la **ficha → Hoy → Reporte diario** ("enviado a las 20:42", a la derecha del título) y en **Revisar pendientes** ("Reporte de hoy · a las 20:42"). Es la hora del primer envío (una corrección no la cambia). `ReportsView.tsx`, `TodayCard.tsx`, `ReviewQueue.tsx`, `coach.css`.
