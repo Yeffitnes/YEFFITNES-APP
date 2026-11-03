@@ -1,4 +1,4 @@
-// 2-nov: Revisar pendientes (botones sin montarse en el celular, filtro Todo/Entrenamientos/Reportes) y logros por rutinas completas.
+// 2-nov: botones de la respuesta sin montarse en el celular (en Revisar) y logros por rutinas completas. El filtro se quitó (ver review3.js).
 // Antes: insert into daily_reports (workspace_id, client_id, report_date, comment) select workspace_id, id, (now() at time zone 'America/Bogota')::date, 'Hoy me sentí bien' from clients where profile_id='00000000-0000-0000-0000-00000000000a';
 const { execSync } = require("child_process");
 const { chromium, ctxFor, watch } = require("./lib.js");
@@ -8,23 +8,10 @@ let fails = 0; const step = async (n, fn) => { try { console.log("OK  ", n, (awa
   const j = await (await ctxFor(b, "jeff", true)).newPage(); watch(j, "jeff", errs);
   await j.goto("http://localhost:3000/coach/revisar", { waitUntil: "networkidle" }); await j.waitForTimeout(1500);
   await step("botones de la respuesta no se montan (celular)", async () => {
-    const acts = j.locator(".fb-acts"); await acts.scrollIntoViewIfNeeded(); await acts.screenshot({ path: `${S}/rv_btns.png` });
+    await j.locator(".rv-old-head").first().click().catch(() => {}); const acts = j.locator(".fb-acts").first(); await acts.scrollIntoViewIfNeeded(); await acts.screenshot({ path: `${S}/rv_btns.png` });
     const r = await acts.locator("button").evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { t: e.textContent.trim(), x: b.x, y: b.y, w: b.width, h: b.height, over: e.scrollWidth > e.clientWidth + 1 }; }));
     const overlap = r.some((a, i) => r.some((c, k) => k > i && a.x < c.x + c.w - 1 && c.x < a.x + a.w - 1 && a.y < c.y + c.h - 1 && c.y < a.y + a.h - 1));
     if (overlap || r.some((x) => x.over)) throw new Error(JSON.stringify(r)); return r.map((x) => x.t).join(" | ");
-  });
-  await step("filtro: Entrenamientos muestra solo entrenamientos", async () => {
-    await j.getByRole("button", { name: /^Entrenamientos/ }).click(); await j.waitForTimeout(300);
-    const t = await j.locator(".rv-who .card-meta").innerText(); const h = await j.locator("h1").innerText();
-    if (!/Entrenamiento/.test(t) || !/1 por revisar/.test(h)) throw new Error(`${h} / ${t}`); return `${h} · ${t}`;
-  });
-  await step("filtro: Reportes muestra solo reportes y marcar visto lo deja listo", async () => {
-    await j.getByRole("button", { name: /^Reportes/ }).click(); await j.waitForTimeout(300);
-    const t = await j.locator(".rv-who .card-meta").innerText(); if (!/Reporte/.test(t)) throw new Error(t);
-    await j.getByRole("button", { name: "Marcar visto y seguir" }).click(); await j.waitForTimeout(1200);
-    const body = await j.locator(".card").first().innerText(); const chip = await j.getByRole("button", { name: /^Reportes/ }).innerText();
-    await j.screenshot({ path: `${S}/rv_filter.png`, fullPage: true });
-    if (!/reportes pendientes/.test(body) || !/0/.test(chip)) throw new Error(`${body} / ${chip}`); return `${chip.replace(/\n/g, " ")} → ${body.split("\n")[0]}`;
   });
   await step("logros: el entrenamiento a medias no cuenta como rutina completa", async () => {
     const c = await (await ctxFor(b, "camila", true)).newPage(); watch(c, "camila", errs);

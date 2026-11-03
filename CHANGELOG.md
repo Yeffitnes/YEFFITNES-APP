@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-02 (noche, 8) - Revisar rehecho: cliente por cliente, sencillo; tarjeta del panel legible
+Corrección de Cristian (22:09): Revisar tenía demasiados botones (2 modos + 3 filtros), ocupaba toda la pantalla en el computador y separaba entrenamiento y reporte del mismo cliente; en el panel la tarjeta se veía "mal escrita".
+- **Revisar = cliente por cliente:** una tarjeta por cliente con su **entrenamiento de hoy** (para responder ahí mismo, o "no ha terminado el entrenamiento de hoy"), su **reporte de hoy** con la hora (Marcar visto, o "no ha enviado el reporte de hoy") y, abajo, lo **pendiente de días anteriores** (cada uno se abre para revisarlo). Solo "← Anterior · Camila · 1 de 3 · Siguiente →". Primero los clientes con algo sin revisar, después los que están al día. Cuando un cliente queda al día sale "Siguiente cliente". Sin modos ni filtros (se quitaron "Pendientes / Todo lo de hoy" y "Todo / Entrenamientos / Reportes" de las entradas anteriores). En computador, ancho máximo de 820 px. `ReviewQueue.tsx` (reescrito), `coach.css`.
+- **Tarjeta del panel:** usaba el estilo `card-dark`, que en computador es blanco: el texto blanco no se veía. Ahora tiene colores propios (negro con brillo rojo), una línea ("Revisar: 1 entrenamiento y 1 reporte") y un solo botón "Revisar". `DashboardView.tsx`.
+- Verificado en local (computador y celular, red lenta): `tests/e2e/review3.js` (rehecho) 6/6, `review2.js`, `extras.js` 15/15 (ajustado al diseño por cliente), `flows.js` 27/27, `stuck.js` sin atascos. NO verificado: iPhone real.
+- Sin migración. Revertir: restaurar `ReviewQueue.tsx`, `DashboardView.tsx` y `coach.css` del commit `aa8951f`.
+
 ## 2026-11-02 (noche, 7) - "Revisar": fácil de encontrar y con "Todo lo de hoy"
 Reporte de Cristian: no encontraba la sección de revisar uno tras otro, y quiere pasar por TODOS los entrenamientos y reportes del día (no solo lo pendiente) con izquierda/derecha, comentando ahí mismo.
 - **Dónde estaba:** `/coach/revisar` existía (menú "Operación" en computador, chip "Revisar" en sexto lugar en el celular y una tarjeta del panel que solo salía con pendientes y, en el celular, muy abajo). Ahora: tarjeta **"Revisar"** siempre arriba del panel con "Pendientes" y "Todo lo de hoy"; en el celular "Revisar" es el segundo del menú. `DashboardView.tsx`, `CoachNav.tsx`, `coach.css`.

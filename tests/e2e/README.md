@@ -17,7 +17,7 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `push.js` (2-nov): motivos de "Avisar", "Probar avisos" y aviso de cambio de plan. Necesita claves VAPID de prueba en el build y al correr: `node -e 'console.log(require("web-push").generateVAPIDKeys())'`, compilar con `NEXT_PUBLIC_VAPID_PUBLIC_KEY` y correr con esa y `VAPID_PRIVATE_KEY`. Para repetirla: `delete from nudges; delete from push_subscriptions; delete from plan_notices;`.
 - `review2.js` (2-nov): Revisar pendientes (botones en el celular, filtro) y logros por rutinas completas; `nudge_row.js`: la fila "Jeff te está esperando" se abre con texto y botones. Ver la cabecera de cada uno para el dato que necesitan.
 - `away.js` (2-nov): hábitos (ayer, récord, historial para cliente y Jeff) y "Jeff estuvo pendiente de ti". Base recién creada.
-- `review3.js` (2-nov): Revisar arriba del panel, segundo en el menú del celular y modo "Todo lo de hoy". Base recién creada. `report_time.js`: hora del reporte (ver cabecera).
+- `review3.js` (2-nov): Revisar cliente por cliente (computador y celular), tarjeta del panel legible, "Revisar" segundo en el menú del celular. Base recién creada. `report_time.js`: hora del reporte (ver cabecera).
 - `bash tests/e2e/run.sh catalog.js`: galería de ejercicios (arranca Compacta; Normal se recuerda por filtro) en celular y computador.
 Límites: `proxy.js` simula solo lo mínimo de Supabase (sesión y /rest). No hay Storage (fotos, audios), Realtime, avisos push ni Bunny.
 **Después de usarlo, vuelve a compilar normal** (`npx next build` con las variables de siempre) antes de los chequeos para subir.

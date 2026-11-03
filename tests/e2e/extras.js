@@ -111,7 +111,8 @@ const U = "http://localhost:3000";
     const card = j.locator(".card", { hasText: "Camila" }).first(); await card.locator("textarea").fill("Excelente récord.");
     await j.locator(".snip", { hasText: "Vas muy bien" }).first().click();
     await j.getByRole("button", { name: "Guardar y marcar revisado" }).click(); await j.waitForTimeout(1500);
-    const h2 = await j.locator("h1").innerText(); if (h === h2) throw new Error(`${h} → ${h2}`); return `${h} → ${h2}`;
+    // Revisar es por cliente (2-nov): el entreno de hoy queda "Revisado" en la misma tarjeta (Camila aún tiene otro pendiente de antes).
+    const st = await j.locator(".rv-sec", { hasText: "Entrenamiento de hoy" }).locator(".rv-state").innerText(); if (st !== "Revisado") throw new Error(`${h} → ${st}`); return `${h} → entreno de hoy ${st}`;
   });
   await step("ficha: resumen de la semana con hábitos y récord", async () => {
     await j.goto(`${U}/coach/clientes/${process.env.CLIENT_ID}?tab=Resumen`, { waitUntil: "networkidle" }); await j.waitForTimeout(1000);
