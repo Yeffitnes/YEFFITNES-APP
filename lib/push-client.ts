@@ -63,3 +63,21 @@ export async function resyncPush(profileId?: string) {
   const r = await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }) }).catch(() => null);
   if (r?.ok) { try { localStorage.setItem(KEY, JSON.stringify({ m: mark, t: Date.now() })); } catch {} }
 }
+
+// "Probar avisos" (2-nov): vuelve a asociar ESTE teléfono a la cuenta con sesión y le manda una notificación de prueba.
+// Devuelve un texto claro de qué pasó (claves de este sitio, teléfonos de la cuenta, si llegó).
+export type PushTest = { configured: boolean; key: string; devices: number; sent: number; reason?: "keys" | "gone" | "timeout" | "other" | null };
+export async function testPush(): Promise<PushTest> {
+  const reg = await navigator.serviceWorker.getRegistration("/sw.js"), sub = reg ? await freshSubscription(reg) : null;
+  if (sub) { const j = sub.toJSON(); await fetch("/api/push/subscribe", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: j.endpoint, keys: j.keys }) }).catch(() => null); }
+  const r = await fetch("/api/push/test", { method: "POST" });
+  if (!r.ok) throw new Error("server");
+  return (await r.json()) as PushTest;
+}
+export const pushTestText = (t: PushTest): string =>
+  !t.configured ? "Este sitio no tiene configuradas las claves de avisos (VAPID). Hay que ponerlas en las variables del sitio y volver a desplegar."
+  : !t.devices ? "Tu cuenta no tiene ningún teléfono con avisos. Toca “Activar avisos”."
+  : t.sent === t.devices ? `Enviada a ${t.devices === 1 ? "tu teléfono" : `tus ${t.devices} teléfonos`}. Si no te llegó en unos segundos, revisa que el teléfono no esté en modo concentración o no molestar.`
+  : t.reason === "keys" ? `Llegó a ${t.sent} de ${t.devices}. Los demás activaron los avisos con las claves del OTRO sitio (Netlify o Vercel): las claves VAPID de los dos sitios deben ser iguales.`
+  : t.reason === "gone" ? `Llegó a ${t.sent} de ${t.devices}. Los demás ya no existen (app borrada o avisos quitados) y se limpiaron.`
+  : `Llegó a ${t.sent} de ${t.devices}. Los demás no respondieron; inténtalo de nuevo en un momento.`;

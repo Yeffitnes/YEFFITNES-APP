@@ -9,7 +9,7 @@ import { useAfterBoot } from "@/lib/use-now";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
 import { useProfile, useToast } from "@/components/Providers";
-import { enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
+import { enablePush, pushState, pushTestText, resyncPush, testPush, type PushState } from "@/lib/push-client";
 import { QuickSearch } from "@/components/coach/QuickSearch";
 import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
@@ -75,6 +75,8 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
   // Cliente: las notificaciones son obligatorias (FirstRun), así que aquí solo se pueden ENCENDER, no apagar.
   // Pedido de Cristian (28-oct): en la app NO hay botón para desactivar los avisos (ni cliente ni coach). Solo aparece "Activar"
   // cuando están apagados; si alguien los quiere quitar, lo hace en los ajustes del teléfono o del navegador.
+  const [testing, setTesting] = useState(false), [testMsg, setTestMsg] = useState("");
+  const runTest = async () => { if (testing) return; setTesting(true); setTestMsg(""); try { setTestMsg(pushTestText(await testPush())); } catch { setTestMsg("No pudimos hacer la prueba. Revisa tu conexión."); } finally { setTesting(false); } };
   const turnOnPush = async () => { if (busy || ps !== "off") return; setBusy(true); try { setPs(await enablePush()); } catch { setPs("off"); toast("No pudimos activar los avisos en este equipo. Inténtalo de nuevo o usa Chrome.", true); } finally { setBusy(false); } };
   const msgHref = side === "coach" ? "/coach/mensajes" : "/inicio/mensajes";
   return (
@@ -98,6 +100,8 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
           <Icon name="bell" size={16} />{busy ? "Activando…" : PUSH_TXT.off}
         </button>}
         {ps === "denied" && <p className="act-empty" style={{ margin: "8px 4px 0" }}>{PUSH_TXT.denied}</p>}
+        {ps === "on" && <button type="button" className="act-test" onClick={() => void runTest()} disabled={testing}>{testing ? "Enviando prueba…" : "Probar avisos en este teléfono"}</button>}
+        {testMsg && <p className="act-empty" role="status" style={{ margin: "8px 4px 0" }}>{testMsg}</p>}
       </div>}
     </div>
   );

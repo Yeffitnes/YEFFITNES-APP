@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { localDate } from "@/lib/fetchers";
+import { notifyPlan } from "@/lib/queries";
 
 export const missingObject = (e: { code?: string; message?: string } | null | undefined) => !!e && (e.code === "42P01" || e.code === "42883" || e.code === "PGRST202" || e.code === "PGRST205" || /does not exist|could not find/i.test(e.message ?? ""));
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
@@ -39,7 +40,7 @@ export function useApplyProgram(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (programId: string) => { const { error } = await db().rpc("apply_program", { p_client: clientId, p_program: programId }); if (error) throw error; },
-    onSuccess: () => toast("Programa asignado: ya tiene su semana completa"),
+    onSuccess: () => { toast("Programa asignado: ya tiene su semana completa"); notifyPlan(clientId, "training"); },
     onError: () => toast("No pudimos asignar el programa. Inténtalo de nuevo.", true),
     onSettled: () => { void qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); void qc.invalidateQueries({ queryKey: ["active-plan-clients"] }); },
   });

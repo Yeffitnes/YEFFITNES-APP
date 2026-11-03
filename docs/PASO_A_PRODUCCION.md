@@ -58,6 +58,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] **`0044_exercise_alternatives.sql`** (31-oct): ejercicios alternativos (sustitutos aprobados por Jeff y el cambio que hace el cliente). **Necesita la 0042.** Correrla ANTES de probar en Vercel (sin ella no aparecen el campo de sustitutos ni el botón de cambiar; lo demás funciona igual). Compatible con `main` (recrea `log_set` con los mismos parámetros; sin cambios hechos, hace lo mismo). Confirmar (solo lectura): `select to_regclass('public.exercise_swaps') is not null and to_regprocedure('public.swap_exercise(date,uuid,uuid)') is not null;` → `true`.
 - [ ] **`0045_more_preset_exercises.sql`** (31-oct): 89 ejercicios precargados más, todos con imagen (`public/ex/`). Solo datos; correrla cuando se apruebe la lista (`docs/EJERCICIOS_NUEVOS.md`). Confirmar: `select count(*) from public.exercises where lower(name) = 'remo en t';` → 1 (uno por cada espacio de coach).
 - [ ] **`0046_fix_preset_images.sql`** (31-oct): la 0045 se corrió en su primera versión (sin imágenes y con 15 repetidos). Esta pone las imágenes de los 89 nuevos y quita los 15 repetidos (archiva los usados en rutinas). Solo datos, se puede correr dos veces. Confirmar: `select count(*) from public.exercises where active and image is null and lower(name) in ('abdominal bicicleta','almeja con banda');` → 0.
+- [ ] **`0047_plan_change_push.sql`** (2-nov): aviso al cliente cuando Jeff cambia su plan (máx. 1 cada 30 min por tipo) y "Probar avisos". Correrla ANTES de probar en Vercel (sin ella, "Probar avisos" dice 0 teléfonos y el aviso de plan no sale; lo demás igual). Compatible con `main`. Confirmar: `select to_regprocedure('public.plan_change_targets(uuid,text)') is not null;` → `true`.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
@@ -89,7 +90,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
 ## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
-La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita **0038, 0039, 0040, 0041 (corridas), 0042, 0043, 0044 y 0045 (por correr) y 0046 (por correr; la 0045 ya se corrió en su primera versión)**.
+La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita **0038, 0039, 0040, 0041 (corridas), 0042, 0043, 0044 y 0045 (por correr) y 0046 y 0047 (por correr; la 0045 ya se corrió en su primera versión)**.
 Orden:
 1. Correr en orden **0042, 0043, 0044 y 0045** en el SQL Editor (la 0041 ya está corrida). Confirmar 0043, 0044 y 0045: ver §3b. Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
 2. Probar en Vercel con el cliente de prueba (lo del 28-oct de la lista anterior y lo del 29-oct):

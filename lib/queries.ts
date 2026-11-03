@@ -135,6 +135,8 @@ export function useSetDayVideo(clientId: string) {
   });
 }
 export const useTrainingPlans = (clientId: string) => useQuery({ queryKey: ["plans-of", clientId], queryFn: () => fetchTrainingPlans(clientId), staleTime: 60_000, enabled: !!clientId });
+// Aviso al cliente cuando Jeff cambia su plan (0047). La base decide si toca (máx. 1 cada 30 min por tipo); si falla, no pasa nada.
+export const notifyPlan = (clientId: string | null | undefined, kind: "training" | "nutrition") => { if (clientId) void fetch("/api/push/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, kind }) }).catch(() => {}); };
 export function useCreatePlan(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
@@ -150,7 +152,7 @@ export function useAssignDay(clientId: string) {
       const res = await Promise.all(v.weekdays.map((w) => db().rpc("assign_day", { p_plan: v.planId, p_weekday: w, p_template: v.templateId })));
       const bad = res.find((r) => r.error); if (bad?.error) throw bad.error;
     },
-    onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
+    onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); notifyPlan(clientId, "training"); },
     onError: () => toast("No pudimos asignar la rutina a todos los días. Revisa cuáles quedaron e inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }), // si falló uno, otros días pudieron guardarse
   });
@@ -166,7 +168,7 @@ export function useClearDay(clientId: string) {
       if (prev) qc.setQueryData<TrainingPlan[]>(key, prev.map((pl) => ({ ...pl, days: pl.days.filter((x) => x.id !== dayId) })));
       return { prev };
     },
-    onSuccess: () => toast("Día libre: queda como descanso"),
+    onSuccess: () => { toast("Día libre: queda como descanso"); notifyPlan(clientId, "training"); },
     onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast("No pudimos dejar el día libre. Inténtalo de nuevo.", true); },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
@@ -178,6 +180,7 @@ export function useSetWeight(clientId: string) {
     onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<TrainingPlan[]>(key);
       qc.setQueryData<TrainingPlan[]>(key, (l) => l?.map((p) => ({ ...p, days: p.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === v.itemId ? { ...i, weight: v.weight } : i)) })) }))); return { prev }; },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar el peso. Inténtalo de nuevo.", true); },
+    onSuccess: () => notifyPlan(clientId, "training"),
   });
 }
 
@@ -709,12 +712,12 @@ export function useSaveNutrition() {
       const { error } = await db().rpc("save_nutrition", { p_id: v.id ?? null, p_client: v.clientId ?? null, p_name: v.name.trim(), p_kcal: num(v.kcal), p_protein: num(v.protein), p_carbs: num(v.carbs), p_fat: num(v.fat), p_notes: v.notes, p_meals: v.meals.filter((m) => m.name.trim() || m.content.trim()).map((m) => ({ name: m.name, content: m.content, weekday: m.weekday })) });
       if (error) throw error;
     },
-    onSuccess: () => toast("Plan de nutrición guardado"), onError: () => toast("No pudimos guardar el plan. Revisa los valores (calorías 500–10000) e inténtalo de nuevo.", true), onSettled: inv });
+    onSuccess: (_d, v) => { toast("Plan de nutrición guardado"); notifyPlan(v.clientId, "nutrition"); }, onError: () => toast("No pudimos guardar el plan. Revisa los valores (calorías 500–10000) e inténtalo de nuevo.", true), onSettled: inv });
 }
 export function useAssignNutrition() {
   const toast = useToast(), inv = useNutInvalidate();
   return useMutation({ mutationFn: async (v: { templateId: string; clientId: string }) => { const { error } = await db().rpc("assign_nutrition", { p_template: v.templateId, p_client: v.clientId }); if (error) throw error; },
-    onSuccess: () => toast("Plan de nutrición asignado"), onError: () => toast("No pudimos asignar el plan. Inténtalo de nuevo.", true), onSettled: inv });
+    onSuccess: (_d, v) => { toast("Plan de nutrición asignado"); notifyPlan(v.clientId, "nutrition"); }, onError: () => toast("No pudimos asignar el plan. Inténtalo de nuevo.", true), onSettled: inv });
 }
 export function useDeleteNutrition() {
   const toast = useToast(), inv = useNutInvalidate();
@@ -788,6 +791,7 @@ export const useTodayNudges = () => useQuery({ queryKey: ["nudges"], staleTime: 
   const { data, error } = await db().from("nudges").select("client_id,kind").eq("day", bogotaDay()); if (error) throw error;
   return ((data ?? []) as { client_id: string; kind: string }[]).map((r) => `${r.client_id}:${r.kind}`);
 } });
+type NudgeOut = { sent: number; reason: string | null };
 export function useNudge() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
@@ -798,14 +802,18 @@ export function useNudge() {
       // Resultado: >0 llegó; 0 sin avisos activos; -1 todavía enviándose; -2 tiene avisos pero NO llegó (p. ej. los activó en la
       // otra versión de la app: Netlify y Vercel usan claves distintas). Antes -2 se mostraba como "no tiene avisos" y confundía (30-oct).
       const push = fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) })
-        .then(async (r) => { if (!r.ok) return -2; const j = (await r.json().catch(() => ({}))) as { sent?: number; failed?: number }; return (j.sent ?? 0) > 0 ? j.sent! : (j.failed ?? 0) > 0 ? -2 : 0; }).catch(() => -2);
-      return Promise.race([push, new Promise<number>((res) => setTimeout(() => res(-1), 7000))]);
+        .then(async (r): Promise<NudgeOut> => { if (!r.ok) return { sent: -2, reason: "other" }; const j = (await r.json().catch(() => ({}))) as { sent?: number; failed?: number; reason?: string | null }; return { sent: (j.sent ?? 0) > 0 ? j.sent! : (j.failed ?? 0) > 0 ? -2 : 0, reason: j.reason ?? null }; }).catch((): NudgeOut => ({ sent: -2, reason: "other" }));
+      return Promise.race([push, new Promise<NudgeOut>((res) => setTimeout(() => res({ sent: -1, reason: null }), 7000))]);
     },
     onMutate: (v) => { qc.setQueryData<string[]>(["nudges"], (l) => [...(l ?? []), `${v.clientId}:${v.kind}`]); },
-    onSuccess: (sent) => toast(sent > 0 ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy."
+    // Desde el 2-nov dice el motivo exacto (antes "no ha activado los avisos" salía también si a ESTE sitio le faltaban las claves).
+    onSuccess: ({ sent, reason }) => toast(sent > 0 ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy."
       : sent === -1 ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación al teléfono sigue enviándose."
-      : sent === -2 ? "Aviso guardado: lo ve en su pantalla Hoy. Tiene avisos activos, pero la notificación no salió (puede que los activara en la otra versión de la app)."
-      : "Aviso guardado: lo verá en su pantalla Hoy (no ha activado los avisos en ningún teléfono)."),
+      : reason === "not_configured" ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación no salió porque a esta versión de la app le faltan las claves de avisos (VAPID)."
+      : reason === "keys" ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación no salió: activó los avisos en la otra versión de la app y las claves VAPID de los dos sitios no son iguales."
+      : reason === "gone" ? "Aviso guardado: lo ve en su pantalla Hoy. Su teléfono ya no tiene los avisos (borró la app o los quitó)."
+      : sent === -2 ? "Aviso guardado: lo ve en su pantalla Hoy. Tiene avisos activos, pero la notificación no salió. Inténtalo más tarde."
+      : "Aviso guardado: lo verá en su pantalla Hoy. Su cuenta no tiene ningún teléfono con avisos (puede que en su teléfono haya entrado después otra cuenta)."),
     onError: (e) => { if ((e as Error).message === "already_sent") { toast("Ya le avisaste esto hoy."); return; } toast("No pudimos guardar el aviso. Inténtalo de nuevo.", true); },
     onSettled: () => { void qc.invalidateQueries({ queryKey: ["nudges"] }); },
   });
@@ -901,7 +909,7 @@ export function useApplyWeight() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (v: { clientId: string; itemId: string; weight: number }) => { const { error } = await db().from("plan_items").update({ target_weight: v.weight }).eq("id", v.itemId); if (error) throw error; },
-    onSuccess: (_d, v) => { toast(`Plan actualizado: ${String(v.weight).replace(".", ",")} kg`); void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); },
+    onSuccess: (_d, v) => { toast(`Plan actualizado: ${String(v.weight).replace(".", ",")} kg`); void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); notifyPlan(v.clientId, "training"); },
     onError: () => toast("No pudimos cambiar el peso. Inténtalo de nuevo.", true),
   });
 }
