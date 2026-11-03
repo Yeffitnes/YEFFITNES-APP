@@ -9,6 +9,7 @@ import { GuideFace } from "./Guide";
 import { useOfflineState } from "@/lib/offline";
 import { localDate } from "@/lib/fetchers";
 import { useHabits, useLogHabit } from "@/lib/extras";
+import { useToast } from "@/components/Providers";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 export const kgTxt = (n: number) => `${String(n).replace(".", ",")} kg`;
@@ -78,34 +79,50 @@ export function OfflineBanner({ cid }: { cid: string }) {
 }
 
 // ---------- Hábitos del día ----------
+// Hábitos (2-nov): una fila por día en la base (habit_logs). Se puede anotar hoy, ayer y anteayer (la base no deja más atrás),
+// y al superar el mejor día de agua o de pasos de los últimos 90 días sale "Nuevo récord". El sueño no tiene récord (más no es mejor).
+const HAB_DAYS = [{ off: 0, t: "Hoy" }, { off: 1, t: "Ayer" }, { off: 2, t: "Anteayer" }] as const;
 export function HabitsCard({ cid }: { cid: string }) {
-  const h = useHabits(cid, 7), log = useLogHabit(cid), today = localDate();
-  const cur = h.data?.find((x) => x.day === today), [steps, setSteps] = useState("");
-  useEffect(() => { setSteps(cur?.steps != null ? String(cur.steps) : ""); }, [cur?.steps]);
+  const h = useHabits(cid, 7), hist = useHabits(cid, 90), log = useLogHabit(cid), toast = useToast();
+  const [off, setOff] = useState(0), day = (() => { const d = new Date(); d.setDate(d.getDate() - off); return localDate(d); })();
+  const cur = h.data?.find((x) => x.day === day), [steps, setSteps] = useState("");
+  useEffect(() => { setSteps(cur?.steps != null ? String(cur.steps) : ""); }, [cur?.steps, day]);
   if (h.isPending) return <div className="card"><div className="sk" style={{ height: 120 }} /></div>;
   if (h.data === null || h.isError) return null;   // migración 0043 sin correr, o sin permiso: no se muestra
   const water = cur?.water ?? 0, sleep = cur?.sleep ?? null;
-  const saveSteps = () => { const n = Math.round(Number(steps.replace(/\D/g, ""))); if (steps.trim() === "" || !(n >= 0) || n > 100000 || n === (cur?.steps ?? -1)) return; log.mutate({ day: today, steps: n }); };
+  // Récord: mejor marca de OTROS días (no del que se está anotando) en los últimos 90 días; el primer registro no cuenta.
+  const best = (k: "water" | "steps") => Math.max(0, ...(hist.data ?? []).filter((x) => x.day !== day && x[k] != null).map((x) => x[k] as number));
+  const save = (v: { water?: number; steps?: number; sleep?: number }) => {
+    const bw = best("water"), bs = best("steps");
+    log.mutate({ day, ...v }, { onSuccess: () => {
+      if (v.water != null && bw > 0 && v.water > bw && (cur?.water ?? 0) <= bw)   // solo al cruzar el récord, no en cada vaso de más
+        toast(`Nuevo récord de agua: ${v.water} vasos en un día (antes ${bw}).`);
+      if (v.steps != null && bs > 0 && v.steps > bs && (cur?.steps ?? 0) <= bs) toast(`Nuevo récord de pasos: ${v.steps.toLocaleString("es-CO")} en un día (antes ${bs.toLocaleString("es-CO")}).`);
+    } });
+  };
+  const saveSteps = () => { const n = Math.round(Number(steps.replace(/\D/g, ""))); if (steps.trim() === "" || !(n >= 0) || n > 100000 || n === (cur?.steps ?? -1)) return; save({ steps: n }); };
   const weekWater = (h.data ?? []).filter((x) => x.water != null), avgW = weekWater.length ? weekWater.reduce((a, x) => a + (x.water ?? 0), 0) / weekWater.length : null;
+  const lbl = off === 0 ? "hoy" : off === 1 ? "ayer" : "anteayer";
   return (
     <div className="card habits-card" id="habitos">
-      <div className="card-tag">Hábitos de hoy</div>
+      <div className="card-tag">Hábitos</div>
       <div className="card-title" style={{ fontSize: 16 }}>Agua, pasos y sueño</div>
-      <p className="card-meta" style={{ marginBottom: 12 }}>Un toque cada uno. Jeff los ve en tu resumen de la semana.</p>
+      <p className="card-meta" style={{ marginBottom: 10 }}>Un toque cada uno. Si se te olvidó, anota ayer o anteayer. Jeff los ve en tu progreso.</p>
+      <div className="hab-days" role="group" aria-label="Día que anotas">{HAB_DAYS.map((d) => <button key={d.off} type="button" aria-pressed={off === d.off} className={off === d.off ? "on" : ""} onClick={() => setOff(d.off)}>{d.t}</button>)}</div>
       <div className="hab-row">
-        <span className="hab-lbl"><b>Agua</b><small>vasos hoy</small></span>
-        <div className="hab-step"><button type="button" aria-label="Un vaso menos" disabled={water <= 0} onClick={() => log.mutate({ day: today, water: water - 1 })}>−</button><b aria-live="polite">{water}</b><button type="button" aria-label="Un vaso más" disabled={water >= 20} onClick={() => log.mutate({ day: today, water: water + 1 })}>+</button></div>
+        <span className="hab-lbl"><b>Agua</b><small>vasos {lbl}</small></span>
+        <div className="hab-step"><button type="button" aria-label="Un vaso menos" disabled={water <= 0} onClick={() => save({ water: water - 1 })}>−</button><b aria-live="polite">{water}</b><button type="button" aria-label="Un vaso más" disabled={water >= 20} onClick={() => save({ water: water + 1 })}>+</button></div>
       </div>
       <div className="hab-glasses" aria-hidden>{Array.from({ length: Math.max(8, Math.min(20, water)) }, (_, i) => <i key={i} className={i < water ? "on" : ""} />)}</div>
       <div className="hab-row">
-        <span className="hab-lbl"><b>Pasos</b><small>de hoy</small></span>
-        <input className="hab-input" inputMode="numeric" value={steps} placeholder="0" aria-label="Pasos de hoy" onChange={(e) => setSteps(e.target.value.replace(/\D/g, "").slice(0, 6))} onBlur={saveSteps} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+        <span className="hab-lbl"><b>Pasos</b><small>de {lbl}</small></span>
+        <input className="hab-input" inputMode="numeric" value={steps} placeholder="0" aria-label={`Pasos de ${lbl}`} onChange={(e) => setSteps(e.target.value.replace(/\D/g, "").slice(0, 6))} onBlur={saveSteps} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
       </div>
       <div className="hab-row">
-        <span className="hab-lbl"><b>Sueño</b><small>horas anoche</small></span>
-        <div className="hab-step"><button type="button" aria-label="Media hora menos" disabled={sleep == null || sleep <= 0} onClick={() => log.mutate({ day: today, sleep: Math.max(0, (sleep ?? 0) - 0.5) })}>−</button><b aria-live="polite">{sleep == null ? "—" : String(sleep).replace(".", ",")}</b><button type="button" aria-label="Media hora más" disabled={sleep != null && sleep >= 16} onClick={() => log.mutate({ day: today, sleep: sleep == null ? 7 : Math.min(16, sleep + 0.5) })}>+</button></div>
+        <span className="hab-lbl"><b>Sueño</b><small>{off === 0 ? "horas anoche" : `horas la noche de ${lbl}`}</small></span>
+        <div className="hab-step"><button type="button" aria-label="Media hora menos" disabled={sleep == null || sleep <= 0} onClick={() => save({ sleep: Math.max(0, (sleep ?? 0) - 0.5) })}>−</button><b aria-live="polite">{sleep == null ? "—" : String(sleep).replace(".", ",")}</b><button type="button" aria-label="Media hora más" disabled={sleep != null && sleep >= 16} onClick={() => save({ sleep: sleep == null ? 7 : Math.min(16, sleep + 0.5) })}>+</button></div>
       </div>
-      {avgW != null && weekWater.length > 1 && <p className="hab-week">Esta semana: {avgW.toFixed(1).replace(".", ",")} vasos al día en promedio.</p>}
+      {avgW != null && weekWater.length > 1 && <p className="hab-week">Esta semana: {avgW.toFixed(1).replace(".", ",")} vasos al día en promedio. Tu historial está en Progreso.</p>}
     </div>
   );
 }

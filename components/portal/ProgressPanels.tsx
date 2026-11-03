@@ -4,7 +4,7 @@ import { useConsent, useGiveConsent, useMeasures, useDeletePhoto, usePhotos, use
 import { useProfile, useToast, useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { compressImage } from "@/lib/image";
-import { RecordsCard, WeekSummary } from "@/components/WeekSummary";
+import { HabitsHistory, RecordsCard, WeekSummary } from "@/components/WeekSummary";
 type K = keyof MeasureInput;
 const M: { id: string; label: string; k: K; unit: string; color: string }[] = [
   { id: "peso", label: "Peso", k: "weight", unit: "kg", color: "var(--neon)" }, { id: "cintura", label: "Cintura", k: "waist", unit: "cm", color: "var(--garnet)" },
@@ -19,7 +19,7 @@ export function ProgressPanels({ clientId, mode }: { clientId: string; mode: "cl
   if (ms.isPending) return <Skeleton rows={3} />;
   if (ms.isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el progreso. <button className="filter-chip" onClick={() => ms.refetch()}>Reintentar</button></p></div>;
   const list = ms.data, mine = mode === "client";
-  const extra = <>{mine && <WeekSummary clientId={clientId} first="" mode="client" />}<div style={{ marginBottom: 18 }}><RecordsCard clientId={clientId} mode={mode} /></div></>;
+  const extra = <>{mine && <WeekSummary clientId={clientId} first="" mode="client" />}<div style={{ marginBottom: 18 }}><RecordsCard clientId={clientId} mode={mode} /></div><HabitsHistory clientId={clientId} mode={mode} /></>;
   const series = (k: K) => list.filter((m) => m[k] != null).map((m) => ({ d: m.date, v: m[k] as number }));
   const dates = list.slice(-6).map((m) => m.date), W = 600, H = 200;
   const pt = (k: K) => { const s = series(k).filter((p) => dates.includes(p.d)); if (!s.length) return [] as { x: number; y: number }[];

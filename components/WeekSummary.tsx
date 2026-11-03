@@ -38,7 +38,7 @@ export function WeekSummary({ clientId, first, mode }: { clientId: string; first
   if (w.mealDays != null) tiles.push({ k: "Nutrición", v: `${w.mealDays}/7`, s: "días completos" });
   if (w.reports != null) tiles.push({ k: "Reportes", v: `${w.reports}/7` });
   if (w.water != null) tiles.push({ k: "Agua", v: dec(w.water), s: "vasos al día" });
-  if (w.steps != null) tiles.push({ k: "Pasos", v: Math.round(w.steps).toLocaleString("es"), s: "al día" });
+  if (w.steps != null) tiles.push({ k: "Pasos", v: Math.round(w.steps).toLocaleString("es-CO"), s: "al día" });
   if (w.sleep != null) tiles.push({ k: "Sueño", v: `${dec(w.sleep)} h`, s: "por noche" });
   if (w.lastW != null) tiles.push({ k: "Peso", v: kg(w.lastW), s: w.wDelta != null ? `${w.wDelta > 0 ? "+" : w.wDelta < 0 ? "−" : ""}${kg(Math.abs(w.wDelta))} en la semana` : undefined });
   const msg = [
@@ -73,6 +73,45 @@ export function RecordsCard({ clientId, mode }: { clientId: string; mode: "coach
       <p className="card-meta" style={{ margin: "6px 0 10px" }}>{next ? `${got.length ? "¡Vas muy bien! " : ""}Te ${next - n === 1 ? "falta 1 rutina completa" : `faltan ${next - n} rutinas completas`} para llegar a ${next}.` : "Completaste todos los logros. Impresionante."} Cuenta cuando haces todos los ejercicios de la rutina con todas sus series.{coach && partial > 0 ? ` Además terminó ${partial} ${partial === 1 ? "entrenamiento" : "entrenamientos"} sin hacer la rutina completa.` : ""}</p>
       {recs.isPending ? <div className="sk" style={{ height: 60 }} /> : !list.length ? <p className="empty-note">{coach ? "Aún no hay series con peso registradas." : "Cuando registres series con peso, aquí verás tu mejor marca de cada ejercicio."}</p>
         : <div className="rec-list">{list.slice(0, 12).map((r) => <div key={r.exercise} className="rec-row"><span className="rec-name">{r.exercise}{r.on >= from && isNewRecord(r) && <i className="rec-new">Nuevo</i>}</span><span className="rec-val">{kg(r.best)} × {r.reps}</span><span className="rec-date">{new Date(`${r.on}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short" })}</span></div>)}</div>}
+    </div>
+  );
+}
+
+// Historial de hábitos (pedido de Cristian, 2-nov): los últimos 30 días, igual para Jeff y para el cliente (Progreso).
+// Por hábito: promedio de los días anotados, mejor día y cuántos días anotó; arriba, la racha de días seguidos anotando.
+// Sin metas: las metas de Jeff están NO DEFINIDO, así que no se marca "cumplido".
+type HabK = "water" | "steps" | "sleep";
+const HAB: { k: HabK; t: string; unit: (n: number) => string }[] = [
+  { k: "water", t: "Agua", unit: (n) => `${dec(n)} ${n === 1 ? "vaso" : "vasos"}` },
+  { k: "steps", t: "Pasos", unit: (n) => Math.round(n).toLocaleString("es-CO") },
+  { k: "sleep", t: "Sueño", unit: (n) => `${dec(n)} h` },
+];
+export function HabitsHistory({ clientId, mode }: { clientId: string; mode: "coach" | "client" }) {
+  const h = useHabits(clientId, 30), days = lastNDays(30);
+  if (h.isPending) return <div className="card" style={{ marginBottom: 18 }}><div className="sk" style={{ height: 120 }} /></div>;
+  if (!h.data) return null;   // 0043 sin correr
+  const by = new Map(h.data.map((x) => [x.day, x]));
+  const any = (d: string) => { const x = by.get(d); return !!x && (x.water != null || x.steps != null || x.sleep != null); };
+  // Racha: días seguidos anotando, contando hasta hoy (si hoy aún no anota, cuenta hasta ayer).
+  let streak = 0; for (let i = days.length - 1; i >= 0; i--) { if (any(days[i])) streak++; else if (i === days.length - 1) continue; else break; }
+  const logged = days.filter(any).length;
+  return (
+    <div className="card hab-hist" style={{ marginBottom: 18 }}>
+      <div className="card-tag">{mode === "coach" ? "Hábitos (30 días)" : "Tus hábitos (30 días)"}</div>
+      {!logged ? <p className="empty-note">{mode === "coach" ? "Aún no anota agua, pasos ni sueño." : "Cuando anotes tu agua, pasos y sueño en Hoy, aquí verás tu historial y tus mejores días."}</p> : <>
+        <div className="card-title" style={{ fontSize: 16 }}>{streak > 1 ? `${streak} días seguidos anotando` : `${mode === "coach" ? "Anotó" : "Anotaste"} ${logged} de los últimos 30 días`}</div>
+        {HAB.map(({ k, t, unit }) => {
+          const vals = days.map((d) => (by.get(d)?.[k] ?? null) as number | null), got = vals.filter((v): v is number => v != null);
+          if (!got.length) return null;
+          const max = Math.max(...got), bestI = vals.lastIndexOf(max), mean = got.reduce((a, b) => a + b, 0) / got.length;
+          return (
+            <div key={k} className="hh-row">
+              <div className="hh-head"><b>{t}</b><span>promedio {unit(mean)} · mejor día {unit(max)} ({new Date(`${days[bestI]}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short" })}) · {got.length} {got.length === 1 ? "día" : "días"}</span></div>
+              <div className="hh-bars" aria-hidden>{vals.map((v, i) => <i key={days[i]} className={v == null ? "none" : i === bestI ? "best" : ""} style={{ height: v == null ? 3 : `${Math.max(8, (v / (max || 1)) * 100)}%` }} />)}</div>
+            </div>);
+        })}
+        <p className="hh-note">Cada barra es un día; la más oscura es el mejor día. Los días sin anotar quedan en gris.</p>
+      </>}
     </div>
   );
 }

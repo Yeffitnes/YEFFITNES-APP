@@ -16,6 +16,7 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `bash tests/e2e/run.sh swaps.js`: ejercicios alternativos (Jeff aprueba 2 sustitutos, Camila cambia en el celular, registra, ya no puede volver, Jeff ve "en lugar de"). Base recién creada.
 - `push.js` (2-nov): motivos de "Avisar", "Probar avisos" y aviso de cambio de plan. Necesita claves VAPID de prueba en el build y al correr: `node -e 'console.log(require("web-push").generateVAPIDKeys())'`, compilar con `NEXT_PUBLIC_VAPID_PUBLIC_KEY` y correr con esa y `VAPID_PRIVATE_KEY`. Para repetirla: `delete from nudges; delete from push_subscriptions; delete from plan_notices;`.
 - `review2.js` (2-nov): Revisar pendientes (botones en el celular, filtro) y logros por rutinas completas; `nudge_row.js`: la fila "Jeff te está esperando" se abre con texto y botones. Ver la cabecera de cada uno para el dato que necesitan.
+- `away.js` (2-nov): hábitos (ayer, récord, historial para cliente y Jeff) y "Jeff estuvo pendiente de ti". Base recién creada.
 - `bash tests/e2e/run.sh catalog.js`: galería de ejercicios (arranca Compacta; Normal se recuerda por filtro) en celular y computador.
 Límites: `proxy.js` simula solo lo mínimo de Supabase (sesión y /rest). No hay Storage (fotos, audios), Realtime, avisos push ni Bunny.
 **Después de usarlo, vuelve a compilar normal** (`npx next build` con las variables de siempre) antes de los chequeos para subir.

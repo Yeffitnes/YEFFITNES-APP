@@ -823,6 +823,13 @@ export const useMyNudges = (clientId: string) => useQuery({ queryKey: ["my-nudge
   const { data, error } = await db().from("nudges").select("kind").eq("client_id", clientId).eq("day", bogotaDay()); if (error) throw error;
   return ((data ?? []) as { kind: NudgeKind }[]).map((r) => r.kind);
 } });
+// Avisos de Jeff de los últimos 7 días ANTES de hoy (2-nov): si el cliente no entró esos días, al volver los ve juntos en Hoy
+// ("Jeff estuvo pendiente de ti"). Antes solo veía los de hoy y los anteriores se perdían.
+export const useMyPastNudges = (clientId: string) => useQuery({ queryKey: ["my-nudges", clientId, "past"], enabled: !!clientId, staleTime: 5 * 60_000, queryFn: async (): Promise<{ id: string; kind: NudgeKind; day: string }[]> => {
+  const today = bogotaDay(), d = new Date(`${today}T12:00:00`); d.setDate(d.getDate() - 7); const from = d.toISOString().slice(0, 10);
+  const { data, error } = await db().from("nudges").select("id,kind,day").eq("client_id", clientId).gte("day", from).lt("day", today).order("day"); if (error) throw error;
+  return (data ?? []) as { id: string; kind: NudgeKind; day: string }[];
+} });
 // Vídeo del objetivo (0036): Jeff lo sube para un cliente (se registra como vídeo de ese cliente) y queda en clients.objective_video_id.
 export function useObjectiveVideo(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();

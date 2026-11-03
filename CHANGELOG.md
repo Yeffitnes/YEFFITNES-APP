@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-11-02 (noche, 3) - Hábitos con historial y récords; "Jeff estuvo pendiente de ti" al volver
+Preguntas de Cristian (19:59): cómo se cuentan y guardan agua, pasos y sueño, que tenga récords; y qué ve el cliente si no entra 3 días y Jeff le mandó avisos.
+**Cómo se guardan los hábitos (sin cambios en la base):** una fila por cliente y por día (`habit_logs`: vasos de agua, pasos, horas de sueño). La base deja anotar hoy y hasta 2 días atrás. Jeff y el cliente leen la misma fila: lo que uno ve es lo que ve el otro.
+- **Anotar ayer o anteayer:** en Hoy, la tarjeta de hábitos tiene "Hoy | Ayer | Anteayer" (antes solo hoy, aunque la base ya lo permitía). `WorkoutExtras.tsx` (`HabitsCard`).
+- **Récord:** al superar su mejor día de agua o de pasos de los últimos 90 días sale "Nuevo récord de pasos: 8.000 en un día (antes 5.000)", una vez al cruzarlo. El sueño no tiene récord (más horas no es necesariamente mejor). El primer día anotado no cuenta como récord.
+- **Historial de 30 días** en Progreso, igual para el cliente y para Jeff (ficha → Progreso): racha de días seguidos anotando y, por hábito, una barra por día, promedio, mejor día con fecha y días anotados. Sin metas (NO DEFINIDO por Jeff). `WeekSummary.tsx` (`HabitsHistory`), `ProgressPanels.tsx`, `globals.css`.
+**Si el cliente no entra varios días:** antes solo veía los avisos de Jeff del día de hoy; los de días anteriores se perdían. Ahora, al volver, sale arriba en Hoy **"Jeff estuvo pendiente de ti"**: los avisos de los últimos 7 días por fecha, las rutinas que le tocaban y no hizo ("eso ya pasó y no se recupera: lo importante es seguir desde hoy"), qué le toca hoy y los botones "Ir a mi rutina de hoy", "Escribirle a Jeff" y "Entendido" (se recuerda en ese teléfono). Mensajes y respuestas a entrenamientos ya se veían (Mensajes y Hoy). `HoyView.tsx` (`WhileAway`), `useMyPastNudges`.
+- Verificado en local (celular, red lenta): `tests/e2e/away.js` (nuevo) 5/5; `extras.js` 15/15, `flows.js` 27/27, `hydration.js` sin redibujar (con un aviso de ayer en pantalla), `stuck.js` sin atascos. NO verificado: iPhone real. Jeff NO ve si el cliente tocó "Entendido" (se guarda solo en el teléfono; si se quiere, necesita migración).
+- Sin migración. Revertir: restaurar `HoyView.tsx`, `WorkoutExtras.tsx`, `WeekSummary.tsx`, `ProgressPanels.tsx`, `lib/queries.ts`, `globals.css` y `portal.css` del commit `93e62a5`.
+
 ## 2026-11-02 (noche, 2) - Revisar pendientes: botones en el celular y filtro; logros por rutinas completas
 Pedido de Cristian (19:48).
 - **Botones montados en el celular:** al revisar un entrenamiento, "Guardar y marcar revisado" se montaba sobre "Vídeo" y no se leía. Ahora Audio, Foto y Vídeo van en una fila y el botón de guardar ocupa toda la fila de abajo (en computador sigue todo en una fila). Vale en Revisar pendientes, en la ficha y en el panel. `RecentWorkouts.tsx` (`fb-acts`), `coach.css`. También "Ver ficha" ya no se parte en dos líneas.
