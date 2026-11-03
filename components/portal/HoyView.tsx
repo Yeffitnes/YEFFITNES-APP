@@ -89,7 +89,7 @@ export function HoyView() {
         </div>
       </div>
       <div className="qrows">
-      <WhileAway cid={cid} plan={plan} logs={logList} today={today} todayName={day?.name ?? null} />
+      <WhileAway cid={cid} plan={plan} logs={logList} today={today} />
       <FromCoach />
       <CoachNudges cid={cid} trainingDone={!!logToday?.completed} trainingToday={!!day && !!me.data?.features.includes("training")} features={me.data?.features ?? []} />
       <CoachFeedback cid={cid} logs={logList} />
@@ -378,34 +378,29 @@ function CoachCancels({ cid }: { cid: string }) {
   })}</>;
 }
 
-// "Jeff estuvo pendiente de ti" (pedido de Cristian, 2-nov): si Jeff le mandó avisos en días en que el cliente no entró, al volver
-// los ve juntos, con las rutinas que quedaron sin hacer (no se recuperan: se sigue con la de hoy) y qué hacer ahora.
-// Sale hasta que toca "Entendido" (se recuerda en ese teléfono). Los avisos de HOY siguen en su propia fila.
+// "Jeff estuvo pendiente de ti" (pedido de Cristian, 2-nov; compactado el mismo día): si Jeff le mandó avisos en días en que el
+// cliente no entró, al volver lo ve en UNA fila plegada, como las demás de Hoy. Al abrirla: una línea por día y lo que quedó sin
+// hacer. Un solo botón ("Entendido"): la rutina, los mensajes y lo de hoy ya están más abajo en la misma pantalla.
 const AWAY_KEY = "yf-away-seen";
-function WhileAway({ cid, plan, logs, today, todayName }: { cid: string; plan?: TrainingPlan; logs: WorkoutLog[]; today: string; todayName: string | null }) {
+const AWAY_SHORT: Record<NudgeKind, string> = { nothing: "te esperaba para que registraras tu día", train: "esperaba tu entrenamiento", meals: "esperaba tu nutrición", report: "esperaba tu reporte" };
+function WhileAway({ cid, plan, logs, today }: { cid: string; plan?: TrainingPlan; logs: WorkoutLog[]; today: string }) {
   const past = useMyPastNudges(cid), [seen, setSeen] = useState<string[] | null>(null);
   useEffect(() => { try { setSeen(JSON.parse(localStorage.getItem(AWAY_KEY) ?? "[]") as string[]); } catch { setSeen([]); } }, []);   // nunca al primer dibujo
   const list = (past.data ?? []).filter((n) => seen && !seen.includes(n.id));
   if (!seen || !list.length) return null;
-  const fmt = (d: string) => cap(new Date(`${d}T12:00:00`).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "short" }));
+  const wd = (d: string) => cap(new Date(`${d}T12:00:00`).toLocaleDateString("es", { weekday: "short", day: "numeric" }).replace(".", ""));
   const days = Array.from(new Set(list.map((n) => n.day)));
-  // Rutinas que le tocaban desde el primer aviso hasta ayer y no terminó.
-  const missed: string[] = [];
+  const missed: string[] = [];   // rutinas que le tocaban desde el primer aviso hasta ayer y no terminó
   if (plan) for (let d = new Date(`${days[0]}T12:00:00`); localDate(d) < today; d.setDate(d.getDate() + 1)) {
-    const ymd = localDate(d), wd = (d.getDay() + 6) % 7 + 1, pd = plan.days.find((x) => x.weekday === wd);
-    if (pd && ymd >= plan.startsOn && !logs.some((l) => l.date === ymd && l.completed)) missed.push(`${fmt(ymd).split(",")[0]} (${pd.name.toLowerCase()})`);
+    const ymd = localDate(d), pd = plan.days.find((x) => x.weekday === (d.getDay() + 6) % 7 + 1);
+    if (pd && ymd >= plan.startsOn && !logs.some((l) => l.date === ymd && l.completed)) missed.push(wd(ymd).toLowerCase());
   }
   const ok = () => { const n = [...(seen ?? []), ...list.map((x) => x.id)].slice(-100); setSeen(n); try { localStorage.setItem(AWAY_KEY, JSON.stringify(n)); } catch { /* sin almacenamiento */ } };
   return (
-    <QuickRow icon="bell" tone="new" chip={days.length === 1 ? "1 día" : `${days.length} días`} defaultOpen title="Jeff estuvo pendiente de ti" sub={`Te escribió ${list.length === 1 ? "1 vez" : `${list.length} veces`} mientras no entrabas`}>
-      {days.map((d) => <div key={d} className="away-day"><b>{fmt(d)}</b>{list.filter((n) => n.day === d).map((n) => <p key={n.id}>{NUDGE_TXT[n.kind].body}</p>)}</div>)}
-      {!!missed.length && <p className="away-missed">Quedaron sin hacer: {missed.join(", ")}. Eso ya pasó y no se recupera: lo importante es seguir desde hoy.</p>}
-      <p className="away-today">{todayName ? `Hoy toca ${todayName.toLowerCase()}.` : "Hoy es día de descanso."} Cuéntale a Jeff cómo vas: él estuvo pendiente.</p>
-      <div className="nudge-acts" style={{ marginTop: 10 }}>
-        {todayName && <button type="button" className="mini-btn primary" onClick={() => { ok(); focusAnchor("rutina"); }}>Ir a mi rutina de hoy</button>}
-        <Link href="/inicio/mensajes" className="mini-btn primary" style={{ textDecoration: "none" }} onClick={ok}>Escribirle a Jeff</Link>
-        <button type="button" className="mini-btn ghost" onClick={ok}>Entendido</button>
-      </div>
+    <QuickRow icon="bell" tone="new" chip={`${days.length} ${days.length === 1 ? "día" : "días"}`} title="Jeff estuvo pendiente de ti" sub={`Te escribió mientras no entrabas (${days.map((d) => wd(d).toLowerCase()).join(", ")})`}>
+      <ul className="away-list">{days.map((d) => <li key={d}><b>{wd(d)}</b>{Array.from(new Set(list.filter((n) => n.day === d).map((n) => AWAY_SHORT[n.kind]))).join(" y ")}</li>)}</ul>
+      <div className="fb-foot"><span>{missed.length ? `Sin hacer: ${missed.join(", ")}. Ya pasó; sigue con lo de hoy.` : "Sigue con lo de hoy."}</span>
+        <button type="button" className="mini-btn ghost" onClick={ok}>Entendido</button></div>
     </QuickRow>
   );
 }

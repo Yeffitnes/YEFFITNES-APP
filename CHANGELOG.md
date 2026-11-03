@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-11-02 (noche, 5) - "Jeff estuvo pendiente de ti" más compacto
+Pedido de Cristian: ocupaba mucho espacio y los tres botones repetían lo que ya está abajo en Hoy.
+- Ahora es una fila plegada como las demás de Hoy ("Te escribió mientras no entrabas (sáb 31, dom 1)", chip "2 días"). Al abrirla: una línea corta por día ("Sáb 31 · esperaba tu entrenamiento"), lo que quedó sin hacer en una frase y un solo botón, "Entendido". Se quitaron "Ir a mi rutina de hoy", "Escribirle a Jeff" y la frase "Hoy toca…" (ya están en la misma pantalla). `HoyView.tsx` (`WhileAway`), `portal.css`.
+- Verificado: `tests/e2e/away.js` 5/5 (arranca cerrada, un solo botón, Entendido la quita). Sin migración. Revertir: restaurar esos dos archivos del commit `644a678`.
+
 ## 2026-11-02 (noche, 4) - Hábitos como dato: promedio de la semana y avisos cuando un día se queda corto (sin "Hoy | Ayer | Anteayer")
 Corrección de Cristian (21:29): no quería anotar días pasados, sino que lo que se anota sirva de dato: cuánto toma, duerme y camina en promedio, y un aviso cuando un día no alcanza, para el cliente y para Jeff.
 - **Se quitó "Hoy | Ayer | Anteayer"** (de la entrada anterior): se anota solo hoy, como antes.

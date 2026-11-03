@@ -1472,9 +1472,7 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .hab-avg b{font-family:var(--font-mono),monospace;font-size:14px}
 .hab-avg span{font-size:10.5px;color:var(--text-faint)}
 .hab-avg.low{box-shadow:inset 0 0 0 1.5px var(--accent)}
-/* "Jeff estuvo pendiente de ti" (2-nov) */
-.away-day{padding:8px 0;border-bottom:1px solid #EFF0F4}
-.away-day b{display:block;font-size:12.5px;margin-bottom:2px}
-.away-day p{margin:0;font-size:13.5px;line-height:1.5;color:var(--text-dim)}
-.away-missed,.away-today{margin:10px 0 0;font-size:13.5px;line-height:1.5}
-.away-today{font-weight:600}
+/* "Jeff estuvo pendiente de ti" (2-nov, compacto) */
+.away-list{list-style:none;margin:0 0 4px;padding:0}
+.away-list li{display:flex;gap:8px;padding:5px 0;font-size:13.5px;line-height:1.4;color:var(--text-dim)}
+.away-list b{flex:none;min-width:58px;color:var(--text);font-weight:600}
