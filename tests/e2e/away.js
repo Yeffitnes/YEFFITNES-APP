@@ -24,27 +24,32 @@ const CID = process.env.CLIENT_ID, D = (n) => `(now() at time zone 'America/Bogo
     if (await c.locator(".qrow", { hasText: "Jeff estuvo pendiente de ti" }).count()) throw new Error("volvió al recargar"); return "ok";
   });
   if (await g.count()) await g.first().click().catch(() => {});
-  await step("hábitos: anotar ayer y luego hoy con récord de pasos", async () => {
+  await step("hábitos: avisos (ayer poca agua y pocos pasos, anoche poco sueño), récord y promedio de la semana", async () => {
+    sql(`insert into habit_logs (client_id, workspace_id, day, water, steps, sleep) select id, workspace_id, ${D(1)}, 3, 5000, 7 from clients where id = '${CID}'`);
+    sql(`insert into habit_logs (client_id, workspace_id, day, water, steps, sleep) select id, workspace_id, ${D(2)}, 8, 1200, 5 from clients where id = '${CID}'`);
+    await c.reload({ waitUntil: "networkidle" }); await c.waitForTimeout(1200);
     const h = c.locator("#habitos"); await h.scrollIntoViewIfNeeded();
-    await h.getByRole("button", { name: "Ayer", exact: true }).click(); await h.getByLabel("Pasos de ayer").fill("5000"); await h.getByLabel("Pasos de ayer").press("Enter"); await c.waitForTimeout(800);
-    await h.getByRole("button", { name: "Un vaso más" }).click(); await c.waitForTimeout(600);
-    await h.getByRole("button", { name: "Hoy", exact: true }).click(); await c.waitForTimeout(300);
-    const empty = await h.getByLabel("Pasos de hoy").inputValue();
+    if (await h.getByRole("button", { name: "Ayer", exact: true }).count()) throw new Error("sigue el selector de días");
+    await h.getByRole("button", { name: "Media hora más" }).click(); await c.waitForTimeout(300);   // 7 h
+    for (let k = 0; k < 4; k++) { await h.getByRole("button", { name: "Media hora menos" }).click(); await c.waitForTimeout(250); }   // 5 h
     await h.getByLabel("Pasos de hoy").fill("8000"); await h.getByLabel("Pasos de hoy").press("Enter");
-    const toast = await c.locator(".toast").innerText({ timeout: 5000 });
-    const rows = sql(`select day = ${D(1)}, water, steps from habit_logs where client_id = '${CID}' order by day`);
+    const toast = await c.locator(".toast").innerText({ timeout: 5000 }); await c.waitForTimeout(800);
+    const alerts = (await h.locator(".hab-alert").allInnerTexts()).join(" | "), week = (await h.locator(".hab-week-box").innerText()).replace(/\n/g, " ");
     await h.screenshot({ path: `${S}/habits.png` });
-    if (empty !== "" || !/Nuevo récord de pasos/.test(toast) || !/t\|1\|5000/.test(rows) || !/f\|\|8000/.test(rows)) throw new Error(`hoyVacío=${empty} toast=${toast} filas=${rows}`);
-    return `${toast} | filas: ${rows.replace(/\n/g, " ; ")}`;
+    if (!/Nuevo récord de pasos: 8\.000/.test(toast) || !/Anoche dormiste 5 h/.test(alerts) || !/Ayer tomaste 3 vasos/.test(alerts) || /Ayer diste/.test(alerts) || !/promedio por día/i.test(week)) throw new Error(`toast=${toast} || avisos=${alerts} || semana=${week}`);
+    return `${alerts} || ${week}`;
   });
   await step("historial de hábitos en Progreso (cliente)", async () => {
     await c.goto("http://localhost:3000/inicio/progreso", { waitUntil: "networkidle" }); await c.waitForTimeout(1500);
     const card = c.locator(".hab-hist"); await card.scrollIntoViewIfNeeded(); await card.screenshot({ path: `${S}/hab_hist.png` });
-    const t = (await card.innerText()).replace(/\n/g, " "); if (!/2 días seguidos/.test(t) || !/mejor día 8\.000/.test(t)) throw new Error(t); return t.slice(0, 140);
+    const t = (await card.innerText()).replace(/\n/g, " "); if (!/3 días seguidos/.test(t) || !/mejor día 8\.000/.test(t) || !/con poco sueño/.test(t)) throw new Error(t); return t.slice(0, 140);
   });
   await step("Jeff ve el mismo historial en la ficha (Progreso)", async () => {
     const j = await (await ctxFor(b, "jeff", false)).newPage(); watch(j, "jeff", errs);
     await j.goto(`http://localhost:3000/coach/clientes/${CID}?tab=Progreso`, { waitUntil: "networkidle" }); await j.waitForTimeout(1500);
-    const t = (await j.locator(".hab-hist").innerText()).replace(/\n/g, " "); if (!/Hábitos \(30 días\)/i.test(t) || !/mejor día 8\.000/.test(t)) throw new Error(t); return t.slice(0, 120);
+    const t = (await j.locator(".hab-hist").innerText()).replace(/\n/g, " "); if (!/Hábitos \(30 días\)/i.test(t) || !/mejor día 8\.000/.test(t)) throw new Error(t);
+    await j.goto(`http://localhost:3000/coach/clientes/${CID}?tab=Resumen`, { waitUntil: "networkidle" }); await j.waitForTimeout(1500);
+    const w = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); await j.locator(".wk-card").screenshot({ path: `${S}/wk_coach.png` });
+    if (!/Hábitos por debajo del mínimo/.test(w) || !/poco sueño 2 días/.test(w) || !/poca agua 1 día/.test(w) || !/pocos pasos 1 día/.test(w)) throw new Error(w); return w.slice(w.indexOf("Hábitos por"), w.indexOf("Hábitos por") + 160);
   });
   console.log(errs.length ? errs.join("\n") : "Sin errores de consola ni de red"); await b.close(); process.exit(fails || errs.length ? 1 : 0); })();

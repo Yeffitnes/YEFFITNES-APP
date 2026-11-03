@@ -108,7 +108,7 @@ Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio
 2. **89 ejercicios precargados más (0045):** todos con imagen del personaje (`public/ex/55-…` a `158-…`, con huecos: se quitaron 15 repetidos). Lista, archivos y textos para las imágenes en `docs/EJERCICIOS_NUEVOS.md`. Las imágenes del muñequito NO las puede dibujar Claude: las genera Cristian; Claude las recorta y escribe la migración que las pone.
 **Siguiente:**
 3. Después (idea aprobada, sin empezar): figura hombre/mujer del muñequito por ejercicio, elegida por el cliente en la bienvenida (necesita el doble de imágenes).
-**Decisiones de Jeff pendientes (PROPUESTA hasta que confirme):** 1 corrección tras terminar; umbrales de subir/bajar peso; 3 días "sin primera llamada"; 2 días sin actividad = urgente; metas de hábitos (NO DEFINIDO).
+**Decisiones de Jeff pendientes (PROPUESTA hasta que confirme):** 1 corrección tras terminar; umbrales de subir/bajar peso; 3 días "sin primera llamada"; 2 días sin actividad = urgente; metas de hábitos (NO DEFINIDO; desde el 2-nov hay mínimos PROPUESTA para los avisos: 6 vasos, 6 h, 3.000 pasos en `lib/habits.ts`).
 
 ## 9. Pendientes (orden sugerido; lo más nuevo está en §8b)
 0. **31-oct:** falta correr **0044** y **0045** y probar los ejercicios alternativos en Vercel. Ejercicios nuevos: 89 con imagen.

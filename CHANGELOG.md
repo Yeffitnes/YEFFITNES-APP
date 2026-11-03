@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-11-02 (noche, 4) - Hábitos como dato: promedio de la semana y avisos cuando un día se queda corto (sin "Hoy | Ayer | Anteayer")
+Corrección de Cristian (21:29): no quería anotar días pasados, sino que lo que se anota sirva de dato: cuánto toma, duerme y camina en promedio, y un aviso cuando un día no alcanza, para el cliente y para Jeff.
+- **Se quitó "Hoy | Ayer | Anteayer"** (de la entrada anterior): se anota solo hoy, como antes.
+- **Mínimos PROPUESTA** (Jeff no ha definido metas): 6 vasos de agua, 6 h de sueño, 3.000 pasos. Están en un solo lugar, `lib/habits.ts` (`HABIT_MIN`): cambiarlos ahí cambia toda la app.
+- **Cliente (Hoy → Hábitos de hoy):** avisos arriba de la tarjeta: "Anoche dormiste 5 h…" (el sueño se juzga con lo de anoche), "Ayer tomaste 3 vasos. Intenta llegar a 6 hoy", "Ayer diste 1.200 pasos…" (agua y pasos se juzgan con AYER, que ya terminó: hoy todavía puede cumplir). Abajo, "Tu semana (promedio por día)": agua, sueño y pasos, con borde rojo si el promedio queda por debajo del mínimo. El récord de agua y pasos sigue igual.
+- **Jeff (ficha → Resumen de la semana) y cliente (Progreso → Tu semana):** las tarjetas de agua, pasos y sueño se marcan si el promedio queda bajo, y una franja dice "Hábitos por debajo del mínimo: poco sueño 2 días (sáb, lun) · poca agua 1 día (dom)…". "Enviarle el resumen" incluye ahora sueño y agua. Historial de 30 días: barras rojas en los días bajo el mínimo y cuántos fueron.
+- Verificado en local (red lenta): `tests/e2e/away.js` 5/5 (avisos de sueño y agua, sin aviso de pasos cuando ayer cumplió, promedios, franja de Jeff), `extras.js` 15/15, `hydration.js` y `stuck.js` sin fallos. NO verificado: iPhone real. No hay notificación al teléfono por hábitos (solo en la app); si se quiere, iría en el recordatorio de la noche.
+- Sin migración. Revertir: restaurar `WorkoutExtras.tsx`, `WeekSummary.tsx`, `globals.css` y `portal.css` del commit `959b1cb` y borrar `lib/habits.ts`.
+
 ## 2026-11-02 (noche, 3) - Hábitos con historial y récords; "Jeff estuvo pendiente de ti" al volver
 Preguntas de Cristian (19:59): cómo se cuentan y guardan agua, pasos y sueño, que tenga récords; y qué ve el cliente si no entra 3 días y Jeff le mandó avisos.
 **Cómo se guardan los hábitos (sin cambios en la base):** una fila por cliente y por día (`habit_logs`: vasos de agua, pasos, horas de sueño). La base deja anotar hoy y hasta 2 días atrás. Jeff y el cliente leen la misma fila: lo que uno ve es lo que ve el otro.
