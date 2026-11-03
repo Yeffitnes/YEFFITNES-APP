@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-02 (noche) - "Jeff te está esperando" se abría vacío
+Reporte de Cristian: "me sale Jeff te está esperando y cuando despliego no se despliega lo demás".
+- Con el aviso "no ha registrado nada" (el de Avisar a un cliente sin actividad), la fila de Hoy se abría sin nada: el mensaje solo se veía cortado en la línea de arriba y no había botones (solo existían para rutina, nutrición o reporte).
+- Ahora al abrirla sale el mensaje completo y un botón por cada cosa que le falta hoy y que su plan incluye: "Ir a mi rutina" (solo si hoy le toca), "Marcar mi nutrición", "Hacer mi reporte". En los otros avisos también se ve el mensaje completo. `HoyView.tsx` (`CoachNudges`), `portal.css`.
+- Verificado en local (celular, red lenta): `tests/e2e/nudge_row.js` (nuevo) muestra texto y 3 botones, "Ir a mi rutina" baja a la rutina, cerrar y abrir de nuevo funciona; `flows.js` 27/27; `hydration.js` sin redibujar. NO verificado: iPhone real.
+- Sin migración. Revertir: restaurar `HoyView.tsx` y `portal.css` del commit `ddc97c7`.
+
 ## 2026-11-02 - Avisos: por qué no llegan los de Jeff, botón "Probar avisos" y aviso al cambiar el plan (MIGRACIÓN 0047)
 Reporte de Cristian: las notificaciones automáticas llegan desde las dos apps, pero "Avisar", los mensajes y los cambios de plan no; "Avisar" en Vercel dice siempre que el cliente "no ha activado los avisos en ningún teléfono".
 - **Causa más probable (no se puede confirmar sin ver la base):** cada teléfono (cada app instalada) queda a nombre de la **última cuenta que entró en esa app** (`save_push_subscription`, desde el 21-oct, y `resyncPush` al abrir). Si en la misma app se entra como Jeff para probar, ese teléfono deja de ser del cliente de prueba y el cliente queda sin teléfonos: "Avisar" no tiene a quién enviar. Las automáticas sí llegan porque salen para la cuenta que tiene el teléfono en ese momento. Además, el mensaje "no ha activado los avisos" salía también si a ese sitio le faltaba la clave privada (VAPID): no distinguía.

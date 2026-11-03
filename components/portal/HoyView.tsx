@@ -90,7 +90,7 @@ export function HoyView() {
       </div>
       <div className="qrows">
       <FromCoach />
-      <CoachNudges cid={cid} trainingDone={!!logToday?.completed} />
+      <CoachNudges cid={cid} trainingDone={!!logToday?.completed} trainingToday={!!day && !!me.data?.features.includes("training")} features={me.data?.features ?? []} />
       <CoachFeedback cid={cid} logs={logList} />
       <CoachCancels cid={cid} />
       {!!ann.data?.length && <QuickRow icon="megaphone" tone="idle" title={ann.data.length === 1 ? "Anuncio de tu coach" : `${ann.data.length} anuncios de tu coach`} sub={ann.data[0].title || ann.data[0].body.slice(0, 60)}>
@@ -303,16 +303,21 @@ function FromCoach() {
 // Avisos rápidos de Jeff de hoy (Seguimiento → "Avisar"): visibles aquí aunque el teléfono no tenga notificaciones activas.
 // Cada aviso se marca solo como hecho cuando el cliente cumple (reporte enviado, rutina terminada, comidas marcadas) y,
 // cuando ya cumplió todo, la fila cambia a "Listo" y se pliega (pedido de Cristian, 28-oct).
-function CoachNudges({ cid, trainingDone }: { cid: string; trainingDone: boolean }) {
+// 2-nov: el aviso "nothing" ("Jeff te está esperando") se abría VACÍO: no mostraba el mensaje ni ningún botón. Ahora siempre se ve el
+// mensaje completo y, para "nothing", un botón por cada cosa que le falta hoy (rutina si le toca, nutrición, reporte).
+function CoachNudges({ cid, trainingDone, trainingToday, features }: { cid: string; trainingDone: boolean; trainingToday: boolean; features: string[] }) {
   const n = useMyNudges(cid), list = n.data ?? [], today = localDate();
   const rep = useTodayReport(cid, today, list.includes("report") || list.includes("nothing"));
-  const nut = useClientNutrition(list.includes("meals") ? cid : ""), ml = useMealLogs(list.includes("meals") ? cid : "", today), wd = (new Date().getDay() + 6) % 7 + 1;
+  const needMeals = list.includes("meals") || list.includes("nothing"), nut = useClientNutrition(needMeals ? cid : ""), ml = useMealLogs(needMeals ? cid : "", today), wd = (new Date().getDay() + 6) % 7 + 1;
   if (!list.length) return null;
   const meals = (nut.data?.meals ?? []).filter((m) => m.weekday === null || m.weekday === wd);
   const mealsDone = meals.length > 0 && meals.every((m) => !!m.id && (ml.data ?? []).includes(m.id)), anyMeal = (ml.data ?? []).length > 0;
   const done: Record<NudgeKind, boolean> = { report: !!rep.data, train: trainingDone, meals: mealsDone, nothing: !!rep.data || trainingDone || anyMeal };
   const DONE_TXT: Record<NudgeKind, string> = { report: "Reporte enviado", train: "Rutina hecha", meals: "Nutrición marcada", nothing: "Ya registraste algo hoy" };
   const allDone = list.every((k) => done[k]);
+  // Lo que le falta hoy, para el aviso "nothing": solo lo que su plan incluye (y la rutina solo si hoy le toca).
+  const todo = ([trainingToday && !trainingDone ? "train" : null, features.includes("nutrition") && !mealsDone ? "meals" : null, features.includes("daily_report") && !rep.data ? "report" : null] as const).filter((x): x is "train" | "meals" | "report" => !!x);
+  const GO_TXT = { train: "Ir a mi rutina", meals: "Marcar mi nutrición", report: "Hacer mi reporte" } as const;
   return (
     <QuickRow key={allDone ? "ok" : "todo"} anchor="avisos" icon={allDone ? "check" : "bell"} tone={allDone ? "ok" : "new"}
       title={allDone ? "Listo: cumpliste lo que Jeff te pidió" : "Jeff te está esperando"}
@@ -321,8 +326,8 @@ function CoachNudges({ cid, trainingDone }: { cid: string; trainingDone: boolean
       {list.map((k) => <div key={k} className={`nudge-line${done[k] ? " ok" : ""}`}>
         {done[k]
           ? <p className="nudge-done"><Icon name="check" size={14} stroke={2.4} />{DONE_TXT[k]}</p>
-          : <>{list.length > 1 && <p>{NUDGE_TXT[k].body}</p>}
-              {k !== "nothing" && <button type="button" className="mini-btn primary" onClick={() => focusAnchor(ANCHORS[k])}>{k === "report" ? "Hacer mi reporte" : k === "train" ? "Ir a mi rutina" : "Marcar mi nutrición"}</button>}</>}
+          : <><p>{NUDGE_TXT[k].body}</p>
+              <span className="nudge-acts">{(k === "nothing" ? todo : [k]).map((x) => <button key={x} type="button" className="mini-btn primary" onClick={() => focusAnchor(ANCHORS[x])}>{GO_TXT[x]}</button>)}</span></>}
       </div>)}
     </QuickRow>
   );
