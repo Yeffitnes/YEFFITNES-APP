@@ -64,13 +64,13 @@ export function RecordsCard({ clientId, mode }: { clientId: string; mode: "coach
   const recs = useRecords(clientId), count = useWorkoutCount(clientId), coach = mode === "coach", from = lastNDays(7)[0];
   if (recs.data === null) return null;   // 0043 sin correr
   const list = [...(recs.data ?? [])].sort((a, b) => b.on.localeCompare(a.on) || b.best - a.best);
-  const n = count.data ?? 0, got = MILESTONES.filter((m) => n >= m), next = MILESTONES.find((m) => n < m);
+  const n = count.data?.full ?? 0, partial = (count.data?.finished ?? 0) - n, got = MILESTONES.filter((m) => n >= m), next = MILESTONES.find((m) => n < m);
   return (
     <div className="card rec-card">
       <div className="card-tag">{coach ? "Récords y logros" : "Tus récords y logros"}</div>
-      <div className="card-title" style={{ fontSize: 16 }}>{count.isPending ? "…" : `${n} entrenamiento${n === 1 ? "" : "s"} completado${n === 1 ? "" : "s"}`}</div>
+      <div className="card-title" style={{ fontSize: 16 }}>{count.isPending ? "…" : `${n} rutina${n === 1 ? "" : "s"} completa${n === 1 ? "" : "s"}`}</div>
       <div className="ach-row">{MILESTONES.map((m) => <span key={m} className={`ach${n >= m ? " on" : ""}`} title={n >= m ? "Logrado" : "Por lograr"}>{m}</span>)}</div>
-      <p className="card-meta" style={{ margin: "6px 0 10px" }}>{next ? `${got.length ? "¡Vas muy bien! " : ""}Te faltan ${next - n} para llegar a ${next}.` : "Completaste todos los logros. Impresionante."}</p>
+      <p className="card-meta" style={{ margin: "6px 0 10px" }}>{next ? `${got.length ? "¡Vas muy bien! " : ""}Te ${next - n === 1 ? "falta 1 rutina completa" : `faltan ${next - n} rutinas completas`} para llegar a ${next}.` : "Completaste todos los logros. Impresionante."} Cuenta cuando haces todos los ejercicios de la rutina con todas sus series.{coach && partial > 0 ? ` Además terminó ${partial} ${partial === 1 ? "entrenamiento" : "entrenamientos"} sin hacer la rutina completa.` : ""}</p>
       {recs.isPending ? <div className="sk" style={{ height: 60 }} /> : !list.length ? <p className="empty-note">{coach ? "Aún no hay series con peso registradas." : "Cuando registres series con peso, aquí verás tu mejor marca de cada ejercicio."}</p>
         : <div className="rec-list">{list.slice(0, 12).map((r) => <div key={r.exercise} className="rec-row"><span className="rec-name">{r.exercise}{r.on >= from && isNewRecord(r) && <i className="rec-new">Nuevo</i>}</span><span className="rec-val">{kg(r.best)} × {r.reps}</span><span className="rec-date">{new Date(`${r.on}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short" })}</span></div>)}</div>}
     </div>

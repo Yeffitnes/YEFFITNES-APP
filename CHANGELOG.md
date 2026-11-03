@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-11-02 (noche, 2) - Revisar pendientes: botones en el celular y filtro; logros por rutinas completas
+Pedido de Cristian (19:48).
+- **Botones montados en el celular:** al revisar un entrenamiento, "Guardar y marcar revisado" se montaba sobre "Vídeo" y no se leía. Ahora Audio, Foto y Vídeo van en una fila y el botón de guardar ocupa toda la fila de abajo (en computador sigue todo en una fila). Vale en Revisar pendientes, en la ficha y en el panel. `RecentWorkouts.tsx` (`fb-acts`), `coach.css`. También "Ver ficha" ya no se parte en dos líneas.
+- **Filtro en Revisar pendientes:** "Todo | Entrenamientos | Reportes", cada uno con cuántos quedan. Jeff puede pasar solo por los reportes o solo por los entrenamientos, uno tras otro. `ReviewQueue.tsx`.
+- **Logros:** contaban cada vez que el cliente tocaba "Terminar entrenamiento", aunque hubiera hecho un solo ejercicio. Ahora cuentan **rutinas completas** (todos los ejercicios de esa rutina con todas sus series) y lo dicen así ("1 rutina completa", "Te faltan 4 rutinas completas para llegar a 5"). En la ficha, Jeff ve además cuántos terminó sin hacer la rutina completa. Si Jeff dejó libre después el día de esa rutina, ya no se puede comprobar y no cuenta. `lib/extras.ts` (`useWorkoutCount`, `isFullRoutine`), `WeekSummary.tsx`. Los récords (mejor peso por ejercicio) no cambian.
+- Verificado en local (celular, red lenta): `tests/e2e/review2.js` (nuevo) 4/4: botones sin encimarse, filtro de entrenamientos y de reportes, logros 0 → 1 al completar la rutina; `flows.js` 27/27, `extras.js` 15/15, sin errores de consola ni de red. NO verificado: iPhone real.
+- Sin migración. Revertir: restaurar `RecentWorkouts.tsx`, `ReviewQueue.tsx`, `WeekSummary.tsx`, `lib/extras.ts` y `coach.css` del commit `87a8d4e`.
+
 ## 2026-11-02 (noche) - "Jeff te está esperando" se abría vacío
 Reporte de Cristian: "me sale Jeff te está esperando y cuando despliego no se despliega lo demás".
 - Con el aviso "no ha registrado nada" (el de Avisar a un cliente sin actividad), la fila de Hoy se abría sin nada: el mensaje solo se veía cortado en la línea de arriba y no había botones (solo existían para rutina, nutrición o reporte).

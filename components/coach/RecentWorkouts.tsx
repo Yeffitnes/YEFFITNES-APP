@@ -119,11 +119,11 @@ export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: strin
           {!vid && keepVid && <div className="fb-att fb-att-row"><button type="button" className="ghost-btn" onClick={() => setWatch(true)}><Icon name="play" size={12} /> Ver tu vídeo</button><button type="button" aria-label="Quitar vídeo" onClick={() => setKeepVid(false)}><Icon name="close" size={14} /></button></div>}
           {aErr && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{aErr}</p>}
           <p className="fb-keep-note">La foto, el vídeo y el audio de tu respuesta se borran solos 7 días después; el texto queda en la ficha.</p>
-          <div className="modal-actions" style={{ gap: 8, flexWrap: "wrap" }}>
+          <div className="modal-actions fb-acts">
             {audioSupported() && <button type="button" className="modal-btn ghost" disabled={rec.recording || saving} onClick={() => { setKeep(false); void rec.start(); }}><Icon name="mic" size={14} /> {audio || keep ? "Otro audio" : "Audio"}</button>}
             <button type="button" className="modal-btn ghost" disabled={rec.recording || saving} onClick={() => imgIn.current?.click()}><Icon name="image" size={14} /> {img || keepImg ? "Otra foto" : "Foto"}</button>
             <button type="button" className="modal-btn ghost" disabled={rec.recording || saving} onClick={() => vidIn.current?.click()}><Icon name="video" size={14} /> {vid || keepVid ? "Otro vídeo" : "Vídeo"}</button>
-            <button className="modal-btn primary" disabled={review.isPending || saving || rec.recording} onClick={() => void save()}>{review.isPending || saving ? "Guardando…" : l.seen ? "Actualizar" : "Guardar y marcar revisado"}</button></div></div>)}
+            <button className="modal-btn primary fb-save" disabled={review.isPending || saving || rec.recording} onClick={() => void save()}>{review.isPending || saving ? "Guardando…" : l.seen ? "Actualizar" : "Guardar y marcar revisado"}</button></div></div>)}
       {watch && <BunnyModal param={`feedback=${l.id}`} title="Tu vídeo de respuesta" onClose={() => setWatch(false)} />}
     </div>
   );

@@ -1080,3 +1080,14 @@ html{scroll-behavior:smooth;}
 .exm-alt button{all:unset; cursor:pointer; display:grid; place-items:center; width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.16)}
 .exm-alt-pick{max-width:100%}
 .ex-tag.alt{display:inline-flex; align-items:center; gap:4px}
+
+/* Botones de la respuesta a un entrenamiento (2-nov): en el celular "Guardar y marcar revisado" se montaba sobre "Vídeo".
+   Audio, Foto y Vídeo van en una fila; el botón de guardar ocupa toda la fila de abajo. */
+.fb-acts{display:flex; flex-wrap:wrap; gap:8px}
+.fb-acts .modal-btn{flex:1 1 0; min-width:0; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap}
+.fb-acts .fb-save{flex:2 1 0}
+@media (max-width:700px){ .fb-acts .fb-save{flex:1 0 100%} }
+/* Revisar pendientes: filtro y "Ver ficha" en una línea (2-nov) */
+.rv-filter{margin-bottom:14px}
+.rv-filter .rv-n{font-family:var(--font-mono),monospace; font-weight:600; margin-left:4px; opacity:.8}
+.rv-who .card-link{white-space:nowrap; flex:none}

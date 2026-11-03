@@ -17,23 +17,32 @@ export function ReviewQueue() {
   const logs = useRecentLogs(), reports = useCoachReports();
   // La lista se arma UNA vez al abrir (así no salta mientras Jeff revisa); "Volver a cargar" la rehace.
   const [queue, setQueue] = useState<Item[] | null>(null), [i, setI] = useState(0), [done, setDone] = useState<string[]>([]);
+  // Filtro (pedido de Cristian, 2-nov): todo, solo entrenamientos o solo reportes, para pasar rápido por uno solo de los dos.
+  const [f, setF] = useState<"all" | "workout" | "report">("all");
   const build = (l: RecentLog[], r: CoachReport[]): Item[] => [
     ...l.filter((x) => x.completed && !x.seen).map((x): Item => ({ kind: "workout", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Entrenamiento de ${dayTxt(x.date)}${x.routine ? ` · ${x.routine}` : ""}` })),
     ...r.filter((x) => !x.seen).map((x): Item => ({ kind: "report", id: x.id, clientId: x.clientId, name: x.clientName, date: x.date, title: `Reporte de ${dayTxt(x.date)}`, r: x })),
   ].sort((a, b) => a.date.localeCompare(b.date) || a.name.localeCompare(b.name));
   useEffect(() => { if (!queue && logs.data && reports.data) setQueue(build(logs.data, reports.data)); }, [logs.data, reports.data, queue]);
-  const reload = () => { void Promise.all([logs.refetch(), reports.refetch()]).then(([a, b]) => { if (a.data && b.data) { setQueue(build(a.data, b.data)); setI(0); setDone([]); } }); };
-  const left = useMemo(() => (queue ?? []).filter((x) => !done.includes(x.id)).length, [queue, done]);
-  const next = (id: string) => { const nd = [...done, id]; setDone(nd); const q = queue ?? []; const k = q.findIndex((x, j) => j > i && !nd.includes(x.id)); setI(k >= 0 ? k : Math.max(0, q.findIndex((x) => !nd.includes(x.id)))); };
+  const reload = () => { void Promise.all([logs.refetch(), reports.refetch()]).then(([a, b]) => { if (a.data && b.data) { setQueue(build(a.data, b.data)); setI(0); setDone([]); } }); };   // conserva el filtro elegido
+  const all = queue ?? [], q = useMemo(() => all.filter((x) => f === "all" || x.kind === f), [all, f]);
+  const left = useMemo(() => q.filter((x) => !done.includes(x.id)).length, [q, done]);
+  const pend = (k: "workout" | "report") => all.filter((x) => x.kind === k && !done.includes(x.id)).length;
+  const pick = (v: typeof f) => { setF(v); const l = all.filter((x) => v === "all" || x.kind === v); setI(Math.max(0, l.findIndex((x) => !done.includes(x.id)))); };
+  const next = (id: string) => { const nd = [...done, id]; setDone(nd); const k = q.findIndex((x, j) => j > i && !nd.includes(x.id)); setI(k >= 0 ? k : Math.max(0, q.findIndex((x) => !nd.includes(x.id)))); };
 
   if ((logs.isPending || reports.isPending) && !queue) return <div><div className="sk" style={{ height: 30, width: 220, marginBottom: 22 }} /><Skeleton rows={3} /></div>;
   if ((logs.isError || reports.isError) && !queue) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar lo pendiente. <button className="filter-chip" onClick={reload}>Reintentar</button></p></div>;
-  const q = queue ?? [], cur = q[i], allDone = !q.length || left === 0;
+  const cur = q[i], allDone = !q.length || left === 0;
   return (
     <div>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Revisar pendientes</div><h1>{allDone ? "Todo revisado" : `${left} por revisar`}</h1>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Revisar pendientes</div><h1>{allDone ? (f === "all" ? "Todo revisado" : "Listo por aquí") : `${left} por revisar`}</h1>
         <p className="greeting-sub">Entrenamientos terminados y reportes del día, uno detrás de otro. Al guardar o marcar visto pasa solo al siguiente.</p></div></div>
-      {allDone ? <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)", lineHeight: 1.6 }}>{q.length ? "Revisaste todo lo pendiente. Buen trabajo." : "No hay nada pendiente por revisar ahora mismo."}</p>
+      {!!all.length && <div className="filter-row rv-filter" role="group" aria-label="Qué revisar">
+        {([["all", "Todo", pend("workout") + pend("report")], ["workout", "Entrenamientos", pend("workout")], ["report", "Reportes", pend("report")]] as const).map(([k, t, n]) =>
+          <button key={k} type="button" aria-pressed={f === k} className={`filter-chip${f === k ? " active" : ""}`} onClick={() => pick(k)}>{t} <b className="rv-n">{n}</b></button>)}
+      </div>}
+      {allDone ? <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)", lineHeight: 1.6 }}>{q.length ? (f === "workout" ? "Revisaste todos los entrenamientos pendientes." : f === "report" ? "Revisaste todos los reportes pendientes." : "Revisaste todo lo pendiente. Buen trabajo.") : f === "workout" ? "No hay entrenamientos pendientes por revisar." : f === "report" ? "No hay reportes pendientes por revisar." : "No hay nada pendiente por revisar ahora mismo."}</p>
         <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}><button className="ghost-btn" onClick={reload}>Volver a cargar</button><Link href="/coach" className="primary-btn" style={{ textDecoration: "none" }}>Ir al panel</Link></div></div> : (
         <>
           <div className="rv-top"><span className="rv-count">{q.length - left + 1} de {q.length}</span>

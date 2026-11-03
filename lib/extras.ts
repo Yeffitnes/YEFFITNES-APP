@@ -105,8 +105,19 @@ export const useRecords = (clientId: string) => useQuery({ queryKey: ["records",
 export const isNewRecord = (r: Record_) => r.prev != null && r.best > r.prev;
 /** El mejor peso ANTES de hoy (para saber si la serie que acaba de guardar es récord). */
 export const bestBefore = (recs: Record_[] | null | undefined, exercise: string, today: string) => { const r = recs?.find((x) => x.exercise === exercise); if (!r) return null; return r.on === today ? r.prev : r.best; };
-export const useWorkoutCount = (clientId: string) => useQuery({ queryKey: ["workout-count", clientId], enabled: !!clientId, staleTime: 5 * 60_000, queryFn: async (): Promise<number> => {
-  const { count, error } = await db().from("workout_logs").select("id", { count: "exact", head: true }).eq("client_id", clientId).not("completed_at", "is", null); if (error) throw error; return count ?? 0;
+// Logros (pedido de Cristian, 2-nov): cuenta RUTINAS COMPLETAS, no entrenamientos terminados. Antes contaba cada vez que tocó
+// "Terminar entrenamiento", aunque hubiera hecho un solo ejercicio. Completa = cada ejercicio de esa rutina con todas sus series.
+// Si el día de la rutina ya no existe (Jeff lo dejó libre después), no se puede comprobar y no cuenta.
+type CountRow = { plan_day_id: string | null; set_logs: { plan_item_id: string | null; set_number: number; kind: string }[]; plan_days: { plan_items: { id: string; sets: number }[] } | null };
+export const isFullRoutine = (l: CountRow) => {
+  const items = l.plan_days?.plan_items ?? []; if (!items.length) return false;
+  return items.every((it) => new Set(l.set_logs.filter((s) => s.plan_item_id === it.id && s.kind === "work" && s.set_number <= it.sets).map((s) => s.set_number)).size >= it.sets);
+};
+export const useWorkoutCount = (clientId: string) => useQuery({ queryKey: ["workout-count", clientId], enabled: !!clientId, staleTime: 5 * 60_000, queryFn: async (): Promise<{ full: number; finished: number }> => {
+  const { data, error } = await db().from("workout_logs").select("plan_day_id,set_logs(plan_item_id,set_number,kind),plan_days(plan_items(id,sets))").eq("client_id", clientId).not("completed_at", "is", null).limit(1000);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as CountRow[];
+  return { full: rows.filter(isFullRoutine).length, finished: rows.length };
 } });
 // Logros por entrenamientos completados (no inventa metas de Jeff: son hitos de constancia).
 export const MILESTONES = [1, 5, 10, 25, 50, 100, 200];
