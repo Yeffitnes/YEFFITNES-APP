@@ -9,12 +9,15 @@ const SHOTS = require("path").join(__dirname, "shots"); require("fs").mkdirSync(
       await p.waitForTimeout(800);
       const txt = await p.evaluate(() => document.body.innerText);
       if (/No pudimos|Application error|Unhandled/.test(txt)) errs.push(`[${who}] ${path} muestra error: ${(txt.match(/[^\n]*(No pudimos|Application error)[^\n]*/) || [""])[0].slice(0, 120)}`);
+      // 4-nov: nada se sale por la derecha (en el celular ya nos pasó con filas con scroll dentro de cuadrículas).
+      const over = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth); if (over > 1) errs.push(`[${who}${mobile ? " cel" : ""}] ${path} se desborda ${over}px a la derecha`);
       await p.screenshot({ path: `${SHOTS}/${who}${path.replace(/[\/?=&]/g, "_") || "_root"}.png`, fullPage: true });
       console.log(who, path, "->", p.url().replace("http://localhost:3000", ""));
     }
     await ctx.close();
   };
-  await run("jeff", false, ["/coach", "/coach/clientes", "/coach/clientes/" + process.env.CLIENT_ID, "/coach/agenda", "/coach/catalogo/ejercicios", "/coach/catalogo/rutinas", "/coach/catalogo/nutricion", "/coach/material", "/coach/mensajes", "/coach/reportes"]);
+  await run("jeff", false, ["/coach", "/coach/clientes", "/coach/clientes/" + process.env.CLIENT_ID, "/coach/agenda", "/coach/catalogo/ejercicios", "/coach/catalogo/rutinas", "/coach/catalogo/nutricion", "/coach/catalogo/programas", "/coach/revisar", "/coach/material", "/coach/mensajes", "/coach/reportes"]);
+  await run("jeff", true, ["/coach", "/coach/revisar", "/coach/clientes/" + process.env.CLIENT_ID]);   // celular (4-nov)
   await run("camila", true, ["/inicio", "/inicio/plan", "/inicio/progreso", "/inicio/agenda", "/inicio/material", "/inicio/mensajes", "/inicio/objetivos"]);
   await run("andres", true, ["/inicio", "/inicio/plan"]);
   await run("laura", true, ["/inicio"]);

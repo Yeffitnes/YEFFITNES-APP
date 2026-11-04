@@ -92,7 +92,9 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
 La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita **0038, 0039, 0040, 0041 (corridas), 0042, 0043, 0044 y 0045 (por correr) y 0046 y 0047 (por correr; la 0045 ya se corrió en su primera versión)**.
 Orden:
-1. Correr en orden **0042, 0043, 0044 y 0045** en el SQL Editor (la 0041 ya está corrida). Confirmar 0043, 0044 y 0045: ver §3b. Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
+1. Saber qué falta con esta consulta de solo lectura (`true` = corrida):
+   `select to_regclass('public.meal_day_locks') is not null as m0042, to_regclass('public.habit_logs') is not null as m0043, to_regclass('public.exercise_swaps') is not null as m0044, exists(select 1 from public.exercises where lower(name)='remo en t') as m0045, (exists(select 1 from public.exercises where lower(name)='remo en t') and not exists(select 1 from public.exercises where active and image is null and lower(name) in ('abdominal bicicleta','almeja con banda'))) as m0046, to_regclass('public.plan_notices') is not null as m0047;`
+   y correr las que falten en orden: 0042 → 0043 → 0044 → 0046 → 0047 (la 0045 ya se corrió en su primera versión el 31-oct; la 0046 la completa). Detalle de cada una: §3b. Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
 2. Probar en Vercel con el cliente de prueba (lo del 28-oct de la lista anterior y lo del 29-oct):
    - Necesitan tu atención (urgentes, falta configurar, llamada del mes) y la campanita;
    - tiempo real: Jeff avisa o responde y el teléfono del cliente lo muestra sin salir de la app;
@@ -102,6 +104,6 @@ Orden:
    - agenda: cancelar dentro de 10 min sí, después no; Jeff cancela desde la ficha con motivo; sesiones pasadas como "Ya pasó";
    - vídeo del día + de la semana a la vez, vista previa y portada difuminada; bienvenida (4 s / 2 s); filtros del catálogo.
 3. Variables de Netlify: no hay nuevas.
-4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`).
+4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`) y la revisión de punta a punta (`tests/e2e/all.sh` en `TODO OK (e2e)` + `push.js`).
 5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos). El último commit NO debe llevar `[skip ci]` (Netlify no publicaría).
 6. Después: no hay tareas programadas nuevas. Pedir a los clientes que abran la app una vez (si su suscripción de avisos era vieja, se rehace sola). Probar en Netlify lo de §9.

@@ -7,6 +7,6 @@ const { chromium, ctxFor, watch } = require("./lib.js");
   await j.goto(`http://localhost:3000/coach/clientes/${process.env.CLIENT_ID}`, { waitUntil: "networkidle" }); await j.waitForTimeout(1200);
   const sec = j.locator(".today-sec", { hasText: "Reporte diario" }); out.push((await sec.innerText()).replace(/\n/g, " ")); await sec.screenshot({ path: __dirname + "/shots/report_time.png" });
   await j.goto("http://localhost:3000/coach/revisar", { waitUntil: "networkidle" }); await j.waitForTimeout(1200);
-  await j.getByRole("button", { name: /^Reportes/ }).click(); out.push(await j.locator(".rv-who .card-meta").innerText());
+  out.push(await j.locator(".rv-sec", { hasText: "Reporte de hoy" }).locator(".rv-state").innerText());   // Revisar por cliente (2-nov)
   const ok = out.every((t) => /20:42/.test(t)); console.log(ok ? "OK" : "FAIL", JSON.stringify(out)); console.log(errs.length ? errs.join("\n") : "sin errores");
   await b.close(); process.exit(ok && !errs.length ? 0 : 1); })();

@@ -38,3 +38,4 @@ tests/e2e/postgrest
 tests/e2e/*.tar.xz
 tests/e2e/shots/
 tests/e2e/*.log
+tests/e2e/logs/
