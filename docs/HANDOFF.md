@@ -29,6 +29,17 @@ Estado al **4-nov-2026** (última fusión a `main`: 28-oct, `37970c1`; lo constr
    - `bash supabase/tests/run_local.sh` (debe terminar en `TODO OK`; ejecuta las pruebas de ataque a RLS)
 8. Mensajes de commit en español, con las líneas de atribución que pida el entorno.
 
+## 2b. Ritmo de trabajo (cómo se trabajó fluido del 29 al 30-oct; síguelo igual)
+- **Mientras editas:** solo `npx tsc --noEmit` (segundos). Nada más pesado tras cada cambio pequeño.
+- **Antes de cada subida (una por tanda de cambios, no por cada edición), los 4 chequeos, siempre los 4:**
+  1. `npx tsc --noEmit`
+  2. `npx next lint` (0 errores)
+  3. `NEXT_PUBLIC_SUPABASE_URL=https://x.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=x npx next build` (sí corre en el sandbox; si falla bajando las fuentes de Google es la red: repítelo una vez)
+  4. `bash supabase/tests/run_local.sh` (debe terminar en `TODO OK`)
+- **Punta a punta (`tests/e2e`):** solo la o las pruebas de lo que tocaste (1 a 3, con `LATENCY=150`), y `stuck.js` + `hydration.js` si tocaste el arranque o la carga de datos. Si es algo nuevo, escribe su prueba. **`all.sh` (~20 min) NO va en cada cambio:** solo antes de un "fusiona" o antes de cambiar de chat.
+- Luego: entrada en `CHANGELOG.md` (con cómo revertir), un commit, subir a `bloque-hoy` y decirle a Cristian en corto qué cambió, qué verificaste y qué no.
+- Cristian dicta por voz y no usa la terminal: respuestas cortas, sin jerga; él prueba en su iPhone en Vercel.
+
 ## 3. Entornos y cómo se sube (muy importante)
 | Entorno | Dirección | Rama | Para qué |
 |---|---|---|---|
@@ -159,7 +170,7 @@ Armado con `docs/CONTEXT.md`, `docs/PROJECT_STATE.md` y lo trabajado en esta eta
 
 ## 10. Cómo arrancar un chat nuevo
 Cristian pega primero el rol (`docs/MASTER_ROLE.md`) por su cuenta y después este mensaje:
-*"Lee `AGENTS.md`, `docs/HANDOFF.md` (sobre todo §2, §3, §4, §7, §8b y §9), `docs/PASO_A_PRODUCCION.md` y las 15 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame en pocas líneas qué entendiste, qué migraciones están corridas y qué está pendiente de probar. Tienes permiso para subir a `bloque-hoy`; a `main` solo cuando yo diga \"fusiona\"."*
-**Pruebas en un chat nuevo:** `bash supabase/tests/run_local.sh` (instala Postgres si falta, ver `AGENT_PLAYBOOK.md` §3). Punta a punta: `bash tests/e2e/all.sh` corre las 17 pruebas en orden con la base que cada una necesita (~20 min: en segundo plano con `nohup`, ver la cabecera del archivo); `push.js` va aparte (claves VAPID de prueba, ver `tests/e2e/README.md`). Una sola: `bash tests/e2e/run.sh setup` y luego `LATENCY=150 bash tests/e2e/run.sh <prueba>.js`. **Antes de subir:** borra `tests/e2e/postgrest` y vuelve a compilar normal.
+*"Lee `AGENTS.md`, `docs/HANDOFF.md` (sobre todo §2, §2b, §3, §4, §7, §8b y §9), `docs/PASO_A_PRODUCCION.md` y las 15 primeras entradas de `CHANGELOG.md` del repo `Yeffitnes/YEFFITNES-APP`, rama `bloque-hoy`. Confírmame en pocas líneas qué entendiste, qué migraciones están corridas y qué está pendiente de probar. Tienes permiso para subir a `bloque-hoy`; a `main` solo cuando yo diga \"fusiona\"."*
+**Pruebas en un chat nuevo:** `bash supabase/tests/run_local.sh` (instala Postgres si falta, ver `AGENT_PLAYBOOK.md` §3). Punta a punta: `bash tests/e2e/all.sh` corre las 17 pruebas en orden con la base que cada una necesita (~20 min: en segundo plano con `nohup`, ver la cabecera del archivo); `push.js` va aparte (claves VAPID de prueba, ver `tests/e2e/README.md`). Una sola: `bash tests/e2e/run.sh setup` y luego `LATENCY=150 bash tests/e2e/run.sh <prueba>.js`. **Antes de subir:** borra `tests/e2e/postgrest` y vuelve a compilar normal. Qué pruebas correr y cuándo: §2b (no corras `all.sh` en cada cambio).
 El blueprint está en `docs/PRODUCT_BLUEPRINT.md` y el cruce con la app en `docs/BLUEPRINT_GAPS.md`: no hace falta pegarlos.
 **No se suben al repo** (hoy es público): el zip de DaniFit (material de terceros, ver blueprint §"Propiedad intelectual") ni la propuesta comercial de Jeff (`APROPUESTA-YEFFITNES.html`). Lo útil de ambos ya está resumido en el blueprint y en `CONTEXT.md`; se adjuntan al chat solo si una tarea los necesita (por ejemplo, comparar un diseño de DaniFit).

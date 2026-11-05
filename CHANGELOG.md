@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-11-04 - Ritmo de trabajo escrito igual en todos los documentos
+Cristian notó que el chat nuevo trabajaba más lento. Causa: los documentos se contradecían. `AGENT_PLAYBOOK.md` decía que el build "no corre en el sandbox" (sí corre: se usaba en cada subida desde el 29-oct), y el traspaso del 4-nov mostraba `tests/e2e/all.sh` (~20 min) sin decir cuándo usarlo, así que se podía correr en cada cambio.
+- Nuevo `HANDOFF.md` §2b "Ritmo de trabajo": mientras se edita, solo `tsc`; antes de cada subida, los 4 chequeos (tsc, lint, build, `run_local.sh`); de `tests/e2e` solo lo que se tocó; `all.sh` solo antes de "fusiona" o de cambiar de chat.
+- Lo mismo, en corto, en `CLAUDE.md`, `AGENTS.md`, `AGENT_PLAYBOOK.md` §3 y `tests/e2e/README.md`. El mensaje para arrancar chat (§10) ahora incluye §2b.
+- Solo documentos. Revertir: restaurar esos 6 archivos del commit `e025bdc`.
+
 ## 2026-11-04 - Revisión completa antes de cambiar de chat y traspaso al día
 Pedido de Cristian: dejar todo al día para migrar de chat y revisar la app de punta a punta.
 - **Revisión:** `tsc`, `lint` (0 errores), build, `run_local.sh` (47 migraciones, 28 pruebas de ataque: ninguno) y 18 pruebas de punta a punta con red lenta: smoke (25 pantallas de Jeff y clientes, computador y celular), flows 27/27, extras 15/15, photos, offline, catalog, swaps, push, nudge_row, review2, review3, report_time, away, ficha, stuck (sin atascos), hydration (Hoy y Progreso sin redibujar). Todo OK. Sin errores de consola ni de red.

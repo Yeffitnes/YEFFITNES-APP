@@ -1,5 +1,5 @@
 # Pruebas de punta a punta (29-oct)
-**Todo de una vez (4-nov):** `bash tests/e2e/all.sh` (17 pruebas en orden, cada una con su base; ~20 min, en segundo plano si el entorno corta a los 10 min). `push.js` va aparte.
+**Todo de una vez (4-nov), solo antes de "fusiona" o de cambiar de chat (no en cada cambio, ver `docs/HANDOFF.md` §2b):** `bash tests/e2e/all.sh` (17 pruebas en orden, cada una con su base; ~20 min, en segundo plano si el entorno corta a los 10 min). `push.js` va aparte.
 
 Levantan la app REAL en local contra un Postgres con todas las migraciones y datos de prueba (Jeff, Camila con rutina y nutrición,
 Andrés sin rutina, Laura pendiente) y la recorren con Playwright como coach y como cliente. Sirven para encontrar errores de flujo,
