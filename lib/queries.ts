@@ -892,32 +892,44 @@ export const useCoachAttention = (enabled = true) => useQuery({ queryKey: ["coac
 
 // ---- Sugerencias de peso para Jeff (29-oct): entrenamientos de los últimos 7 días donde hizo más o menos repeticiones de las pedidas ----
 export type AdviceFeedRow = { logId: string; clientId: string; clientName: string; date: string; routine: string | null; effort: number | null; seen: boolean;
-  sets: { itemId: string | null; reps: number | null; weight: number | null; warmup: boolean }[]; items: { id: string; name: string; reps: string; weight: number | null }[] };
+  sets: { itemId: string | null; reps: number | null; weight: number | null; warmup: boolean }[]; items: { id: string; name: string; reps: string; weight: number | null; active: boolean }[] };
 export const useAdviceFeed = () => useQuery({ queryKey: ["advice-feed"], staleTime: 30_000, queryFn: async (): Promise<AdviceFeedRow[]> => {
   const since = new Date(); since.setDate(since.getDate() - 7);
-  const q = (extra: string) => db().from("workout_logs").select(`id,client_id,log_date,effort,coach_seen_at,plan_days(name),clients(profiles(full_name)),set_logs(plan_item_id,reps,weight,kind,plan_items(id,reps,target_weight,exercises(name)))${extra}`)
+  const q = (extra: string) => db().from("workout_logs").select(`id,client_id,log_date,effort,coach_seen_at,plan_days(name),clients(profiles(full_name)),set_logs(plan_item_id,reps,weight,kind,plan_items(id,reps,target_weight,exercises(name),plan_days(training_plans(status))))${extra}`)
     .not("completed_at", "is", null).gte("log_date", localDate(since)).order("log_date", { ascending: false }).limit(80);
   let { data, error } = await q(",exercise_swaps(plan_item_id)");
   if (error && missingTable(error)) ({ data, error } = await q(""));   // base sin la 0044
   if (error) throw error;
   type Raw = { id: string; client_id: string; log_date: string; effort: number | null; coach_seen_at: string | null; plan_days: { name: string } | null; clients: { profiles: { full_name: string } | null } | null;
-    set_logs: { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string; plan_items: { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null } | null }[]; exercise_swaps?: { plan_item_id: string }[] };
+    set_logs: { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string; plan_items: { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null; plan_days: { training_plans: { status: string } | null } | null } | null }[]; exercise_swaps?: { plan_item_id: string }[] };
   return (data as unknown as Raw[]).map((l) => {
     // Un ejercicio que el cliente cambió por un sustituto no se compara con el peso del original (0044).
     const swapped = new Set((l.exercise_swaps ?? []).map((x) => x.plan_item_id)); l.set_logs = l.set_logs.filter((s) => !s.plan_item_id || !swapped.has(s.plan_item_id));
-    const items = new Map<string, { id: string; name: string; reps: string; weight: number | null }>();
-    l.set_logs.forEach((s) => { if (s.plan_items) items.set(s.plan_items.id, { id: s.plan_items.id, name: s.plan_items.exercises?.name ?? "Ejercicio", reps: s.plan_items.reps, weight: s.plan_items.target_weight }); });
+    const items = new Map<string, { id: string; name: string; reps: string; weight: number | null; active: boolean }>();
+    l.set_logs.forEach((s) => { if (s.plan_items) items.set(s.plan_items.id, { id: s.plan_items.id, name: s.plan_items.exercises?.name ?? "Ejercicio", reps: s.plan_items.reps, weight: s.plan_items.target_weight, active: s.plan_items.plan_days?.training_plans?.status === "active" }); });
     return { logId: l.id, clientId: l.client_id, clientName: l.clients?.profiles?.full_name || "Cliente", date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, seen: !!l.coach_seen_at,
       sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, reps: s.reps, weight: s.weight, warmup: s.kind === "warmup" })), items: Array.from(items.values()) };
   });
 } });
-// Jeff aplica la sugerencia: cambia el peso de ese ejercicio en el plan del cliente (lo verá en su próxima rutina).
-export function useApplyWeight() {
-  const qc = useQueryClient(), toast = useToast();
+// Lo que Jeff ya decidió (0049): aceptar con un peso o descartar. Vive en la base, así vale en todos sus aparatos.
+export type AdviceDecision = { logId: string; itemId: string; weight: number | null };
+export const useAdviceDecisions = () => useQuery({ queryKey: ["advice-decisions"], staleTime: 30_000, queryFn: async (): Promise<AdviceDecision[]> => {
+  const { data, error } = await db().from("weight_advice_decisions").select("log_id,plan_item_id,weight").order("decided_at", { ascending: false }).limit(1000);
+  if (error) { if (missingTable(error) || error.code === "PGRST205") return []; throw error; }   // base sin la 0049
+  return (data as { log_id: string; plan_item_id: string; weight: number | null }[]).map((d) => ({ logId: d.log_id, itemId: d.plan_item_id, weight: d.weight }));
+} });
+// Jeff decide: con peso, cambia el peso de ese ejercicio en el plan del cliente (lo verá en su próxima rutina); sin peso, la descarta.
+export function useDecideAdvice() {
+  const qc = useQueryClient(), toast = useToast(), key = ["advice-decisions"];
   return useMutation({
-    mutationFn: async (v: { clientId: string; itemId: string; weight: number }) => { const { error } = await db().from("plan_items").update({ target_weight: v.weight }).eq("id", v.itemId); if (error) throw error; },
-    onSuccess: (_d, v) => { toast(`Plan actualizado: ${String(v.weight).replace(".", ",")} kg`); void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); notifyPlan(v.clientId, "training"); },
-    onError: () => toast("No pudimos cambiar el peso. Inténtalo de nuevo.", true),
+    mutationFn: async (v: { clientId: string; logId: string; itemId: string; weight: number | null; name: string }) => { const { error } = await db().rpc("decide_weight_advice", { p_log: v.logId, p_item: v.itemId, p_weight: v.weight }); if (error) throw error; },
+    onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<AdviceDecision[]>(key); qc.setQueryData<AdviceDecision[]>(key, (l = []) => [{ logId: v.logId, itemId: v.itemId, weight: v.weight }, ...l]); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardarlo. Inténtalo de nuevo.", true); },
+    onSuccess: (_d, v) => {
+      toast(v.weight != null ? `Plan actualizado: ${v.name}, ${String(v.weight).replace(".", ",")} kg` : "Sugerencia descartada");
+      void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); void qc.invalidateQueries({ queryKey: key });
+      if (v.weight != null) notifyPlan(v.clientId, "training");
+    },
   });
 }
 

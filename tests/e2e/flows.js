@@ -51,7 +51,8 @@ const step = async (name, fn) => { try { const r = await fn(); log("OK  ", name,
   const jc = await ctxFor(b, "jeff", false), j = await jc.newPage(); watch(j, "jeff", errs);
   await j.goto("http://localhost:3000/coach", { waitUntil: "networkidle" });
   await j.screenshot({ path: `${S}/f_jeff_dash.png`, fullPage: true });
-  await step("coach: sugerencia de peso de hoy aparece", async () => { const t = await j.locator("#ajustes").innerText(); if (!/Sentadilla/.test(t)) throw new Error(t.slice(0, 120)); return t.split("\n").slice(3, 6).join(" | "); });
+  // 4-nov: hoy solo 1 de 3 series quedó corta, así que hoy está bien: no debe salir la sugerencia de hace 3 días (7, 7, 7). Sugerencias: advice.js.
+  await step("coach: si hoy cumplió, no sale la sugerencia vieja", async () => { await j.waitForTimeout(800); if (await j.locator("#ajustes").count()) throw new Error((await j.locator("#ajustes").innerText()).slice(0, 160)); });
   await step("coach: Avisar a Andrés (urgente)", async () => { await j.locator(".attn-line", { hasText: "Andrés" }).getByRole("button", { name: /Avisar/ }).click(); await j.waitForTimeout(1500); return await j.locator(".attn-line", { hasText: "Andrés" }).innerText(); });
   await step("coach: Escribir lleva mensaje listo", async () => {
     await j.locator(".attn-line", { hasText: "Camila" }).getByRole("link", { name: "Escribir" }).click(); await j.waitForURL(/mensajes/); await j.waitForTimeout(1500);

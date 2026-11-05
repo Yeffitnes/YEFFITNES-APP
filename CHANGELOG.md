@@ -1,4 +1,16 @@
 # CHANGELOG
+## 2026-11-04 (noche, 2) - Sugerencias de peso: se resuelven ahí mismo y no vuelven (MIGRACIÓN 0049)
+Pedido de Cristian (20:19): "Ajustar en su plan" no llevaba al ejercicio, y quiere cambiar el peso, aceptar y que se quite.
+- **Decisión de diseño:** en vez de llevar a Jeff a otra pantalla, el peso se cambia en la misma sugerencia: viene escrito, lo edita si quiere y toca Aceptar o Descartar. Se actualiza el plan, sale al momento y sigue con la siguiente. Se quitó "Ajustar en su plan" y "Subir/Bajar a X kg". Igual al revisar un entrenamiento (Revisar y ficha). `AdviceEditor.tsx` (nuevo), `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `coach.css`.
+- **Errores encontrados y arreglados:**
+  - "Descartar" se guardaba solo en ese navegador: en otro aparato volvía. Ahora queda en la base (`weight_advice_decisions`, `decide_weight_advice`).
+  - Resolver la sugerencia más nueva revivía una vieja del mismo ejercicio; y seguía saliendo una vieja aunque después lo hiciera bien. Ahora cada ejercicio se juzga solo por su entrenamiento más reciente (`pendingAdvice`, `lib/progression.ts`).
+  - Elegir un peso distinto al sugerido no la quitaba (bajar a 38 cuando sugería 37,5).
+  - Sin peso en el plan, ponerlo desde la ficha no la quitaba y luego sugería subir desde ese peso.
+  - Salían sugerencias de planes ya terminados: aplicarlas no cambiaba nada para el cliente.
+- Prueba de ataque `rls_advice.sql`: ninguno. Prueba nueva `tests/e2e/advice.js`, 18 de 18 en celular y computador. NO verificado: iPhone real. Sin cambio: un ejercicio sin peso (flexiones, por ejemplo) solo se puede descartar o ponerle peso; no se cambian repeticiones.
+- Revertir: código, restaurar `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `lib/progression.ts`, `lib/queries.ts` y `coach.css` del commit `d6af11b` y borrar `AdviceEditor.tsx` y `tests/e2e/advice.js`; base, cabecera de la 0049.
+
 ## 2026-11-04 (noche) - Revisar saca lo revisado, resumen por la semana real y avisos de plan por vencer (MIGRACIÓN 0048)
 Correcciones de Cristian (19:31).
 - **Revisar:** solo muestra lo que falta. Al responder un entrenamiento o marcar visto un reporte, también los de hoy, sale de la lista al momento; cuando a un cliente no le queda nada, pasa solo al siguiente ("Listo con Camila. Sigue Andrés."). Lo que aún no ha hecho hoy ya no ocupa secciones: va en una línea junto al nombre. Sin pendientes: "Todo revisado" y la pista de que lo revisado sigue en la ficha (pestaña Hoy). Lo nuevo que llega va al final, sin mover la tarjeta abierta. `ReviewQueue.tsx`, `DashboardView.tsx`, `useReviewReport`, `coach.css`.

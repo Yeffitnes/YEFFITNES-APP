@@ -66,3 +66,23 @@ export function workoutAdvice(sets: { itemId: string | null; reps: number | null
   }
   return out;
 }
+// Sugerencias que siguen pendientes para Jeff (4-nov). Cada ejercicio se juzga SOLO por su entrenamiento más reciente: si después lo hizo
+// bien, o si Jeff ya decidió sobre el último, no revive una sugerencia vieja. `logs` debe venir del más reciente al más viejo.
+// Sale también si el peso del plan ya se movió en esa dirección (Jeff lo cambió en la ficha) o si el ejercicio ya no está en su plan activo.
+type AdviceItem = { id: string; name: string; reps: string; weight: number | null; active?: boolean };
+type AdviceLog = { logId: string; effort: number | null; sets: { itemId: string | null; reps: number | null; weight: number | null; warmup?: boolean }[]; items: AdviceItem[] };
+export function pendingAdvice<T extends AdviceLog>(logs: T[], decided: Set<string>): { l: T; a: ExAdvice; key: string }[] {
+  const seen = new Set<string>(), out: { l: T; a: ExAdvice; key: string }[] = [];
+  for (const l of logs) for (const it of l.items) {
+    const work = l.sets.filter((s) => s.itemId === it.id && !s.warmup);
+    if (!work.length || seen.has(it.id)) continue;
+    seen.add(it.id);
+    if (it.active === false) continue;
+    const a = workoutAdvice(l.sets, [it], l.effort)[0], key = `${l.logId}:${it.id}`;
+    if (!a || decided.has(key)) continue;
+    const used = work.some((s) => s.weight != null), cur = it.weight;
+    if (cur != null && (!used || a.base == null || (a.kind === "up" ? cur > a.base : cur < a.base))) continue;   // ya se ajustó en el plan
+    out.push({ l, a: used ? a : { ...a, base: null, next: null }, key });
+  }
+  return out;
+}

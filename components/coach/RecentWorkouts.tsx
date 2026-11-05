@@ -11,7 +11,8 @@ import { compressImage } from "@/lib/image";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { BunnyModal } from "@/components/ui/BunnyModal";
-import { notifyFeedback, useClientLogs, useReviewWorkout, useSetWeight, useTrainingPlans, type ClientLog } from "@/lib/queries";
+import { notifyFeedback, useAdviceDecisions, useClientLogs, useReviewWorkout, useTrainingPlans, type ClientLog } from "@/lib/queries";
+import { AdviceEditor } from "./AdviceEditor";
 import { advise, nextWeight, rangeText, repTarget } from "@/lib/progression";
 import { Skeleton } from "@/components/ui/Modal";
 import { Snippets } from "./Snippets";
@@ -39,21 +40,22 @@ export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", s
     </div>
   );
 }
-// Sugerencia de peso por ejercicio según las repeticiones que puso Jeff (rango o fijas) (lib/progression.ts). Jeff decide: un toque cambia el peso del plan.
-function WeightAdvice({ clientId, sets, effort }: { clientId: string; sets: ClientLog["sets"]; effort: number | null }) {
-  const plans = useTrainingPlans(clientId), setW = useSetWeight(clientId), [done, setDone] = useState<number | null>(null);
+// Sugerencia de peso por ejercicio según las repeticiones que puso Jeff (rango o fijas) (lib/progression.ts). Jeff decide igual que en el panel.
+function WeightAdvice({ clientId, logId, sets, effort }: { clientId: string; logId: string; sets: ClientLog["sets"]; effort: number | null }) {
+  const plans = useTrainingPlans(clientId), decisions = useAdviceDecisions();
   const itemId = sets.find((x) => x.itemId)?.itemId;
-  const item = itemId ? plans.data?.flatMap((p) => p.days.flatMap((d) => d.items)).find((i) => i.id === itemId) : undefined;
-  const range = repTarget(item?.reps); if (!item || !range) return null;   // rango (8-12) o fijas (10), desde el 29-oct
+  const item = itemId ? plans.data?.filter((p) => p.status === "active").flatMap((p) => p.days.flatMap((d) => d.items)).find((i) => i.id === itemId) : undefined;
+  const range = repTarget(item?.reps); if (!item || !range) return null;   // rango (8-12) o fijas (10), desde el 29-oct; solo su plan activo
   const work = sets.filter((x) => !x.warmup), a = advise(range, work.map((x) => x.reps), effort);
   if (a.kind === "keep") return null;
   const used = work.map((x) => x.weight).filter((w): w is number => w != null), base = used.length ? Math.max(...used) : item.weight, next = nextWeight(base, a.kind);
+  const d = decisions.data?.find((x) => x.logId === logId && x.itemId === item.id);
   return (
     <div className={`wadv ${a.kind}`}>
       <Icon name={a.kind === "up" ? "up" : "down"} size={14} />
       <div className="wadv-txt"><b>{a.kind === "up" ? "Recomendado: subir el peso" : "Recomendado: bajar el peso"}</b><span>{a.reason} {range.fixed ? "Pedido" : "Rango"}: {rangeText(range)} repeticiones.{item.weight != null ? ` En el plan: ${item.weight} kg.` : ""}</span></div>
-      {done != null ? <span className="wadv-ok">Plan actualizado: {String(done).replace(".", ",")} kg</span>
-        : next != null && <button type="button" className="pd-btn primary" disabled={setW.isPending} onClick={() => setW.mutate({ itemId: item.id, weight: next }, { onSuccess: () => setDone(next) })}>{a.kind === "up" ? "Subir" : "Bajar"} a {String(next).replace(".", ",")} kg</button>}
+      {d ? <span className="wadv-ok">{d.weight != null ? `Plan actualizado: ${String(d.weight).replace(".", ",")} kg` : "Descartada"}</span>
+        : !decisions.isPending && <AdviceEditor clientId={clientId} logId={logId} itemId={item.id} next={next} name={item.name} />}
     </div>
   );
 }
@@ -101,7 +103,7 @@ export function Detail({ l, clientId, onSaved }: { l: ClientLog; clientId: strin
         <div key={ex}>
           <div className="ex-row-static"><span className="ex-dot" /><span style={{ fontSize: 13, flex: 1, fontWeight: 600 }}>{ex}{sw && <span className="swap-tag" title="El cliente lo cambió por un sustituto que aprobaste"><Icon name="swap" size={11} />en lugar de {sw.from}</span>}</span>
             <span style={{ fontSize: 12.5, color: "var(--text-dim)" }}>{ss.sort((a, b) => a.n - b.n).map((s) => `${s.reps ?? "–"}${s.weight != null ? `×${s.weight} kg` : ""}`).join(" · ")}</span></div>
-          {!sw && <WeightAdvice clientId={clientId} sets={ss} effort={l.effort} />}
+          {!sw && <WeightAdvice clientId={clientId} logId={l.id} sets={ss} effort={l.effort} />}
         </div>); })}
       {l.swaps?.filter((x) => !l.sets.some((y) => y.itemId === x.itemId)).map((x) => <p key={x.itemId} className="swap-note"><Icon name="swap" size={12} />Cambió {x.from} por {x.to} (aún sin series).</p>)}
       {l.note && <p style={{ fontSize: 13, margin: "12px 0 0", padding: 10, background: "var(--surface)", borderRadius: 10 }}><b>Comentario del cliente:</b> {l.note}</p>}
