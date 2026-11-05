@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-04 - Migraciones al día y regla de borrado de vídeos aclarada en los documentos
+Cristian confirmó que corrió todas las migraciones hasta la 0047 y que los vídeos de reporte se borran 32 h después de enviados si Jeff no los ve y 12 h después de verlos.
+- `HANDOFF.md` §4, §8b y §9, y `PASO_A_PRODUCCION.md` §3b y §10: migraciones marcadas como corridas. No queda ninguna por correr; la próxima es la 0048.
+- `HANDOFF.md` §5 y `BLUEPRINT_GAPS.md`: se quitó la regla vieja de 24 h y 7 días, y se anotó que la tarea de borrado ya está programada.
+- Revisado en el código: la base (0033 y 0042), las rutas de borrado y los textos de la app ya usaban 32 h y 12 h; no hubo que cambiarlos. NO verificado: la base real (el asistente no tiene acceso; se anota lo que Cristian confirmó) ni el borrado de un vídeo real en Bunny.
+- Solo documentos. Revertir: restaurar esos archivos y este `CHANGELOG.md` del commit `c5ed57b`.
+
 ## 2026-11-04 - Ritmo de trabajo escrito igual en todos los documentos
 Cristian notó que el chat nuevo trabajaba más lento. Causa: los documentos se contradecían. `AGENT_PLAYBOOK.md` decía que el build "no corre en el sandbox" (sí corre: se usaba en cada subida desde el 29-oct), y el traspaso del 4-nov mostraba `tests/e2e/all.sh` (~20 min) sin decir cuándo usarlo, así que se podía correr en cada cambio.
 - Nuevo `HANDOFF.md` §2b "Ritmo de trabajo": mientras se edita, solo `tsc`; antes de cada subida, los 4 chequeos (tsc, lint, build, `run_local.sh`); de `tests/e2e` solo lo que se tocó; `all.sh` solo antes de "fusiona" o de cambiar de chat.
