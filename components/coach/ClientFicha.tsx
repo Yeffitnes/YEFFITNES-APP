@@ -7,7 +7,7 @@ import { useClientBookings, useClients, useRenewPlan, useObjectiveVideo, usePlan
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { ago, initials } from "@/lib/format";
-import { planMonth, planMonthText, shortDate } from "@/lib/planmonth";
+import { PLAN_DAYS, planMonth, planMonthText, shortDate } from "@/lib/planmonth";
 import type { ClientRow, Plan } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
@@ -59,8 +59,8 @@ function PlanMonthLine({ c }: { c: ClientRow }) {
   const renew = useRenewPlan(), m = c.status === "active" && c.planId ? planMonth(c.planSince) : null;
   if (!m) return null;
   return <div className={`plan-month${m.expired ? " expired" : m.soon ? " soon" : ""}`}>
-    <span>Plan del {shortDate(m.since)} · {planMonthText(m)}</span>
-    {(m.expired || m.soon) && <button type="button" disabled={renew.isPending} onClick={() => renew.mutate(c.id)}>{renew.isPending ? "Renovando…" : "Renovar 30 días"}</button>}
+    <span>Plan del {shortDate(m.since)}{m.expired ? "" : ` · día ${m.day} de ${PLAN_DAYS}`} · {planMonthText(m)}</span>
+    {m.expired && <button type="button" disabled={renew.isPending} onClick={() => renew.mutate(c.id)}>{renew.isPending ? "Renovando…" : "Renovar 30 días"}</button>}
   </div>;
 }
 function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {

@@ -677,7 +677,7 @@ export function useReviewReport() {
   return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("review_report", { p_id: id }); if (error) throw error; },
     onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<CoachReport[]>(key); const r = prev?.find((x) => x.id === id);
       qc.setQueryData<CoachReport[]>(key, (l) => l?.map((x) => (x.id === id ? { ...x, seen: true, deleteAfter: x.videoState === "uploaded" ? new Date(Math.min(Date.now() + 12 * 3600000, x.deleteAfter ? +new Date(x.deleteAfter) : Infinity)).toISOString() : x.deleteAfter } : x))); return { prev, hadVideo: r?.videoState === "uploaded" }; },
-    onSuccess: (_d, _v, ctx) => { if (ctx?.hadVideo) toast("Visto. El vídeo se borrará en las próximas 12 horas."); },
+    onSuccess: (_d, _v, ctx) => { toast(ctx?.hadVideo ? "Visto. El vídeo se borrará en las próximas 12 horas." : "Reporte revisado"); },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos marcarlo como visto.", true); }, onSettled: () => qc.invalidateQueries({ queryKey: key }) });
 }
 export async function fetchReportVideoUrl(id: string): Promise<string> { return (await fetchReportVideo(id)).url; }

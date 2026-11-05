@@ -51,6 +51,7 @@ const CID = process.env.CLIENT_ID, D = (n) => `(now() at time zone 'America/Bogo
     await j.goto(`http://localhost:3000/coach/clientes/${CID}?tab=Progreso`, { waitUntil: "networkidle" }); await j.waitForTimeout(1500);
     const t = (await j.locator(".hab-hist").innerText()).replace(/\n/g, " "); if (!/Hábitos \(30 días\)/i.test(t) || !/mejor día 8\.000/.test(t)) throw new Error(t);
     await j.goto(`http://localhost:3000/coach/clientes/${CID}?tab=Resumen`, { waitUntil: "networkidle" }); await j.waitForTimeout(1500);
+    const cu = j.locator(".wk-tabs button", { hasText: "en curso" }); if (await cu.count()) { await cu.click(); await j.waitForTimeout(400); }
     const w = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); await j.locator(".wk-card").screenshot({ path: `${S}/wk_coach.png` });
     if (!/Hábitos por debajo del mínimo/.test(w) || !/poco sueño 2 días/.test(w) || !/poca agua 1 día/.test(w) || !/pocos pasos 1 día/.test(w)) throw new Error(w); return w.slice(w.indexOf("Hábitos por"), w.indexOf("Hábitos por") + 160);
   });

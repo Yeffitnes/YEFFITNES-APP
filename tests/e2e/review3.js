@@ -1,4 +1,4 @@
-// 2-nov (rehecho): Revisar cliente por cliente. Prepara: Camila con reporte de hoy sin ver y su entreno de hace 3 días sin revisar;
+// 2-nov (rehecho; 4-nov: lo revisado sale de la lista): Revisar cliente por cliente. Prepara: Camila con reporte de hoy sin ver y su entreno de hace 3 días sin revisar;
 // Andrés con entreno de hoy YA revisado. Base recién creada.
 const { execSync } = require("child_process");
 const { chromium, ctxFor, watch } = require("./lib.js");
@@ -23,20 +23,25 @@ let fails = 0; const step = async (n, fn) => { try { console.log("OK  ", n, (awa
       await step("[pc] ancho limitado (no llena toda la pantalla)", async () => { const w = await p.locator(".rv-wrap").evaluate((e) => Math.round(e.getBoundingClientRect().width)); if (w > 830) throw new Error(`${w}px`); return `${w}px`; });
       continue;
     }
-    await step("[cel] Camila primero, con su entreno de hoy, su reporte y lo pendiente de antes en la misma tarjeta", async () => {
+    await step("[cel] solo sale lo que falta: Camila, y NO Andrés (su entreno de hoy ya está revisado)", async () => {
       const h = await p.locator("h1").innerText(), t = (await p.locator(".rv-card").innerText()).replace(/\n/g, " ");
-      if (!/1 cliente por revisar/.test(h) || !/Camila/.test(t) || !/no ha terminado el entrenamiento de hoy/.test(t) || !/Hoy me sentí bien/.test(t) || !/Pendiente de días anteriores/.test(t)) throw new Error(`${h} / ${t.slice(0, 300)}`);
+      if (!/1 cliente por revisar/.test(h) || !/Camila/.test(t) || !/Hoy me sentí bien/.test(t) || !/Pendiente de días anteriores/.test(t) || !/sin entrenamiento hoy/.test(t) || (await p.locator(".rv-sec", { hasText: "Entrenamiento de hoy" }).count()) || /Andrés/.test(await p.locator(".rv-wrap").innerText())) throw new Error(`${h} / ${t.slice(0, 300)}`);
       return h;
     });
-    await step("[cel] marcar el reporte visto y revisar el entreno pendiente ahí mismo → 'Siguiente cliente'", async () => {
-      await p.getByRole("button", { name: "Marcar visto" }).click(); await p.waitForTimeout(1000);
+    await step("[cel] marcar visto el reporte de HOY: desaparece al momento, sin recargar", async () => {
+      await p.getByRole("button", { name: "Marcar visto" }).click(); await p.waitForTimeout(1200);
+      const t = (await p.locator(".rv-card").innerText()).replace(/\n/g, " ");
+      if (/Reporte de hoy/.test(t) || /Hoy me sentí bien/.test(t) || !/1 por revisar/.test(t)) throw new Error(t.slice(0, 300)); return "sale el reporte, queda 1";
+    });
+    await step("[cel] revisar lo último: el cliente sale y queda 'Todo revisado' con la pista de dónde volver a verlo", async () => {
       await p.locator(".rv-old-head").first().click(); await p.waitForTimeout(800);
       await p.locator(".rv-old textarea").fill("Bien, baja un poco el peso"); await p.getByRole("button", { name: "Guardar y marcar revisado" }).click(); await p.waitForTimeout(1800);
-      const t = (await p.locator(".rv-card").innerText()).replace(/\n/g, " ");
-      if (!/Todo revisado/.test(t) || !/Siguiente cliente/.test(t)) throw new Error(t.slice(0, 300));
-      await p.getByRole("button", { name: /Siguiente cliente/ }).click(); await p.waitForTimeout(800);
-      const a = (await p.locator(".rv-card").innerText()).replace(/\n/g, " "); await p.screenshot({ path: `${S}/rv_andres.png`, fullPage: true });
-      if (!/Andrés/.test(a) || !/Revisado/.test(a) || !/no ha enviado el reporte de hoy/.test(a)) throw new Error(a.slice(0, 300)); return a.slice(0, 140);
+      const h = await p.locator("h1").innerText(), w = await p.locator(".rv-wrap").innerText(); await p.screenshot({ path: `${S}/rv_done.png`, fullPage: true });
+      if (h !== "Todo revisado" || /Camila/.test(w) || !/ficha del cliente/.test(w)) throw new Error(`${h} / ${w.slice(0, 200)}`); return h;
+    });
+    await step("[cel] sigue en la ficha de Jeff: lo revisado no se perdió", async () => {
+      await p.goto(`http://localhost:3000/coach/clientes/${process.env.CLIENT_ID}`, { waitUntil: "networkidle" }); await p.waitForTimeout(1200);
+      const t = (await p.locator("main, .main").first().innerText()).replace(/\n/g, " "); if (!/Hoy me sentí bien/.test(t)) throw new Error(t.slice(0, 200));
     });
   }
   console.log(errs.length ? errs.join("\n") : "Sin errores de consola ni de red"); await b.close(); process.exit(fails || errs.length ? 1 : 0); })();

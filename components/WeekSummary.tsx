@@ -1,9 +1,14 @@
 "use client";
-// Resumen de la semana (pedido de Cristian, 30-oct, noche): lo que hizo el cliente en los últimos 7 días, en una sola tarjeta.
-// Jeff lo ve en la ficha (Resumen) y puede mandárselo con un toque; el cliente ve el suyo en Progreso.
+// Resumen de la semana (pedido de Cristian, 30-oct; corregido el 4-nov): la semana de CADA cliente, 7 días desde que empezó con Jeff
+// (lib/week.ts). La semana en curso cuenta solo los días que han pasado y no se puede enviar: "Enviarle el resumen" se activa cuando
+// la semana termina. Jeff abre por defecto la última semana completa; el cliente, la que lleva en curso.
+import { useState } from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/supabase/browser";
 import { useClientLogs, useClientNutrition, useMeasures, useTrainingPlans } from "@/lib/queries";
 import { isNewRecord, lastNDays, useClientReportDays, useHabits, useMealLogsRange, useRecords, useWorkoutCount, MILESTONES } from "@/lib/extras";
+import { clientWeeks, spanText, weekdayDate, type WeekSpan } from "@/lib/clientweek";
 import { Icon } from "@/components/ui/Icon";
 import { HABIT_MIN, HABIT_TXT, isLow, lowDays, shortDay, type HabitKey } from "@/lib/habits";
 
@@ -11,55 +16,77 @@ const kg = (n: number) => `${String(Math.round(n * 10) / 10).replace(".", ",")} 
 const dec = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 const wdOf = (ymd: string) => { const d = new Date(`${ymd}T12:00:00`); return (d.getDay() + 6) % 7 + 1; };
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+const WINDOW = 14;   // alcanza para la semana en curso y la anterior
 
-export function useWeek(clientId: string) {
-  const days = lastNDays(7), from = days[0];
-  const plans = useTrainingPlans(clientId), logs = useClientLogs(clientId), nut = useClientNutrition(clientId), meals = useMealLogsRange(clientId, 7);
-  const reps = useClientReportDays(clientId, 7), hab = useHabits(clientId, 7), recs = useRecords(clientId), ms = useMeasures(clientId);
+// Desde cuándo cuenta: el día en que se activó; sin ese dato, el inicio del plan o el registro.
+const useWeekStart = (clientId: string) => useQuery({ queryKey: ["week-start", clientId], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<string> => {
+  const { data, error } = await db().from("clients").select("activated_at,plan_since,created_at").eq("id", clientId).single(); if (error) throw error;
+  const r = data as { activated_at: string | null; plan_since: string | null; created_at: string };
+  return r.activated_at ? new Date(r.activated_at).toLocaleDateString("en-CA", { timeZone: "America/Bogota" }) : r.plan_since ?? new Date(r.created_at).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
+} });
+
+export function useWeek(clientId: string, span: WeekSpan | null) {
+  const days = span?.days ?? [], from = span?.from ?? "", to = span?.to ?? "", inSpan = (d: string) => d >= from && d <= to;
+  const plans = useTrainingPlans(clientId), logs = useClientLogs(clientId), nut = useClientNutrition(clientId), meals = useMealLogsRange(clientId, WINDOW);
+  const reps = useClientReportDays(clientId, WINDOW), hab = useHabits(clientId, WINDOW), recs = useRecords(clientId), ms = useMeasures(clientId);
   const pending = plans.isPending || logs.isPending || ms.isPending;
   const plan = plans.data?.find((p) => p.status === "active");
   const planned = plan ? days.filter((d) => d >= plan.startsOn && plan.days.some((x) => x.weekday === wdOf(d))) : [];
-  const weekLogs = (logs.data ?? []).filter((l) => l.date >= from && l.completed);
+  const weekLogs = (logs.data ?? []).filter((l) => inSpan(l.date) && l.completed);
   const effort = avg(weekLogs.map((l) => l.effort).filter((e): e is number => e != null));
   const mealDays = nut.data ? days.filter((d) => { const need = nut.data!.meals.filter((m) => m.weekday === null || m.weekday === wdOf(d)); if (!need.length) return false; const got = new Set((meals.data ?? []).filter((x) => x.date === d).map((x) => x.meal)); return need.every((m) => !!m.id && got.has(m.id)); }).length : null;
-  const h = hab.data ?? null;
+  const h = hab.data ? hab.data.filter((x) => inSpan(x.day)) : null;
   const water = h ? avg(h.map((x) => x.water).filter((x): x is number => x != null)) : null, steps = h ? avg(h.map((x) => x.steps).filter((x): x is number => x != null)) : null, sleep = h ? avg(h.map((x) => x.sleep).filter((x): x is number => x != null)) : null;
-  const newRecs = (recs.data ?? []).filter((r) => r.on >= from && isNewRecord(r));
-  const wList = (ms.data ?? []).filter((m) => m.weight != null), lastW = wList[wList.length - 1], baseW = [...wList].reverse().find((m) => m.date < from);
+  const newRecs = (recs.data ?? []).filter((r) => inSpan(r.on) && isNewRecord(r));
+  const wList = (ms.data ?? []).filter((m) => m.weight != null && m.date <= to), lastW = wList[wList.length - 1], baseW = [...wList].reverse().find((m) => m.date < from);
   const wDelta = lastW && baseW && lastW.date >= from ? (lastW.weight as number) - (baseW.weight as number) : null;
   const lows = h ? ((["sleep", "water", "steps"] as HabitKey[]).map((k) => ({ k, days: lowDays(h, k) })).filter((x) => x.days.length)) : [];
-  return { pending, plan, planned: planned.length, done: weekLogs.length, effort, mealDays, reports: reps.data?.length ?? null, water, steps, sleep, habits: h !== null && h.length > 0, lows, newRecs, lastW: lastW?.weight ?? null, wDelta };
+  return { pending, plan, planned: planned.length, done: weekLogs.length, effort, mealDays, reports: reps.data ? reps.data.filter(inSpan).length : null, water, steps, sleep, habits: h !== null && h.length > 0, lows, newRecs, lastW: lastW?.weight ?? null, wDelta };
 }
 
 export function WeekSummary({ clientId, first, mode }: { clientId: string; first: string; mode: "coach" | "client" }) {
-  const w = useWeek(clientId), coach = mode === "coach";
-  if (w.pending) return <div className="card" style={{ marginBottom: 16 }}><div className="sk" style={{ height: 120 }} /></div>;
+  const coach = mode === "coach", start = useWeekStart(clientId), [pick, setPick] = useState<"current" | "last" | null>(null);
+  const weeks = start.data ? clientWeeks(start.data) : null;
+  const span = !weeks ? null : (pick ?? (coach ? "last" : "current")) === "last" && weeks.last ? weeks.last : weeks.current;
+  const w = useWeek(clientId, span);
+  if (start.isError && !start.data) return <div className="card" style={{ marginBottom: 16 }}><p role="alert" className="empty-note">No pudimos cargar el resumen de la semana. <button type="button" className="tech-link" onClick={() => start.refetch()}>Reintentar</button></p></div>;
+  if (!weeks || !span || w.pending) return <div className="card" style={{ marginBottom: 16 }}><div className="sk" style={{ height: 120 }} /></div>;
+  const total = span.days.length;   // días que cuentan: 7 si ya terminó; si no, los que van
   const tiles: { k: string; v: string; s?: string; low?: boolean }[] = [];
-  if (w.plan) tiles.push({ k: "Entrenos", v: `${w.done}/${w.planned || w.done}`, s: w.effort ? `esfuerzo ${dec(w.effort)}/10` : undefined });
+  if (w.plan) tiles.push(w.planned || w.done ? { k: "Entrenos", v: `${w.done}/${w.planned || w.done}`, s: w.effort ? `esfuerzo ${dec(w.effort)}/10` : undefined } : { k: "Entrenos", v: "–", s: "sin rutina estos días" });
   else if (w.done) tiles.push({ k: "Entrenos", v: String(w.done) });
-  if (w.mealDays != null) tiles.push({ k: "Nutrición", v: `${w.mealDays}/7`, s: "días completos" });
-  if (w.reports != null) tiles.push({ k: "Reportes", v: `${w.reports}/7` });
+  if (w.mealDays != null) tiles.push({ k: "Nutrición", v: `${w.mealDays}/${total}`, s: "días completos" });
+  if (w.reports != null) tiles.push({ k: "Reportes", v: `${w.reports}/${total}` });
   if (w.water != null) tiles.push({ k: "Agua", v: dec(w.water), s: "vasos al día", low: isLow("water", w.water) });
   if (w.steps != null) tiles.push({ k: "Pasos", v: Math.round(w.steps).toLocaleString("es-CO"), s: "al día", low: isLow("steps", w.steps) });
   if (w.sleep != null) tiles.push({ k: "Sueño", v: `${dec(w.sleep)} h`, s: "por noche", low: isLow("sleep", w.sleep) });
   if (w.lastW != null) tiles.push({ k: "Peso", v: kg(w.lastW), s: w.wDelta != null ? `${w.wDelta > 0 ? "+" : w.wDelta < 0 ? "−" : ""}${kg(Math.abs(w.wDelta))} en la semana` : undefined });
   const msg = [
-    `Resumen de tu semana, ${first}:`,
+    `Resumen de tu semana (${spanText(span)}), ${first}:`,
     w.plan ? `entrenaste ${w.done} de ${w.planned || w.done} días` : w.done ? `entrenaste ${w.done} días` : null,
-    w.mealDays != null ? `nutrición completa ${w.mealDays} de 7 días` : null,
+    w.mealDays != null ? `nutrición completa ${w.mealDays} de ${total} días` : null,
     w.sleep != null ? `dormiste ${dec(w.sleep)} h por noche` : null,
     w.water != null ? `${dec(w.water)} vasos de agua al día` : null,
     w.newRecs.length ? `${w.newRecs.length === 1 ? "1 récord nuevo" : `${w.newRecs.length} récords nuevos`} (${w.newRecs.slice(0, 2).map((r) => `${r.exercise} ${kg(r.best)}`).join(", ")})` : null,
   ].filter(Boolean).join(" · ").replace(":  · ", ": ").replace(": · ", ": ") + ". ";
+  const when = span.left === 1 ? "mañana" : `el ${weekdayDate(span.completesOn)}`;
   return (
     <div className="card wk-card" style={{ marginBottom: 16 }}>
-      <div className="card-head"><div><div className="card-tag">{coach ? "Resumen de la semana" : "Tu semana"}</div><div className="card-title" style={{ fontSize: 15 }}>Últimos 7 días</div></div>
-        {coach && <Link className="pd-btn primary" style={{ textDecoration: "none" }} href={`/coach/mensajes?c=${clientId}&t=${encodeURIComponent(msg)}`}><Icon name="send" size={13} /> Enviarle el resumen</Link>}</div>
-      {!tiles.length ? <p className="empty-note" style={{ marginTop: 6 }}>{coach ? `${first} no registró nada en los últimos 7 días.` : "Aún no hay nada registrado esta semana."}</p> : (
+      <div className="card-head"><div><div className="card-tag">{coach ? "Resumen de la semana" : "Tu semana"}</div>
+        <div className="card-title" style={{ fontSize: 15 }}>Semana {span.n} · {span.complete ? "completa" : `día ${span.day} de 7`}</div>
+        <div className="card-meta">{span.complete ? spanText(span) : `Se completa ${when}`}</div></div>
+        {coach && (span.complete
+          ? <Link className="pd-btn primary" style={{ textDecoration: "none" }} href={`/coach/mensajes?c=${clientId}&t=${encodeURIComponent(msg)}`}><Icon name="send" size={13} /> Enviarle el resumen</Link>
+          : <button type="button" className="pd-btn wk-wait" disabled><Icon name="clock" size={13} /> {span.left === 1 ? "Falta 1 día" : `Faltan ${span.left} días`}</button>)}</div>
+      {weeks.last && <div className="wk-tabs" role="group" aria-label="Elegir semana">
+        <button type="button" className={span.complete ? "on" : ""} aria-pressed={span.complete} onClick={() => setPick("last")}>Semana {weeks.last.n} · completa</button>
+        <button type="button" className={span.complete ? "" : "on"} aria-pressed={!span.complete} onClick={() => setPick("current")}>Semana {weeks.current.n} · en curso</button>
+      </div>}
+      {!tiles.length ? <p className="empty-note" style={{ marginTop: 6 }}>{coach ? `${first} no registró nada ${span.complete ? "en esa semana" : "esta semana"}.` : `Aún no hay nada registrado ${span.complete ? "en esa semana" : "esta semana"}.`}</p> : (
         <div className="wk-grid">{tiles.map((t) => <div key={t.k} className={`wk-tile${t.low ? " low" : ""}`}><small>{t.k}</small><b>{t.v}</b>{t.s && <span>{t.s}</span>}</div>)}</div>)}
       {!!w.lows.length && <div className="wk-lows" role="status"><Icon name="bell" size={14} /><span><b>{coach ? "Hábitos por debajo del mínimo" : "Días que te quedaste corto"}:</b> {w.lows.map((x) => `${HABIT_TXT[x.k].low} ${x.days.length === 1 ? "1 día" : `${x.days.length} días`} (${x.days.map(shortDay).join(", ")})`).join(" · ")}. <small>Mínimo: {HABIT_MIN.water} vasos, {HABIT_MIN.sleep} h de sueño, {HABIT_TXT.steps.unit(HABIT_MIN.steps)} pasos.</small></span></div>}
       {!!w.newRecs.length && <div className="wk-recs"><span className="card-tag" style={{ marginBottom: 4 }}>Récords de la semana</span>{w.newRecs.map((r) => <div key={r.exercise} className="wk-rec"><Icon name="up" size={13} /><b>{r.exercise}</b><span>{kg(r.best)} × {r.reps}{r.prev != null ? ` (antes ${kg(r.prev)})` : ""}</span></div>)}</div>}
-      {coach && <p className="wk-note">“Enviarle el resumen” abre Mensajes con este resumen ya escrito para que agregues tu comentario.</p>}
+      {coach && <p className="wk-note">{span.complete ? "“Enviarle el resumen” abre Mensajes con este resumen ya escrito para que agregues tu comentario." : `Lleva ${weeks.dayN === 1 ? "1 día" : `${weeks.dayN} días`} contigo. Podrás enviarle el resumen cuando complete su semana.`}</p>}
     </div>
   );
 }

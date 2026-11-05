@@ -34,7 +34,7 @@ export function DashboardView() {
           que en computador es blanca y dejaba el texto blanco invisible). */}
       <Link href="/coach/revisar" className="rv-cta">
         <span className="rv-cta-ico"><Icon name="check" size={17} stroke={2.2} /></span>
-        <span className="rv-cta-txt"><b>{unseenReports + unreviewed ? `Revisar: ${[unreviewed ? `${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""}` : null, unseenReports ? `${unseenReports} reporte${unseenReports > 1 ? "s" : ""}` : null].filter(Boolean).join(" y ")}` : "Revisar lo de hoy"}</b>
+        <span className="rv-cta-txt"><b>{unseenReports + unreviewed ? `Revisar: ${[unreviewed ? `${unreviewed} entrenamiento${unreviewed > 1 ? "s" : ""}` : null, unseenReports ? `${unseenReports} reporte${unseenReports > 1 ? "s" : ""}` : null].filter(Boolean).join(" y ")}` : "Todo revisado"}</b>
           <small>Cliente por cliente: entrenamiento y reporte juntos</small></span>
         <span className="rv-cta-go">Revisar <Icon name="arrow" size={13} /></span>
       </Link>

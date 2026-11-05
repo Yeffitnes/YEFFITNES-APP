@@ -111,15 +111,16 @@ const U = "http://localhost:3000";
     const card = j.locator(".card", { hasText: "Camila" }).first(); await card.locator("textarea").fill("Excelente récord.");
     await j.locator(".snip", { hasText: "Vas muy bien" }).first().click();
     await j.getByRole("button", { name: "Guardar y marcar revisado" }).click(); await j.waitForTimeout(1500);
-    // Revisar es por cliente (2-nov): el entreno de hoy queda "Revisado" en la misma tarjeta (Camila aún tiene otro pendiente de antes).
-    const st = await j.locator(".rv-sec", { hasText: "Entrenamiento de hoy" }).locator(".rv-state").innerText(); if (st !== "Revisado") throw new Error(`${h} → ${st}`); return `${h} → entreno de hoy ${st}`;
+    // 4-nov: lo revisado sale de Revisar (Camila aún tiene otro pendiente de antes, así que sigue en la lista sin esa sección).
+    const n = await j.locator(".rv-sec", { hasText: "Entrenamiento de hoy" }).count(); if (n) throw new Error(`${h} → sigue en la lista`); return `${h} → el entreno de hoy salió`;
   });
   await step("ficha: resumen de la semana con hábitos y récord", async () => {
     await j.goto(`${U}/coach/clientes/${process.env.CLIENT_ID}?tab=Resumen`, { waitUntil: "networkidle" }); await j.waitForTimeout(1000);
     const resumen = j.locator(".tab-btn", { hasText: "Resumen" }); if (await resumen.count()) await resumen.click();
-    const t = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); await j.locator(".wk-card").screenshot({ path: `${S}/x_resumen.png` });
+    await j.locator(".wk-tabs button", { hasText: "en curso" }).click(); await j.waitForTimeout(400); const t = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); await j.locator(".wk-card").screenshot({ path: `${S}/x_resumen.png` });
     if (!/Agua/i.test(t) || !/Sentadilla/.test(t)) throw new Error(t.slice(0, 160));
-    const href = await j.getByRole("link", { name: /Enviarle el resumen/ }).getAttribute("href"); return decodeURIComponent(href.split("t=")[1]).slice(0, 110);
+    await j.locator(".wk-tabs button", { hasText: "en curso" }).click().catch(() => {}); const again = (await j.locator(".wk-card").innerText()); if (!/Agua/i.test(again)) throw new Error(again.slice(0, 160));
+    await j.locator(".wk-tabs button", { hasText: "completa" }).click(); const href = await j.getByRole("link", { name: /Enviarle el resumen/ }).getAttribute("href"); return decodeURIComponent(href.split("t=")[1]).slice(0, 110);
   });
   await step("Camila: ve la respuesta de Jeff (con la frase guardada)", async () => {
     await c.goto(`${U}/inicio`, { waitUntil: "networkidle" }); await c.waitForTimeout(1200); const t = await c.locator("body").innerText();

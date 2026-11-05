@@ -15,16 +15,19 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: "failed" }, { status: 500 });
   const rows = (data ?? []) as Row[]; let sent = 0;
   await Promise.all(rows.map(async (r) => { const dead = await sendPush([r], { title: r.title, body: r.body, url: r.url === "/inicio" && r.tag === "report" ? "/inicio#reporte" : r.url === "/inicio" && r.tag === "training" ? "/inicio#rutina" : r.url, tag: r.tag }); if (!dead.length) sent++; }));
-  // Mañana: a Jeff le llega UNA notificación por cada plan mensual que acaba de vencer (0038). Si falla, no frena lo demás.
+  // Mañana: a Jeff le llegan los avisos de plan mensual (0048): 7 días antes, 2 días antes y el día que vence, una sola vez cada uno.
+  // Si falla, no frena lo demás.
   let plans = 0;
   if (kind === "morning") {
-    const exp = await createClient().rpc("due_plan_expiry_cron", { p_secret: secret });
-    const list = (exp.data ?? []) as (Target & { n: number; names: string })[];
-    plans = list[0]?.n ?? 0;
-    await Promise.all(list.map((r) => sendPush([{ endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth }], {
-      title: r.n === 1 ? "Plan mensual vencido" : `${r.n} planes mensuales vencidos`,
-      body: `${r.names.length > 90 ? r.names.slice(0, 88) + "…" : r.names}: ya cumplieron 30 días. Renueva o quita el plan.`, url: "/coach#planes", tag: "plan-expiry",
-    }).catch(() => [])));
+    const exp = await createClient().rpc("due_plan_notices_cron", { p_secret: secret });
+    if (exp.error) console.error("due_plan_notices_cron", exp.error.message);
+    const list = (exp.data ?? []) as (Target & { stage: "d7" | "d2" | "d0"; n: number; names: string })[];
+    plans = Array.from(new Map(list.map((r) => [r.stage, r.n])).values()).reduce((a, b) => a + b, 0);
+    const short = (t: string) => (t.length > 90 ? t.slice(0, 88) + "…" : t);
+    await Promise.all(list.map((r) => sendPush([{ endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth }], r.stage === "d0"
+      ? { title: r.n === 1 ? "Plan mensual vencido" : `${r.n} planes mensuales vencidos`, body: `${short(r.names)}: ya cumplió 30 días. Decide si lo renuevas o lo cancelas.`, url: "/coach#planes", tag: "plan-d0" }
+      : { title: r.n === 1 ? "Plan por vencer" : `${r.n} planes por vencer`, body: `${short(r.names)}.`, url: "/coach#planes", tag: `plan-${r.stage}` },
+    ).catch(() => [])));
   }
   return NextResponse.json({ ok: true, due: rows.length, sent, plans });
 }

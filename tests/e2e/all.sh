@@ -13,7 +13,7 @@ run() { local t=$1; shift; bash tests/e2e/run.sh setup >/dev/null 2>&1; for q in
   LATENCY=150 bash tests/e2e/run.sh $t > $OUT/$t.log 2>&1; local r=$?; [ $r = 0 ] || FAIL=1
   echo "$([ $r = 0 ] && echo "OK   " || echo "FALLA") $t · $(grep -c '^OK' $OUT/$t.log) pasos OK · $(grep -c '^FAIL' $OUT/$t.log) fallas"; }
 run smoke.js; run flows.js; run extras.js; run photos.js; run offline.js; run catalog.js; run swaps.js
-run nudge_row.js "$NUDGE"; run review2.js "$REP"; run review3.js; run report_time.js "$REP_T"; run away.js; run ficha.js "$REP"; run stuck.js
+run nudge_row.js "$NUDGE"; run review2.js "$REP"; run review3.js; run set_order.js; run week_plan.js; run report_time.js "$REP_T"; run away.js; run ficha.js "$REP"; run stuck.js
 bash tests/e2e/run.sh setup >/dev/null 2>&1
 LATENCY=150 bash tests/e2e/run.sh hydration.js > $OUT/hydration.log 2>&1; n=$(grep -vc ' ok$' $OUT/hydration.log); [ "$n" = 0 ] || FAIL=1; echo "$([ "$n" = 0 ] && echo "OK   " || echo "FALLA") hydration.js (Hoy) · $n aperturas con redibujo"
 PAGE=/inicio/progreso LATENCY=150 bash tests/e2e/run.sh hydration.js > $OUT/hydration_prog.log 2>&1; n=$(grep -vc ' ok$' $OUT/hydration_prog.log); [ "$n" = 0 ] || FAIL=1; echo "$([ "$n" = 0 ] && echo "OK   " || echo "FALLA") hydration.js (Progreso) · $n aperturas con redibujo"

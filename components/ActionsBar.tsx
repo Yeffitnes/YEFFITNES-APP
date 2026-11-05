@@ -40,7 +40,9 @@ function useItems(side: "client" | "coach"): Item[] {
     const act = activity.data ?? 0;
     if (act) items.push({ key: "act", text: `${act} avance${act === 1 ? "" : "s"} de clientes (entrenamiento o nutrición)`, href: "/coach" });
     const expired = (clients.data ?? []).filter((c) => c.status === "active" && c.planId && planMonth(c.planSince)?.expired).length;
-    if (expired) items.push({ key: "plan", text: `${expired} plan${expired === 1 ? "" : "es"} mensual${expired === 1 ? "" : "es"} vencido${expired === 1 ? "" : "s"}: renueva o quita`, href: "/coach#planes" });
+    if (expired) items.push({ key: "plan", text: `${expired} plan${expired === 1 ? "" : "es"} mensual${expired === 1 ? "" : "es"} vencido${expired === 1 ? "" : "s"}: renueva o cancela`, href: "/coach#planes" });
+    const dueSoon = (clients.data ?? []).filter((c) => { const m = c.status === "active" && c.planId ? planMonth(c.planSince) : null; return !!m && !m.expired && m.daysLeft <= 2; }).length;
+    if (dueSoon) items.push({ key: "plan-soon", text: `${dueSoon} plan${dueSoon === 1 ? " vence" : "es vencen"} en 2 días o menos`, href: "/coach#planes" });
     if (pending) items.push({ key: "pend", text: `${pending} cliente${pending === 1 ? "" : "s"} esperando plan`, href: "/coach/clientes" });
     // "Necesitan tu atención" (29-oct): urgentes por contactar y lo que falta configurar, también en la campanita.
     const nd = needs(attn.data ?? [], new Map((clients.data ?? []).map((c) => [c.id, c.name])));

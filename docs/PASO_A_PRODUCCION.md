@@ -59,6 +59,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [x] **`0045_more_preset_exercises.sql`** (corrida en su primera versión; la 0046 la completó) (31-oct): 89 ejercicios precargados más, todos con imagen (`public/ex/`). Solo datos; correrla cuando se apruebe la lista (`docs/EJERCICIOS_NUEVOS.md`). Confirmar: `select count(*) from public.exercises where lower(name) = 'remo en t';` → 1 (uno por cada espacio de coach).
 - [x] **`0046_fix_preset_images.sql`** (corrida, confirmado 4-nov) (31-oct): la 0045 se corrió en su primera versión (sin imágenes y con 15 repetidos). Esta pone las imágenes de los 89 nuevos y quita los 15 repetidos (archiva los usados en rutinas). Solo datos, se puede correr dos veces. Confirmar: `select count(*) from public.exercises where active and image is null and lower(name) in ('abdominal bicicleta','almeja con banda');` → 0.
 - [x] **`0047_plan_change_push.sql`** (corrida, confirmado 4-nov) (2-nov): aviso al cliente cuando Jeff cambia su plan (máx. 1 cada 30 min por tipo) y "Probar avisos". Correrla ANTES de probar en Vercel (sin ella, "Probar avisos" dice 0 teléfonos y el aviso de plan no sale; lo demás igual). Compatible con `main`. Confirmar: `select to_regprocedure('public.plan_change_targets(uuid,text)') is not null;` → `true`.
+- [ ] **`0048_plan_expiry_notices.sql`** (4-nov): avisos a Jeff de plan por vencer (7 días, 2 días y el día que vence). **Obligatoria antes de fusionar:** el código nuevo de la tarea de la mañana la llama; sin ella no sale ningún aviso de plan. Se puede correr ya: compatible con `main` (solo agrega). No hay tareas programadas nuevas: usa `yeffitnes-buenosdias`. Confirmar: `select to_regclass('public.plan_expiry_log') is not null and to_regprocedure('public.due_plan_notices_cron(text)') is not null;` → `true`.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
@@ -90,9 +91,9 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
 ## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
-La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita de la 0038 a la 0047: **todas corridas (Cristian lo confirmó el 4-nov)**. Si se crea una nueva (0048 en adelante), correrla antes de fusionar.
+La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita de la 0038 a la 0048: **corridas hasta la 0047 (Cristian lo confirmó el 4-nov); falta la 0048**. Si se crea una nueva (0049 en adelante), correrla antes de fusionar.
 Orden:
-1. Migraciones: corridas hasta la 0047. Para comprobarlo de nuevo, consulta de solo lectura (`true` = corrida):
+1. Migraciones: correr la 0048 (§3b). Para comprobar las anteriores, consulta de solo lectura (`true` = corrida):
    `select to_regclass('public.meal_day_locks') is not null as m0042, to_regclass('public.habit_logs') is not null as m0043, to_regclass('public.exercise_swaps') is not null as m0044, exists(select 1 from public.exercises where lower(name)='remo en t') as m0045, (exists(select 1 from public.exercises where lower(name)='remo en t') and not exists(select 1 from public.exercises where active and image is null and lower(name) in ('abdominal bicicleta','almeja con banda'))) as m0046, to_regclass('public.plan_notices') is not null as m0047;`
    Detalle de cada una: §3b. Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
 2. Probar en Vercel con el cliente de prueba (lo del 28-oct de la lista anterior y lo del 29-oct):
