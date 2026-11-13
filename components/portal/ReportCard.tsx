@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { localDate, useSubmitReport, useTodayReport, useVideoEnabled, type MyReport } from "@/lib/queries";
 import { MAX_SOURCE_SECONDS, MAX_VIDEO_MB, MAX_VIDEO_SECONDS, UploadError, discardVideo, uploadVideo } from "@/lib/upload-video";
 import { Icon } from "@/components/ui/Icon";
+import { offlineNow } from "@/lib/offline";
 import { useVideoPick } from "@/components/ui/useVideoPick";
 import { QuickRow } from "./QuickRow";
 const UP_ERR: Record<string, string> = { too_many: "Ya subiste varios vídeos hoy. Inténtalo mañana.", not_allowed: "Tu plan no incluye el reporte diario.", video_service_unavailable: "El servicio de vídeo no responde. Inténtalo en un rato.", upload_failed: "Se cortó la subida. Revisa tu conexión y vuelve a intentarlo (se reanuda sola)." };
@@ -23,6 +24,8 @@ export function ReportCard({ clientId }: { clientId: string }) {
     if (busy) return; setErr("");
     if (needVideo && !file && !videoId) return setErr("El vídeo es obligatorio: grábalo antes de enviar.");
     if (!comment.trim()) return setErr("El comentario es obligatorio: cuéntale a tu coach cómo te fue.");
+    // Sin señal (12-nov): el vídeo necesita internet para subir. No se pierde nada: lo que grabaste y escribiste sigue aquí mientras no cierres la app.
+    if (needVideo && !videoId && offlineNow()) return setErr("Sin señal no se puede subir el vídeo. Tu reporte sigue aquí: toca Enviar cuando vuelva la señal.");
     setBusy(true);
     try {
       let vid = videoId;
@@ -57,9 +60,9 @@ export function ReportCard({ clientId }: { clientId: string }) {
 // Reporte enviado (30-oct): con la cabecita del personaje y UNA corrección del comentario mientras Jeff no lo haya visto (0042).
 function ReportSent({ clientId, today, r }: { clientId: string; today: string; r: MyReport }) {
   const submit = useSubmitReport(clientId, today), [edit, setEdit] = useState(false), [txt, setTxt] = useState(r.comment ?? "");
-  const can = !r.seen && (r.edits ?? 0) < 1;
+  const can = !r.seen && (r.edits ?? 0) < 1 && !r.pending;
   return (
-    <QuickRow anchor="reporte" icon="check" tone="ok" title="Reporte enviado" sub={r.seen ? "Tu coach ya lo vio" : (r.edits ?? 0) > 0 ? "Corregido · tu coach lo verá pronto" : "Tu coach lo verá pronto"}>
+    <QuickRow anchor="reporte" icon={r.pending ? "clock" : "check"} tone="ok" title={r.pending ? "Reporte guardado" : "Reporte enviado"} sub={r.pending ? "Sin señal: se enviará solo cuando vuelva" : r.seen ? "Tu coach ya lo vio" : (r.edits ?? 0) > 0 ? "Corregido · tu coach lo verá pronto" : "Tu coach lo verá pronto"}>
       {!edit && r.comment && <p className="qrow-quote">“{r.comment}”</p>}
       {edit ? <>
         <textarea aria-label="Corregir el comentario" maxLength={1000} value={txt} onChange={(e) => setTxt(e.target.value)} style={{ width: "100%", minHeight: 70, marginTop: 8, border: "1px solid var(--line)", borderRadius: 12, padding: 12, fontSize: 13.5, resize: "vertical" }} />
@@ -67,6 +70,6 @@ function ReportSent({ clientId, today, r }: { clientId: string; today: string; r
         <div style={{ display: "flex", gap: 8, marginTop: 8 }}><button type="button" className="mini-btn ghost" onClick={() => { setEdit(false); setTxt(r.comment ?? ""); }}>Cancelar</button>
           <button type="button" className="mini-btn primary" disabled={submit.isPending || !txt.trim()} onClick={() => submit.mutate({ comment: txt, videoId: null, edit: true }, { onSuccess: () => setEdit(false) })}>{submit.isPending ? "Guardando…" : "Guardar corrección"}</button></div>
       </> : can ? <button type="button" className="mini-btn ghost" style={{ marginTop: 8 }} onClick={() => setEdit(true)}>Corregir mi comentario (1 vez)</button>
-        : <p className="fold-note" style={{ padding: 0 }}>{r.seen ? "Tu coach ya lo vio: queda así." : "Ya usaste tu corrección."}</p>}
+        : !r.pending && <p className="fold-note" style={{ padding: 0 }}>{r.seen ? "Tu coach ya lo vio: queda así." : "Ya usaste tu corrección."}</p>}
     </QuickRow>);
 }

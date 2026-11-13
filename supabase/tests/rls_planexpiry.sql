@@ -26,7 +26,12 @@ begin
   select count(*), max(d.stage) into n, st from public.due_plan_notices_cron(sec) d where d.endpoint='https://test.push/jeff-exp';
   if n <> 1 or st <> 'd2' then bad:=bad||' [no avisó a los 2 días]'; end if;
   select count(*) into n from public.due_plan_notices_cron(sec) d where d.endpoint='https://test.push/cli-exp'; if n <> 0 then bad:=bad||' [el aviso le llegó a un cliente]'; end if;
-  update public.clients set plan_since = today - 30 where id = ca; delete from public.plan_expiry_log where client_id = ca; insert into public.plan_expiry_log (client_id, ends_on, stage) values (ca, today, 'd7'), (ca, today, 'd2');
+  -- 0051: 1 día antes
+  update public.clients set plan_since = today - 29 where id = ca; delete from public.plan_expiry_log where client_id = ca; insert into public.plan_expiry_log (client_id, ends_on, stage) values (ca, today + 1, 'd7'), (ca, today + 1, 'd2');
+  select count(*), max(d.stage), max(d.names) into n, st, nm from public.due_plan_notices_cron(sec) d where d.endpoint='https://test.push/jeff-exp';
+  if n <> 1 or st <> 'd1' or nm not like '%(vence mañana)%' then bad:=bad||' [no avisó 1 día antes: '||coalesce(st,'-')||']'; end if;
+  select count(*) into n from public.due_plan_notices_cron(sec); if n <> 0 then bad:=bad||' [repitió el aviso de 1 día]'; end if;
+  update public.clients set plan_since = today - 30 where id = ca; delete from public.plan_expiry_log where client_id = ca; insert into public.plan_expiry_log (client_id, ends_on, stage) values (ca, today, 'd7'), (ca, today, 'd2'), (ca, today, 'd1');
   select count(*), max(d.stage) into n, st from public.due_plan_notices_cron(sec) d where d.endpoint='https://test.push/jeff-exp';
   if n <> 1 or st <> 'd0' then bad:=bad||' [no avisó el día que vence]'; end if;
   select plan_id into pl from public.clients where id = ca; if pl is null then bad:=bad||' [el plan se quitó solo]'; end if;

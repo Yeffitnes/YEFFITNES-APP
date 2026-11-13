@@ -7,10 +7,10 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useClientLogs, useClientNutrition, useMeasures, useTrainingPlans } from "@/lib/queries";
-import { isNewRecord, lastNDays, useClientReportDays, useHabits, useMealLogsRange, useRecords, useWorkoutCount, MILESTONES } from "@/lib/extras";
+import { isNewRecord, lastNDays, useClientReportDays, useHabitSpecs, useHabits, useMealLogsRange, useRecords, useWorkoutCount, MILESTONES } from "@/lib/extras";
 import { clientWeeks, spanText, weekdayDate, type WeekSpan } from "@/lib/clientweek";
 import { Icon } from "@/components/ui/Icon";
-import { HABIT_MIN, HABIT_TXT, isLow, lowDays, shortDay, type HabitKey } from "@/lib/habits";
+import { fmtHabit, goalText, habitStats, isLowS, lowDaysS, lowWord, shortDay, valueOf } from "@/lib/habits";
 
 const kg = (n: number) => `${String(Math.round(n * 10) / 10).replace(".", ",")} kg`;
 const dec = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
@@ -28,20 +28,22 @@ const useWeekStart = (clientId: string) => useQuery({ queryKey: ["week-start", c
 export function useWeek(clientId: string, span: WeekSpan | null) {
   const days = span?.days ?? [], from = span?.from ?? "", to = span?.to ?? "", inSpan = (d: string) => d >= from && d <= to;
   const plans = useTrainingPlans(clientId), logs = useClientLogs(clientId), nut = useClientNutrition(clientId), meals = useMealLogsRange(clientId, WINDOW);
-  const reps = useClientReportDays(clientId, WINDOW), hab = useHabits(clientId, WINDOW), recs = useRecords(clientId), ms = useMeasures(clientId);
-  const pending = plans.isPending || logs.isPending || ms.isPending;
+  const reps = useClientReportDays(clientId, WINDOW), hab = useHabits(clientId, WINDOW), specs = useHabitSpecs(clientId), recs = useRecords(clientId), ms = useMeasures(clientId);
+  const pending = plans.isPending || logs.isPending || ms.isPending || specs.isPending;
   const plan = plans.data?.find((p) => p.status === "active");
   const planned = plan ? days.filter((d) => d >= plan.startsOn && plan.days.some((x) => x.weekday === wdOf(d))) : [];
   const weekLogs = (logs.data ?? []).filter((l) => inSpan(l.date) && l.completed);
   const effort = avg(weekLogs.map((l) => l.effort).filter((e): e is number => e != null));
   const mealDays = nut.data ? days.filter((d) => { const need = nut.data!.meals.filter((m) => m.weekday === null || m.weekday === wdOf(d)); if (!need.length) return false; const got = new Set((meals.data ?? []).filter((x) => x.date === d).map((x) => x.meal)); return need.every((m) => !!m.id && got.has(m.id)); }).length : null;
   const h = hab.data ? hab.data.filter((x) => inSpan(x.day)) : null;
-  const water = h ? avg(h.map((x) => x.water).filter((x): x is number => x != null)) : null, steps = h ? avg(h.map((x) => x.steps).filter((x): x is number => x != null)) : null, sleep = h ? avg(h.map((x) => x.sleep).filter((x): x is number => x != null)) : null;
+  // Hábitos (12-nov): los activos de Jeff para este cliente, cada uno contra su meta.
+  const habits = h ? (specs.data ?? []).map((s) => ({ s, st: habitStats(s, h, days) })).filter((x) => x.st.n > 0) : [];
+  const avgOf = (k: string) => habits.find((x) => x.s.key === k)?.st.avg ?? null;
   const newRecs = (recs.data ?? []).filter((r) => inSpan(r.on) && isNewRecord(r));
   const wList = (ms.data ?? []).filter((m) => m.weight != null && m.date <= to), lastW = wList[wList.length - 1], baseW = [...wList].reverse().find((m) => m.date < from);
   const wDelta = lastW && baseW && lastW.date >= from ? (lastW.weight as number) - (baseW.weight as number) : null;
-  const lows = h ? ((["sleep", "water", "steps"] as HabitKey[]).map((k) => ({ k, days: lowDays(h, k) })).filter((x) => x.days.length)) : [];
-  return { pending, plan, planned: planned.length, done: weekLogs.length, effort, mealDays, reports: reps.data ? reps.data.filter(inSpan).length : null, water, steps, sleep, habits: h !== null && h.length > 0, lows, newRecs, lastW: lastW?.weight ?? null, wDelta };
+  const lows = h ? (specs.data ?? []).map((s) => ({ s, days: lowDaysS(s, h) })).filter((x) => x.days.length) : [];
+  return { pending, plan, planned: planned.length, done: weekLogs.length, effort, mealDays, reports: reps.data ? reps.data.filter(inSpan).length : null, habits, water: avgOf("water"), sleep: avgOf("sleep"), lows, goals: (specs.data ?? []).filter((s) => s.kind === "number" && s.goal != null), newRecs, lastW: lastW?.weight ?? null, wDelta };
 }
 
 export function WeekSummary({ clientId, first, mode }: { clientId: string; first: string; mode: "coach" | "client" }) {
@@ -57,9 +59,8 @@ export function WeekSummary({ clientId, first, mode }: { clientId: string; first
   else if (w.done) tiles.push({ k: "Entrenos", v: String(w.done) });
   if (w.mealDays != null) tiles.push({ k: "Nutrición", v: `${w.mealDays}/${total}`, s: "días completos" });
   if (w.reports != null) tiles.push({ k: "Reportes", v: `${w.reports}/${total}` });
-  if (w.water != null) tiles.push({ k: "Agua", v: dec(w.water), s: "vasos al día", low: isLow("water", w.water) });
-  if (w.steps != null) tiles.push({ k: "Pasos", v: Math.round(w.steps).toLocaleString("es-CO"), s: "al día", low: isLow("steps", w.steps) });
-  if (w.sleep != null) tiles.push({ k: "Sueño", v: `${dec(w.sleep)} h`, s: "por noche", low: isLow("sleep", w.sleep) });
+  for (const { s, st } of w.habits) tiles.push(s.kind === "check" ? { k: s.name, v: `${st.done}/${total}`, s: s.goal != null ? `días · meta ${s.goal} por semana` : "días hecho", low: st.ok === false }
+    : { k: s.name, v: s.key === "water" ? dec(st.avg!) : s.key === "steps" ? Math.round(st.avg!).toLocaleString("es-CO") : s.key === "sleep" ? `${dec(st.avg!)} h` : fmtHabit(s, st.avg!), s: s.key === "water" ? "vasos al día" : s.key === "sleep" ? "por noche" : "al día", low: st.ok === false });
   if (w.lastW != null) tiles.push({ k: "Peso", v: kg(w.lastW), s: w.wDelta != null ? `${w.wDelta > 0 ? "+" : w.wDelta < 0 ? "−" : ""}${kg(Math.abs(w.wDelta))} en la semana` : undefined });
   const msg = [
     `Resumen de tu semana (${spanText(span)}), ${first}:`,
@@ -84,7 +85,7 @@ export function WeekSummary({ clientId, first, mode }: { clientId: string; first
       </div>}
       {!tiles.length ? <p className="empty-note" style={{ marginTop: 6 }}>{coach ? `${first} no registró nada ${span.complete ? "en esa semana" : "esta semana"}.` : `Aún no hay nada registrado ${span.complete ? "en esa semana" : "esta semana"}.`}</p> : (
         <div className="wk-grid">{tiles.map((t) => <div key={t.k} className={`wk-tile${t.low ? " low" : ""}`}><small>{t.k}</small><b>{t.v}</b>{t.s && <span>{t.s}</span>}</div>)}</div>)}
-      {!!w.lows.length && <div className="wk-lows" role="status"><Icon name="bell" size={14} /><span><b>{coach ? "Hábitos por debajo del mínimo" : "Días que te quedaste corto"}:</b> {w.lows.map((x) => `${HABIT_TXT[x.k].low} ${x.days.length === 1 ? "1 día" : `${x.days.length} días`} (${x.days.map(shortDay).join(", ")})`).join(" · ")}. <small>Mínimo: {HABIT_MIN.water} vasos, {HABIT_MIN.sleep} h de sueño, {HABIT_TXT.steps.unit(HABIT_MIN.steps)} pasos.</small></span></div>}
+      {!!w.lows.length && <div className="wk-lows" role="status"><Icon name="bell" size={14} /><span><b>{coach ? "Hábitos por debajo del mínimo" : "Días que te quedaste corto"}:</b> {w.lows.map((x) => `${lowWord(x.s)} ${x.days.length === 1 ? "1 día" : `${x.days.length} días`} (${x.days.map(shortDay).join(", ")})`).join(" · ")}. <small>{coach ? "Metas" : "Tus metas"}: {w.goals.map((s) => `${s.name.toLowerCase()} ${fmtHabit(s, s.goal!)}`).join(", ")}.</small></span></div>}
       {!!w.newRecs.length && <div className="wk-recs"><span className="card-tag" style={{ marginBottom: 4 }}>Récords de la semana</span>{w.newRecs.map((r) => <div key={r.exercise} className="wk-rec"><Icon name="up" size={13} /><b>{r.exercise}</b><span>{kg(r.best)} × {r.reps}{r.prev != null ? ` (antes ${kg(r.prev)})` : ""}</span></div>)}</div>}
       {coach && <p className="wk-note">{span.complete ? "“Enviarle el resumen” abre Mensajes con este resumen ya escrito para que agregues tu comentario." : `Lleva ${weeks.dayN === 1 ? "1 día" : `${weeks.dayN} días`} contigo. Podrás enviarle el resumen cuando complete su semana.`}</p>}
     </div>
@@ -109,40 +110,36 @@ export function RecordsCard({ clientId, mode }: { clientId: string; mode: "coach
   );
 }
 
-// Historial de hábitos (pedido de Cristian, 2-nov): los últimos 30 días, igual para Jeff y para el cliente (Progreso).
-// Por hábito: promedio de los días anotados, mejor día y cuántos días anotó; arriba, la racha de días seguidos anotando.
-// Sin metas: las metas de Jeff están NO DEFINIDO, así que no se marca "cumplido".
-type HabK = "water" | "steps" | "sleep";
-const HAB: { k: HabK; t: string; unit: (n: number) => string }[] = [
-  { k: "water", t: "Agua", unit: (n) => `${dec(n)} ${n === 1 ? "vaso" : "vasos"}` },
-  { k: "steps", t: "Pasos", unit: (n) => Math.round(n).toLocaleString("es-CO") },
-  { k: "sleep", t: "Sueño", unit: (n) => `${dec(n)} h` },
-];
+// Historial de hábitos (pedido de Cristian, 2-nov; metas de Jeff desde el 12-nov): los últimos 30 días, igual para Jeff y para el
+// cliente (Progreso). Por hábito: promedio, mejor día y días por debajo de la meta (los de sí/no: días hechos). Arriba, la racha.
 export function HabitsHistory({ clientId, mode }: { clientId: string; mode: "coach" | "client" }) {
-  const h = useHabits(clientId, 30), days = lastNDays(30);
-  if (h.isPending) return <div className="card" style={{ marginBottom: 18 }}><div className="sk" style={{ height: 120 }} /></div>;
-  if (!h.data) return null;   // 0043 sin correr
-  const by = new Map(h.data.map((x) => [x.day, x]));
-  const any = (d: string) => { const x = by.get(d); return !!x && (x.water != null || x.steps != null || x.sleep != null); };
+  const h = useHabits(clientId, 30), specs = useHabitSpecs(clientId), days = lastNDays(30);
+  if (h.isPending || specs.isPending) return <div className="card" style={{ marginBottom: 18 }}><div className="sk" style={{ height: 120 }} /></div>;
+  if (!h.data || !specs.data?.length) return null;   // 0043 sin correr, o Jeff apagó todos
+  const list = specs.data, by = new Map(h.data.map((x) => [x.day, x]));
+  const any = (d: string) => list.some((s) => valueOf(by.get(d), s) != null);
   // Racha: días seguidos anotando, contando hasta hoy (si hoy aún no anota, cuenta hasta ayer).
   let streak = 0; for (let i = days.length - 1; i >= 0; i--) { if (any(days[i])) streak++; else if (i === days.length - 1) continue; else break; }
-  const logged = days.filter(any).length;
+  const logged = days.filter(any).length, names = list.map((s) => s.name.toLowerCase()).join(", ").replace(/, ([^,]*)$/, " ni $1");
   return (
     <div className="card hab-hist" style={{ marginBottom: 18 }}>
       <div className="card-tag">{mode === "coach" ? "Hábitos (30 días)" : "Tus hábitos (30 días)"}</div>
-      {!logged ? <p className="empty-note">{mode === "coach" ? "Aún no anota agua, pasos ni sueño." : "Cuando anotes tu agua, pasos y sueño en Hoy, aquí verás tu historial y tus mejores días."}</p> : <>
+      {!logged ? <p className="empty-note">{mode === "coach" ? `Aún no anota ${names}.` : "Cuando anotes tus hábitos en Hoy, aquí verás tu historial y tus mejores días."}</p> : <>
         <div className="card-title" style={{ fontSize: 16 }}>{streak > 1 ? `${streak} días seguidos anotando` : `${mode === "coach" ? "Anotó" : "Anotaste"} ${logged} de los últimos 30 días`}</div>
-        {HAB.map(({ k, t, unit }) => {
-          const vals = days.map((d) => (by.get(d)?.[k] ?? null) as number | null), got = vals.filter((v): v is number => v != null);
+        {list.map((s) => {
+          const vals = days.map((d) => valueOf(by.get(d), s)), got = vals.filter((v): v is number => v != null);
           if (!got.length) return null;
-          const max = Math.max(...got), bestI = vals.lastIndexOf(max), mean = got.reduce((a, b) => a + b, 0) / got.length, lowN = got.filter((v) => isLow(k, v)).length;
+          if (s.kind === "check") { const done = got.filter((v) => v > 0).length;
+            return (<div key={s.id} className="hh-row"><div className="hh-head"><b>{s.name}</b><span>{done} {done === 1 ? "día hecho" : "días hechos"} de 30{s.goal != null ? ` · meta ${goalText(s)}` : ""}</span></div>
+              <div className="hh-bars" aria-hidden>{vals.map((v, i) => <i key={days[i]} className={v ? "best" : "none"} style={{ height: v ? "100%" : 3 }} />)}</div></div>); }
+          const max = Math.max(...got), bestI = vals.lastIndexOf(max), mean = got.reduce((a, b) => a + b, 0) / got.length, lowN = got.filter((v) => isLowS(s, v)).length;
           return (
-            <div key={k} className="hh-row">
-              <div className="hh-head"><b>{t}</b><span>promedio {unit(mean)} · mejor día {unit(max)} ({new Date(`${days[bestI]}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short" })}) · {got.length} {got.length === 1 ? "día" : "días"}{lowN ? ` · ${lowN} con ${HABIT_TXT[k].low}` : ""}</span></div>
-              <div className="hh-bars" aria-hidden>{vals.map((v, i) => <i key={days[i]} className={v == null ? "none" : isLow(k, v) ? "low" : i === bestI ? "best" : ""} style={{ height: v == null ? 3 : `${Math.max(8, (v / (max || 1)) * 100)}%` }} />)}</div>
+            <div key={s.id} className="hh-row">
+              <div className="hh-head"><b>{s.name}</b><span>promedio {fmtHabit(s, mean)} · mejor día {fmtHabit(s, max)} ({new Date(`${days[bestI]}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short" })}) · {got.length} {got.length === 1 ? "día" : "días"}{lowN ? ` · ${lowN} con ${lowWord(s)}` : ""}</span></div>
+              <div className="hh-bars" aria-hidden>{vals.map((v, i) => <i key={days[i]} className={v == null ? "none" : isLowS(s, v) ? "low" : i === bestI ? "best" : ""} style={{ height: v == null ? 3 : `${Math.max(8, (v / (max || 1)) * 100)}%` }} />)}</div>
             </div>);
         })}
-        <p className="hh-note">Cada barra es un día: la negra es el mejor día, las rojas quedaron por debajo del mínimo ({HABIT_MIN.water} vasos, {HABIT_MIN.sleep} h, {HABIT_TXT.steps.unit(HABIT_MIN.steps)} pasos) y las grises son días sin anotar.</p>
+        <p className="hh-note">Cada barra es un día: la negra es el mejor día (o un día hecho), las rojas quedaron por debajo de la meta y las grises son días sin anotar. Metas: {list.filter((s) => s.goal != null).map((s) => `${s.name.toLowerCase()} ${goalText(s)}`).join(", ")}.</p>
       </>}
     </div>
   );

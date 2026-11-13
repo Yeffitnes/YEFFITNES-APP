@@ -61,7 +61,9 @@ export function HoyView() {
   useOfflineSync(cid, qc, (r) => {
     if (r.finished.length) { r.finished.forEach((d) => void fetch("/api/push/activity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: d }) }).catch(() => {})); void qc.invalidateQueries({ queryKey: ["records", cid] }); }
     if (r.dropped) toast("Algo de lo que guardaste sin señal ya no se pudo enviar (por ejemplo, Jeff ya lo había revisado).", true);
-    else if (r.sent) toast("Volvió la señal: tu entrenamiento quedó enviado.");
+    else if (r.sent) { const k = r.kinds, what = [k.some((x) => x === "set" || x === "unset" || x === "finish") && "tu entrenamiento", k.some((x) => x === "habit" || x === "habitx") && "tus hábitos", k.includes("meal") && "tu nutrición", k.includes("report") && "tu reporte"].filter(Boolean) as string[];
+      toast(`Volvió la señal: ${what.length ? what.join(", ").replace(/, ([^,]*)$/, " y $1") : "todo"} quedó enviado.`); }
+    if (r.kinds.includes("report")) void qc.invalidateQueries({ queryKey: ["report", cid] });
   });
   if (me.isPending || (cid && (plans.isPending || logs.isPending))) return <div aria-busy="true"><div className="sk" style={{ height: 30, width: 200, marginBottom: 22 }} /><div className="sk" style={{ height: 80, marginBottom: 18 }} /><div className="sk" style={{ height: 260 }} /></div>;
   if ((me.isError && !me.data) || (plans.isError && !plans.data) || (logs.isError && !logs.data)) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu día. Revisa tu conexión e inténtalo de nuevo.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => { me.refetch(); plans.refetch(); logs.refetch(); }}>Reintentar</button></div>;
@@ -131,8 +133,11 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
   const [rest, setRest] = useState<Rest | null>(null), [hit, setHit] = useState<RecordHit | null>(null), recs = useRecords(cid), cheered = useRef<Record<string, number>>({});
   const onSetSaved = (i: PlanItem, setNumber: number, reps: number, weight: number | null) => {
     setJust({ itemId: i.id, setNumber, reps, weight, at: Date.now() });
-    const totalSets = items.reduce((a, x) => a + x.sets, 0), doneSets = new Set((log?.sets ?? []).map((x) => `${x.itemId}:${x.setNumber}`)); doneSets.add(`${i.id}:${setNumber}`);
-    if (i.rest && i.rest > 0 && doneSets.size < totalSets) { primeSound(); setRest({ end: Date.now() + i.rest * 1000, total: i.rest, label: i.name }); }
+    // Descanso SOLO entre series del mismo ejercicio (pedido de Cristian, 12-nov): si con esta serie el ejercicio queda completo, no hay
+    // cronómetro hasta que empiece el siguiente. Antes contaba las series de toda la rutina y salía al terminar un ejercicio, e incluso al final.
+    const mine = new Set(saved(i.id).filter((s) => s.setNumber <= i.sets).map((s) => s.setNumber)); if (setNumber <= i.sets) mine.add(setNumber);
+    if (i.rest && i.rest > 0 && mine.size < i.sets) { primeSound(); setRest({ end: Date.now() + i.rest * 1000, total: i.rest, label: i.name, itemId: i.id }); }
+    else setRest(null);
     const prev = bestBefore(recs.data, i.name, today);
     if (weight != null && prev != null && prev > 0 && weight > Math.max(prev, cheered.current[i.name] ?? 0)) { cheered.current[i.name] = weight; setHit({ exercise: i.name, weight, prev, at: Date.now() }); }
   };
@@ -145,6 +150,8 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
   // Antes bastaba con marcar la última serie: si se tocaba por error, el ejercicio se plegaba y saltaba al otro aunque faltaran series.
   const doneNow = (i: PlanItem) => new Set(saved(i.id).filter((s) => s.setNumber <= i.sets).map((s) => s.setNumber)).size >= i.sets;
   const doneKey = items.map((i) => (doneNow(i) ? "1" : "0")).join(""), prevDone = useRef<string | null>(null);
+  // Si el ejercicio del descanso queda completo (p. ej. marcó las series en desorden), el descanso se va.
+  useEffect(() => { const it = rest?.itemId ? items.find((x) => x.id === rest.itemId) : undefined; if (it && doneNow(it)) setRest(null); }, [doneKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const was = prevDone.current; prevDone.current = doneKey;
     if (was === null || !open) return;

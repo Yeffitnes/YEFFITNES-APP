@@ -1,6 +1,6 @@
 "use client";
 import { useCallback } from "react";
-import { applyQueue, enqueue, hasQueue, isNetErr, offlineNow, useQueueVersion, type Op } from "@/lib/offline";
+import { applyQueue, enqueue, hasQueue, isNetErr, offlineNow, queued, useQueueVersion, type Op } from "@/lib/offline";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
@@ -213,7 +213,7 @@ export function useLogs(clientId: string) {
   return useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId), select });
 }
 /** Ejecuta la acción; sin señal (o con cosas ya en espera, para no desordenarlas) la deja en la cola del teléfono. */
-async function viaQueue(clientId: string, op: Op, run: () => PromiseLike<{ error: unknown }>): Promise<"sent" | "queued"> {
+export async function viaQueue(clientId: string, op: Op, run: () => PromiseLike<{ error: unknown }>): Promise<"sent" | "queued"> {
   if (offlineNow() || hasQueue(clientId)) { enqueue(clientId, op); return "queued"; }
   try { const { error } = await run(); if (error) { if (isNetErr(error)) { enqueue(clientId, op); return "queued"; } throw error; } return "sent"; }
   catch (e) { if (isNetErr(e)) { enqueue(clientId, op); return "queued"; } throw e; }
@@ -642,8 +642,14 @@ export function useDeleteNote(clientId: string) {
 export const useVideoEnabled = () => useQuery({ queryKey: ["video-enabled"], staleTime: 600_000, queryFn: async (): Promise<boolean> => {
   const r = await fetch("/api/video/config"); if (!r.ok) return false; return !!((await r.json()) as { enabled?: boolean }).enabled;
 } });
-export type MyReport = { id: string; date: string; comment: string | null; hasVideo: boolean; seen: boolean; edits?: number };
-export const useTodayReport = (clientId: string, date: string, enabled = true) => useQuery({ queryKey: ["report", clientId, date], staleTime: 30_000, enabled: !!clientId && enabled, queryFn: async (): Promise<MyReport | null> => {
+export type MyReport = { id: string; date: string; comment: string | null; hasVideo: boolean; seen: boolean; edits?: number; pending?: boolean };
+// Un reporte de solo texto enviado sin señal se muestra como enviado mientras espera (12-nov).
+export function useTodayReport(clientId: string, date: string, enabled = true) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: MyReport | null) => { if (v === 0 || d) return d; const o = queued(clientId, "report").find((x) => x.date === date); return o ? { id: "tmp", date, comment: o.comment, hasVideo: false, seen: false, edits: 0, pending: true } : d; }, [clientId, date, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useTodayReportQ(clientId, date, enabled, select);
+}
+const useTodayReportQ = (clientId: string, date: string, enabled: boolean, select: (d: MyReport | null) => MyReport | null) => useQuery({ queryKey: ["report", clientId, date], staleTime: 30_000, enabled: !!clientId && enabled, select, queryFn: async (): Promise<MyReport | null> => {
   const q = (cols: string) => db().from("daily_reports").select(cols).eq("client_id", clientId).eq("report_date", date).maybeSingle();
   let { data, error } = await q("id,report_date,comment,video_state,coach_seen_at,edits");
   if (error && missingColumn(error)) ({ data, error } = await q("id,report_date,comment,video_state,coach_seen_at"));   // base sin la 0042
@@ -655,8 +661,13 @@ const REPORT_ERR: Record<string, string> = { already_edited: "Ya corregiste este
 export const reportError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(REPORT_ERR).find((x) => m.includes(x)); return k ? REPORT_ERR[k] : "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."; };
 export function useSubmitReport(clientId: string, date: string) {
   const qc = useQueryClient(), toast = useToast();
-  return useMutation({ mutationFn: async (v: { comment: string; videoId: string | null; edit?: boolean }) => { const { error } = await db().rpc("submit_report", { p_date: date, p_comment: v.comment, p_video_id: v.videoId }); if (error) throw error; },
-    onSuccess: (_d, v) => toast(v.edit ? "Reporte corregido. Ya no se puede volver a cambiar." : "¡Reporte enviado!"), onError: (e) => toast(reportError(e), true), onSettled: () => qc.invalidateQueries({ queryKey: ["report", clientId, date] }) });
+  return useMutation({ networkMode: "always",
+    // Solo texto: sin señal queda en el teléfono y se envía al volver (12-nov). Con vídeo necesita internet.
+    mutationFn: async (v: { comment: string; videoId: string | null; edit?: boolean }): Promise<"sent" | "queued"> => {
+      const run = () => db().rpc("submit_report", { p_date: date, p_comment: v.comment, p_video_id: v.videoId });
+      if (!v.videoId) return viaQueue(clientId, { t: "report", date, comment: v.comment }, run);
+      const { error } = await run(); if (error) throw error; return "sent"; },
+    onSuccess: (r, v) => toast(r === "queued" ? "Sin señal: tu reporte quedó guardado en el teléfono y se enviará solo cuando vuelva la señal." : v.edit ? "Reporte corregido. Ya no se puede volver a cambiar." : "¡Reporte enviado!"), onError: (e) => toast(reportError(e), true), onSettled: () => qc.invalidateQueries({ queryKey: ["report", clientId, date] }) });
 }
 export type CoachReport = { id: string; clientId: string; clientName: string; date: string; comment: string | null; videoState: "none" | "uploaded" | "deleted"; seen: boolean; sentAt: string; deleteAfter: string | null };
 // Texto de cuándo se borra el vídeo (migración 0033: 32 h sin verlo, 12 h después de verlo).
@@ -740,18 +751,28 @@ export function useSetObjective(clientId: string) {
 
 // ---- Checks de nutrición del día + actividad para el coach (migración 0025) ----
 export type MealProgress = { done: number; total: number; complete: boolean };
-export const useMealLogs = (clientId: string, date: string) => useQuery({ queryKey: ["meal-logs", clientId, date], enabled: !!clientId, staleTime: 30_000, queryFn: async (): Promise<string[]> => {
-  const { data, error } = await db().from("meal_logs").select("meal_id").eq("client_id", clientId).eq("log_date", date); if (error) throw error; return ((data ?? []) as { meal_id: string }[]).map((r) => r.meal_id);
-} });
+// Con las comidas marcadas sin señal encima (12-nov, lib/offline.ts).
+export function useMealLogs(clientId: string, date: string) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: string[]) => { if (v === 0) return d; let out = d; for (const o of queued(clientId, "meal")) if (o.date === date) out = o.done ? (out.includes(o.mealId) ? out : [...out, o.mealId]) : out.filter((x) => x !== o.mealId); return out; }, [clientId, date, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useQuery({ queryKey: ["meal-logs", clientId, date], enabled: !!clientId, staleTime: 30_000, select, queryFn: async (): Promise<string[]> => {
+    const { data, error } = await db().from("meal_logs").select("meal_id").eq("client_id", clientId).eq("log_date", date); if (error) throw error; return ((data ?? []) as { meal_id: string }[]).map((r) => r.meal_id);
+  } });
+}
 // Avisa al coach (push) de lo que el cliente acaba de completar. Si falla o no hay push configurado, no pasa nada.
 export const notifyActivity = (date: string) => { void fetch("/api/push/activity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date }) }).catch(() => {}); };
 export function useLogMeal(clientId: string, date: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["meal-logs", clientId, date];
   return useMutation({
-    mutationFn: async (v: { mealId: string; done: boolean }): Promise<MealProgress> => { const { data, error } = await db().rpc("log_meal", { p_meal: v.mealId, p_date: date, p_done: v.done }); if (error) throw error; return data as MealProgress; },
+    networkMode: "always",
+    // Sin señal queda en el teléfono y se envía al volver (12-nov). Entonces no hay progreso que mostrar todavía (null).
+    mutationFn: async (v: { mealId: string; done: boolean }): Promise<MealProgress | null> => {
+      let out: MealProgress | null = null;
+      const r = await viaQueue(clientId, { t: "meal", date, mealId: v.mealId, done: v.done }, async () => { const x = await db().rpc("log_meal", { p_meal: v.mealId, p_date: date, p_done: v.done }); out = x.data as MealProgress; return x; });
+      return r === "sent" ? out : null; },
     onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<string[]>(key) ?? []; qc.setQueryData<string[]>(key, v.done ? (prev.includes(v.mealId) ? prev : prev.concat(v.mealId)) : prev.filter((x) => x !== v.mealId)); return { prev }; },
     onError: (e, _v, ctx) => { if (ctx) qc.setQueryData(key, ctx.prev); toast(isLock(e) ? "Ya corregiste tu nutrición de hoy una vez; no se puede volver a cambiar." : "No pudimos guardar la comida. Revisa tu conexión e inténtalo de nuevo.", true); },
-    onSuccess: (r, v) => { if (v.done && r.complete) { toast("¡Nutrición del día completada!"); notifyActivity(date); } },
+    onSuccess: (r, v) => { if (r && v.done && r.complete) { toast("¡Nutrición del día completada!"); notifyActivity(date); } },
     onSettled: () => { void qc.invalidateQueries({ queryKey: key }); void qc.invalidateQueries({ queryKey: ["meal-lock", clientId, date] }); },
   });
 }

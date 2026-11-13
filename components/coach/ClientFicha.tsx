@@ -1,5 +1,6 @@
 "use client";
 import { WeekSummary } from "@/components/WeekSummary";
+import { ClientHabitGoals } from "./ClientHabitGoals";
 import { Icon } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -44,6 +45,7 @@ export function ClientFicha({ id, tab: start }: { id: string; tab?: string }) {
             <div className="mini-kpi"><div className="mini-kpi-label">Registro</div><div className="mini-kpi-val">{new Date(c.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div></div>
           </div>
           <WeekSummary clientId={c.id} first={c.name.split(" ")[0]} mode="coach" />
+          <ClientHabitGoals clientId={c.id} first={c.name.split(" ")[0]} />
           <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} hasVideo={!!c.objectiveVideo} />
           <RecentWorkouts clientId={c.id} />
         </>

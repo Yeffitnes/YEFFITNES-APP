@@ -8,8 +8,8 @@ import { Icon } from "@/components/ui/Icon";
 import { GuideFace } from "./Guide";
 import { useOfflineState } from "@/lib/offline";
 import { localDate } from "@/lib/fetchers";
-import { useHabits, useLogHabit } from "@/lib/extras";
-import { HABIT_MIN, HABIT_TXT, habitAvg, isLow } from "@/lib/habits";
+import { useHabitSpecs, useHabits, useLogHabit, useLogHabitExtra } from "@/lib/extras";
+import { fmtHabit, goalText, habitStats, isLowS, valueOf, type HabitSpec } from "@/lib/habits";
 import { useToast } from "@/components/Providers";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
@@ -28,7 +28,7 @@ function beep() {
       g.gain.setValueAtTime(0.0001, t0 + d); g.gain.exponentialRampToValueAtTime(0.25, t0 + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.16); o.start(t0 + d); o.stop(t0 + d + 0.18); });
   } catch { /* sin sonido */ }
 }
-export type Rest = { end: number; total: number; label: string };
+export type Rest = { end: number; total: number; label: string; itemId?: string };
 export function RestTimer({ rest, onChange }: { rest: Rest | null; onChange: (r: Rest | null) => void }) {
   const [now, setNow] = useState(() => Date.now()), [done, setDone] = useState(false), fired = useRef<number | null>(null);
   useEffect(() => { if (!rest) return; setDone(false); const t = setInterval(() => setNow(Date.now()), 250); return () => clearInterval(t); }, [rest]);
@@ -74,61 +74,82 @@ export function OfflineBanner({ cid }: { cid: string }) {
   return (
     <div className="off-banner" role="status">
       <Icon name={offline ? "lock" : "clock"} size={14} />
-      <span>{offline ? "Sin señal. Sigue entrenando: lo que registres queda guardado en tu teléfono" : "Volvió la señal: enviando lo que guardaste"}{pending ? ` (${pending} pendiente${pending === 1 ? "" : "s"}).` : "."}</span>
+      <span>{offline ? "Sin señal. Sigue: tus series, hábitos, comidas y el reporte sin vídeo quedan guardados en tu teléfono" : "Volvió la señal: enviando lo que guardaste"}{pending ? ` (${pending} pendiente${pending === 1 ? "" : "s"}).` : "."}</span>
     </div>
   );
 }
 
 // ---------- Hábitos del día ----------
-// Hábitos (2-nov, revisado con Cristian): el cliente anota HOY (una fila por día en la base). Lo que anota se refleja en su semana
-// (promedio por día de agua, sueño y pasos) y, si un día se queda corto, sale un aviso: anoche durmió poco, ayer tomó poca agua o
-// caminó poco. Los mínimos son PROPUESTA (lib/habits.ts) hasta que Jeff defina sus metas. Jeff ve lo mismo en la ficha.
-// Récord: al superar su mejor día de agua o de pasos de los últimos 90 días (el sueño no tiene récord: más no es mejor).
+// Hábitos (2-nov; desde el 12-nov los define Jeff, 0052): el cliente anota HOY los hábitos activos de Jeff, cada uno con su meta (la suya
+// si Jeff se la cambió). Agua, pasos y sueño con sus controles de siempre; los que agrega Jeff: número con su unidad, o sí/no.
+// Avisos: el sueño se juzga con lo de anoche (ya pasó); los demás de número con AYER, que ya terminó (hoy todavía puede cumplir).
+// Récord: al superar su mejor día de agua o de pasos de los últimos 90 días. Sin señal se guarda en el teléfono (lib/offline.ts).
 export function HabitsCard({ cid }: { cid: string }) {
-  const h = useHabits(cid, 7), hist = useHabits(cid, 90), log = useLogHabit(cid), toast = useToast(), today = localDate();
+  const h = useHabits(cid, 7), hist = useHabits(cid, 90), specs = useHabitSpecs(cid), log = useLogHabit(cid), logX = useLogHabitExtra(cid), toast = useToast(), today = localDate();
   const yest = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return localDate(d); })();
-  const cur = h.data?.find((x) => x.day === today), prev = h.data?.find((x) => x.day === yest), [steps, setSteps] = useState("");
-  useEffect(() => { setSteps(cur?.steps != null ? String(cur.steps) : ""); }, [cur?.steps]);
-  if (h.isPending) return <div className="card"><div className="sk" style={{ height: 120 }} /></div>;
-  if (h.data === null || h.isError) return null;   // migración 0043 sin correr, o sin permiso: no se muestra
-  const water = cur?.water ?? 0, sleep = cur?.sleep ?? null, week = h.data ?? [];
+  const cur = h.data?.find((x) => x.day === today), prev = h.data?.find((x) => x.day === yest);
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  if (h.isPending || specs.isPending) return <div className="card"><div className="sk" style={{ height: 120 }} /></div>;
+  if (h.data === null || h.isError || !specs.data?.length) return null;   // 0043 sin correr, sin permiso, o Jeff apagó todos
+  const list = specs.data, week = h.data ?? [], days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return localDate(d); });
   const best = (k: "water" | "steps") => Math.max(0, ...(hist.data ?? []).filter((x) => x.day !== today && x[k] != null).map((x) => x[k] as number));
   const save = (v: { water?: number; steps?: number; sleep?: number }) => {
     const bw = best("water"), bs = best("steps");
-    log.mutate({ day: today, ...v }, { onSuccess: () => {
+    log.mutate({ day: today, ...v }, { onSuccess: (r) => {
+      if (r === "queued") return;
       if (v.water != null && bw > 0 && v.water > bw && (cur?.water ?? 0) <= bw) toast(`Nuevo récord de agua: ${v.water} vasos en un día (antes ${bw}).`);   // solo al cruzar el récord
       if (v.steps != null && bs > 0 && v.steps > bs && (cur?.steps ?? 0) <= bs) toast(`Nuevo récord de pasos: ${v.steps.toLocaleString("es-CO")} en un día (antes ${bs.toLocaleString("es-CO")}).`);
     } });
   };
-  const saveSteps = () => { const n = Math.round(Number(steps.replace(/\D/g, ""))); if (steps.trim() === "" || !(n >= 0) || n > 100000 || n === (cur?.steps ?? -1)) return; save({ steps: n }); };
-  // Avisos: el sueño se juzga con lo de anoche (ya pasó); el agua y los pasos con AYER, que ya terminó (hoy todavía puede cumplir).
+  const num = (s: HabitSpec) => valueOf(cur, s);
+  const txt = (s: HabitSpec) => draft[s.id] ?? (num(s) != null ? String(num(s)).replace(".", ",") : "");
+  const commit = (s: HabitSpec) => {
+    const raw = (draft[s.id] ?? "").trim(); if (draft[s.id] === undefined) return;
+    setDraft((d) => { const n = { ...d }; delete n[s.id]; return n; });
+    const n = raw === "" ? null : Number(raw.replace(/\./g, s.key === "steps" ? "" : ".").replace(",", "."));
+    if (n != null && (!Number.isFinite(n) || n < 0 || n > 100000)) return;
+    if (n === num(s)) return;
+    if (s.key === "steps") { if (n != null) save({ steps: Math.round(n) }); } else logX.mutate({ day: today, habit: s.id, value: n });
+  };
   const alerts: string[] = [];
-  if (isLow("sleep", sleep)) alerts.push(`Anoche dormiste ${HABIT_TXT.sleep.unit(sleep!)}. Lo recomendado es al menos ${HABIT_MIN.sleep} h: intenta acostarte más temprano hoy.`);
-  if (isLow("water", prev?.water)) alerts.push(`Ayer tomaste ${HABIT_TXT.water.unit(prev!.water!)}. Intenta llegar a ${HABIT_MIN.water} hoy.`);
-  if (isLow("steps", prev?.steps)) alerts.push(`Ayer diste ${HABIT_TXT.steps.unit(prev!.steps!)} pasos. Hoy intenta pasar de ${HABIT_TXT.steps.unit(HABIT_MIN.steps)}.`);
-  const avgs = (["water", "sleep", "steps"] as const).map((k) => ({ k, v: habitAvg(week, k), n: week.filter((x) => x[k] != null).length })).filter((x) => x.v != null);
+  for (const s of list) {
+    if (s.kind !== "number" || s.goal == null) continue;
+    const v = s.key === "sleep" ? num(s) : valueOf(prev, s);
+    if (!isLowS(s, v)) continue;
+    alerts.push(s.key === "sleep" ? `Anoche dormiste ${fmtHabit(s, v!)}. Tu meta es al menos ${fmtHabit(s, s.goal)}: intenta acostarte más temprano hoy.`
+      : s.key === "water" ? `Ayer tomaste ${fmtHabit(s, v!)}. Tu meta es ${fmtHabit(s, s.goal)}: intenta llegar hoy.`
+      : s.key === "steps" ? `Ayer diste ${fmtHabit(s, v!)}. Hoy intenta pasar de ${fmtHabit(s, s.goal)}.`
+      : `${s.name}: ayer ${fmtHabit(s, v!)}. Tu meta es ${fmtHabit(s, s.goal)} al día.`);
+  }
+  const avgs = list.map((s) => ({ s, st: habitStats(s, week, days7) })).filter((x) => x.st.n > 0);
+  const water = cur?.water ?? 0, sleep = cur?.sleep ?? null;
   return (
     <div className="card habits-card" id="habitos">
       <div className="card-tag">Hábitos de hoy</div>
-      <div className="card-title" style={{ fontSize: 16 }}>Agua, pasos y sueño</div>
-      <p className="card-meta" style={{ marginBottom: 12 }}>Un toque cada uno. Jeff ve cómo vas en la semana.</p>
+      <div className="card-title" style={{ fontSize: 16 }}>{list.length <= 3 ? list.map((s) => s.name).join(list.length === 2 ? " y " : ", ").replace(/, ([^,]*)$/, " y $1") : "Tus hábitos"}</div>
+      <p className="card-meta" style={{ marginBottom: 12 }}>Anótalos cada día. Jeff ve cómo vas en la semana.</p>
       {alerts.map((a) => <p key={a} className="hab-alert" role="status"><Icon name="bell" size={14} />{a}</p>)}
-      <div className="hab-row">
-        <span className="hab-lbl"><b>Agua</b><small>vasos hoy</small></span>
-        <div className="hab-step"><button type="button" aria-label="Un vaso menos" disabled={water <= 0} onClick={() => save({ water: water - 1 })}>−</button><b aria-live="polite">{water}</b><button type="button" aria-label="Un vaso más" disabled={water >= 20} onClick={() => save({ water: water + 1 })}>+</button></div>
-      </div>
-      <div className="hab-glasses" aria-hidden>{Array.from({ length: Math.max(8, Math.min(20, water)) }, (_, i) => <i key={i} className={i < water ? "on" : ""} />)}</div>
-      <div className="hab-row">
-        <span className="hab-lbl"><b>Pasos</b><small>de hoy</small></span>
-        <input className="hab-input" inputMode="numeric" value={steps} placeholder="0" aria-label="Pasos de hoy" onChange={(e) => setSteps(e.target.value.replace(/\D/g, "").slice(0, 6))} onBlur={saveSteps} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
-      </div>
-      <div className="hab-row">
-        <span className="hab-lbl"><b>Sueño</b><small>horas anoche</small></span>
-        <div className="hab-step"><button type="button" aria-label="Media hora menos" disabled={sleep == null || sleep <= 0} onClick={() => save({ sleep: Math.max(0, (sleep ?? 0) - 0.5) })}>−</button><b aria-live="polite">{sleep == null ? "—" : String(sleep).replace(".", ",")}</b><button type="button" aria-label="Media hora más" disabled={sleep != null && sleep >= 16} onClick={() => save({ sleep: sleep == null ? 7 : Math.min(16, sleep + 0.5) })}>+</button></div>
-      </div>
+      {list.map((s) => {
+        const meta = s.goal != null ? <small>{s.kind === "check" ? `meta: ${goalText(s)}` : `meta ${fmtHabit(s, s.goal)}`}</small> : null;
+        if (s.key === "water") return (<div key={s.id}>
+          <div className="hab-row"><span className="hab-lbl"><b>Agua</b><small>vasos hoy{s.goal != null ? ` · meta ${s.goal}` : ""}</small></span>
+            <div className="hab-step"><button type="button" aria-label="Un vaso menos" disabled={water <= 0} onClick={() => save({ water: water - 1 })}>−</button><b aria-live="polite">{water}</b><button type="button" aria-label="Un vaso más" disabled={water >= 20} onClick={() => save({ water: water + 1 })}>+</button></div></div>
+          <div className="hab-glasses" aria-hidden>{Array.from({ length: Math.max(s.goal ?? 8, Math.min(20, water)) }, (_, i) => <i key={i} className={i < water ? "on" : ""} />)}</div></div>);
+        if (s.key === "sleep") return (
+          <div key={s.id} className="hab-row"><span className="hab-lbl"><b>Sueño</b><small>horas anoche{s.goal != null ? ` · meta ${fmtHabit(s, s.goal)}` : ""}</small></span>
+            <div className="hab-step"><button type="button" aria-label="Media hora menos" disabled={sleep == null || sleep <= 0} onClick={() => save({ sleep: Math.max(0, (sleep ?? 0) - 0.5) })}>−</button><b aria-live="polite">{sleep == null ? "—" : String(sleep).replace(".", ",")}</b><button type="button" aria-label="Media hora más" disabled={sleep != null && sleep >= 16} onClick={() => save({ sleep: sleep == null ? 7 : Math.min(16, sleep + 0.5) })}>+</button></div></div>);
+        if (s.kind === "check") { const on = (num(s) ?? 0) > 0;
+          return (<div key={s.id} className="hab-row"><span className="hab-lbl"><b>{s.name}</b>{meta ?? <small>hoy</small>}</span>
+            <button type="button" className={`hab-check${on ? " on" : ""}`} aria-pressed={on} onClick={() => logX.mutate({ day: today, habit: s.id, value: on ? null : 1 })}>{on ? <><Icon name="check" size={14} stroke={2.4} /> Hecho</> : "Marcar hecho"}</button></div>); }
+        return (<div key={s.id} className="hab-row"><span className="hab-lbl"><b>{s.name}</b><small>{s.key === "steps" ? "de hoy" : s.unit ? `${s.unit} hoy` : "hoy"}{s.goal != null ? ` · meta ${s.key === "steps" ? s.goal.toLocaleString("es-CO") : fmtHabit(s, s.goal)}` : ""}</small></span>
+          <input className="hab-input" inputMode={s.key === "steps" ? "numeric" : "decimal"} value={txt(s)} placeholder="0" aria-label={`${s.name} de hoy`}
+            onChange={(e) => setDraft((d) => ({ ...d, [s.id]: s.key === "steps" ? e.target.value.replace(/\D/g, "").slice(0, 6) : e.target.value.replace(/[^\d,.]/g, "").slice(0, 7) }))}
+            onBlur={() => commit(s)} onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} /></div>);
+      })}
       {!!avgs.length && <div className="hab-week-box">
         <span className="card-tag" style={{ marginBottom: 6 }}>Tu semana (promedio por día)</span>
-        <div className="hab-avgs">{avgs.map(({ k, v, n }) => <div key={k} className={`hab-avg${isLow(k, v) ? " low" : ""}`}><small>{HABIT_TXT[k].name}</small><b>{k === "sleep" ? HABIT_TXT.sleep.unit(v!) : k === "water" ? HABIT_TXT.water.unit(v!) : HABIT_TXT.steps.unit(v!)}</b><span>{n} {n === 1 ? "día" : "días"} anotados</span></div>)}</div>
+        <div className="hab-avgs">{avgs.map(({ s, st }) => <div key={s.id} className={`hab-avg${st.ok === false ? " low" : ""}`}><small>{s.name}</small>
+          <b>{s.kind === "check" ? `${st.done} de 7 días` : fmtHabit(s, st.avg!)}</b><span>{s.kind === "check" ? (s.goal != null ? `meta ${s.goal}` : "") : `${st.n} ${st.n === 1 ? "día anotado" : "días anotados"}`}</span></div>)}</div>
       </div>}
     </div>
   );

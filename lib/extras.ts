@@ -5,7 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { localDate } from "@/lib/fetchers";
-import { notifyPlan } from "@/lib/queries";
+import { notifyPlan, viaQueue } from "@/lib/queries";
+import { queued, useQueueVersion } from "@/lib/offline";
+import { useCallback } from "react";
+import { DEFAULT_DEFS, specsFor, type ClientGoal, type HabitDay, type HabitDef } from "@/lib/habits";
 
 export const missingObject = (e: { code?: string; message?: string } | null | undefined) => !!e && (e.code === "42P01" || e.code === "42883" || e.code === "PGRST202" || e.code === "PGRST205" || /does not exist|could not find/i.test(e.message ?? ""));
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
@@ -70,24 +73,111 @@ export function useDeleteSnippet() {
 }
 
 // ---------- Hábitos ----------
-export type Habit = { day: string; water: number | null; steps: number | null; sleep: number | null };
-export const useHabits = (clientId: string, days = 7) => useQuery({ queryKey: ["habits", clientId, days], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<Habit[] | null> => {
-  const { data, error } = await db().from("habit_logs").select("day,water,steps,sleep").eq("client_id", clientId).gte("day", daysAgo(days - 1)).order("day");
+export type Habit = HabitDay;
+// Con lo anotado sin señal encima (12-nov, lib/offline.ts).
+export function useHabits(clientId: string, days = 7) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: Habit[] | null) => (d && v > 0 ? applyHabitQueue(clientId, d) : d), [clientId, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useHabitsQ(clientId, days, select);
+}
+function applyHabitQueue(cid: string, rows: Habit[]): Habit[] {
+  const ops = [...queued(cid, "habit"), ...queued(cid, "habitx")]; if (!ops.length) return rows;
+  let out = rows;
+  for (const o of ops) {
+    const cur = out.find((h) => h.day === o.date) ?? { day: o.date, water: null, steps: null, sleep: null, extra: {} };
+    const next: Habit = o.t === "habit" ? { ...cur, ...(o.water != null ? { water: o.water } : {}), ...(o.steps != null ? { steps: o.steps } : {}), ...(o.sleep != null ? { sleep: o.sleep } : {}) }
+      : { ...cur, extra: Object.fromEntries(Object.entries({ ...(cur.extra ?? {}), [o.habit]: o.value }).filter(([, x]) => x != null)) as Record<string, number> };
+    out = [...out.filter((h) => h.day !== o.date), next].sort((a, b) => a.day.localeCompare(b.day));
+  }
+  return out;
+}
+const useHabitsQ = (clientId: string, days: number, select: (d: Habit[] | null) => Habit[] | null) => useQuery({ queryKey: ["habits", clientId, days], enabled: !!clientId, staleTime: 60_000, select, queryFn: async (): Promise<Habit[] | null> => {
+  const q = (cols: string) => db().from("habit_logs").select(cols).eq("client_id", clientId).gte("day", daysAgo(days - 1)).order("day");
+  let { data, error } = await q("day,water,steps,sleep,extra");
+  if (error && error.code === "42703") ({ data, error } = await q("day,water,steps,sleep"));   // base sin la 0052
   if (error) { if (missingObject(error)) return null; throw error; }
-  return (data as Habit[]).map((h) => ({ ...h, sleep: h.sleep == null ? null : Number(h.sleep) }));
+  return (data as unknown as Habit[]).map((h) => ({ ...h, sleep: h.sleep == null ? null : Number(h.sleep), extra: h.extra ?? {} }));
 } });
+// Hábitos del negocio (0052). Sin la 0052: los tres de fábrica.
+export const useHabitDefs = () => useQuery({ queryKey: ["habit-defs"], staleTime: 5 * 60_000, queryFn: async (): Promise<{ defs: HabitDef[]; ready: boolean }> => {
+  const { data, error } = await db().from("habit_defs").select("id,key,name,unit,kind,goal,active,position").order("position");
+  if (error) { if (missingObject(error)) return { defs: DEFAULT_DEFS, ready: false }; throw error; }
+  const defs = (data as HabitDef[]).map((d) => ({ ...d, goal: d.goal == null ? null : Number(d.goal) }));
+  return { defs: defs.length ? defs : DEFAULT_DEFS, ready: defs.length > 0 };
+} });
+// Metas por cliente (0052). El cliente solo recibe las suyas (RLS); Jeff, las de todos.
+export const useClientGoals = () => useQuery({ queryKey: ["habit-goals"], staleTime: 5 * 60_000, queryFn: async (): Promise<ClientGoal[]> => {
+  const { data, error } = await db().from("client_habit_goals").select("client_id,habit_id,goal,off");
+  if (error) { if (missingObject(error)) return []; throw error; }
+  return (data as { client_id: string; habit_id: string; goal: number | null; off: boolean }[]).map((g) => ({ clientId: g.client_id, habitId: g.habit_id, goal: g.goal == null ? null : Number(g.goal), off: g.off }));
+} });
+/** Los hábitos que aplican a un cliente, con su meta. */
+export function useHabitSpecs(clientId: string) {
+  const defs = useHabitDefs(), goals = useClientGoals();
+  const data = defs.data && goals.data ? specsFor(defs.data.defs, goals.data, clientId) : undefined;
+  return { data, isPending: defs.isPending || goals.isPending, isError: defs.isError || goals.isError };
+}
+// Jeff: lo anotado por todos sus clientes (para "Hábitos").
+export const useAllHabitLogs = (days: number) => useQuery({ queryKey: ["habit-logs-all", days], staleTime: 60_000, queryFn: async (): Promise<(Habit & { clientId: string })[] | null> => {
+  const q = (cols: string) => db().from("habit_logs").select(cols).gte("day", daysAgo(days)).order("day");
+  let { data, error } = await q("client_id,day,water,steps,sleep,extra");
+  if (error && error.code === "42703") ({ data, error } = await q("client_id,day,water,steps,sleep"));
+  if (error) { if (missingObject(error)) return null; throw error; }
+  return (data as unknown as (Habit & { client_id: string })[]).map((h) => ({ clientId: h.client_id, day: h.day, water: h.water, steps: h.steps, sleep: h.sleep == null ? null : Number(h.sleep), extra: h.extra ?? {} }));
+} });
+const HABIT_ERR: Record<string, string> = { bad_goal: "Esa meta no es válida.", bad_habit: "Revisa el nombre y la unidad.", too_many: "Ya hay 12 hábitos; apaga o reutiliza uno.", not_allowed: "No tienes permiso para esto." };
+const habitErr = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(HABIT_ERR).find((x) => m.includes(x)); return k ? HABIT_ERR[k] : "No pudimos guardarlo. Revisa tu conexión e inténtalo de nuevo."; };
+export function useSaveHabitDef() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { id: string | null; name: string; unit: string | null; kind: "number" | "check"; goal: number | null; active: boolean }) => {
+      const { error } = await db().rpc("save_habit_def", { p_id: v.id, p_name: v.name, p_unit: v.unit, p_kind: v.kind, p_goal: v.goal, p_active: v.active }); if (error) throw error; },
+    onSuccess: (_d, v) => toast(v.id ? "Hábito guardado" : `Hábito agregado: ${v.name}. Ya lo ven tus clientes.`),
+    onError: (e) => toast(habitErr(e), true),
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["habit-defs"] }); },
+  });
+}
+export function useSetClientGoal() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { clientId: string; habitId: string; goal: number | null; off: boolean }) => {
+      const { error } = await db().rpc("set_client_habit_goal", { p_client: v.clientId, p_habit: v.habitId, p_goal: v.goal, p_off: v.off }); if (error) throw error; },
+    onMutate: async (v) => { await qc.cancelQueries({ queryKey: ["habit-goals"] }); const prev = qc.getQueryData<ClientGoal[]>(["habit-goals"]);
+      qc.setQueryData<ClientGoal[]>(["habit-goals"], (l = []) => [...l.filter((g) => !(g.clientId === v.clientId && g.habitId === v.habitId)), ...(v.goal != null || v.off ? [v] : [])]); return { prev }; },
+    onError: (e, _v, ctx) => { qc.setQueryData(["habit-goals"], ctx?.prev); toast(habitErr(e), true); },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["habit-goals"] }); },
+  });
+}
 export function useLogHabit(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { day: string; water?: number; steps?: number; sleep?: number }) => {
-      const { error } = await db().rpc("log_habit", { p_day: v.day, p_water: v.water ?? null, p_steps: v.steps ?? null, p_sleep: v.sleep ?? null }); if (error) throw error;
-    },
+    networkMode: "always",
+    mutationFn: (v: { day: string; water?: number; steps?: number; sleep?: number }) =>
+      viaQueue(clientId, { t: "habit", date: v.day, water: v.water, steps: v.steps, sleep: v.sleep }, () => db().rpc("log_habit", { p_day: v.day, p_water: v.water ?? null, p_steps: v.steps ?? null, p_sleep: v.sleep ?? null })),
     onMutate: async (v) => {
       const keys = qc.getQueryCache().findAll({ queryKey: ["habits", clientId] }).map((q) => q.queryKey);
       keys.forEach((k) => qc.setQueryData<Habit[] | null>(k, (l) => {
         if (!l) return l; const cur = l.find((h) => h.day === v.day) ?? { day: v.day, water: null, steps: null, sleep: null };
         const next = { ...cur, ...(v.water != null ? { water: v.water } : {}), ...(v.steps != null ? { steps: v.steps } : {}), ...(v.sleep != null ? { sleep: v.sleep } : {}) };
         return [...l.filter((h) => h.day !== v.day), next].sort((a, b) => a.day.localeCompare(b.day));
+      }));
+    },
+    onError: () => { toast("No pudimos guardar tu hábito. Revisa tu conexión.", true); void qc.invalidateQueries({ queryKey: ["habits", clientId] }); },
+  });
+}
+
+// Hábitos que agregó Jeff (0052): número o sí/no. `value` nulo = borrar lo anotado ese día.
+export function useLogHabitExtra(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    networkMode: "always",
+    mutationFn: (v: { day: string; habit: string; value: number | null }) =>
+      viaQueue(clientId, { t: "habitx", date: v.day, habit: v.habit, value: v.value }, () => db().rpc("log_habit_extra", { p_day: v.day, p_habit: v.habit, p_value: v.value })),
+    onMutate: async (v) => {
+      qc.getQueryCache().findAll({ queryKey: ["habits", clientId] }).forEach((q) => qc.setQueryData<Habit[] | null>(q.queryKey, (l) => {
+        if (!l) return l; const cur = l.find((h) => h.day === v.day) ?? { day: v.day, water: null, steps: null, sleep: null, extra: {} };
+        const extra = { ...(cur.extra ?? {}) }; if (v.value == null) delete extra[v.habit]; else extra[v.habit] = v.value;
+        return [...l.filter((h) => h.day !== v.day), { ...cur, extra }].sort((a, b) => a.day.localeCompare(b.day));
       }));
     },
     onError: () => { toast("No pudimos guardar tu hábito. Revisa tu conexión.", true); void qc.invalidateQueries({ queryKey: ["habits", clientId] }); },

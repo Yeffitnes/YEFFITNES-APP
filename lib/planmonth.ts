@@ -1,5 +1,5 @@
 // Plan mensual (pedido de Cristian, 28-oct): cada plan dura 30 días desde plan_since (migración 0038).
-// Al vencer NO se quita solo: Jeff lo ve y decide. Avisos (0048): 7 días antes, 2 días antes y el día que vence, con la decisión.
+// Al vencer NO se quita solo: Jeff lo ve y decide. Avisos (0048, 0051): 7, 2 y 1 día antes y el día que vence, con la decisión.
 export const PLAN_DAYS = 30;
 export const PLAN_WARN_DAYS = 7;
 const bogota = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });

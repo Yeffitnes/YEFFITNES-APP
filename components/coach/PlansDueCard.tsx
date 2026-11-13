@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRenewPlan, useSetPlan, type ClientRow } from "@/lib/queries";
 import { planMonth, planMonthText } from "@/lib/planmonth";
 import { useFocusAnchor } from "@/lib/focus";
-// Planes mensuales vencidos o por vencer (pedido de Cristian, 28-oct; decisión aclarada el 4-nov). Avisa 7 y 2 días antes (solo información,
+// Planes mensuales vencidos o por vencer (pedido de Cristian, 28-oct; decisión aclarada el 4-nov). Avisa 7, 2 y 1 día antes (solo información,
 // sin botones: renovar antes de tiempo le quitaría días al cliente porque el mes cuenta desde hoy). El día que vence, Jeff decide
 // según si el cliente pagó. El plan nunca se quita solo.
 export function PlansDueCard({ clients }: { clients: ClientRow[] }) {

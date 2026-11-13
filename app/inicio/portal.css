@@ -1465,6 +1465,8 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 /* Hábitos: avisos y promedio de la semana (2-nov) */
 .hab-alert{display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;padding:9px 11px;border-radius:11px;font-size:13px;line-height:1.45;color:#fff;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
 .hab-alert svg{flex:none;margin-top:2px}
+.hab-check{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:var(--paper);font:inherit;font-size:13px;font-weight:700;color:var(--text);cursor:pointer}
+.hab-check.on{color:#fff;border-color:var(--ink);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
 .hab-week-box{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
 .hab-avgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .hab-avg{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:11px;background:var(--surface);min-width:0}
