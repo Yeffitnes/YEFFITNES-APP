@@ -20,7 +20,8 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `review2.js` (2-nov): Revisar pendientes (botones en el celular, filtro) y logros por rutinas completas; `nudge_row.js`: la fila "Jeff te está esperando" se abre con texto y botones. Ver la cabecera de cada uno para el dato que necesitan.
 - `away.js` (2-nov): hábitos (ayer, récord, historial para cliente y Jeff) y "Jeff estuvo pendiente de ti". Base recién creada.
 - `review3.js` (2-nov): Revisar cliente por cliente (computador y celular), tarjeta del panel legible, "Revisar" segundo en el menú del celular. Base recién creada. `report_time.js`: hora del reporte (ver cabecera).
-- `advice.js` (4-nov): sugerencias de peso (aceptar con otro peso, descartar, sin peso, sugerencia vieja, plan terminado, desde Revisar; celular y computador). Base recién creada.
+- `tip_noweight.js` (12-nov): consejo al cliente en un ejercicio sin peso. Base recién creada.
+- `advice.js` (4-nov; 12-nov repeticiones): sugerencias (aceptar con otro peso, descartar, sin peso → repeticiones fijas y en rango, "Mejor ponerle peso", sugerencia vieja, plan terminado, desde Revisar; celular y computador). Base recién creada.
 - `set_order.js` (4-nov): marcar la última serie sin las de arriba no recoge el ejercicio. `week_plan.js`: resumen por la semana real y planes por vencer (computador y celular). `plan_cron.js`: la tarea de la mañana manda el aviso de plan y no lo repite (claves VAPID de prueba, como `push.js`). Base recién creada.
 - `bash tests/e2e/run.sh catalog.js`: galería de ejercicios (arranca Compacta; Normal se recuerda por filtro) en celular y computador.
 Límites: `proxy.js` simula solo lo mínimo de Supabase (sesión y /rest). No hay Storage (fotos, audios), Realtime, avisos push ni Bunny.

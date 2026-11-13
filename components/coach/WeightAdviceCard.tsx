@@ -23,9 +23,9 @@ export function WeightAdviceCard() {
   const groups = Array.from(rows.slice(0, 20).reduce((m, r) => m.set(r.l.logId, [...(m.get(r.l.logId) ?? []), r]), new Map<string, typeof rows>()).values());
   return (
     <div className="card wadv-card" id="ajustes">
-      <div className="card-head"><div><div className="card-tag">Ajustes de peso sugeridos</div>
+      <div className="card-head"><div><div className="card-tag">Ajustes sugeridos</div>
         <div className="card-title" style={{ fontSize: 15 }}>{rows.length} sugerencia{rows.length === 1 ? "" : "s"} de tus clientes</div></div></div>
-      <p className="plans-due-sub">Según las repeticiones que hicieron frente a las que pediste. Cambia el peso si quieres y acepta: se actualiza su plan y sale de aquí.</p>
+      <p className="plans-due-sub">Según las repeticiones que hicieron frente a las que pediste. Cambia el valor si quieres y acepta: se actualiza su plan y sale de aquí.</p>
       {groups.map((g) => { const l = g[0].l;
         return (
           <div key={l.logId} className="wadv-group">
@@ -39,11 +39,11 @@ export function WeightAdviceCard() {
               return (
                 <div key={key} className={`wadv-row ${a.kind}`}>
                   <span className="wadv-txt">
-                    <b><Icon name={a.kind === "up" ? "up" : "down"} size={13} /> {a.name}: {a.kind === "up" ? "subir el peso" : "bajar el peso"}</b>
-                    <span>{a.range.fixed ? `Pediste ${a.range.min} repeticiones` : `Rango ${rangeText(a.range)} repeticiones`}; hizo {done.join(", ") || "—"}{a.base != null ? ` con ${kg(a.base)}` : ""}.{plan != null ? ` En su plan: ${kg(plan)}.` : ""}</span>
-                    {a.next == null && <span className="wadv-noweight">No registró peso y su plan no tiene. Escribe el que le quieres dejar, o descarta si es sin peso.</span>}
+                    <b><Icon name={a.kind === "up" ? "up" : "down"} size={13} /> {a.name}: {a.kind === "up" ? "subir" : "bajar"} {a.mode === "reps" ? "las repeticiones" : "el peso"}</b>
+                    <span>{a.range.fixed ? `Pediste ${a.range.min} repeticiones` : `Rango ${rangeText(a.range)} repeticiones`}; hizo {done.join(", ") || "—"}{a.mode === "reps" ? " sin peso" : a.base != null ? ` con ${kg(a.base)}` : ""}.{plan != null ? ` En su plan: ${kg(plan)}.` : ""}</span>
+                    {a.mode === "reps" && !a.nextReps && <span className="wadv-noweight">Escribe las repeticiones que le quieres dejar.</span>}
                   </span>
-                  <AdviceEditor clientId={l.clientId} logId={l.logId} itemId={a.itemId} next={a.next} name={a.name} />
+                  <AdviceEditor clientId={l.clientId} logId={l.logId} itemId={a.itemId} next={a.next} name={a.name} mode={a.mode} nextReps={a.nextReps} planReps={l.items.find((i) => i.id === a.itemId)?.reps ?? ""} />
                 </div>);
             })}
           </div>);

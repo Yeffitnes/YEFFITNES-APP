@@ -43,7 +43,13 @@ export function nextWeight(current: number | null | undefined, dir: "up" | "down
   return v > 0 ? Math.round(v * 2) / 2 : null;
 }
 // Consejo inmediato al cliente después de guardar una serie.
-export function setTip(range: RepRange, reps: number): string | null {
+export function setTip(range: RepRange, reps: number, noWeight = false): string | null {
+  // Sin peso (12-nov): no hay peso que subir o bajar; Jeff ajusta las repeticiones.
+  if (noWeight) {
+    if (reps > range.max) return `Hiciste ${reps} y la meta era ${range.fixed ? range.max : `entre ${range.min} y ${range.max}`}. Bien: Jeff verá que te quedó fácil y puede subirte las repeticiones.`;
+    if (reps < range.min) return `Hiciste ${reps} de ${range.min}. Descansa un poco más antes de la siguiente serie. Si no llegas, Jeff puede ajustarte las repeticiones.`;
+    return null;
+  }
   if (range.fixed) {
     if (reps > range.max) return `Hiciste ${reps} y la meta era ${range.max}. La próxima vez sube un poco el peso para quedar en ${range.max}.`;
     if (reps < range.min) return `Hiciste ${reps} de ${range.min}. Baja un poco el peso o descansa un poco más para llegar a ${range.min}.`;
@@ -54,7 +60,21 @@ export function setTip(range: RepRange, reps: number): string | null {
   return null;
 }
 // Resumen para Jeff de un entrenamiento: qué ejercicios conviene subir o bajar (lo usan la notificación y el panel).
-export type ExAdvice = { itemId: string; name: string; kind: "up" | "down"; reason: string; range: RepRange; base: number | null; next: number | null };
+// mode "reps" (12-nov): ejercicio sin peso (ni en el plan ni registrado): se sugiere cambiar las repeticiones (nextReps).
+export type ExAdvice = { itemId: string; name: string; kind: "up" | "down"; reason: string; range: RepRange; base: number | null; next: number | null; mode: "weight" | "reps"; nextReps: string | null };
+// Repeticiones sugeridas en ejercicios sin peso: lo que de verdad hizo (la mediana de sus series). Si subió por esfuerzo bajo sin pasarse,
+// 2 más. En rango se conserva el ancho: hizo 15 con "8-12" → "11-15"; hizo 6 → "6-10". Devuelve solo el número o el rango, sin "por lado".
+export function nextReps(range: RepRange, done: number[], dir: "up" | "down"): string | null {
+  if (!done.length) return null;
+  const s = [...done].sort((a, b) => a - b), m = s[Math.floor((s.length - 1) / 2)], width = range.max - range.min;
+  let lo = dir === "up" ? (m > range.max ? m - width : range.min + 2) : (m < range.min ? m : range.min - 2);
+  if (lo < 1) lo = 1;
+  const hi = lo + width;
+  if (lo === range.min && hi === range.max) return null;
+  return range.fixed ? String(lo) : `${lo}-${hi}`;
+}
+// Lo que se agrega al número al guardar, para no perder lo que Jeff había escrito ("10 por lado" → "12 por lado").
+export const repsSuffix = (reps: string) => { const m = reps.trim().match(/^\d{1,3}(?:\s*(?:-|–|—|a|al|to)\s*\d{1,3})?\s*(.*)$/i); const t = (m?.[1] ?? "").trim(); return /^(reps?|repeticiones)$/i.test(t) ? "" : t; };
 export function workoutAdvice(sets: { itemId: string | null; reps: number | null; weight: number | null; warmup?: boolean }[], items: { id: string; name: string; reps: string; weight: number | null }[], effort?: number | null): ExAdvice[] {
   const out: ExAdvice[] = [];
   for (const it of items) {
@@ -62,7 +82,9 @@ export function workoutAdvice(sets: { itemId: string | null; reps: number | null
     const work = sets.filter((s) => s.itemId === it.id && !s.warmup); if (!work.length) continue;
     const a = advise(r, work.map((s) => s.reps), effort); if (a.kind === "keep") continue;
     const used = work.map((s) => s.weight).filter((w): w is number => w != null), base = used.length ? Math.max(...used) : it.weight;
-    out.push({ itemId: it.id, name: it.name, kind: a.kind, reason: a.reason, range: r, base: base ?? null, next: nextWeight(base, a.kind) });
+    const noWeight = !used.length && it.weight == null;
+    out.push({ itemId: it.id, name: it.name, kind: a.kind, reason: a.reason, range: r, base: base ?? null, next: nextWeight(base, a.kind), mode: noWeight ? "reps" : "weight",
+      nextReps: noWeight ? nextReps(r, work.map((s) => s.reps).filter((x): x is number => x != null), a.kind) : null });
   }
   return out;
 }

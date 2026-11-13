@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-11-12 - Sugerencias en ejercicios sin peso: repeticiones (MIGRACIÓN 0050)
+Aprobado por Cristian (12-nov) a partir de la propuesta del 4-nov.
+- En un ejercicio sin peso (ni en el plan ni registrado por el cliente), la sugerencia ya no dice "subir el peso": dice "subir/bajar las repeticiones" y trae escritas las que de verdad hizo (la mediana de sus series): pidió 10 e hizo 14, 15, 14 → "14"; rango "8-12" e hizo 6, 6, 7 → "6-10" (conserva el ancho). Si subió solo por esfuerzo bajo, 2 más. Se respeta lo que Jeff había escrito ("10 por lado" → "14 por lado"). Aceptar cambia las repeticiones del plan y avisa al cliente; "Mejor ponerle peso" cambia la casilla a kg. Igual al revisar un entrenamiento. La tarjeta pasa a llamarse "Ajustes sugeridos". La notificación a Jeff también habla de repeticiones. `lib/progression.ts` (`nextReps`, `repsSuffix`, `setTip`), `AdviceEditor.tsx`, `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `lib/queries.ts`, `app/api/push/activity/route.ts`, `coach.css`.
+- Cliente: en ejercicios sin peso, el consejo al abrir y al guardar una serie habla de repeticiones, no de subir o bajar el peso. `HoyView.tsx`.
+- Base: `0050_reps_advice.sql` (`decide_reps_advice`, columna `reps` en `weight_advice_decisions`; `decide_weight_advice` ahora limpia una decisión de repeticiones anterior). Prueba de ataque `rls_advice.sql` ampliada: ninguno.
+- Pruebas: `advice.js` 20 de 20 (celular y computador), `tip_noweight.js` nueva. NO verificado: iPhone real.
+- Límite conocido: si Jeff cambia las repeticiones desde la ficha, la sugerencia se recalcula contra las nuevas (no se guarda qué pedía el plan el día del entrenamiento); si quedan iguales a lo que hizo, desaparece.
+- Revertir: código, restaurar del commit `d636986` y borrar `tests/e2e/tip_noweight.js`; base, cabecera de la 0050.
+
 ## 2026-11-04 (noche, 2) - Sugerencias de peso: se resuelven ahí mismo y no vuelven (MIGRACIÓN 0049)
 Pedido de Cristian (20:19): "Ajustar en su plan" no llevaba al ejercicio, y quiere cambiar el peso, aceptar y que se quite.
 - **Decisión de diseño:** en vez de llevar a Jeff a otra pantalla, el peso se cambia en la misma sugerencia: viene escrito, lo edita si quiere y toca Aceptar o Descartar. Se actualiza el plan, sale al momento y sigue con la siguiente. Se quitó "Ajustar en su plan" y "Subir/Bajar a X kg". Igual al revisar un entrenamiento (Revisar y ficha). `AdviceEditor.tsx` (nuevo), `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `coach.css`.

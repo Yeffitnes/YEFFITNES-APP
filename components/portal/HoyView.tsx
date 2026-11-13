@@ -130,7 +130,7 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
   // Descanso y récords (30-oct, noche). El récord se compara con el mejor peso ANTES de hoy; en la misma sesión solo se celebra si lo vuelve a superar.
   const [rest, setRest] = useState<Rest | null>(null), [hit, setHit] = useState<RecordHit | null>(null), recs = useRecords(cid), cheered = useRef<Record<string, number>>({});
   const onSetSaved = (i: PlanItem, setNumber: number, reps: number, weight: number | null) => {
-    setJust({ itemId: i.id, setNumber, reps, at: Date.now() });
+    setJust({ itemId: i.id, setNumber, reps, weight, at: Date.now() });
     const totalSets = items.reduce((a, x) => a + x.sets, 0), doneSets = new Set((log?.sets ?? []).map((x) => `${x.itemId}:${x.setNumber}`)); doneSets.add(`${i.id}:${setNumber}`);
     if (i.rest && i.rest > 0 && doneSets.size < totalSets) { primeSound(); setRest({ end: Date.now() + i.rest * 1000, total: i.rest, label: i.name }); }
     const prev = bestBefore(recs.data, i.name, today);
@@ -234,13 +234,13 @@ function SwapBar({ cid, item, alts, today, locked, hasSets }: { cid: string; ite
 // Consejo del rango de repeticiones (pedido de Cristian, 28-oct): ya no es un texto fijo (en el teléfono se veía montado).
 // Es un aviso corto que aparece solo un momento: al abrir el ejercicio (una vez al día) y después de guardar una serie fuera del rango.
 // Desde el 29-oct también con repeticiones fijas ("10"): si hizo menos, bajar; si hizo más, subir.
-type JustSaved = { itemId: string; setNumber: number; reps: number; at: number };
+type JustSaved = { itemId: string; setNumber: number; reps: number; weight: number | null; at: number };
 function RepTip({ item, just }: { item: PlanItem; just: JustSaved | null }) {
   const r = repTarget(item.reps);
   // El consejo es sobre la serie que se ACABA de guardar (29-oct): antes miraba la de número más alto, y si ya estaba la serie 3,
   // guardar la 1 con menos repeticiones no mostraba nada.
   const last = just && just.itemId === item.id ? just : null;
-  const tip = r && last ? setTip(r, last.reps) : null;
+  const noWeight = item.weight == null && (!last || last.weight == null), tip = r && last ? setTip(r, last.reps, noWeight) : null;   // sin peso: habla de repeticiones (12-nov)
   const key = tip ? `s${last!.setNumber}-${last!.reps}-${last!.at}` : "intro";
   // El aviso de entrada sale una vez al día por ejercicio; se decide una sola vez al abrir el ejercicio.
   const [intro] = useState(() => {
@@ -254,7 +254,9 @@ function RepTip({ item, just }: { item: PlanItem; just: JustSaved | null }) {
   useEffect(() => { if (!shown) return; const t = setTimeout(() => setShown(null), shown === "intro" ? 9000 : 7000); return () => clearTimeout(t); }, [shown]);
   if (!r || shown !== key) return null;
   const w = item.weight != null ? ` con ${item.weight} kg` : "";
-  const text = tip ?? (r.fixed
+  const text = tip ?? (noWeight
+    ? `Haz tus ${item.sets} series de ${r.fixed ? r.min : `entre ${r.min} y ${r.max}`} repeticiones. Escribe las que hiciste de verdad: si te sobran o te faltan, Jeff te ajusta las repeticiones.`
+    : r.fixed
     ? `Haz tus ${item.sets} series${w} de ${r.min} repeticiones. Si haces más, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Escribe las repeticiones que hiciste de verdad. Si tienes dudas, pregúntale a Jeff.`
     : `Haz tus ${item.sets} series${w} buscando entre ${r.min} y ${r.max} repeticiones. Si pasas de ${r.max}, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Si tienes dudas, pregúntale a Jeff.`);
   return (

@@ -13,7 +13,7 @@ import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/li
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { notifyFeedback, useAdviceDecisions, useClientLogs, useReviewWorkout, useTrainingPlans, type ClientLog } from "@/lib/queries";
 import { AdviceEditor } from "./AdviceEditor";
-import { advise, nextWeight, rangeText, repTarget } from "@/lib/progression";
+import { rangeText, workoutAdvice } from "@/lib/progression";
 import { Skeleton } from "@/components/ui/Modal";
 import { Snippets } from "./Snippets";
 const when = (iso: string) => { const d = Math.round((new Date(new Date().toDateString()).getTime() - new Date(iso + "T00:00:00").getTime()) / 86400000); return d <= 0 ? "Hoy" : d === 1 ? "Ayer" : new Date(iso + "T00:00:00").toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" }); };
@@ -40,22 +40,22 @@ export function RecentWorkouts({ clientId, title = "Entrenamientos recientes", s
     </div>
   );
 }
-// Sugerencia de peso por ejercicio según las repeticiones que puso Jeff (rango o fijas) (lib/progression.ts). Jeff decide igual que en el panel.
+// Sugerencia por ejercicio según las repeticiones que puso Jeff (rango o fijas) (lib/progression.ts): peso o, sin peso, repeticiones.
+// Misma regla y mismo editor que el panel.
 function WeightAdvice({ clientId, logId, sets, effort }: { clientId: string; logId: string; sets: ClientLog["sets"]; effort: number | null }) {
   const plans = useTrainingPlans(clientId), decisions = useAdviceDecisions();
   const itemId = sets.find((x) => x.itemId)?.itemId;
   const item = itemId ? plans.data?.filter((p) => p.status === "active").flatMap((p) => p.days.flatMap((d) => d.items)).find((i) => i.id === itemId) : undefined;
-  const range = repTarget(item?.reps); if (!item || !range) return null;   // rango (8-12) o fijas (10), desde el 29-oct; solo su plan activo
-  const work = sets.filter((x) => !x.warmup), a = advise(range, work.map((x) => x.reps), effort);
-  if (a.kind === "keep") return null;
-  const used = work.map((x) => x.weight).filter((w): w is number => w != null), base = used.length ? Math.max(...used) : item.weight, next = nextWeight(base, a.kind);
-  const d = decisions.data?.find((x) => x.logId === logId && x.itemId === item.id);
+  if (!item) return null;   // solo su plan activo
+  const a = workoutAdvice(sets.map((x) => ({ itemId: x.itemId, reps: x.reps, weight: x.weight, warmup: x.warmup })), [{ id: item.id, name: item.name, reps: item.reps, weight: item.weight }], effort)[0];
+  if (!a) return null;
+  const d = decisions.data?.find((x) => x.logId === logId && x.itemId === item.id), what = a.mode === "reps" ? "las repeticiones" : "el peso";
   return (
     <div className={`wadv ${a.kind}`}>
       <Icon name={a.kind === "up" ? "up" : "down"} size={14} />
-      <div className="wadv-txt"><b>{a.kind === "up" ? "Recomendado: subir el peso" : "Recomendado: bajar el peso"}</b><span>{a.reason} {range.fixed ? "Pedido" : "Rango"}: {rangeText(range)} repeticiones.{item.weight != null ? ` En el plan: ${item.weight} kg.` : ""}</span></div>
-      {d ? <span className="wadv-ok">{d.weight != null ? `Plan actualizado: ${String(d.weight).replace(".", ",")} kg` : "Descartada"}</span>
-        : !decisions.isPending && <AdviceEditor clientId={clientId} logId={logId} itemId={item.id} next={next} name={item.name} />}
+      <div className="wadv-txt"><b>Recomendado: {a.kind === "up" ? "subir" : "bajar"} {what}</b><span>{a.reason} {a.range.fixed ? "Pedido" : "Rango"}: {rangeText(a.range)} repeticiones.{a.mode === "reps" ? " Sin peso." : item.weight != null ? ` En el plan: ${item.weight} kg.` : ""}</span></div>
+      {d ? <span className="wadv-ok">{d.reps ? `Plan actualizado: ${d.reps} repeticiones` : d.weight != null ? `Plan actualizado: ${String(d.weight).replace(".", ",")} kg` : "Descartada"}</span>
+        : !decisions.isPending && <AdviceEditor clientId={clientId} logId={logId} itemId={item.id} next={a.next} name={item.name} mode={a.mode} nextReps={a.nextReps} planReps={item.reps} />}
     </div>
   );
 }

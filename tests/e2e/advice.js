@@ -1,4 +1,4 @@
-// 4-nov: sugerencias de peso que se resuelven ahí mismo. Base recién creada. Prepara a Camila: entreno de hace 3 días, pidió 10 e hizo 7 con 40 kg.
+// 4-nov: sugerencias de peso que se resuelven ahí mismo; 12-nov: sin peso, repeticiones. Base recién creada. Prepara a Camila: entreno de hace 3 días, pidió 10 e hizo 7 con 40 kg.
 const { execSync } = require("child_process");
 const { chromium, ctxFor, watch } = require("./lib.js");
 const S = __dirname + "/shots", U = "http://localhost:3000", CID = process.env.CLIENT_ID;
@@ -30,11 +30,21 @@ const logNewer = (it, reps) => sql(`with w as (insert into workout_logs (workspa
       if (await p.locator(".wadv-card").count()) throw new Error("sigue"); if (Number(sql(`select target_weight from plan_items where id='${it}'`)) !== 40) throw new Error("cambió el peso");
       const o = await (await ctxFor(b, "jeff", !mobile)).newPage(); await o.goto(`${U}/coach`, { waitUntil: "networkidle" }); await o.waitForTimeout(1300); if (await o.locator(".wadv-card").count()) throw new Error("salió en el otro aparato"); await o.close();
     });
-    await step(`[${tag}] sin peso: casilla vacía, Aceptar inactivo hasta escribirlo`, async () => {
-      it = reset(); sql(`update set_logs set weight=null where plan_item_id='${it}'; update plan_items set target_weight=null where id='${it}'`);
-      const c = await panel(); if (await c.locator("input").inputValue() !== "" || !/No registró peso/.test(await c.innerText())) throw new Error(await c.innerText());
-      const ok = c.getByRole("button", { name: "Aceptar" }); if (!(await ok.isDisabled())) throw new Error("activo sin peso");
-      await c.locator("input").fill("22,5"); await ok.click(); await p.waitForTimeout(1200); if (Number(sql(`select target_weight from plan_items where id='${it}'`)) !== 22.5 || await p.locator(".wadv-card").count()) throw new Error("no aplicó");
+    await step(`[${tag}] sin peso (12-nov): sugiere las repeticiones que hizo y al aceptar cambia las repeticiones del plan`, async () => {
+      it = reset(); sql(`update set_logs set weight=null, reps=14 where plan_item_id='${it}'; update set_logs set reps=15 where plan_item_id='${it}' and set_number=2; update plan_items set target_weight=null where id='${it}'`);
+      const c = await panel(), t = (await c.innerText()).replace(/\n/g, " "); await c.screenshot({ path: `${S}/adv_reps_${tag}.png` });
+      if (!/subir las repeticiones/.test(t) || !/hizo 14, 15, 14 sin peso/.test(t) || /el peso/.test(t) || await c.locator("input").inputValue() !== "14") throw new Error(t);
+      await c.getByRole("button", { name: "Aceptar" }).click(); await p.waitForTimeout(1200);
+      const r = sql(`select reps, target_weight is null from plan_items where id='${it}'`); if (r !== "14|t" || await p.locator(".wadv-card").count()) throw new Error(r);
+      sql(`update plan_items set reps='10' where id='${it}'`); return `plan: ${r}`;
+    });
+    await step(`[${tag}] sin peso, rango "8-12" e hizo 6, 6, 7: sugiere "6-10"; "Mejor ponerle peso" deja escribir kg`, async () => {
+      it = reset(); sql(`update set_logs set weight=null, reps=6 where plan_item_id='${it}'; update set_logs set reps=7 where plan_item_id='${it}' and set_number=3; update plan_items set target_weight=null, reps='8-12' where id='${it}'`);
+      const c = await panel(); const v = await c.locator("input").inputValue(); if (v !== "6-10" || !/bajar las repeticiones/.test(await c.innerText())) throw new Error(v);
+      await c.getByRole("button", { name: "Mejor ponerle peso" }).click(); const ok = c.getByRole("button", { name: "Aceptar" }); if (!(await ok.isDisabled())) throw new Error("activo sin peso");
+      await c.locator("input").fill("22,5"); await ok.click(); await p.waitForTimeout(1200);
+      const r = sql(`select target_weight, reps from plan_items where id='${it}'`); if (r !== "22.50|8-12" || await p.locator(".wadv-card").count()) throw new Error(r);
+      sql(`update plan_items set reps='10' where id='${it}'`); return r;
     });
     await step(`[${tag}] si después lo hizo bien, no sale la sugerencia vieja`, async () => { it = reset(); logNewer(it, 10); await panel(); if (await p.locator(".wadv-card").count()) throw new Error("sale"); });
     await step(`[${tag}] descartar la nueva no revive la vieja`, async () => {

@@ -912,23 +912,28 @@ export const useAdviceFeed = () => useQuery({ queryKey: ["advice-feed"], staleTi
   });
 } });
 // Lo que Jeff ya decidió (0049): aceptar con un peso o descartar. Vive en la base, así vale en todos sus aparatos.
-export type AdviceDecision = { logId: string; itemId: string; weight: number | null };
+export type AdviceDecision = { logId: string; itemId: string; weight: number | null; reps: string | null };
 export const useAdviceDecisions = () => useQuery({ queryKey: ["advice-decisions"], staleTime: 30_000, queryFn: async (): Promise<AdviceDecision[]> => {
-  const { data, error } = await db().from("weight_advice_decisions").select("log_id,plan_item_id,weight").order("decided_at", { ascending: false }).limit(1000);
+  const q = (cols: string) => db().from("weight_advice_decisions").select(cols).order("decided_at", { ascending: false }).limit(1000);
+  let { data, error } = await q("log_id,plan_item_id,weight,reps");
+  if (error && error.code === "42703") ({ data, error } = await q("log_id,plan_item_id,weight"));   // base sin la 0050
   if (error) { if (missingTable(error) || error.code === "PGRST205") return []; throw error; }   // base sin la 0049
-  return (data as { log_id: string; plan_item_id: string; weight: number | null }[]).map((d) => ({ logId: d.log_id, itemId: d.plan_item_id, weight: d.weight }));
+  return (data as unknown as { log_id: string; plan_item_id: string; weight: number | null; reps?: string | null }[]).map((d) => ({ logId: d.log_id, itemId: d.plan_item_id, weight: d.weight, reps: d.reps ?? null }));
 } });
 // Jeff decide: con peso, cambia el peso de ese ejercicio en el plan del cliente (lo verá en su próxima rutina); sin peso, la descarta.
 export function useDecideAdvice() {
   const qc = useQueryClient(), toast = useToast(), key = ["advice-decisions"];
   return useMutation({
-    mutationFn: async (v: { clientId: string; logId: string; itemId: string; weight: number | null; name: string }) => { const { error } = await db().rpc("decide_weight_advice", { p_log: v.logId, p_item: v.itemId, p_weight: v.weight }); if (error) throw error; },
-    onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<AdviceDecision[]>(key); qc.setQueryData<AdviceDecision[]>(key, (l = []) => [{ logId: v.logId, itemId: v.itemId, weight: v.weight }, ...l]); return { prev }; },
+    // Con `reps` (0050) cambia las repeticiones del plan en vez del peso.
+    mutationFn: async (v: { clientId: string; logId: string; itemId: string; weight: number | null; reps?: string | null; name: string }) => {
+      const { error } = v.reps ? await db().rpc("decide_reps_advice", { p_log: v.logId, p_item: v.itemId, p_reps: v.reps }) : await db().rpc("decide_weight_advice", { p_log: v.logId, p_item: v.itemId, p_weight: v.weight });
+      if (error) throw error; },
+    onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<AdviceDecision[]>(key); qc.setQueryData<AdviceDecision[]>(key, (l = []) => [{ logId: v.logId, itemId: v.itemId, weight: v.reps ? null : v.weight, reps: v.reps ?? null }, ...l]); return { prev }; },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardarlo. Inténtalo de nuevo.", true); },
     onSuccess: (_d, v) => {
-      toast(v.weight != null ? `Plan actualizado: ${v.name}, ${String(v.weight).replace(".", ",")} kg` : "Sugerencia descartada");
+      toast(v.reps ? `Plan actualizado: ${v.name}, ${v.reps} repeticiones` : v.weight != null ? `Plan actualizado: ${v.name}, ${String(v.weight).replace(".", ",")} kg` : "Sugerencia descartada");
       void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); void qc.invalidateQueries({ queryKey: key });
-      if (v.weight != null) notifyPlan(v.clientId, "training");
+      if (v.weight != null || v.reps) notifyPlan(v.clientId, "training");
     },
   });
 }

@@ -42,6 +42,6 @@ async function adviceText(supabase: ReturnType<typeof createClient>, date: strin
   const { data: items } = await supabase.from("plan_items").select("id,reps,target_weight,exercises(name)").in("id", ids);
   const list = ((items ?? []) as unknown as { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null }[]).map((i) => ({ id: i.id, name: i.exercises?.name ?? "un ejercicio", reps: i.reps, weight: i.target_weight }));
   const adv = workoutAdvice(sets, list, (log as { effort: number | null } | null)?.effort ?? null); if (!adv.length) return null;
-  const t = (a: (typeof adv)[number]) => `${a.kind === "up" ? "subir" : "bajar"} el peso en ${a.name}${a.next != null ? ` (a ${a.next} kg)` : ""}`;
+  const t = (a: (typeof adv)[number]) => a.mode === "reps" ? `${a.kind === "up" ? "subir" : "bajar"} las repeticiones en ${a.name}${a.nextReps ? ` (a ${a.nextReps})` : ""}` : `${a.kind === "up" ? "subir" : "bajar"} el peso en ${a.name}${a.next != null ? ` (a ${a.next} kg)` : ""}`;
   return `Sugerencia: ${adv.slice(0, 2).map(t).join("; ")}${adv.length > 2 ? ` y ${adv.length - 2} más` : ""}.`;
 }
