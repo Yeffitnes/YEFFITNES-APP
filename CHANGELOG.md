@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-13 - La letra en Vercel salía con serifa: compilación limpia en cada despliegue
+Cristian lo vio en el panel de Vercel (la de Netlify estaba bien). Causa: en Vercel la página pedía la letra con un código (`__variable_855f89`, Manrope; `__variable_30a8c4`, IBM Plex Mono) y su hoja de estilos traía otro (`f524cf`, `9f0762`). Sin esas variables, `var(--font-body)` y `var(--font-mono)` quedaban vacías y el navegador ponía su letra por defecto, con serifa. El código de la letra no cambió (`app/layout.tsx`, igual desde el 23-oct); compilando desde cero los códigos coinciden. Fue la memoria de compilación de Vercel (`.next/cache`), reutilizada a medias entre despliegues.
+- `vercel.json` (nuevo): Vercel borra `.next/cache` antes de compilar. Despliegues un poco más lentos, pero sin mezclas. Netlify no lee este archivo.
+- Verificado: build local limpio con códigos iguales en la página y en los estilos. Tras el despliegue, se comprueba en `https://yeffitnes.vercel.app` (página y CSS publicados).
+- Error del asistente el 12-nov: dijo que la letra no había cambiado sin revisar el sitio publicado. Lección en `HANDOFF.md`.
+- Revertir: borrar `vercel.json`.
+
 ## 2026-11-12 (noche) - Descanso, aviso 1 día antes, hábitos de Jeff y más cosas sin señal (MIGRACIONES 0051 y 0052)
 Pedido de Cristian (20:05).
 - **Cronómetro de descanso:** solo sale entre series del mismo ejercicio. Al completar un ejercicio (también marcando en desorden) o la rutina, no queda descanso. Antes contaba las series de toda la rutina. `HoyView.tsx`, `WorkoutExtras.tsx` (`Rest.itemId`). Prueba `rest_end.js`.
