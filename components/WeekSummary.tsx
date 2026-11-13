@@ -3,23 +3,25 @@
 // (lib/week.ts). La semana en curso cuenta solo los días que han pasado y no se puede enviar: "Enviarle el resumen" se activa cuando
 // la semana termina. Jeff abre por defecto la última semana completa; el cliente, la que lleva en curso.
 import { useState } from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useClientLogs, useClientNutrition, useMeasures, useTrainingPlans } from "@/lib/queries";
 import { isNewRecord, lastNDays, useClientReportDays, useHabitSpecs, useHabits, useMealLogsRange, useRecords, useWorkoutCount, MILESTONES } from "@/lib/extras";
 import { clientWeeks, spanText, weekdayDate, type WeekSpan } from "@/lib/clientweek";
 import { Icon } from "@/components/ui/Icon";
+import { Modal } from "@/components/ui/Modal";
+import { WeekReport } from "@/components/WeekReport";
+import { useSendWeek, useSentWeeks } from "@/lib/weeksum";
 import { fmtHabit, goalText, habitStats, isLowS, lowDaysS, lowWord, shortDay, valueOf } from "@/lib/habits";
 
 const kg = (n: number) => `${String(Math.round(n * 10) / 10).replace(".", ",")} kg`;
 const dec = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 const wdOf = (ymd: string) => { const d = new Date(`${ymd}T12:00:00`); return (d.getDay() + 6) % 7 + 1; };
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
-const WINDOW = 14;   // alcanza para la semana en curso y la anterior
+export const WINDOW = 21;   // alcanza para la semana en curso, la anterior y la de antes (comparación del resumen enviado)
 
 // Desde cuándo cuenta: el día en que se activó; sin ese dato, el inicio del plan o el registro.
-const useWeekStart = (clientId: string) => useQuery({ queryKey: ["week-start", clientId], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<string> => {
+export const useWeekStart = (clientId: string) => useQuery({ queryKey: ["week-start", clientId], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<string> => {
   const { data, error } = await db().from("clients").select("activated_at,plan_since,created_at").eq("id", clientId).single(); if (error) throw error;
   const r = data as { activated_at: string | null; plan_since: string | null; created_at: string };
   return r.activated_at ? new Date(r.activated_at).toLocaleDateString("en-CA", { timeZone: "America/Bogota" }) : r.plan_since ?? new Date(r.created_at).toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
@@ -43,11 +45,19 @@ export function useWeek(clientId: string, span: WeekSpan | null) {
   const wList = (ms.data ?? []).filter((m) => m.weight != null && m.date <= to), lastW = wList[wList.length - 1], baseW = [...wList].reverse().find((m) => m.date < from);
   const wDelta = lastW && baseW && lastW.date >= from ? (lastW.weight as number) - (baseW.weight as number) : null;
   const lows = h ? (specs.data ?? []).map((s) => ({ s, days: lowDaysS(s, h) })).filter((x) => x.days.length) : [];
-  return { pending, plan, planned: planned.length, done: weekLogs.length, effort, mealDays, reports: reps.data ? reps.data.filter(inSpan).length : null, habits, water: avgOf("water"), sleep: avgOf("sleep"), lows, goals: (specs.data ?? []).filter((s) => s.kind === "number" && s.goal != null), newRecs, lastW: lastW?.weight ?? null, wDelta };
+  // Para el resumen enviado (13-nov): peso movido (repeticiones × kg de las series de trabajo), series hechas, mejor peso por ejercicio y por día.
+  const work = weekLogs.flatMap((l) => l.sets.filter((s) => !s.warmup && s.reps != null).map((s) => ({ ...s, date: l.date })));
+  const volume = work.reduce((a, s) => a + (s.reps ?? 0) * (s.weight ?? 0), 0);
+  const byEx = new Map<string, number>(); for (const s of work) if (s.weight != null) byEx.set(s.exercise, Math.max(byEx.get(s.exercise) ?? 0, s.weight));
+  const dailyVolume = days.map((d) => work.filter((s) => s.date === d).reduce((a, s) => a + (s.reps ?? 0) * (s.weight ?? 0), 0));
+  const trainedDays = days.map((d) => weekLogs.some((l) => l.date === d));
+  const habitDaily = h ? (specs.data ?? []).map((s) => ({ s, vals: days.map((d) => valueOf(h.find((x) => x.day === d), s)) })) : [];
+  return { volume, sets: work.length, byEx, dailyVolume, trainedDays, habitDaily, pending, plan, planned: planned.length, done: weekLogs.length, effort, mealDays, reports: reps.data ? reps.data.filter(inSpan).length : null, habits, water: avgOf("water"), sleep: avgOf("sleep"), lows, goals: (specs.data ?? []).filter((s) => s.kind === "number" && s.goal != null), newRecs, lastW: lastW?.weight ?? null, wDelta };
 }
 
 export function WeekSummary({ clientId, first, mode }: { clientId: string; first: string; mode: "coach" | "client" }) {
-  const coach = mode === "coach", start = useWeekStart(clientId), [pick, setPick] = useState<"current" | "last" | null>(null);
+  const coach = mode === "coach", start = useWeekStart(clientId), [pick, setPick] = useState<"current" | "last" | null>(null), [sending, setSending] = useState(false);
+  const sent = useSentWeeks(coach ? clientId : "");
   const weeks = start.data ? clientWeeks(start.data) : null;
   const span = !weeks ? null : (pick ?? (coach ? "last" : "current")) === "last" && weeks.last ? weeks.last : weeks.current;
   const w = useWeek(clientId, span);
@@ -62,22 +72,15 @@ export function WeekSummary({ clientId, first, mode }: { clientId: string; first
   for (const { s, st } of w.habits) tiles.push(s.kind === "check" ? { k: s.name, v: `${st.done}/${total}`, s: s.goal != null ? `días · meta ${s.goal} por semana` : "días hecho", low: st.ok === false }
     : { k: s.name, v: s.key === "water" ? dec(st.avg!) : s.key === "steps" ? Math.round(st.avg!).toLocaleString("es-CO") : s.key === "sleep" ? `${dec(st.avg!)} h` : fmtHabit(s, st.avg!), s: s.key === "water" ? "vasos al día" : s.key === "sleep" ? "por noche" : "al día", low: st.ok === false });
   if (w.lastW != null) tiles.push({ k: "Peso", v: kg(w.lastW), s: w.wDelta != null ? `${w.wDelta > 0 ? "+" : w.wDelta < 0 ? "−" : ""}${kg(Math.abs(w.wDelta))} en la semana` : undefined });
-  const msg = [
-    `Resumen de tu semana (${spanText(span)}), ${first}:`,
-    w.plan ? `entrenaste ${w.done} de ${w.planned || w.done} días` : w.done ? `entrenaste ${w.done} días` : null,
-    w.mealDays != null ? `nutrición completa ${w.mealDays} de ${total} días` : null,
-    w.sleep != null ? `dormiste ${dec(w.sleep)} h por noche` : null,
-    w.water != null ? `${dec(w.water)} vasos de agua al día` : null,
-    w.newRecs.length ? `${w.newRecs.length === 1 ? "1 récord nuevo" : `${w.newRecs.length} récords nuevos`} (${w.newRecs.slice(0, 2).map((r) => `${r.exercise} ${kg(r.best)}`).join(", ")})` : null,
-  ].filter(Boolean).join(" · ").replace(":  · ", ": ").replace(": · ", ": ") + ". ";
   const when = span.left === 1 ? "mañana" : `el ${weekdayDate(span.completesOn)}`;
+  const sentNow = coach && span.complete ? sent.data?.find((x) => x.from === span.from) : undefined;
   return (
     <div className="card wk-card" style={{ marginBottom: 16 }}>
       <div className="card-head"><div><div className="card-tag">{coach ? "Resumen de la semana" : "Tu semana"}</div>
         <div className="card-title" style={{ fontSize: 15 }}>Semana {span.n} · {span.complete ? "completa" : `día ${span.day} de 7`}</div>
         <div className="card-meta">{span.complete ? spanText(span) : `Se completa ${when}`}</div></div>
         {coach && (span.complete
-          ? <Link className="pd-btn primary" style={{ textDecoration: "none" }} href={`/coach/mensajes?c=${clientId}&t=${encodeURIComponent(msg)}`}><Icon name="send" size={13} /> Enviarle el resumen</Link>
+          ? <button type="button" className="pd-btn primary" onClick={() => setSending(true)}><Icon name="send" size={13} /> {sentNow ? "Ver o reenviar" : "Enviarle el resumen"}</button>
           : <button type="button" className="pd-btn wk-wait" disabled><Icon name="clock" size={13} /> {span.left === 1 ? "Falta 1 día" : `Faltan ${span.left} días`}</button>)}</div>
       {weeks.last && <div className="wk-tabs" role="group" aria-label="Elegir semana">
         <button type="button" className={span.complete ? "on" : ""} aria-pressed={span.complete} onClick={() => setPick("last")}>Semana {weeks.last.n} · completa</button>
@@ -87,8 +90,23 @@ export function WeekSummary({ clientId, first, mode }: { clientId: string; first
         <div className="wk-grid">{tiles.map((t) => <div key={t.k} className={`wk-tile${t.low ? " low" : ""}`}><small>{t.k}</small><b>{t.v}</b>{t.s && <span>{t.s}</span>}</div>)}</div>)}
       {!!w.lows.length && <div className="wk-lows" role="status"><Icon name="bell" size={14} /><span><b>{coach ? "Hábitos por debajo del mínimo" : "Días que te quedaste corto"}:</b> {w.lows.map((x) => `${lowWord(x.s)} ${x.days.length === 1 ? "1 día" : `${x.days.length} días`} (${x.days.map(shortDay).join(", ")})`).join(" · ")}. <small>{coach ? "Metas" : "Tus metas"}: {w.goals.map((s) => `${s.name.toLowerCase()} ${fmtHabit(s, s.goal!)}`).join(", ")}.</small></span></div>}
       {!!w.newRecs.length && <div className="wk-recs"><span className="card-tag" style={{ marginBottom: 4 }}>Récords de la semana</span>{w.newRecs.map((r) => <div key={r.exercise} className="wk-rec"><Icon name="up" size={13} /><b>{r.exercise}</b><span>{kg(r.best)} × {r.reps}{r.prev != null ? ` (antes ${kg(r.prev)})` : ""}</span></div>)}</div>}
-      {coach && <p className="wk-note">{span.complete ? "“Enviarle el resumen” abre Mensajes con este resumen ya escrito para que agregues tu comentario." : `Lleva ${weeks.dayN === 1 ? "1 día" : `${weeks.dayN} días`} contigo. Podrás enviarle el resumen cuando complete su semana.`}</p>}
+      {coach && <p className="wk-note">{sentNow ? `Se lo enviaste el ${new Date(sentNow.sentAt).toLocaleDateString("es", { day: "numeric", month: "short" })} · ${sentNow.seenAt ? "ya lo vio" : "aún no lo abre"}.` : span.complete ? "“Enviarle el resumen” te muestra cómo lo verá (con gráficas y la comparación con la semana anterior) para que agregues tu comentario." : `Lleva ${weeks.dayN === 1 ? "1 día" : `${weeks.dayN} días`} contigo. Podrás enviarle el resumen cuando complete su semana.`}</p>}
+      {sending && span.complete && <SendWeek clientId={clientId} first={first} n={span.n} from={span.from} prev={sentNow?.note ?? ""} again={!!sentNow} onClose={() => setSending(false)} />}
     </div>
+  );
+}
+
+// Jeff ve exactamente lo que le llegará al cliente, escribe su comentario y lo envía (13-nov, 0053).
+function SendWeek({ clientId, first, n, from, prev, again, onClose }: { clientId: string; first: string; n: number; from: string; prev: string; again: boolean; onClose: () => void }) {
+  const send = useSendWeek(clientId), [note, setNote] = useState(prev);
+  return (
+    <Modal title={`Resumen de la semana ${n} para ${first}`} sub={again ? "Ya se lo enviaste. Si lo reenvías, le llega de nuevo con tu comentario actualizado." : "Así lo verá en su app. Agrega tu comentario: es lo primero que leerá."} onClose={onClose} wide>
+      <label className="wr-note-in"><span>Tu comentario (opcional)</span>
+        <textarea maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} placeholder={`Ej.: ${first}, gran semana. Esta semana enfócate en dormir más.`} /></label>
+      <WeekReport clientId={clientId} first={first} n={n} from={from} note={note.trim() || null} mode="preview" />
+      <div className="wr-send"><button type="button" className="ghost-btn" onClick={onClose}>Cancelar</button>
+        <button type="button" className="primary-btn" disabled={send.isPending} onClick={() => send.mutate({ n, from, note }, { onSuccess: onClose })}><Icon name="send" size={14} /> {send.isPending ? "Enviando…" : again ? "Reenviar" : "Enviar resumen"}</button></div>
+    </Modal>
   );
 }
 

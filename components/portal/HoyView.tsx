@@ -1,4 +1,6 @@
 "use client";
+import { useSentWeeks } from "@/lib/weeksum";
+import { NewWeekSummary } from "./WeekReportPage";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSignedAudio, useThread } from "@/lib/messages";
@@ -92,7 +94,8 @@ export function HoyView() {
       </div>
       <div className="qrows">
       <WhileAway cid={cid} plan={plan} logs={logList} today={today} />
-      <FromCoach />
+      <FromCoach cid={cid} />
+      {cid && <NewWeekSummary cid={cid} />}
       <CoachNudges cid={cid} trainingDone={!!logToday?.completed} trainingToday={!!day && !!me.data?.features.includes("training")} features={me.data?.features ?? []} />
       <CoachFeedback cid={cid} logs={logList} />
       <CoachCancels cid={cid} />
@@ -296,9 +299,11 @@ function SetRow({ cid, item, n, today, saved, locked, hint, onSaved }: { hint?: 
 }
 
 // Último mensaje de tu coach: una fila compacta que se abre. Nuevo = resaltada; ya leído = discreta.
-function FromCoach() {
-  const t = useThread(), last = [...(t.data ?? [])].reverse().find((m) => m.sender === "coach"), audio = useSignedAudio(last?.audioPath ?? null);
+function FromCoach({ cid }: { cid: string }) {
+  const t = useThread(), last = [...(t.data ?? [])].reverse().find((m) => m.sender === "coach"), audio = useSignedAudio(last?.audioPath ?? null), weeks = useSentWeeks(cid);
+  // 13-nov: tras el seen, el mensaje del resumen queda leído (see_week_summary).
   if (!last) return null;
+  if (weeks.data?.some((w) => w.messageId === last.id)) return null;   // es el aviso del resumen de la semana: tiene su propia tarjeta (y luego queda en Progreso)
   const when = new Date(last.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" }), fresh = !last.readAt;
   const text = last.body ?? (last.audioPath ? "Te envió un audio" : last.hasVideo || last.youtubeId ? "Te envió un vídeo" : "Te envió una foto");
   return (

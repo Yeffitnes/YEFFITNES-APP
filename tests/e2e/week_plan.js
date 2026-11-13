@@ -14,7 +14,7 @@ let fails = 0; const step = async (n, fn) => { try { console.log("OK  ", n, (awa
     await step(`[${tag}] día 3: dice su día real y el botón está inactivo`, async () => {
       const t = await ficha(); await j.locator(".wk-card").screenshot({ path: `${S}/wk_day3_${tag}.png` });
       if (!/Semana 1 · día 3 de 7/i.test(t) || !/faltan 5 días/i.test(t) || /Últimos 7/.test(t) || /\/7/.test(t)) throw new Error(t.slice(0, 260));
-      if (await j.getByRole("link", { name: /Enviarle el resumen/ }).count()) throw new Error("se puede enviar");
+      if (await j.getByRole("button", { name: /Enviarle el resumen/ }).count()) throw new Error("se puede enviar");
       if (!(await j.locator(".wk-wait").isDisabled())) throw new Error("botón activo"); return t.slice(0, 80);
     });
     await step(`[${tag}] ficha: día del plan`, async () => { const t = await j.locator(".plan-month").innerText(); if (!/día 3 de 30/.test(t) || /Renovar/.test(t)) throw new Error(t); return t; });
@@ -22,11 +22,10 @@ let fails = 0; const step = async (n, fn) => { try { console.log("OK  ", n, (awa
     await step(`[${tag}] día 9: abre la semana 1 completa, con envío; la 2 en curso sin envío`, async () => {
       const t = await ficha(); await j.locator(".wk-card").screenshot({ path: `${S}/wk_day9_${tag}.png` });
       if (!/Semana 1 · completa/i.test(t)) throw new Error(t.slice(0, 200));
-      const href = decodeURIComponent(await j.getByRole("link", { name: /Enviarle el resumen/ }).getAttribute("href"));
-      if (!/Resumen de tu semana \(\d+ \w+\.? al \d+ \w+\.?\)/.test(href)) throw new Error(href.slice(0, 200));
+      if (!(await j.getByRole("button", { name: /Enviarle el resumen/ }).count())) throw new Error("sin botón de enviar");
       await j.locator(".wk-tabs button", { hasText: "en curso" }).click(); await j.waitForTimeout(400);
-      const c = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); if (!/Semana 2 · día 2 de 7/i.test(c) || await j.getByRole("link", { name: /Enviarle el resumen/ }).count()) throw new Error(c.slice(0, 200));
-      return href.split("t=")[1].slice(0, 70);
+      const c = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); if (!/Semana 2 · día 2 de 7/i.test(c) || await j.getByRole("button", { name: /Enviarle el resumen/ }).count()) throw new Error(c.slice(0, 200));
+      return "semana 1 se puede enviar; la 2 no";
     });
     const panel = async () => { await j.goto(`${U}/coach`, { waitUntil: "networkidle" }); await j.waitForTimeout(1200); return j.locator("#planes"); };
     sql(`update clients set plan_since = ${hoy} - 23 where id = '${CID}'`);

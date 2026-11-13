@@ -120,7 +120,7 @@ const U = "http://localhost:3000";
     await j.locator(".wk-tabs button", { hasText: "en curso" }).click(); await j.waitForTimeout(400); const t = (await j.locator(".wk-card").innerText()).replace(/\n/g, " "); await j.locator(".wk-card").screenshot({ path: `${S}/x_resumen.png` });
     if (!/Agua/i.test(t) || !/Sentadilla/.test(t)) throw new Error(t.slice(0, 160));
     await j.locator(".wk-tabs button", { hasText: "en curso" }).click().catch(() => {}); const again = (await j.locator(".wk-card").innerText()); if (!/Agua/i.test(again)) throw new Error(again.slice(0, 160));
-    await j.locator(".wk-tabs button", { hasText: "completa" }).click(); const href = await j.getByRole("link", { name: /Enviarle el resumen/ }).getAttribute("href"); return decodeURIComponent(href.split("t=")[1]).slice(0, 110);
+    await j.locator(".wk-tabs button", { hasText: "completa" }).click(); if (!(await j.getByRole("button", { name: /Enviarle el resumen/ }).count())) throw new Error("sin botón de enviar"); return "botón de enviar en la semana completa";
   });
   await step("Camila: ve la respuesta de Jeff (con la frase guardada)", async () => {
     await c.goto(`${U}/inicio`, { waitUntil: "networkidle" }); await c.waitForTimeout(1200); const t = await c.locator("body").innerText();

@@ -20,6 +20,7 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `review2.js` (2-nov): Revisar pendientes (botones en el celular, filtro) y logros por rutinas completas; `nudge_row.js`: la fila "Jeff te está esperando" se abre con texto y botones. Ver la cabecera de cada uno para el dato que necesitan.
 - `away.js` (2-nov): hábitos (ayer, récord, historial para cliente y Jeff) y "Jeff estuvo pendiente de ti". Base recién creada.
 - `review3.js` (2-nov): Revisar cliente por cliente (computador y celular), tarjeta del panel legible, "Revisar" segundo en el menú del celular. Base recién creada. `report_time.js`: hora del reporte (ver cabecera).
+- `week_send.js` (13-nov): Jeff envía el resumen de la semana (vista previa con comparación y gráficas), el cliente lo abre en Hoy, queda en Progreso y Jeff ve que lo vio. Base recién creada.
 - `rest_end.js` (12-nov): descanso solo entre series. `habits_cfg.js`: hábitos de Jeff (tabla, agregar, meta por cliente, no aplica, apagar). `offline2.js`: hábitos, comida y reporte de texto sin señal. Base recién creada.
 - `tip_noweight.js` (12-nov): consejo al cliente en un ejercicio sin peso. Base recién creada.
 - `advice.js` (4-nov; 12-nov repeticiones): sugerencias (aceptar con otro peso, descartar, sin peso → repeticiones fijas y en rango, "Mejor ponerle peso", sugerencia vieja, plan terminado, desde Revisar; celular y computador). Base recién creada.
