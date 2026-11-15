@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-15 - Vídeos: clave de Bunny sin espacios y comprobación más clara
+La comprobación /api/video/health seguía dando 401 después de cambiar la clave en Vercel. Cambios:
+- `lib/bunny.ts`: la clave y el número de biblioteca se usan sin espacios ni saltos de línea al principio o al final (`trim`). Una clave pegada con un salto de línea al final da 401 aunque sea la correcta.
+- `/api/video/health` ahora muestra también `clave_termina_en` (últimos 4 caracteres, para compararla con Bunny sin mostrarla entera), `clave_largo`, `clave_tenia_espacios`, `entorno` (production/preview) y `version` (commit publicado), y responde con UTF-8 para que las tildes se vean bien.
+Sigue sin permitir enviar el reporte sin vídeo (Cristian lo pidió así).
+Revertir: `git revert` de este commit (vuelve a usar las variables tal cual y a la comprobación anterior).
+
 ## 2026-11-15 - Diagnóstico de vídeos: "El servicio de vídeo no responde"
 Cristian no pudo enviar un reporte ("El servicio de vídeo no responde"). Ese mensaje sale cuando Bunny rechaza crear el vídeo. El código de vídeos no cambió desde el 30-oct y la API de Bunny estaba en línea (sin clave responde 401, lo normal), así que el rechazo es de la clave o de la cuenta (saldo, clave o biblioteca cambiada). Antes no quedaba registrado el motivo.
 - `app/api/video/health` (nuevo, solo coach): abre `/api/video/health` con la sesión de Jeff y dice qué responde Bunny con la clave de ESE sitio (401 clave, 403 cuenta/saldo, 404 biblioteca). No muestra claves ni crea nada.

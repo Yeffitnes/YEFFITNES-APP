@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 // Bunny Stream: TODAS las claves viven solo en el servidor (variables de Netlify sin NEXT_PUBLIC_).
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
-export const bunnyConfigured = () => !!(process.env.BUNNY_API_KEY && process.env.BUNNY_LIBRARY_ID);
-const lib = () => process.env.BUNNY_LIBRARY_ID!, key = () => process.env.BUNNY_API_KEY!;
+// trim (15-nov): una clave pegada con un espacio o salto de línea al final hace que Bunny responda 401 aunque sea la correcta.
+export const bunnyLib = () => (process.env.BUNNY_LIBRARY_ID || "").trim(), bunnyKey = () => (process.env.BUNNY_API_KEY || "").trim();
+export const bunnyConfigured = () => !!(bunnyKey() && bunnyLib());
+const lib = bunnyLib, key = bunnyKey;
 export async function createVideo(title: string): Promise<string> {
   const r = await fetch(`https://video.bunnycdn.com/library/${lib()}/videos`, { method: "POST", headers: { AccessKey: key(), "content-type": "application/json", accept: "application/json" }, body: JSON.stringify({ title }) });
   if (!r.ok) throw new Error(`bunny_create_${r.status}`);
