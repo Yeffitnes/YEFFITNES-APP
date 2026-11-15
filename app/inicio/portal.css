@@ -1478,3 +1478,50 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .away-list{list-style:none;margin:0 0 4px;padding:0}
 .away-list li{display:flex;gap:8px;padding:5px 0;font-size:13.5px;line-height:1.4;color:var(--text-dim)}
 .away-list b{flex:none;min-width:58px;color:var(--text);font-weight:600}
+
+/* ---- Hoy con la estética de la marca (14-nov, demo con Jeff) ---- */
+.day-hero{position:relative;overflow:hidden;border-radius:22px;padding:22px 22px 16px;margin:4px 0 20px;color:#fff;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(247,37,75,.34),transparent 55%),radial-gradient(90% 120% at 100% 100%,rgba(205,177,112,.14),transparent 60%),var(--ink);
+  box-shadow:0 18px 40px -24px rgba(42,10,22,.65)}
+.day-hero::after{content:"";position:absolute;width:220px;height:220px;right:-80px;top:-90px;border-radius:50%;background:radial-gradient(circle,rgba(247,37,75,.28),transparent 65%);pointer-events:none}
+.dh-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.dh-eyebrow{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.58)}
+.dh-greet h1{font-family:var(--font-display),sans-serif;font-size:27px;line-height:1.1;margin:6px 0 6px;color:#fff;letter-spacing:-.01em}
+.dh-greet p{margin:0;font-size:14px;line-height:1.45;color:rgba(255,255,255,.74)}
+.dh-ring{position:relative;flex:none;width:62px;height:62px}
+.dh-ring svg{display:block}
+.dh-ring-bg{fill:none;stroke:rgba(255,255,255,.12);stroke-width:5}
+.dh-ring-fg{fill:none;stroke:var(--neon);stroke-width:5;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(247,37,75,.75));transition:stroke-dashoffset .5s ease}
+.dh-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono),monospace;font-size:12px;color:rgba(255,255,255,.7)}
+.dh-ring span b{font-size:17px;color:#fff}
+.dh-tasks{position:relative;z-index:1;margin-top:16px}
+.dh-label{font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px}
+.dh-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dh-chip{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px 0 9px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.dh-chip:hover{background:rgba(255,255,255,.12)}
+.dh-chip i{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;border:1.5px solid rgba(255,255,255,.42)}
+.dh-chip.done{background:linear-gradient(135deg,var(--neon),var(--rose));border-color:transparent;box-shadow:0 6px 16px -8px rgba(247,37,75,.8)}
+.dh-chip.done i{border-color:transparent;background:rgba(255,255,255,.26);color:#fff}
+.dh-streak{position:relative;z-index:1}
+.day-hero .streak-strip{background:none;border:0;border-top:1px solid rgba(255,255,255,.1);border-radius:0;box-shadow:none;padding:14px 0 0;margin:16px 0 0}
+@media (max-width:640px){.day-hero{margin-left:-2px;margin-right:-2px;padding:20px 18px 14px}.dh-greet h1{font-size:24px}}
+
+/* Barra de abajo oscura, como el menú de Jeff */
+@media (max-width:1024px){
+  .bottom-nav{background:radial-gradient(80% 160% at 50% 120%,rgba(247,37,75,.22),transparent 60%),var(--ink);border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -10px 30px -18px rgba(0,0,0,.6)}
+  .bottom-nav .bn-link{color:rgba(255,255,255,.5)}
+  .bottom-nav .bn-link.active{color:#fff}
+  .bottom-nav .bn-link.active svg{stroke:var(--neon);filter:drop-shadow(0 0 6px rgba(247,37,75,.75))}
+}
+
+/* Acentos oscuros en las tarjetas de Hoy */
+.routine-progress-bar{background:var(--surface)}
+.routine-progress-fill{background:linear-gradient(90deg,var(--ink),var(--neon));box-shadow:0 0 10px rgba(247,37,75,.45)}
+.hab-avg{background:var(--ink);color:#fff}
+.hab-avg small{color:rgba(255,255,255,.6)}
+.hab-avg span{color:rgba(255,255,255,.5)}
+.hab-avg.low{background:radial-gradient(120% 180% at 0% 0%,rgba(247,37,75,.55),transparent 65%),var(--ink);box-shadow:inset 0 0 0 1.5px var(--neon)}
+.habits-card,.card-nutrition{background-image:radial-gradient(130% 70% at 100% 0%,rgba(247,37,75,.07),transparent 55%)}
+/* Rótulos de tarjeta en píldora oscura con brillo rojo y acento superior más largo (14-nov) */
+.card > .card-tag,.card .card-head .card-tag{background:radial-gradient(140% 220% at 0% 0%,rgba(247,37,75,.55),transparent 62%),var(--ink);color:#fff;padding:4px 11px 4px 10px;letter-spacing:.1em;display:inline-flex;align-self:flex-start;width:max-content;max-width:100%;border-radius:20px}
+.card::before{width:72px;height:3px;opacity:1;box-shadow:0 0 10px rgba(247,37,75,.45)}

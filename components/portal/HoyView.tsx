@@ -1,4 +1,5 @@
 "use client";
+import { DayHero } from "./DayHero";
 import { useSentWeeks } from "@/lib/weeksum";
 import { NewWeekSummary } from "./WeekReportPage";
 import { useEffect, useRef, useState } from "react";
@@ -85,13 +86,15 @@ export function HoyView() {
   const planWd = plan?.days.map((d) => d.weekday) ?? [], wk = weekDates(), n = streak(plan?.days.map((d) => d.weekday) ?? [], logList);
   return (
     <>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">{cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))}</div><h1>Hola, {first}</h1><p className="greeting-sub">{sub}</p></div></div>
+      <DayHero cid={cid} eyebrow={cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))} first={first} sub={sub} features={me.data?.features ?? []}
+        trainingToday={!!day && !!me.data?.features.includes("training")} trainingDone={!!logToday?.completed} hasPlan={!!plan && me.data?.status === "active"}>
       <div className="streak-strip">
         <div className="streak-copy"><div className="streak-num"><span>{n}</span> {n === 1 ? "día" : "días"}</div><div className="streak-label">{n ? "seguidos cumpliendo tu rutina." : "Completa tu primera rutina para empezar tu racha."}</div></div>
         <div>
         <div className="week-strip">{wk.map((d, i) => { const st = dayState(d, i + 1, today, planWd, logList, plan?.startsOn ?? ""); return <div key={d} className="week-day"><div className={`week-dot ${st.cls}${d === today ? " today" : ""}`} title={`${DAY_LONG[i]} — ${st.title}`}>{st.cls === "done" ? <Icon name="check" size={13} stroke={2.6} /> : d === today ? <span className="week-letter">{LBL[i]}</span> : null}</div>{d !== today && <div className="week-day-label">{LBL[i]}</div>}</div>; })}</div>
         </div>
       </div>
+      </DayHero>
       <div className="qrows">
       <WhileAway cid={cid} plan={plan} logs={logList} today={today} />
       <FromCoach cid={cid} />

@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-11-14 - Hoy del cliente con la estética de la marca (para la demo con Jeff)
+Cristian veía Hoy muy blanco y plano.
+- Arriba, un panel oscuro con brillo rojo junta el saludo, "Tu día" y la racha. "Tu día" muestra lo que le toca hoy (Entrenar, Nutrición, Hábitos, Reporte, solo lo que aplica), se marca con el brillo rojo al cumplirlo, lleva a cada sección y tiene un círculo de avance ("2/4"). `components/portal/DayHero.tsx` (nuevo), `HoyView.tsx`.
+- Barra de abajo (celular) oscura, como el menú de Jeff. Rótulos de las tarjetas en píldora oscura y acento superior más visible. Barra de progreso de la rutina y "Tu semana" de hábitos en oscuro; brillo suave en hábitos y nutrición. `app/inicio/portal.css` (al final).
+- Sin cambios de datos ni de base. Revertir: restaurar `HoyView.tsx` y `portal.css` del commit `5ad523c` y borrar `DayHero.tsx`.
+
 ## 2026-11-13 (noche) - Resumen de la semana: algo que de verdad le sirva al cliente (MIGRACIÓN 0053)
 Pedido de Cristian (17:53): el resumen enviado era una línea de texto; quiere estadísticas, comparación con la semana anterior y gráficas que motiven.
 - **Jeff:** "Enviarle el resumen" ya no abre Mensajes: abre una vista previa de lo que verá el cliente, con una casilla para su comentario, y "Enviar resumen". Puede reenviarlo (actualiza el comentario). La ficha dice cuándo lo envió y si el cliente ya lo vio.
