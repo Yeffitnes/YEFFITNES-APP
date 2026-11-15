@@ -5,10 +5,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { localDate } from "@/lib/fetchers";
-import { notifyPlan, viaQueue } from "@/lib/queries";
+import { notifyPlan, useClients, viaQueue } from "@/lib/queries";
 import { queued, useQueueVersion } from "@/lib/offline";
-import { useCallback } from "react";
-import { DEFAULT_DEFS, specsFor, type ClientGoal, type HabitDay, type HabitDef } from "@/lib/habits";
+import { useCallback, useMemo } from "react";
+import { DEFAULT_DEFS, fmtHabit, habitStats, specsFor, type ClientGoal, type HabitDay, type HabitDef } from "@/lib/habits";
 
 export const missingObject = (e: { code?: string; message?: string } | null | undefined) => !!e && (e.code === "42P01" || e.code === "42883" || e.code === "PGRST202" || e.code === "PGRST205" || /does not exist|could not find/i.test(e.message ?? ""));
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
@@ -118,13 +118,38 @@ export function useHabitSpecs(clientId: string) {
   return { data, isPending: defs.isPending || goals.isPending, isError: defs.isError || goals.isError };
 }
 // Jeff: lo anotado por todos sus clientes (para "Hábitos").
-export const useAllHabitLogs = (days: number) => useQuery({ queryKey: ["habit-logs-all", days], staleTime: 60_000, queryFn: async (): Promise<(Habit & { clientId: string })[] | null> => {
+export const useAllHabitLogs = (days: number, enabled = true) => useQuery({ queryKey: ["habit-logs-all", days], enabled, staleTime: 60_000, queryFn: async (): Promise<(Habit & { clientId: string })[] | null> => {
   const q = (cols: string) => db().from("habit_logs").select(cols).gte("day", daysAgo(days)).order("day");
   let { data, error } = await q("client_id,day,water,steps,sleep,extra");
   if (error && error.code === "42703") ({ data, error } = await q("client_id,day,water,steps,sleep"));
   if (error) { if (missingObject(error)) return null; throw error; }
   return (data as unknown as (Habit & { client_id: string })[]).map((h) => ({ clientId: h.client_id, day: h.day, water: h.water, steps: h.steps, sleep: h.sleep == null ? null : Number(h.sleep), extra: h.extra ?? {} }));
 } });
+// Tabla de hábitos de Jeff (12-nov; también la usa la campanita del panel, 14-nov): cada cliente activo contra SU meta en los últimos
+// 7 días completos (hasta ayer). Ordenada: primero quien está por debajo, luego quien no anota.
+export type HabitCell = { state: "ok" | "low" | "none" | "off"; v: string; sub: string };
+const lastDays = () => Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 7 + i); return localDate(d); });
+export function useHabitBoard(enabled = true) {
+  const clients = useClients(enabled), defs = useHabitDefs(), goals = useClientGoals(), logs = useAllHabitLogs(8, enabled), days = useMemo(lastDays, []);
+  const active = (defs.data?.defs ?? []).filter((d) => d.active);
+  const rows = useMemo(() => {
+    if (!enabled || !clients.data || !defs.data || !goals.data || logs.data === undefined) return [];
+    return clients.data.filter((c) => c.status === "active").map((c) => {
+      const specs = specsFor(defs.data!.defs, goals.data!, c.id), mine = (logs.data ?? []).filter((r) => r.clientId === c.id);
+      const cells = new Map<string, HabitCell>(active.map((d) => {
+        const s = specs.find((x) => x.id === d.id);
+        if (!s) return [d.id, { state: "off", v: "No aplica", sub: "" }];
+        const st = habitStats(s, mine, days);
+        if (!st.n) return [d.id, { state: "none", v: "—", sub: "sin anotar" }];
+        const v = s.kind === "check" ? `${st.done} de 7` : fmtHabit(s, st.avg!);
+        return [d.id, { state: st.ok === false ? "low" : "ok", v, sub: `${s.own ? "su meta " : "meta "}${s.kind === "check" ? `${s.goal ?? "—"}` : s.goal != null ? fmtHabit(s, s.goal) : "—"} · ${st.n}/7 días` }];
+      }));
+      const vals = Array.from(cells.values()), lows = vals.filter((x) => x.state === "low").length, none = vals.filter((x) => x.state === "none").length;
+      return { c, cells, lows, none };
+    }).sort((a, b) => b.lows - a.lows || b.none - a.none || a.c.name.localeCompare(b.c.name));
+  }, [enabled, clients.data, defs.data, goals.data, logs.data, days]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { clients, defs, goals, logs, days, active, rows };
+}
 const HABIT_ERR: Record<string, string> = { bad_goal: "Esa meta no es válida.", bad_habit: "Revisa el nombre y la unidad.", too_many: "Ya hay 12 hábitos; apaga o reutiliza uno.", not_allowed: "No tienes permiso para esto." };
 const habitErr = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(HABIT_ERR).find((x) => m.includes(x)); return k ? HABIT_ERR[k] : "No pudimos guardarlo. Revisa tu conexión e inténtalo de nuevo."; };
 export function useSaveHabitDef() {

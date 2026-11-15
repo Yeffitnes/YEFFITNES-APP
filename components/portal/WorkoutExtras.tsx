@@ -1,5 +1,6 @@
 "use client";
 // Pedido de Cristian (30-oct, noche): temporizador de descanso, celebración de récords, aviso de "sin señal" y hábitos del día.
+import { useFocusAnchor } from "@/lib/focus";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 // El temporizador y el récord se dibujan en el <body>: dentro de la tarjeta de la rutina "fixed" quedaba pegado a la tarjeta, no a la pantalla.
@@ -89,6 +90,7 @@ export function HabitsCard({ cid }: { cid: string }) {
   const yest = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return localDate(d); })();
   const cur = h.data?.find((x) => x.day === today), prev = h.data?.find((x) => x.day === yest);
   const [draft, setDraft] = useState<Record<string, string>>({});
+  useFocusAnchor("habitos");   // "Anotar mis hábitos" (aviso de Jeff) y "Tu día" llevan aquí (14-nov)
   if (h.isPending || specs.isPending) return <div className="card"><div className="sk" style={{ height: 120 }} /></div>;
   if (h.data === null || h.isError || !specs.data?.length) return null;   // 0043 sin correr, sin permiso, o Jeff apagó todos
   const list = specs.data, week = h.data ?? [], days7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return localDate(d); });

@@ -15,6 +15,7 @@ import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
 import { focusAnchor } from "@/lib/focus";
 import { planMonth } from "@/lib/planmonth";
+import { useHabitBoard } from "@/lib/extras";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 
@@ -27,7 +28,7 @@ function useItems(side: "client" | "coach"): Item[] {
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
   const rep = useTodayReport(cid, today, wantsReport && boot), bookings = useMyBookings(cid);
   // Lo del coach solo se pide en el panel del coach (antes el portal del cliente también lo pedía y lo repetía cada minuto).
-  const coach = side === "coach", clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach);
+  const coach = side === "coach", hab = useHabitBoard(coach && boot), clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach);
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
@@ -43,6 +44,9 @@ function useItems(side: "client" | "coach"): Item[] {
     if (expired) items.push({ key: "plan", text: `${expired} plan${expired === 1 ? "" : "es"} mensual${expired === 1 ? "" : "es"} vencido${expired === 1 ? "" : "s"}: renueva o cancela`, href: "/coach#planes" });
     const dueSoon = (clients.data ?? []).filter((c) => { const m = c.status === "active" && c.planId ? planMonth(c.planSince) : null; return !!m && !m.expired && m.daysLeft <= 2; }).length;
     if (dueSoon) items.push({ key: "plan-soon", text: `${dueSoon} plan${dueSoon === 1 ? " vence" : "es vencen"} en 2 días o menos`, href: "/coach#planes" });
+    // Hábitos (14-nov): quién está por debajo de su meta en la semana.
+    const habLow = hab.rows.filter((r) => r.lows > 0).length;
+    if (habLow) items.push({ key: "hab", text: `${habLow} cliente${habLow === 1 ? "" : "s"} por debajo en sus hábitos esta semana`, href: "/coach/habitos" });
     if (pending) items.push({ key: "pend", text: `${pending} cliente${pending === 1 ? "" : "s"} esperando plan`, href: "/coach/clientes" });
     // "Necesitan tu atención" (29-oct): urgentes por contactar y lo que falta configurar, también en la campanita.
     const nd = needs(attn.data ?? [], new Map((clients.data ?? []).map((c) => [c.id, c.name])));

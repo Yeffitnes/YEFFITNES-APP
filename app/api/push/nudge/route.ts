@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { failReason, pushConfigured, sendPushReport, type Target } from "@/lib/push";
 import { NUDGE_TXT, type NudgeKind } from "@/lib/nudges";
-const NUDGE_URL: Record<NudgeKind, string> = { nothing: "/inicio", report: "/inicio#reporte", train: "/inicio#rutina", meals: "/inicio#nutricion" };
+const NUDGE_URL: Record<NudgeKind, string> = { nothing: "/inicio", report: "/inicio#reporte", train: "/inicio#rutina", meals: "/inicio#nutricion", habits: "/inicio#habitos" };
 export const dynamic = "force-dynamic";
 // Notificación del teléfono para un aviso YA guardado por send_nudge (migración 0037). Si esto falla, el aviso igual queda en la app del cliente.
 export async function POST(req: NextRequest) {

@@ -1,4 +1,6 @@
 "use client";
+import { useHabitSpecs, useHabits } from "@/lib/extras";
+import { valueOf } from "@/lib/habits";
 import { DayHero } from "./DayHero";
 import { useSentWeeks } from "@/lib/weeksum";
 import { NewWeekSummary } from "./WeekReportPage";
@@ -326,16 +328,18 @@ function FromCoach({ cid }: { cid: string }) {
 function CoachNudges({ cid, trainingDone, trainingToday, features }: { cid: string; trainingDone: boolean; trainingToday: boolean; features: string[] }) {
   const n = useMyNudges(cid), list = n.data ?? [], today = localDate();
   const rep = useTodayReport(cid, today, list.includes("report") || list.includes("nothing"));
+  const hab = useHabits(list.includes("habits") ? cid : "", 1), specs = useHabitSpecs(list.includes("habits") ? cid : "");
   const needMeals = list.includes("meals") || list.includes("nothing"), nut = useClientNutrition(needMeals ? cid : ""), ml = useMealLogs(needMeals ? cid : "", today), wd = (new Date().getDay() + 6) % 7 + 1;
   if (!list.length) return null;
   const meals = (nut.data?.meals ?? []).filter((m) => m.weekday === null || m.weekday === wd);
   const mealsDone = meals.length > 0 && meals.every((m) => !!m.id && (ml.data ?? []).includes(m.id)), anyMeal = (ml.data ?? []).length > 0;
-  const done: Record<NudgeKind, boolean> = { report: !!rep.data, train: trainingDone, meals: mealsDone, nothing: !!rep.data || trainingDone || anyMeal };
-  const DONE_TXT: Record<NudgeKind, string> = { report: "Reporte enviado", train: "Rutina hecha", meals: "Nutrición marcada", nothing: "Ya registraste algo hoy" };
+  const habRow = hab.data?.find((h) => h.day === today), habitsDone = !!specs.data?.length && specs.data.every((s) => valueOf(habRow, s) != null);
+  const done: Record<NudgeKind, boolean> = { report: !!rep.data, train: trainingDone, meals: mealsDone, nothing: !!rep.data || trainingDone || anyMeal, habits: habitsDone };
+  const DONE_TXT: Record<NudgeKind, string> = { report: "Reporte enviado", train: "Rutina hecha", meals: "Nutrición marcada", nothing: "Ya registraste algo hoy", habits: "Hábitos anotados" };
   const allDone = list.every((k) => done[k]);
   // Lo que le falta hoy, para el aviso "nothing": solo lo que su plan incluye (y la rutina solo si hoy le toca).
   const todo = ([trainingToday && !trainingDone ? "train" : null, features.includes("nutrition") && !mealsDone ? "meals" : null, features.includes("daily_report") && !rep.data ? "report" : null] as const).filter((x): x is "train" | "meals" | "report" => !!x);
-  const GO_TXT = { train: "Ir a mi rutina", meals: "Marcar mi nutrición", report: "Hacer mi reporte" } as const;
+  const GO_TXT = { train: "Ir a mi rutina", meals: "Marcar mi nutrición", report: "Hacer mi reporte", habits: "Anotar mis hábitos" } as const;
   return (
     <QuickRow key={allDone ? "ok" : "todo"} anchor="avisos" icon={allDone ? "check" : "bell"} tone={allDone ? "ok" : "new"}
       title={allDone ? "Listo: cumpliste lo que Jeff te pidió" : "Jeff te está esperando"}
@@ -399,7 +403,7 @@ function CoachCancels({ cid }: { cid: string }) {
 // cliente no entró, al volver lo ve en UNA fila plegada, como las demás de Hoy. Al abrirla: una línea por día y lo que quedó sin
 // hacer. Un solo botón ("Entendido"): la rutina, los mensajes y lo de hoy ya están más abajo en la misma pantalla.
 const AWAY_KEY = "yf-away-seen";
-const AWAY_SHORT: Record<NudgeKind, string> = { nothing: "te esperaba para que registraras tu día", train: "esperaba tu entrenamiento", meals: "esperaba tu nutrición", report: "esperaba tu reporte" };
+const AWAY_SHORT: Record<NudgeKind, string> = { nothing: "te esperaba para que registraras tu día", train: "esperaba tu entrenamiento", meals: "esperaba tu nutrición", report: "esperaba tu reporte", habits: "esperaba tus hábitos" };
 function WhileAway({ cid, plan, logs, today }: { cid: string; plan?: TrainingPlan; logs: WorkoutLog[]; today: string }) {
   const past = useMyPastNudges(cid), [seen, setSeen] = useState<string[] | null>(null);
   useEffect(() => { try { setSeen(JSON.parse(localStorage.getItem(AWAY_KEY) ?? "[]") as string[]); } catch { setSeen([]); } }, []);   // nunca al primer dibujo

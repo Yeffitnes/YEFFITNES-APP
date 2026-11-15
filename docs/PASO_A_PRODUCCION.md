@@ -65,6 +65,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] **`0051_plan_notice_day_before.sql`** (12-nov): aviso de plan también 1 día antes. Necesita la 0048. Compatible con `main`.
 - [ ] **`0052_habit_settings.sql`** (12-nov): hábitos que configura Jeff, metas por cliente y hábitos nuevos. **Correrla antes de probar en Vercel:** sin ella la app sigue con agua/pasos/sueño de siempre y la página Hábitos pide la migración. Compatible con `main` (solo agrega). Confirmar: `select count(*) from public.habit_defs;` → 3 o más.
 - [ ] **`0053_week_summaries.sql`** (13-nov): resumen de la semana que Jeff envía. **Correrla antes de probar en Vercel:** sin ella, "Enviar resumen" avisa que falta la migración. Compatible con `main` (solo agrega). Confirmar: `select to_regclass('public.week_summaries') is not null;` → `true`.
+- [ ] **`0054_habit_nudges.sql`** (14-nov): "Recordarle" de hábitos, recordatorio de la noche al cliente y resumen de la mañana a Jeff. Necesita la 0052. Sin ella, "Recordarle" da error y las tareas no mandan avisos de hábitos (lo demás sigue igual). Usa las tareas que ya existen (`-noche` y `-buenosdias`). Compatible con `main`. Confirmar: `select to_regprocedure('public.due_habit_digest_cron(text)') is not null;` → `true`.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).

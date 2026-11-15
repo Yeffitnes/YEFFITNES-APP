@@ -14,6 +14,15 @@ export async function POST(req: NextRequest) {
   const { data, error } = await createClient().rpc("due_reminders", { p_secret: secret, p_kind: kind });
   if (error) return NextResponse.json({ error: "failed" }, { status: 500 });
   const rows = (data ?? []) as Row[]; let sent = 0;
+  // Noche (0054): a quien le faltan hábitos por anotar hoy. Si también le falta el reporte, va en el MISMO aviso (no dos).
+  const habitMiss = new Map<string, Target & { missing: string }>();
+  if (kind === "night") {
+    const hr = await createClient().rpc("due_habit_reminders_cron", { p_secret: secret });
+    if (hr.error) console.error("due_habit_reminders_cron", hr.error.message);
+    for (const r of (hr.data ?? []) as (Target & { missing: string })[]) habitMiss.set(r.endpoint, r);
+    for (const r of rows) if (r.tag === "report" && habitMiss.has(r.endpoint)) { r.body = `Envía tu reporte y anota tus hábitos (te falta: ${habitMiss.get(r.endpoint)!.missing}).`; habitMiss.delete(r.endpoint); }
+  }
+
   await Promise.all(rows.map(async (r) => { const dead = await sendPush([r], { title: r.title, body: r.body, url: r.url === "/inicio" && r.tag === "report" ? "/inicio#reporte" : r.url === "/inicio" && r.tag === "training" ? "/inicio#rutina" : r.url, tag: r.tag }); if (!dead.length) sent++; }));
   // Mañana: a Jeff le llegan los avisos de plan mensual (0048, 0051): 7, 2 y 1 día antes y el día que vence, una sola vez cada uno.
   // Si falla, no frena lo demás.
@@ -30,5 +39,15 @@ export async function POST(req: NextRequest) {
       : { title: r.n === 1 ? "Plan por vencer" : `${r.n} planes por vencer`, body: `${short(r.names)}.`, url: "/coach#planes", tag: `plan-${r.stage}` },
     ).catch(() => [])));
   }
-  return NextResponse.json({ ok: true, due: rows.length, sent, plans });
+  let habits = 0;
+  if (habitMiss.size) await Promise.all(Array.from(habitMiss.values()).map(async (r) => { const dead = await sendPush([r], { title: "¿Ya anotaste tus hábitos de hoy?", body: `Te falta: ${r.missing}. Un minuto antes de dormir.`, url: "/inicio#habitos", tag: "habits" }).catch(() => []); if (!dead.length) habits++; }));
+  // Mañana (0054): a Jeff, quién quedó por debajo de su meta ayer o no anotó.
+  if (kind === "morning") {
+    const dg = await createClient().rpc("due_habit_digest_cron", { p_secret: secret });
+    if (dg.error) console.error("due_habit_digest_cron", dg.error.message);
+    const list = (dg.data ?? []) as (Target & { n: number; body: string })[];
+    await Promise.all(list.map((r) => sendPush([r], { title: r.n === 1 ? "Hábitos de ayer: 1 cliente por debajo" : `Hábitos de ayer: ${r.n} clientes por debajo`, body: r.body.length > 140 ? r.body.slice(0, 138) + "…" : r.body, url: "/coach/habitos", tag: "habits-coach" }).catch(() => [])));
+    habits += list.length ? 1 : 0;
+  }
+  return NextResponse.json({ ok: true, due: rows.length, sent, plans, habits });
 }

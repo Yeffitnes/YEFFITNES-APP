@@ -2,37 +2,16 @@
 // Hábitos para Jeff (pedido de Cristian, 12-nov): quién cumple y quién no con el agua, los pasos, el sueño y lo que Jeff agregue,
 // cada cliente contra SU meta, en los últimos 7 días completos (hasta ayer: hoy todavía puede cumplir). Debajo, la configuración:
 // metas generales, apagar hábitos y agregar otros. La meta de un solo cliente se cambia en su ficha (ClientHabitGoals).
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useClients } from "@/lib/queries";
-import { useAllHabitLogs, useClientGoals, useHabitDefs, useSaveHabitDef } from "@/lib/extras";
-import { fmtHabit, goalText, habitStats, specsFor, type HabitDef } from "@/lib/habits";
-import { localDate } from "@/lib/fetchers";
+import { useNudge, useTodayNudges } from "@/lib/queries";
+import { Icon } from "@/components/ui/Icon";
+import { useHabitBoard, useSaveHabitDef } from "@/lib/extras";
+import { goalText, type HabitDef } from "@/lib/habits";
 import { Skeleton } from "@/components/ui/Modal";
 
-const lastDays = () => Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 7 + i); return localDate(d); });
-type Cell = { state: "ok" | "low" | "none" | "off"; v: string; sub: string };
-
 export function HabitsBoard() {
-  const clients = useClients(), defs = useHabitDefs(), goals = useClientGoals(), logs = useAllHabitLogs(8), [only, setOnly] = useState(false);
-  const days = useMemo(lastDays, []);
-  const active = (defs.data?.defs ?? []).filter((d) => d.active);
-  const rows = useMemo(() => {
-    if (!clients.data || !defs.data || !goals.data || logs.data === undefined) return [];
-    return clients.data.filter((c) => c.status === "active").map((c) => {
-      const specs = specsFor(defs.data!.defs, goals.data!, c.id), mine = (logs.data ?? []).filter((r) => r.clientId === c.id);
-      const cells = new Map<string, Cell>(active.map((d) => {
-        const s = specs.find((x) => x.id === d.id);
-        if (!s) return [d.id, { state: "off", v: "No aplica", sub: "" }];
-        const st = habitStats(s, mine, days);
-        if (!st.n) return [d.id, { state: "none", v: "—", sub: "sin anotar" }];
-        const v = s.kind === "check" ? `${st.done} de 7` : fmtHabit(s, st.avg!);
-        return [d.id, { state: st.ok === false ? "low" : "ok", v, sub: `${s.own ? "su meta " : "meta "}${s.kind === "check" ? `${s.goal ?? "—"}` : s.goal != null ? fmtHabit(s, s.goal) : "—"} · ${st.n}/7 días` }];
-      }));
-      const lows = Array.from(cells.values()).filter((x) => x.state === "low").length, none = Array.from(cells.values()).filter((x) => x.state === "none").length;
-      return { c, cells, lows, none };
-    }).sort((a, b) => b.lows - a.lows || b.none - a.none || a.c.name.localeCompare(b.c.name));
-  }, [clients.data, defs.data, goals.data, logs.data, days]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { clients, defs, goals, logs, days, active, rows } = useHabitBoard(), [only, setOnly] = useState(false), nudge = useNudge(), sent = useTodayNudges();
   const shown = only ? rows.filter((r) => r.lows || r.none) : rows;
   const loading = clients.isPending || defs.isPending || goals.isPending || logs.isPending;
   const failed = (clients.isError && !clients.data) || (defs.isError && !defs.data) || (logs.isError && !logs.data);
@@ -55,8 +34,10 @@ export function HabitsBoard() {
             : !shown.length ? <p className="empty-note">{rows.length ? "Todos cumplen sus metas y anotan. Bien." : "Aún no tienes clientes activos."}</p> : (
             <div className="hb-scroll"><table className="hb-table">
               <thead><tr><th scope="col">Cliente</th>{active.map((d) => <th key={d.id} scope="col">{d.name}<small>{d.goal != null ? goalText({ ...d, goal: d.goal }) : "sin meta"}</small></th>)}</tr></thead>
-              <tbody>{shown.map(({ c, cells, lows }) => (
-                <tr key={c.id}><th scope="row"><Link href={`/coach/clientes/${c.id}?tab=Resumen#metas-habitos`}>{c.name}</Link>{lows > 0 && <small>{lows} por debajo</small>}</th>
+              <tbody>{shown.map(({ c, cells, lows, none }) => (
+                <tr key={c.id}><th scope="row"><Link href={`/coach/clientes/${c.id}?tab=Resumen#metas-habitos`}>{c.name}</Link>{lows > 0 && <small>{lows} por debajo</small>}
+                  {(lows > 0 || none > 0) && (sent.data?.includes(`${c.id}:habits`) ? <span className="hb-sent">Recordado hoy</span>
+                    : <button type="button" className="hb-nudge" disabled={nudge.isPending} onClick={() => nudge.mutate({ clientId: c.id, kind: "habits" })}><Icon name="bell" size={11} /> Recordarle</button>)}</th>
                   {active.map((d) => { const x = cells.get(d.id)!; return <td key={d.id} className={`hb-cell ${x.state}`}><b>{x.v}</b>{x.sub && <small>{x.sub}</small>}</td>; })}</tr>))}
               </tbody></table></div>)}
           <p className="hb-legend"><i className="ok" /> cumple <i className="low" /> por debajo de su meta <i className="none" /> sin anotar. Toca un cliente para ver su historial o cambiar sus metas.</p>

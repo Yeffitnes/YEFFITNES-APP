@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-11-14 (noche) - Hábitos como llamada a la acción (MIGRACIÓN 0054)
+Pedido de Cristian: que los hábitos lleven a actuar, para el cliente y para Jeff.
+- **Cliente, en la noche** (tarea `yeffitnes-noche`): si no anotó todos sus hábitos de hoy, "¿Ya anotaste tus hábitos de hoy? Te falta: pasos, sueño." Si también le falta el reporte, va en el mismo aviso ("Envía tu reporte y anota tus hábitos…"), no en dos.
+- **Jeff, en la mañana** (tarea `yeffitnes-buenosdias`): "Hábitos de ayer: 2 clientes por debajo" con quién y en qué ("Camila: agua · Andrés: no anotó"); abre la página Hábitos.
+- **Jeff, en el panel:** la campanita dice "N clientes por debajo en sus hábitos esta semana". En Hábitos, cada cliente por debajo o sin anotar tiene "Recordarle" (aviso rápido nuevo de hábitos; queda "Recordado hoy").
+- **Cliente, en Hoy:** el aviso de Jeff con "Anotar mis hábitos" (lleva a la tarjeta); al anotarlos todos queda "Hábitos anotados". "Tu día" también lleva a los hábitos.
+- `0054_habit_nudges.sql`, `app/api/cron/reminders`, `lib/nudges.ts`, `lib/focus.ts`, `lib/extras.ts` (`useHabitBoard`), `HabitsBoard.tsx`, `ActionsBar.tsx`, `HoyView.tsx`, `WorkoutExtras.tsx`, `app/api/push/nudge`, `coach.css`. Prueba de ataque `rls_habitnudge.sql`; pruebas `habits_cta.js` y `habits_cron.js`.
+- NO verificado: iPhone real; avisos llegando a un teléfono (las tareas apuntan a Netlify: salen después de fusionar).
+- Revertir: código, restaurar del commit `08ab070` y borrar las pruebas nuevas; base, cabecera de la 0054.
+
 ## 2026-11-14 - Hoy del cliente con la estética de la marca (para la demo con Jeff)
 Cristian veía Hoy muy blanco y plano.
 - Arriba, un panel oscuro con brillo rojo junta el saludo, "Tu día" y la racha. "Tu día" muestra lo que le toca hoy (Entrenar, Nutrición, Hábitos, Reporte, solo lo que aplica), se marca con el brillo rojo al cumplirlo, lleva a cada sección y tiene un círculo de avance ("2/4"). `components/portal/DayHero.tsx` (nuevo), `HoyView.tsx`.
