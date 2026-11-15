@@ -38,7 +38,8 @@ reset role;
 -- historial: Camila entrenó hace 3 días (pidió 10, hizo 7), y una sesión ya pasada hoy
 insert into public.workout_logs (workspace_id, client_id, log_date, plan_day_id, effort, completed_at)
  select c.workspace_id, c.id, (now() at time zone 'America/Bogota')::date - 3, pd.id, 8, now() - interval '3 days'
- from public.clients c join public.plan_days pd on pd.client_id = c.id where c.profile_id='00000000-0000-0000-0000-00000000000a' order by pd.weekday limit 1;
+ from public.clients c join public.plan_days pd on pd.client_id = c.id where c.profile_id='00000000-0000-0000-0000-00000000000a'
+   and exists (select 1 from public.plan_items pi where pi.plan_day_id = pd.id and pi.reps = '10') limit 1;   -- 15-nov: con "order by weekday" los domingos escogía el día de mañana (lunes) y no había series
 insert into public.set_logs (workspace_id, client_id, workout_log_id, plan_item_id, exercise_name, set_number, kind, reps, weight)
  select w.workspace_id, w.client_id, w.id, pi.id, (select name from public.exercises where id = pi.exercise_id), g, 'work', 7, 40 from public.workout_logs w join public.plan_items pi on pi.plan_day_id = w.plan_day_id and pi.reps='10', generate_series(1,3) g;
 insert into public.bookings (workspace_id, slot_id, client_id, booked_by)

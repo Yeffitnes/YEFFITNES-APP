@@ -97,7 +97,8 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Probar en Netlify: login, Hoy, series (marcar y destachar), nutrición, mensaje, reporte con vídeo, agenda y avisos.
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
-## 10. Próxima salida a `main` (preparada el 29-oct; NO fusionar hasta que Cristian diga "fusiona")
+## 10. Salida a `main` del 15-nov (hecha; la siguiente, igual: NO fusionar hasta que Cristian diga "fusiona")
+**Hecha el 15-nov:** migraciones 0038-0054 corridas, 4 chequeos y `all.sh` OK. Falta lo de §9 (probar en Netlify).
 La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita de la 0038 a la 0052: **corridas hasta la 0049 (Cristian, 12-nov); la 0050 en curso; faltan la 0051 y la 0052**. Si se crea una nueva (0053 en adelante), correrla antes de fusionar.
 Orden:
 1. Migraciones: correr la 0050, la 0051 y la 0052, en ese orden (§3b). Para comprobar las anteriores, consulta de solo lectura (`true` = corrida):

@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-11-15 - PUBLICACIÓN A PRODUCCIÓN: `bloque-hoy` a `main` (Netlify)
+Cristian dijo "fusiona" con las migraciones 0038 a 0054 corridas (confirmó 0050-0054 con la consulta de solo lectura). Entra todo lo hecho del 29-oct al 15-nov. Antes: 4 chequeos y `tests/e2e/all.sh` (todo OK tras arreglar la semilla de pruebas, abajo).
+Prueba de punta a punta, semilla: `tests/e2e/seed.sql` escogía el entreno de "hace 3 días" con `order by weekday`; los domingos tomaba el día de mañana (lunes), que no tiene el ejercicio de 10 repeticiones, y `advice.js` y `extras.js` fallaban. Ahora escoge el día que tiene ese ejercicio. Solo pruebas, la app no cambia.
+Revertir la publicación: en `main`, `git revert -m 1 <commit de fusión>` (Netlify vuelve a publicar lo anterior). La semilla: `git revert` de este commit.
+
 ## 2026-11-15 - Comprobación de vídeo: el 401 apunta primero al saldo
 `/api/video/health`: con 401 ahora dice que revisen primero el saldo de Bunny (sin saldo, Bunny responde 401, no 403). Notas en `docs/PASO_A_PRODUCCION.md` §4 y `docs/HANDOFF.md`.
 Revertir: `git revert` de este commit (solo cambia un texto y la documentación).
