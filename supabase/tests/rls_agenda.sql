@@ -30,9 +30,11 @@ begin
   if not pg_temp.fails(format('insert into public.bookings (workspace_id,slot_id,client_id,booked_by) values (%L,%L,%L,%L)', ws, s2, cb, 'client')) then bad:=bad||' [B insertó una reserva directo en la tabla]'; end if;
   if not pg_temp.fails(format('select public.cancel_booking(%L)', bk)) then bad:=bad||' [B canceló la reserva de A]'; end if;
   perform pg_temp.as_user(a); select id into bk from public.bookings limit 1;
-  perform public.cancel_booking(bk); raise notice 'OK cancelación del cliente (faltan más de 24 h)';
+  perform public.cancel_booking(bk); raise notice 'OK cancelación del cliente (dentro de los 10 min)';
   bkb := null; perform pg_temp.as_user(b); bkb := public.book_slot(s3);  -- hueco en 5 h
-  if not pg_temp.fails(format('select public.cancel_booking(%L)', bkb)) then bad:=bad||' [cliente canceló con menos de 24 h]'; end if;
+  -- 0041 (decisión de Cristian, 29-oct): el cliente solo cancela en los 10 min siguientes a reservar; después se pide a Jeff.
+  perform pg_temp.reset(); update public.bookings set created_at = now() - interval '11 minutes' where id = bkb; perform pg_temp.as_user(b);
+  if not pg_temp.fails(format('select public.cancel_booking(%L)', bkb)) then bad:=bad||' [cliente canceló pasados los 10 minutos]'; end if;
   perform pg_temp.as_user(a);
   if not pg_temp.fails(format('select public.book_slot(%L)', s3)) then bad:=bad||' [A reservó un hueco ocupado]'; end if;
   perform pg_temp.as_user(jeff);

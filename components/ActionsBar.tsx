@@ -2,15 +2,20 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import "@/app/messages.css";
-import { localDate, useUnseenActivity, useClients, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
+import { localDate, upcomingOnly, useUnseenActivity, useClients, useCoachAttention, useCoachReports, useMe, useMyBookings, useTodayReport } from "@/lib/queries";
+import { needs } from "@/lib/attention";
+import { useLiveSync } from "@/lib/live";
+import { useAfterBoot } from "@/lib/use-now";
 import { useQueryClient } from "@tanstack/react-query";
 import { fetchThread, threadKey, useMessagesRealtime, useUnread } from "@/lib/messages";
-import { useProfile } from "@/components/Providers";
-import { disablePush, enablePush, pushState, resyncPush, type PushState } from "@/lib/push-client";
+import { useProfile, useToast } from "@/components/Providers";
+import { enablePush, pushState, pushTestText, resyncPush, testPush, type PushState } from "@/lib/push-client";
 import { QuickSearch } from "@/components/coach/QuickSearch";
 import { hasFeature } from "@/lib/features";
 import { useInstall } from "@/lib/install";
 import { focusAnchor } from "@/lib/focus";
+import { planMonth } from "@/lib/planmonth";
+import { useHabitBoard } from "@/lib/extras";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 
@@ -18,34 +23,54 @@ type Item = { key: string; text: string; href: string };
 const PUSH_TXT: Record<PushState, string> = { unsupported: "Tu navegador no permite avisos. Instala la app en la pantalla de inicio e inténtalo de nuevo.", not_configured: "Los avisos aún no están configurados.", denied: "Bloqueaste los avisos. Actívalos en los ajustes del navegador o del teléfono.", off: "Activar avisos en este teléfono", on: "Avisos activados en este teléfono" };
 
 function useItems(side: "client" | "coach"): Item[] {
-  const { profileId } = useProfile(), me = useMe(side === "client" ? profileId : ""), cid = side === "client" ? me.data?.id ?? "" : "";
+  const boot = useAfterBoot(), { profileId } = useProfile(), me = useMe(side === "client" ? profileId : ""), cid = side === "client" && boot ? me.data?.id ?? "" : "";
   const unread = useUnread(), today = localDate();
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
-  const rep = useTodayReport(cid, today, wantsReport), bookings = useMyBookings(cid);
-  const clients = useClients(), reports = useCoachReports(), activity = useUnseenActivity();
+  const rep = useTodayReport(cid, today, wantsReport && boot), bookings = useMyBookings(cid);
+  // Lo del coach solo se pide en el panel del coach (antes el portal del cliente también lo pedía y lo repetía cada minuto).
+  const coach = side === "coach", hab = useHabitBoard(coach && boot), clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach);
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
     if (wantsReport && rep.data === null) items.push({ key: "rep", text: "Aún no envías tu reporte de hoy", href: "/inicio#reporte" });
-    const next = bookings.data?.[0];
+    const next = upcomingOnly(bookings.data)[0];
     if (next) { const ms = new Date(next.startsAt).getTime() - Date.now(); if (ms < 36 * 3600_000) items.push({ key: "bk", text: `Tu sesión: ${new Date(next.startsAt).toLocaleDateString("es", { weekday: "long" })} a las ${new Date(next.startsAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" })}`, href: "/inicio/agenda" }); }
   } else {
     const unseen = (reports.data ?? []).filter((r) => !r.seen).length, pending = (clients.data ?? []).filter((c) => c.status === "pending").length;
     if (unseen) items.push({ key: "rep", text: `${unseen} reporte${unseen === 1 ? "" : "s"} por revisar`, href: "/coach/reportes" });
     const act = activity.data ?? 0;
     if (act) items.push({ key: "act", text: `${act} avance${act === 1 ? "" : "s"} de clientes (entrenamiento o nutrición)`, href: "/coach" });
+    const expired = (clients.data ?? []).filter((c) => c.status === "active" && c.planId && planMonth(c.planSince)?.expired).length;
+    if (expired) items.push({ key: "plan", text: `${expired} plan${expired === 1 ? "" : "es"} mensual${expired === 1 ? "" : "es"} vencido${expired === 1 ? "" : "s"}: renueva o cancela`, href: "/coach#planes" });
+    const dueSoon = (clients.data ?? []).filter((c) => { const m = c.status === "active" && c.planId ? planMonth(c.planSince) : null; return !!m && !m.expired && m.daysLeft <= 2; }).length;
+    if (dueSoon) items.push({ key: "plan-soon", text: `${dueSoon} plan${dueSoon === 1 ? " vence" : "es vencen"} en 2 días o menos`, href: "/coach#planes" });
+    // Hábitos (14-nov): quién está por debajo de su meta en la semana.
+    const habLow = hab.rows.filter((r) => r.lows > 0).length;
+    if (habLow) items.push({ key: "hab", text: `${habLow} cliente${habLow === 1 ? "" : "s"} por debajo en sus hábitos esta semana`, href: "/coach/habitos" });
     if (pending) items.push({ key: "pend", text: `${pending} cliente${pending === 1 ? "" : "s"} esperando plan`, href: "/coach/clientes" });
+    // "Necesitan tu atención" (29-oct): urgentes por contactar y lo que falta configurar, también en la campanita.
+    const nd = needs(attn.data ?? [], new Map((clients.data ?? []).map((c) => [c.id, c.name])));
+    const urgent = new Set(nd.filter((x) => x.kind === "urgent").map((x) => x.clientId)).size, setup = new Set(nd.filter((x) => x.kind === "setup").map((x) => x.clientId)).size;
+    if (urgent) items.unshift({ key: "urg", text: `${urgent} cliente${urgent === 1 ? "" : "s"} urgente${urgent === 1 ? "" : "s"} por contactar (2 días o más sin actividad o sin reporte)`, href: "/coach#atencion" });
+    if (setup) items.push({ key: "setup", text: `${setup} cliente${setup === 1 ? "" : "s"} sin rutina o nutrición completa`, href: "/coach#atencion" });
   }
   return items;
 }
 
 export function ActionsBar({ side }: { side: "client" | "coach" }) {
   useMessagesRealtime(side);
+  const { profileId: pid } = useProfile(), meLive = useMe(side === "client" ? pid : "");
+  useLiveSync(side, side === "client" ? meLive.data?.id : undefined);   // tiempo real (29-oct)
   const qc = useQueryClient();
-  useEffect(() => { if (side === "client") void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side]);   // "Mensajes" abre al instante
+  const boot = useAfterBoot(1500);
+  useEffect(() => { if (side === "client" && boot) void qc.prefetchQuery({ queryKey: threadKey(), queryFn: () => fetchThread(), staleTime: 10_000 }); }, [qc, side, boot]);   // "Mensajes" abre al instante
   const inst = useInstall(), items = useItems(side), unread = useUnread().data ?? 0, [open, setOpen] = useState(false), [ps, setPs] = useState<PushState>("off"), [busy, setBusy] = useState(false), box = useRef<HTMLDivElement>(null);
-  const { profileId } = useProfile(), pathname = usePathname();
+  const { profileId } = useProfile(), pathname = usePathname(), toast = useToast();
   useEffect(() => { void pushState().then(setPs); void resyncPush(profileId); }, [profileId]);
+  // Se vuelve a revisar al abrir la campanita y al volver a la app: si se activaron en la pantalla obligatoria (o en Ajustes),
+  // aquí ya no debe salir "Activar" (antes el estado se leía una sola vez y quedaba viejo).
+  useEffect(() => { if (open) void pushState().then(setPs); }, [open]);
+  useEffect(() => { const v = () => { if (document.visibilityState === "visible") void pushState().then(setPs); }; document.addEventListener("visibilitychange", v); return () => document.removeEventListener("visibilitychange", v); }, []);
   useEffect(() => { const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; try { void (unread > 0 ? nav.setAppBadge?.(unread) : nav.clearAppBadge?.()); } catch { /* sin soporte */ } }, [unread]);
   useEffect(() => {
     if (!open) return;
@@ -54,8 +79,11 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
   }, [open]);
   // Cliente: las notificaciones son obligatorias (FirstRun), así que aquí solo se pueden ENCENDER, no apagar.
-  const lockedOn = side === "client" && ps === "on";
-  const togglePush = async () => { if (busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied") return; setBusy(true); try { setPs(ps === "on" ? await disablePush() : await enablePush()); } finally { setBusy(false); } };
+  // Pedido de Cristian (28-oct): en la app NO hay botón para desactivar los avisos (ni cliente ni coach). Solo aparece "Activar"
+  // cuando están apagados; si alguien los quiere quitar, lo hace en los ajustes del teléfono o del navegador.
+  const [testing, setTesting] = useState(false), [testMsg, setTestMsg] = useState("");
+  const runTest = async () => { if (testing) return; setTesting(true); setTestMsg(""); try { setTestMsg(pushTestText(await testPush())); } catch { setTestMsg("No pudimos hacer la prueba. Revisa tu conexión."); } finally { setTesting(false); } };
+  const turnOnPush = async () => { if (busy || ps !== "off") return; setBusy(true); try { setPs(await enablePush()); } catch { setPs("off"); toast("No pudimos activar los avisos en este equipo. Inténtalo de nuevo o usa Chrome.", true); } finally { setBusy(false); } };
   const msgHref = side === "coach" ? "/coach/mensajes" : "/inicio/mensajes";
   return (
     <div className="actions-bar" ref={box}>
@@ -74,9 +102,12 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
         {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={(e) => { setOpen(false); const [p, h] = i.href.split("#"); if (h && p === pathname) { e.preventDefault(); focusAnchor(h); } }}>{i.text}<Icon name="chevron" size={14} /></Link>)}
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
-        <button type="button" className="act-push" onClick={togglePush} disabled={busy || lockedOn || ps === "unsupported" || ps === "not_configured" || ps === "denied"}>
-          <span className={`act-switch${ps === "on" ? " on" : ""}`} aria-hidden />{PUSH_TXT[ps]}
-        </button>
+        {ps === "off" && <button type="button" className="act-push" onClick={() => void turnOnPush()} disabled={busy}>
+          <Icon name="bell" size={16} />{busy ? "Activando…" : PUSH_TXT.off}
+        </button>}
+        {ps === "denied" && <p className="act-empty" style={{ margin: "8px 4px 0" }}>{PUSH_TXT.denied}</p>}
+        {ps === "on" && <button type="button" className="act-test" onClick={() => void runTest()} disabled={testing}>{testing ? "Enviando prueba…" : "Probar avisos en este teléfono"}</button>}
+        {testMsg && <p className="act-empty" role="status" style={{ margin: "8px 4px 0" }}>{testMsg}</p>}
       </div>}
     </div>
   );

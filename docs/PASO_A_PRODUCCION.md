@@ -22,10 +22,10 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 2. Supabase
 - [ ] **Authentication → URL Configuration:** **Site URL = dirección de Netlify**; en **Redirect URLs** poner la de Netlify y la de Vercel (ambas con `/**` y sin `/**`).
 - [ ] **Tareas programadas (pg_cron):** las cuatro (`yeffitnes-buenosdias`, `-mediodia`, `-noche`, `-sesiones`) deben llamar a la **dirección de Netlify** (SQL en `docs/CONTEXT.md` §13). Si se crearon con otra dirección: `select cron.unschedule('nombre');` y volver a programarlas.
-- [ ] **Quinta tarea, borrado de vídeos (0033), programarla justo DESPUÉS de fusionar a `main`** (antes Netlify no tiene la ruta): cada hora, borra en Bunny los vídeos de reporte vencidos (32 h sin ver, 12 h tras verlos) y los huérfanos.
+- [x] (programada el 28-oct, tarea 10/11) **Quinta tarea, borrado de vídeos (0033), programarla justo DESPUÉS de fusionar a `main`** (antes Netlify no tiene la ruta): cada hora, borra en Bunny los vídeos de reporte vencidos (32 h sin ver, 12 h tras verlos) y los huérfanos.
   `select cron.schedule('yeffitnes-videos', '7 * * * *', $$ select net.http_post(url:='https://yeffitnes.netlify.app/api/cron/purge-videos', headers:=jsonb_build_object('x-cron-secret','LA-MISMA-CLAVE-DEL-CRON')) $$);`
   Detener: `select cron.unschedule('yeffitnes-videos');`. Si cambias la clave del cron, reprograma también esta.
-- [ ] **§3c Mantener despierto el servidor (primera apertura rápida):** DESPUÉS de fusionar (la ruta `/api/ping` debe existir en `main`). Cada 5 min, de 5 a. m. a medianoche hora Colombia (las horas del cron van en UTC). Costo en Netlify: unos 3 créditos/mes.
+- [x] (programada el 28-oct) **§3c Mantener despierto el servidor (primera apertura rápida):** DESPUÉS de fusionar (la ruta `/api/ping` debe existir en `main`). Cada 5 min, de 5 a. m. a medianoche hora Colombia (las horas del cron van en UTC). Costo en Netlify: unos 3 créditos/mes.
   `select cron.schedule('yeffitnes-despierta', '*/5 0-4,10-23 * * *', $$ select net.http_get(url:='https://yeffitnes.netlify.app/api/ping') $$);`
   Detener: `select cron.unschedule('yeffitnes-despierta');`. Si existe la de pruebas (`yeffitnes-despierta-vercel`), se puede dejar o detener igual.
 - [ ] **Clave del cron:** cambiarla por una nueva antes de lanzar (`update public.app_secrets set value='NUEVA' where name='cron';`) y reprogramar las tareas; la actual circuló en capturas.
@@ -36,7 +36,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 ## 3. Notificaciones y app instalada
 - [ ] Desde el 27-oct el cliente **no puede usar la app sin activar las notificaciones** (si el teléfono las admite). Sin `NEXT_PUBLIC_VAPID_PUBLIC_KEY` esa pantalla no aparece: confirma que esté en Netlify antes de fusionar.
 - [ ] Las suscripciones push y la app instalada son **por dirección**: los clientes y Jeff deben activar avisos e instalar la app **desde la dirección de Netlify**. Lo hecho en Vercel no vale.
-- [x] Claves VAPID: Netlify y Vercel tienen claves DISTINTAS (decidido 28-oct). No es problema: cada suscripción solo sirve con la clave de su sitio; un envío cruzado falla con 403 y no borra nada. Si se cambian las de Netlify, todos deben reactivar avisos.
+- [ ] **Claves VAPID: RECOMENDADO (30-oct) poner en Vercel las MISMAS 3 claves de Netlify** (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) y volver a desplegar Vercel. Hasta el 28-oct se dejaron distintas, pero eso causó la confusión del 30-oct: "Avisar" desde Vercel no llega a los teléfonos que activaron avisos en Netlify (falla con 403) y la app lo mostraba como "no tiene avisos activos". Con las mismas claves, un aviso desde cualquiera de los dos llega a cualquier teléfono. Los teléfonos que activaron avisos en Vercel se reajustan solos al abrir la app (`resyncPush`). **NO cambies las de Netlify** (producción): copia las de Netlify a Vercel, no al revés.
 - [ ] iPhone: los avisos solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o superior).
 
 ## 3b. Migraciones pendientes antes de fusionar a `main`
@@ -48,11 +48,30 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
   - `0035_material_private_video.sql`: vídeo privado en Material y vídeo del día o de la semana.
 - [x] **`0036_nudges_activity_objective_video.sql`** (corrida) (27-oct, noche): botón "Avisar", actividad solo de hoy, vídeo del objetivo. El código de `bloque-hoy` la necesita (Clientes y portal leen `objective_video_id`).
 - [x] **`0037_nudges_in_app.sql`** (corrida, 28-oct) (27-oct, noche): "Avisar" guarda el aviso aunque falle el push y el cliente lo ve en Hoy. El código de `bloque-hoy` la necesita para "Avisar".
+- [x] **`0038_start_point_feedback_plan_month.sql`** (corrida, 28-oct) (28-oct, noche): punto de partida obligatorio, respuestas de Jeff aparte, plan mensual de 30 días y aviso de cita cancelada. El código de `bloque-hoy` la necesita (Hoy y Clientes leen las columnas nuevas).
+- [x] **`0039_exercise_images.sql`** (corrida, 28-oct): imagen y series sugeridas de cada ejercicio + bucket `exercise-images`. El código de `bloque-hoy` la necesita (catálogo y rutinas leen las columnas).
+- [x] **`0040_preset_exercises.sql`** (corrida, 28-oct): carga los 54 ejercicios precargados con su imagen. Solo datos; correrla cuando Jeff apruebe.
+- [x] **`0041_live_feedback_media_agenda_attention.sql`** (corrida) (29-oct, noche): tiempo real (agrega tablas a la publicación `supabase_realtime`), respuestas con foto/vídeo, cancelar en 10 min con motivo, vídeo del día y de la semana a la vez con portada, panel "Necesitan tu atención" y arranque en un viaje. **Correrla ANTES de probar en Vercel.** Compatible con `main`: lo único que cambia para el código viejo es que el cliente ya no puede cancelar pasados 10 min (verá un mensaje genérico de error).
+
+- [x] **`0042_edit_once.sql`** (corrida, confirmado 4-nov) (30-oct): lo terminado (entreno, reporte del día, nutrición del día) se puede corregir **una sola vez** y nunca después de que Jeff lo revisó; lo impone la base de datos. Añade columnas `edits`/`edited_at` y la tabla `meal_day_locks`. **Correrla ANTES de probar en Vercel.** Compatible con `main`: el código viejo, en un segundo intento de corregir, verá un mensaje genérico de error. Confirmar (solo lectura): `select to_regclass('public.meal_day_locks') is not null;` → `true`.
+- [x] **`0043_programs_snippets_habits_records.sql`** (corrida, confirmado 4-nov) (30-oct, noche): programas, respuestas guardadas, hábitos del día y récords. **Correrla ANTES de probar en Vercel** (sin ella esas tarjetas no aparecen; el resto funciona igual). Compatible con `main`. Confirmar (solo lectura): `select to_regclass('public.habit_logs') is not null and to_regprocedure('public.apply_program(uuid,uuid)') is not null;` → `true`.
+- [x] **`0044_exercise_alternatives.sql`** (corrida, confirmado 4-nov) (31-oct): ejercicios alternativos (sustitutos aprobados por Jeff y el cambio que hace el cliente). **Necesita la 0042.** Correrla ANTES de probar en Vercel (sin ella no aparecen el campo de sustitutos ni el botón de cambiar; lo demás funciona igual). Compatible con `main` (recrea `log_set` con los mismos parámetros; sin cambios hechos, hace lo mismo). Confirmar (solo lectura): `select to_regclass('public.exercise_swaps') is not null and to_regprocedure('public.swap_exercise(date,uuid,uuid)') is not null;` → `true`.
+- [x] **`0045_more_preset_exercises.sql`** (corrida en su primera versión; la 0046 la completó) (31-oct): 89 ejercicios precargados más, todos con imagen (`public/ex/`). Solo datos; correrla cuando se apruebe la lista (`docs/EJERCICIOS_NUEVOS.md`). Confirmar: `select count(*) from public.exercises where lower(name) = 'remo en t';` → 1 (uno por cada espacio de coach).
+- [x] **`0046_fix_preset_images.sql`** (corrida, confirmado 4-nov) (31-oct): la 0045 se corrió en su primera versión (sin imágenes y con 15 repetidos). Esta pone las imágenes de los 89 nuevos y quita los 15 repetidos (archiva los usados en rutinas). Solo datos, se puede correr dos veces. Confirmar: `select count(*) from public.exercises where active and image is null and lower(name) in ('abdominal bicicleta','almeja con banda');` → 0.
+- [x] **`0047_plan_change_push.sql`** (corrida, confirmado 4-nov) (2-nov): aviso al cliente cuando Jeff cambia su plan (máx. 1 cada 30 min por tipo) y "Probar avisos". Correrla ANTES de probar en Vercel (sin ella, "Probar avisos" dice 0 teléfonos y el aviso de plan no sale; lo demás igual). Compatible con `main`. Confirmar: `select to_regprocedure('public.plan_change_targets(uuid,text)') is not null;` → `true`.
+- [x] **`0048_plan_expiry_notices.sql`** (corrida, confirmado 12-nov) (4-nov): avisos a Jeff de plan por vencer (7 días, 2 días y el día que vence). **Obligatoria antes de fusionar:** el código nuevo de la tarea de la mañana la llama; sin ella no sale ningún aviso de plan. Se puede correr ya: compatible con `main` (solo agrega). No hay tareas programadas nuevas: usa `yeffitnes-buenosdias`. Confirmar: `select to_regclass('public.plan_expiry_log') is not null and to_regprocedure('public.due_plan_notices_cron(text)') is not null;` → `true`.
+- [x] **`0049_weight_advice_decisions.sql`** (corrida, confirmado 12-nov) (4-nov): sugerencias de peso que Jeff acepta o descarta y no vuelven. **Correrla ANTES de probar en Vercel:** sin ella, Aceptar y Descartar dan error (las sugerencias se ven, pero no se pueden resolver). Compatible con `main` (solo agrega). Confirmar: `select to_regclass('public.weight_advice_decisions') is not null and to_regprocedure('public.decide_weight_advice(uuid,uuid,numeric)') is not null;` → `true`.
+- [ ] **`0050_reps_advice.sql`** (12-nov): en ejercicios sin peso, Jeff acepta repeticiones sugeridas. Necesita la 0049 antes. Sin ella, Aceptar en una sugerencia de repeticiones da error (las de peso siguen bien). Compatible con `main`. Confirmar: `select to_regprocedure('public.decide_reps_advice(uuid,uuid,text)') is not null;` → `true`.
+- [ ] **`0051_plan_notice_day_before.sql`** (12-nov): aviso de plan también 1 día antes. Necesita la 0048. Compatible con `main`.
+- [ ] **`0052_habit_settings.sql`** (12-nov): hábitos que configura Jeff, metas por cliente y hábitos nuevos. **Correrla antes de probar en Vercel:** sin ella la app sigue con agua/pasos/sueño de siempre y la página Hábitos pide la migración. Compatible con `main` (solo agrega). Confirmar: `select count(*) from public.habit_defs;` → 3 o más.
+- [ ] **`0053_week_summaries.sql`** (13-nov): resumen de la semana que Jeff envía. **Correrla antes de probar en Vercel:** sin ella, "Enviar resumen" avisa que falta la migración. Compatible con `main` (solo agrega). Confirmar: `select to_regclass('public.week_summaries') is not null;` → `true`.
+- [ ] **`0054_habit_nudges.sql`** (14-nov): "Recordarle" de hábitos, recordatorio de la noche al cliente y resumen de la mañana a Jeff. Necesita la 0052. Sin ella, "Recordarle" da error y las tareas no mandan avisos de hábitos (lo demás sigue igual). Usa las tareas que ya existen (`-noche` y `-buenosdias`). Compatible con `main`. Confirmar: `select to_regprocedure('public.due_habit_digest_cron(text)') is not null;` → `true`.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
 - [ ] Si se activa protección por dominio o token en Bunny, **añadir la dirección de Netlify** (y la de Vercel si se prueba allí).
 - [ ] Probar: vídeo de rutina (coach sube, cliente ve), vídeo del reporte (máx. **20 s**; de la galería hasta 60 s con recorte) y vídeo privado de Material (Jeff sube, cliente con el plan lo ve; sin el plan, no).
+- **La cuenta es de prepago** (mínimo 1 USD al mes). Si el saldo llega a 0, Bunny responde **401** a todo y los reportes fallan con "El servicio de vídeo no responde" (pasó el 15-nov, el día de la demo). Activar recarga automática o aviso de saldo bajo en Billing. Diagnóstico: `/api/video/health` con la sesión de Jeff.
 - [ ] Borrado de vídeos de reporte: 32 h sin verlos, 12 h tras verlos. Lo garantiza la tarea `yeffitnes-videos` (§2); abrir Reportes lo hace también como respaldo.
 
 ## 5. Dominio propio (opcional)
@@ -78,11 +97,22 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Probar en Netlify: login, Hoy, series (marcar y destachar), nutrición, mensaje, reporte con vídeo, agenda y avisos.
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
-## 10. Próxima salida a `main` (preparada el 27-oct; NO fusionar hasta que Cristian diga "fusiona")
+## 10. Salida a `main` del 15-nov (hecha; la siguiente, igual: NO fusionar hasta que Cristian diga "fusiona")
+**Hecha el 15-nov:** migraciones 0038-0054 corridas, 4 chequeos y `all.sh` OK. Falta lo de §9 (probar en Netlify).
+La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita de la 0038 a la 0052: **corridas hasta la 0049 (Cristian, 12-nov); la 0050 en curso; faltan la 0051 y la 0052**. Si se crea una nueva (0053 en adelante), correrla antes de fusionar.
 Orden:
-1. Correr `0032` a `0037` en Supabase (§3b) y probar en Vercel con el cliente de prueba.
-2. En Vercel, de punta a punta: registro nuevo → app con candados → "Solicitar acceso" (a Jeff le llega el aviso) → Jeff asigna plan (al cliente le llega "Tu plan está activo") → activar notificaciones → bienvenida con el personaje → mensajes (3 textos, 1 foto, 1 vídeo; el cuarto texto se rechaza) → reporte con vídeo → Jeff lo marca visto (dice "se borrará en 12 h") → Material: vídeo privado y vídeo del día.
-3. Revisar en Netlify: `BUNNY_*`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
-4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`).
-5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos).
-6. Justo después: programar `yeffitnes-videos` (§2) y probar en Netlify lo de §9.
+1. Migraciones: correr la 0050, la 0051 y la 0052, en ese orden (§3b). Para comprobar las anteriores, consulta de solo lectura (`true` = corrida):
+   `select to_regclass('public.meal_day_locks') is not null as m0042, to_regclass('public.habit_logs') is not null as m0043, to_regclass('public.exercise_swaps') is not null as m0044, exists(select 1 from public.exercises where lower(name)='remo en t') as m0045, (exists(select 1 from public.exercises where lower(name)='remo en t') and not exists(select 1 from public.exercises where active and image is null and lower(name) in ('abdominal bicicleta','almeja con banda'))) as m0046, to_regclass('public.plan_notices') is not null as m0047;`
+   Detalle de cada una: §3b. Confirmar 0042: `select to_regclass('public.meal_day_locks') is not null;` → `true`. Confirmar 0041 (solo lectura): `select to_regprocedure('public.portal_boot()') is not null;` → `true`; `select count(*) from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('nudges','workout_logs','bookings','daily_reports','activity_events');` → 5.
+2. Probar en Vercel con el cliente de prueba (lo del 28-oct de la lista anterior y lo del 29-oct):
+   - Necesitan tu atención (urgentes, falta configurar, llamada del mes) y la campanita;
+   - tiempo real: Jeff avisa o responde y el teléfono del cliente lo muestra sin salir de la app;
+   - rutina: marcar solo la última serie NO pasa al siguiente ejercicio;
+   - repeticiones fijas: pedir 10, registrar 8 → consejo al cliente, notificación y tarjeta "Ajustes de peso sugeridos" a Jeff;
+   - respuesta con foto y con vídeo;
+   - agenda: cancelar dentro de 10 min sí, después no; Jeff cancela desde la ficha con motivo; sesiones pasadas como "Ya pasó";
+   - vídeo del día + de la semana a la vez, vista previa y portada difuminada; bienvenida (4 s / 2 s); filtros del catálogo.
+3. Variables de Netlify: no hay nuevas.
+4. Los 4 chequeos (`tsc`, `lint`, build y `run_local.sh` en `TODO OK`) y la revisión de punta a punta (`tests/e2e/all.sh` en `TODO OK (e2e)` + `push.js`).
+5. Fusionar `bloque-hoy` → `main` en un solo bloque (15 créditos). El último commit NO debe llevar `[skip ci]` (Netlify no publicaría).
+6. Después: no hay tareas programadas nuevas. Pedir a los clientes que abran la app una vez (si su suscripción de avisos era vieja, se rehace sola). Probar en Netlify lo de §9.

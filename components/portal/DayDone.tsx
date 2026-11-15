@@ -6,13 +6,15 @@ import { GuideFace } from "./Guide";
 export function DayDone({ cid, features, trainingToday, trainingDone }: { cid: string; features: string[]; trainingToday: boolean; trainingDone: boolean }) {
   const hasN = features.includes("nutrition"), nut = useClientNutrition(hasN ? cid : ""), logs = useMealLogs(hasN ? cid : "", localDate());
   const wd = todayWeekday(), meals = (nut.data?.meals ?? []).filter((m) => m.weekday === null || m.weekday === wd), nDone = meals.filter((m) => m.id && (logs.data ?? []).includes(m.id)).length;
+  // Mientras la nutrición carga NO se sabe si el día está completo (29-oct): antes se daba por completado y luego desaparecía.
+  if (hasN && (nut.isPending || (meals.length > 0 && logs.isPending))) return null;
   const nutPlanned = hasN && meals.length > 0, nutDone = nutPlanned && nDone === meals.length;
   if (!trainingToday && !nutPlanned) return null;
   const ok = (!trainingToday || trainingDone) && (!nutPlanned || nutDone);
   if (!ok) return null;
-  const parts = [trainingToday && "entrenamiento", nutPlanned && "nutrición"].filter(Boolean).join(" y ");
+  const both = trainingToday && nutPlanned, parts = both ? "entrenamiento y tu nutrición" : trainingToday ? "entrenamiento" : "nutrición";
   return (
     <div className="day-complete big dc-guide" role="status"><span className="gd-pop"><GuideFace size={40} /></span>
-      <span><b>Día completado</b><br />Tu {parts} de hoy están al día. Tu coach ya lo sabe.</span></div>
+      <span><b>Día completado</b><br />Tu {parts} de hoy {both ? "están" : "está"} al día. Tu coach ya lo sabe.</span></div>
   );
 }

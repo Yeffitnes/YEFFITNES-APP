@@ -1,4 +1,441 @@
 # CHANGELOG
+## 2026-11-15 - PUBLICACIÓN A PRODUCCIÓN: `bloque-hoy` a `main` (Netlify)
+Cristian dijo "fusiona" con las migraciones 0038 a 0054 corridas (confirmó 0050-0054 con la consulta de solo lectura). Entra todo lo hecho del 29-oct al 15-nov. Antes: 4 chequeos y `tests/e2e/all.sh` (todo OK tras arreglar la semilla de pruebas, abajo).
+Prueba de punta a punta, semilla: `tests/e2e/seed.sql` escogía el entreno de "hace 3 días" con `order by weekday`; los domingos tomaba el día de mañana (lunes), que no tiene el ejercicio de 10 repeticiones, y `advice.js` y `extras.js` fallaban. Ahora escoge el día que tiene ese ejercicio. Solo pruebas, la app no cambia.
+Revertir la publicación: en `main`, `git revert -m 1 <commit de fusión>` (Netlify vuelve a publicar lo anterior). La semilla: `git revert` de este commit.
+
+## 2026-11-15 - Comprobación de vídeo: el 401 apunta primero al saldo
+`/api/video/health`: con 401 ahora dice que revisen primero el saldo de Bunny (sin saldo, Bunny responde 401, no 403). Notas en `docs/PASO_A_PRODUCCION.md` §4 y `docs/HANDOFF.md`.
+Revertir: `git revert` de este commit (solo cambia un texto y la documentación).
+
+## 2026-11-15 - Menú inferior del portal más bajo en iPhone
+En iPhone, la franja de la rayita de inicio (~34 pt) quedaba entera debajo de los iconos del menú inferior y lo hacía ocupar mucho. Ahora se quitan 16 pt de esa franja: los iconos son del mismo tamaño y bajan, y quedan ~18 pt de margen para no tocar la rayita y salir de la app sin querer. Barra de 89 a 73 pt de alto en un iPhone (simulado). En Android con botones el margen es 8 px (antes 10). El relleno bajo la barra (al estirar la página) ahora es oscuro como la barra, y la barra del descanso y el espacio al final de la página se ajustan al nuevo alto.
+Archivo: `app/inicio/portal.css` (bloque "Barra inferior" y `.rest-bar`). Solo el portal del cliente; el de Jeff no cambia.
+Revertir: `git revert` de este commit (vuelve a `padding-bottom:max(10px, env(safe-area-inset-bottom))`).
+
+## 2026-11-15 - Vídeos: clave de Bunny sin espacios y comprobación más clara
+La comprobación /api/video/health seguía dando 401 después de cambiar la clave en Vercel. Cambios:
+- `lib/bunny.ts`: la clave y el número de biblioteca se usan sin espacios ni saltos de línea al principio o al final (`trim`). Una clave pegada con un salto de línea al final da 401 aunque sea la correcta.
+- `/api/video/health` ahora muestra también `clave_termina_en` (últimos 4 caracteres, para compararla con Bunny sin mostrarla entera), `clave_largo`, `clave_tenia_espacios`, `entorno` (production/preview) y `version` (commit publicado), y responde con UTF-8 para que las tildes se vean bien.
+Sigue sin permitir enviar el reporte sin vídeo (Cristian lo pidió así).
+Revertir: `git revert` de este commit (vuelve a usar las variables tal cual y a la comprobación anterior).
+
+## 2026-11-15 - Diagnóstico de vídeos: "El servicio de vídeo no responde"
+Cristian no pudo enviar un reporte ("El servicio de vídeo no responde"). Ese mensaje sale cuando Bunny rechaza crear el vídeo. El código de vídeos no cambió desde el 30-oct y la API de Bunny estaba en línea (sin clave responde 401, lo normal), así que el rechazo es de la clave o de la cuenta (saldo, clave o biblioteca cambiada). Antes no quedaba registrado el motivo.
+- `app/api/video/health` (nuevo, solo coach): abre `/api/video/health` con la sesión de Jeff y dice qué responde Bunny con la clave de ESE sitio (401 clave, 403 cuenta/saldo, 404 biblioteca). No muestra claves ni crea nada.
+- `app/api/video/upload-url`: guarda en los registros del servidor qué respondió Bunny y lo devuelve (`detail`).
+- NO verificado contra Bunny real (el asistente no tiene la clave). Revertir: borrar `app/api/video/health` y restaurar `upload-url/route.ts` del commit `68b1d7f`.
+
+## 2026-11-14 (noche) - Hábitos como llamada a la acción (MIGRACIÓN 0054)
+Pedido de Cristian: que los hábitos lleven a actuar, para el cliente y para Jeff.
+- **Cliente, en la noche** (tarea `yeffitnes-noche`): si no anotó todos sus hábitos de hoy, "¿Ya anotaste tus hábitos de hoy? Te falta: pasos, sueño." Si también le falta el reporte, va en el mismo aviso ("Envía tu reporte y anota tus hábitos…"), no en dos.
+- **Jeff, en la mañana** (tarea `yeffitnes-buenosdias`): "Hábitos de ayer: 2 clientes por debajo" con quién y en qué ("Camila: agua · Andrés: no anotó"); abre la página Hábitos.
+- **Jeff, en el panel:** la campanita dice "N clientes por debajo en sus hábitos esta semana". En Hábitos, cada cliente por debajo o sin anotar tiene "Recordarle" (aviso rápido nuevo de hábitos; queda "Recordado hoy").
+- **Cliente, en Hoy:** el aviso de Jeff con "Anotar mis hábitos" (lleva a la tarjeta); al anotarlos todos queda "Hábitos anotados". "Tu día" también lleva a los hábitos.
+- `0054_habit_nudges.sql`, `app/api/cron/reminders`, `lib/nudges.ts`, `lib/focus.ts`, `lib/extras.ts` (`useHabitBoard`), `HabitsBoard.tsx`, `ActionsBar.tsx`, `HoyView.tsx`, `WorkoutExtras.tsx`, `app/api/push/nudge`, `coach.css`. Prueba de ataque `rls_habitnudge.sql`; pruebas `habits_cta.js` y `habits_cron.js`.
+- NO verificado: iPhone real; avisos llegando a un teléfono (las tareas apuntan a Netlify: salen después de fusionar).
+- Revertir: código, restaurar del commit `08ab070` y borrar las pruebas nuevas; base, cabecera de la 0054.
+
+## 2026-11-14 - Hoy del cliente con la estética de la marca (para la demo con Jeff)
+Cristian veía Hoy muy blanco y plano.
+- Arriba, un panel oscuro con brillo rojo junta el saludo, "Tu día" y la racha. "Tu día" muestra lo que le toca hoy (Entrenar, Nutrición, Hábitos, Reporte, solo lo que aplica), se marca con el brillo rojo al cumplirlo, lleva a cada sección y tiene un círculo de avance ("2/4"). `components/portal/DayHero.tsx` (nuevo), `HoyView.tsx`.
+- Barra de abajo (celular) oscura, como el menú de Jeff. Rótulos de las tarjetas en píldora oscura y acento superior más visible. Barra de progreso de la rutina y "Tu semana" de hábitos en oscuro; brillo suave en hábitos y nutrición. `app/inicio/portal.css` (al final).
+- Sin cambios de datos ni de base. Revertir: restaurar `HoyView.tsx` y `portal.css` del commit `5ad523c` y borrar `DayHero.tsx`.
+
+## 2026-11-13 (noche) - Resumen de la semana: algo que de verdad le sirva al cliente (MIGRACIÓN 0053)
+Pedido de Cristian (17:53): el resumen enviado era una línea de texto; quiere estadísticas, comparación con la semana anterior y gráficas que motiven.
+- **Jeff:** "Enviarle el resumen" ya no abre Mensajes: abre una vista previa de lo que verá el cliente, con una casilla para su comentario, y "Enviar resumen". Puede reenviarlo (actualiza el comentario). La ficha dice cuándo lo envió y si el cliente ya lo vio.
+- **Lo que trae el resumen** (todo calculado con sus datos, nada inventado): lo más destacado (récords, cumplir todos los entrenamientos, más peso movido…), lo que mejoró frente a la semana anterior, el comentario de Jeff, números con su cambio (entrenamientos, peso movido = repeticiones × kilos, esfuerzo, nutrición, reportes, cada hábito y peso corporal), gráfica de peso movido por día comparando con la semana anterior, hábitos día a día con su meta, cuánto subió de peso en cada ejercicio, y "para la próxima semana" con los hábitos que quedaron por debajo. En la primera semana dice que la comparación llega desde la siguiente.
+- **Cliente:** le llega una notificación ("Tu resumen de la semana") que abre el resumen; en Hoy le sale una tarjeta hasta que lo abre; queda guardado en Progreso ("Resúmenes de Jeff"). Al abrirlo queda visto y el mensaje en su chat queda leído. En Hoy no se repite como "Mensaje de tu coach".
+- Archivos: `0053_week_summaries.sql`, `lib/weeksum.ts`, `components/WeekReport.tsx`, `components/portal/WeekReportPage.tsx`, `app/inicio/resumen/[id]`, `app/api/push/week`, `WeekSummary.tsx` (más datos en `useWeek`; ventana de 21 días), `HoyView.tsx`, `ProgressPanels.tsx`, `globals.css`. Prueba de ataque `rls_weeksum.sql`; prueba `week_send.js`; ajustadas `week_plan.js` y `extras.js`.
+- NO verificado: iPhone real; la notificación llegando a un teléfono (se probó en local sin claves de notificación).
+- Revertir: código, restaurar del commit `dedd086` y borrar los archivos nuevos; base, cabecera de la 0053.
+
+## 2026-11-13 - La letra en Vercel salía con serifa: compilación limpia en cada despliegue
+Cristian lo vio en el panel de Vercel (la de Netlify estaba bien). Causa: en Vercel la página pedía la letra con un código (`__variable_855f89`, Manrope; `__variable_30a8c4`, IBM Plex Mono) y su hoja de estilos traía otro (`f524cf`, `9f0762`). Sin esas variables, `var(--font-body)` y `var(--font-mono)` quedaban vacías y el navegador ponía su letra por defecto, con serifa. El código de la letra no cambió (`app/layout.tsx`, igual desde el 23-oct); compilando desde cero los códigos coinciden. Fue la memoria de compilación de Vercel (`.next/cache`), reutilizada a medias entre despliegues.
+- `vercel.json` (nuevo): Vercel borra `.next/cache` antes de compilar. Despliegues un poco más lentos, pero sin mezclas. Netlify no lee este archivo.
+- Verificado: build local limpio con códigos iguales en la página y en los estilos. Tras el despliegue, se comprueba en `https://yeffitnes.vercel.app` (página y CSS publicados).
+- Error del asistente el 12-nov: dijo que la letra no había cambiado sin revisar el sitio publicado. Lección en `HANDOFF.md`.
+- Revertir: borrar `vercel.json`.
+
+## 2026-11-12 (noche) - Descanso, aviso 1 día antes, hábitos de Jeff y más cosas sin señal (MIGRACIONES 0051 y 0052)
+Pedido de Cristian (20:05).
+- **Cronómetro de descanso:** solo sale entre series del mismo ejercicio. Al completar un ejercicio (también marcando en desorden) o la rutina, no queda descanso. Antes contaba las series de toda la rutina. `HoyView.tsx`, `WorkoutExtras.tsx` (`Rest.itemId`). Prueba `rest_end.js`.
+- **Plan mensual:** aviso a Jeff también 1 día antes ("Plan vence mañana"). Quedan 7, 2, 1 y el día. Renovar tarde sigue contando desde que Jeff acepta (confirmado). `0051_plan_notice_day_before.sql`, `app/api/cron/reminders`. Prueba de ataque `rls_planexpiry.sql` ampliada.
+- **Hábitos que configura Jeff:** agua 6 vasos, pasos 3.000, sueño 6 h (confirmado) vienen de fábrica. En la nueva página **Hábitos** (`/coach/habitos`) Jeff ve, por cliente y contra SU meta, quién cumple, quién está por debajo y quién no anota en los últimos 7 días completos (filtro "Necesitan atención"). Debajo cambia las metas generales, apaga hábitos o agrega otros: de número ("Lectura, 20 min al día") o de sí/no ("Estiramiento, 5 días por semana"). En la ficha (Resumen), las metas de un cliente: otra meta o "No aplica". El cliente ve sus hábitos con su meta; avisos, resumen de la semana e historial usan esas metas. `0052_habit_settings.sql`, `lib/habits.ts`, `lib/extras.ts`, `HabitsBoard.tsx`, `ClientHabitGoals.tsx`, `WorkoutExtras.tsx`, `WeekSummary.tsx`, `CoachNav.tsx`, `ClientFicha.tsx`, `coach.css`, `portal.css`. Prueba de ataque `rls_habits.sql`; prueba `habits_cfg.js`.
+- **Sin señal:** además de la rutina, ahora se guardan en el teléfono los hábitos, las comidas marcadas y el reporte de SOLO texto, y se envían solos al volver la señal ("Volvió la señal: tus hábitos, tu nutrición y tu reporte quedó enviado"). Reporte con vídeo: sin señal avisa que el vídeo necesita internet (antes fallaba al intentar). Arreglado de paso: anotar pasos sin señal borraba el agua anotada antes sin señal. `lib/offline.ts`, `lib/queries.ts`, `lib/extras.ts`, `ReportCard.tsx`, `HoyView.tsx`. Prueba `offline2.js`.
+- **Tipografía:** revisado, no cambió (Instrument Sans, Manrope, IBM Plex Mono desde el 23-oct; igual en Netlify y Vercel). Sin cambios.
+- NO verificado: iPhone real; base real; las notificaciones de plan salen solo después de fusionar (las tareas apuntan a Netlify).
+- Revertir: código, restaurar del commit `afac7b1` y borrar `HabitsBoard.tsx`, `ClientHabitGoals.tsx`, `app/coach/habitos/` y las pruebas nuevas; base, cabeceras de la 0051 y la 0052.
+
+## 2026-11-12 - Sugerencias en ejercicios sin peso: repeticiones (MIGRACIÓN 0050)
+Aprobado por Cristian (12-nov) a partir de la propuesta del 4-nov.
+- En un ejercicio sin peso (ni en el plan ni registrado por el cliente), la sugerencia ya no dice "subir el peso": dice "subir/bajar las repeticiones" y trae escritas las que de verdad hizo (la mediana de sus series): pidió 10 e hizo 14, 15, 14 → "14"; rango "8-12" e hizo 6, 6, 7 → "6-10" (conserva el ancho). Si subió solo por esfuerzo bajo, 2 más. Se respeta lo que Jeff había escrito ("10 por lado" → "14 por lado"). Aceptar cambia las repeticiones del plan y avisa al cliente; "Mejor ponerle peso" cambia la casilla a kg. Igual al revisar un entrenamiento. La tarjeta pasa a llamarse "Ajustes sugeridos". La notificación a Jeff también habla de repeticiones. `lib/progression.ts` (`nextReps`, `repsSuffix`, `setTip`), `AdviceEditor.tsx`, `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `lib/queries.ts`, `app/api/push/activity/route.ts`, `coach.css`.
+- Cliente: en ejercicios sin peso, el consejo al abrir y al guardar una serie habla de repeticiones, no de subir o bajar el peso. `HoyView.tsx`.
+- Base: `0050_reps_advice.sql` (`decide_reps_advice`, columna `reps` en `weight_advice_decisions`; `decide_weight_advice` ahora limpia una decisión de repeticiones anterior). Prueba de ataque `rls_advice.sql` ampliada: ninguno.
+- Pruebas: `advice.js` 20 de 20 (celular y computador), `tip_noweight.js` nueva. NO verificado: iPhone real.
+- Límite conocido: si Jeff cambia las repeticiones desde la ficha, la sugerencia se recalcula contra las nuevas (no se guarda qué pedía el plan el día del entrenamiento); si quedan iguales a lo que hizo, desaparece.
+- Revertir: código, restaurar del commit `d636986` y borrar `tests/e2e/tip_noweight.js`; base, cabecera de la 0050.
+
+## 2026-11-04 (noche, 2) - Sugerencias de peso: se resuelven ahí mismo y no vuelven (MIGRACIÓN 0049)
+Pedido de Cristian (20:19): "Ajustar en su plan" no llevaba al ejercicio, y quiere cambiar el peso, aceptar y que se quite.
+- **Decisión de diseño:** en vez de llevar a Jeff a otra pantalla, el peso se cambia en la misma sugerencia: viene escrito, lo edita si quiere y toca Aceptar o Descartar. Se actualiza el plan, sale al momento y sigue con la siguiente. Se quitó "Ajustar en su plan" y "Subir/Bajar a X kg". Igual al revisar un entrenamiento (Revisar y ficha). `AdviceEditor.tsx` (nuevo), `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `coach.css`.
+- **Errores encontrados y arreglados:**
+  - "Descartar" se guardaba solo en ese navegador: en otro aparato volvía. Ahora queda en la base (`weight_advice_decisions`, `decide_weight_advice`).
+  - Resolver la sugerencia más nueva revivía una vieja del mismo ejercicio; y seguía saliendo una vieja aunque después lo hiciera bien. Ahora cada ejercicio se juzga solo por su entrenamiento más reciente (`pendingAdvice`, `lib/progression.ts`).
+  - Elegir un peso distinto al sugerido no la quitaba (bajar a 38 cuando sugería 37,5).
+  - Sin peso en el plan, ponerlo desde la ficha no la quitaba y luego sugería subir desde ese peso.
+  - Salían sugerencias de planes ya terminados: aplicarlas no cambiaba nada para el cliente.
+- Prueba de ataque `rls_advice.sql`: ninguno. Prueba nueva `tests/e2e/advice.js`, 18 de 18 en celular y computador. NO verificado: iPhone real. Sin cambio: un ejercicio sin peso (flexiones, por ejemplo) solo se puede descartar o ponerle peso; no se cambian repeticiones.
+- Revertir: código, restaurar `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `lib/progression.ts`, `lib/queries.ts` y `coach.css` del commit `d6af11b` y borrar `AdviceEditor.tsx` y `tests/e2e/advice.js`; base, cabecera de la 0049.
+
+## 2026-11-04 (noche) - Revisar saca lo revisado, resumen por la semana real y avisos de plan por vencer (MIGRACIÓN 0048)
+Correcciones de Cristian (19:31).
+- **Revisar:** solo muestra lo que falta. Al responder un entrenamiento o marcar visto un reporte, también los de hoy, sale de la lista al momento; cuando a un cliente no le queda nada, pasa solo al siguiente ("Listo con Camila. Sigue Andrés."). Lo que aún no ha hecho hoy ya no ocupa secciones: va en una línea junto al nombre. Sin pendientes: "Todo revisado" y la pista de que lo revisado sigue en la ficha (pestaña Hoy). Lo nuevo que llega va al final, sin mover la tarjeta abierta. `ReviewQueue.tsx`, `DashboardView.tsx`, `useReviewReport`, `coach.css`.
+- **Rutina que se recoge al marcar la última serie:** no se pudo reproducir en `bloque-hoy` (arreglado el 29-oct). Sigue en producción: `main` aún tiene `if (n === item.sets) onLast()`. Se corrige al fusionar. Sin cambios en la app; prueba nueva `tests/e2e/set_order.js` para que no vuelva.
+- **Resumen de la semana:** ya no dice "Últimos 7 días". Es la semana del cliente, 7 días desde que se activó ("Semana 1 · día 3 de 7 · Se completa el lun 9 nov"); renovar el mes no la reinicia. Lo de la semana en curso se cuenta sobre los días que van (Reportes 1/3). "Enviarle el resumen" queda inactivo ("Faltan 5 días") y se activa al completarse la semana. Desde la semana 2, Jeff abre la última completa y puede ver la que está en curso; el cliente abre la que está en curso. Sin rutina esos días sale "–", no "0/0". `lib/clientweek.ts` (nuevo), `WeekSummary.tsx`, `globals.css`.
+- **Plan mensual:** la ficha dice en qué día va ("día 3 de 30"). Aviso a Jeff 7 días antes, 2 días antes y el día que vence, una vez cada uno, en la tarea de la mañana; la tarjeta del panel aparece desde 7 días antes y la campanita desde 2. Antes de vencer solo informa, sin botones (renovar antes le quitaría días al cliente, porque el mes cuenta desde el día en que se renueva). El día que vence, Jeff decide: "Sí pagó: renovar 30 días" o "No pagó: cancelar plan", con confirmación. Si no decide, el cliente sigue con su plan. `0048_plan_expiry_notices.sql`, `app/api/cron/reminders`, `lib/planmonth.ts`, `PlansDueCard.tsx`, `ClientFicha.tsx`, `ActionsBar.tsx`. **PROPUESTA:** segundo aviso a 2 días (Cristian dijo "2 días antes" y "mañana"); renovar tarde cuenta 30 días desde el día en que Jeff acepta.
+- **Avisos:** Cristian confirmó que "Avisar" y las notificaciones funcionan en Netlify.
+- Prueba de ataque `rls_planexpiry.sql`: ninguno. Pruebas nuevas `set_order.js`, `week_plan.js`, `plan_cron.js`; ajustadas `review3.js`, `extras.js`, `away.js`.
+- NO verificado: iPhone real; notificación de plan llegando a un teléfono (se probó la ruta con un teléfono falso; las tareas apuntan a Netlify, así que no sale hasta fusionar).
+- Revertir: código, restaurar del commit `b8eea5d` y borrar `lib/clientweek.ts`, `tests/e2e/set_order.js`, `tests/e2e/week_plan.js` y `tests/e2e/plan_cron.js`; base, cabecera de la 0048 (si se revierte el código, puede quedarse corrida).
+
+## 2026-11-04 - Migraciones al día y regla de borrado de vídeos aclarada en los documentos
+Cristian confirmó que corrió todas las migraciones hasta la 0047 y que los vídeos de reporte se borran 32 h después de enviados si Jeff no los ve y 12 h después de verlos.
+- `HANDOFF.md` §4, §8b y §9, y `PASO_A_PRODUCCION.md` §3b y §10: migraciones marcadas como corridas. No queda ninguna por correr; la próxima es la 0048.
+- `HANDOFF.md` §5 y `BLUEPRINT_GAPS.md`: se quitó la regla vieja de 24 h y 7 días, y se anotó que la tarea de borrado ya está programada.
+- Revisado en el código: la base (0033 y 0042), las rutas de borrado y los textos de la app ya usaban 32 h y 12 h; no hubo que cambiarlos. NO verificado: la base real (el asistente no tiene acceso; se anota lo que Cristian confirmó) ni el borrado de un vídeo real en Bunny.
+- Solo documentos. Revertir: restaurar esos archivos y este `CHANGELOG.md` del commit `c5ed57b`.
+
+## 2026-11-04 - Ritmo de trabajo escrito igual en todos los documentos
+Cristian notó que el chat nuevo trabajaba más lento. Causa: los documentos se contradecían. `AGENT_PLAYBOOK.md` decía que el build "no corre en el sandbox" (sí corre: se usaba en cada subida desde el 29-oct), y el traspaso del 4-nov mostraba `tests/e2e/all.sh` (~20 min) sin decir cuándo usarlo, así que se podía correr en cada cambio.
+- Nuevo `HANDOFF.md` §2b "Ritmo de trabajo": mientras se edita, solo `tsc`; antes de cada subida, los 4 chequeos (tsc, lint, build, `run_local.sh`); de `tests/e2e` solo lo que se tocó; `all.sh` solo antes de "fusiona" o de cambiar de chat.
+- Lo mismo, en corto, en `CLAUDE.md`, `AGENTS.md`, `AGENT_PLAYBOOK.md` §3 y `tests/e2e/README.md`. El mensaje para arrancar chat (§10) ahora incluye §2b.
+- Solo documentos. Revertir: restaurar esos 6 archivos del commit `e025bdc`.
+
+## 2026-11-04 - Revisión completa antes de cambiar de chat y traspaso al día
+Pedido de Cristian: dejar todo al día para migrar de chat y revisar la app de punta a punta.
+- **Revisión:** `tsc`, `lint` (0 errores), build, `run_local.sh` (47 migraciones, 28 pruebas de ataque: ninguno) y 18 pruebas de punta a punta con red lenta: smoke (25 pantallas de Jeff y clientes, computador y celular), flows 27/27, extras 15/15, photos, offline, catalog, swaps, push, nudge_row, review2, review3, report_time, away, ficha, stuck (sin atascos), hydration (Hoy y Progreso sin redibujar). Todo OK. Sin errores de consola ni de red.
+- **Arreglos en las pruebas (no en la app):** `report_time.js` buscaba el filtro "Reportes" que se quitó al rehacer Revisar; `smoke.js` ahora abre también Revisar, Programas y el panel de Jeff en celular, y avisa si algo se desborda a la derecha.
+- **Nuevo:** `tests/e2e/all.sh` (corre todo en orden con la base que cada prueba necesita) y `tools/crop_grid.py` (recorte de cuadrículas de imágenes de ejercicios; antes vivía en una carpeta temporal que se perdía).
+- **Traspaso:** `docs/HANDOFF.md` al día (§4 consulta única para saber qué migraciones faltan y regla "una migración entregada no se modifica"; §6 mapa del código nuevo; §7 lecciones del 31-oct al 4-nov; §8b dónde quedamos; §10 mensaje de arranque SIN el rol, que Cristian pega aparte). `PASO_A_PRODUCCION.md` §10 con la consulta y el orden de migraciones; `AGENTS.md` y `tests/e2e/README.md`.
+- Sin cambios en la app. Revertir: no aplica (documentación y pruebas).
+
+## 2026-11-02 (noche, 8) - Revisar rehecho: cliente por cliente, sencillo; tarjeta del panel legible
+Corrección de Cristian (22:09): Revisar tenía demasiados botones (2 modos + 3 filtros), ocupaba toda la pantalla en el computador y separaba entrenamiento y reporte del mismo cliente; en el panel la tarjeta se veía "mal escrita".
+- **Revisar = cliente por cliente:** una tarjeta por cliente con su **entrenamiento de hoy** (para responder ahí mismo, o "no ha terminado el entrenamiento de hoy"), su **reporte de hoy** con la hora (Marcar visto, o "no ha enviado el reporte de hoy") y, abajo, lo **pendiente de días anteriores** (cada uno se abre para revisarlo). Solo "← Anterior · Camila · 1 de 3 · Siguiente →". Primero los clientes con algo sin revisar, después los que están al día. Cuando un cliente queda al día sale "Siguiente cliente". Sin modos ni filtros (se quitaron "Pendientes / Todo lo de hoy" y "Todo / Entrenamientos / Reportes" de las entradas anteriores). En computador, ancho máximo de 820 px. `ReviewQueue.tsx` (reescrito), `coach.css`.
+- **Tarjeta del panel:** usaba el estilo `card-dark`, que en computador es blanco: el texto blanco no se veía. Ahora tiene colores propios (negro con brillo rojo), una línea ("Revisar: 1 entrenamiento y 1 reporte") y un solo botón "Revisar". `DashboardView.tsx`.
+- Verificado en local (computador y celular, red lenta): `tests/e2e/review3.js` (rehecho) 6/6, `review2.js`, `extras.js` 15/15 (ajustado al diseño por cliente), `flows.js` 27/27, `stuck.js` sin atascos. NO verificado: iPhone real.
+- Sin migración. Revertir: restaurar `ReviewQueue.tsx`, `DashboardView.tsx` y `coach.css` del commit `aa8951f`.
+
+## 2026-11-02 (noche, 7) - "Revisar": fácil de encontrar y con "Todo lo de hoy"
+Reporte de Cristian: no encontraba la sección de revisar uno tras otro, y quiere pasar por TODOS los entrenamientos y reportes del día (no solo lo pendiente) con izquierda/derecha, comentando ahí mismo.
+- **Dónde estaba:** `/coach/revisar` existía (menú "Operación" en computador, chip "Revisar" en sexto lugar en el celular y una tarjeta del panel que solo salía con pendientes y, en el celular, muy abajo). Ahora: tarjeta **"Revisar"** siempre arriba del panel con "Pendientes" y "Todo lo de hoy"; en el celular "Revisar" es el segundo del menú. `DashboardView.tsx`, `CoachNav.tsx`, `coach.css`.
+- **Dos modos en Revisar:** "Pendientes" (como antes) y **"Todo lo de hoy"**: todos los entrenamientos terminados y reportes de hoy, revisados o no; "← Anterior" / "Siguiente →" pasa entre ellos; en lo ya revisado se puede editar la respuesta ("Actualizar") o seguir ("Ya lo viste · Siguiente"). Los filtros Todo / Entrenamientos / Reportes valen en los dos. `/coach/revisar?modo=hoy` abre directo en "Todo lo de hoy". `ReviewQueue.tsx`.
+- Verificado en local (celular, red lenta): `tests/e2e/review3.js` (nuevo) 4/4; `review2.js` 4/4, `extras.js` 15/15, `flows.js` 27/27, `stuck.js` sin atascos. NO verificado: iPhone real. Sin gesto de deslizar con el dedo (se usan los botones; deslizar chocaría con escribir la respuesta).
+- Sin migración. Revertir: restaurar `ReviewQueue.tsx`, `DashboardView.tsx`, `CoachNav.tsx` y `coach.css` del commit `c5eb024`.
+
+## 2026-11-02 (noche, 6) - Hora de los reportes y "Ayer" falso desde las 7 p. m.
+Pedido de Cristian: que se vea a qué hora se envió cada reporte, sin cambiar nada más.
+- La hora de envío se ve en **Reportes** ("Camila · Hoy a las 20:42"), en la **ficha → Hoy → Reporte diario** ("enviado a las 20:42", a la derecha del título) y en **Revisar pendientes** ("Reporte de hoy · a las 20:42"). Es la hora del primer envío (una corrección no la cambia). `ReportsView.tsx`, `TodayCard.tsx`, `ReviewQueue.tsx`, `coach.css`.
+- **Error encontrado al probar:** "Hoy / Ayer / Hace N días" leía las fechas en hora UTC, así que desde las 7 p. m. (hora Colombia) un reporte o entrenamiento de HOY salía como "Ayer" (Reportes, ficha, panel). Ahora compara días del calendario. `lib/format.ts` (`ago`).
+- Verificado en local: `tests/e2e/report_time.js` (nuevo) en las tres pantallas, a las 21:46 dice "Hoy"; `flows.js` 27/27. Sin migración. Revertir: restaurar esos archivos del commit `0b4e64b`.
+
+## 2026-11-02 (noche, 5) - "Jeff estuvo pendiente de ti" más compacto
+Pedido de Cristian: ocupaba mucho espacio y los tres botones repetían lo que ya está abajo en Hoy.
+- Ahora es una fila plegada como las demás de Hoy ("Te escribió mientras no entrabas (sáb 31, dom 1)", chip "2 días"). Al abrirla: una línea corta por día ("Sáb 31 · esperaba tu entrenamiento"), lo que quedó sin hacer en una frase y un solo botón, "Entendido". Se quitaron "Ir a mi rutina de hoy", "Escribirle a Jeff" y la frase "Hoy toca…" (ya están en la misma pantalla). `HoyView.tsx` (`WhileAway`), `portal.css`.
+- Verificado: `tests/e2e/away.js` 5/5 (arranca cerrada, un solo botón, Entendido la quita). Sin migración. Revertir: restaurar esos dos archivos del commit `644a678`.
+
+## 2026-11-02 (noche, 4) - Hábitos como dato: promedio de la semana y avisos cuando un día se queda corto (sin "Hoy | Ayer | Anteayer")
+Corrección de Cristian (21:29): no quería anotar días pasados, sino que lo que se anota sirva de dato: cuánto toma, duerme y camina en promedio, y un aviso cuando un día no alcanza, para el cliente y para Jeff.
+- **Se quitó "Hoy | Ayer | Anteayer"** (de la entrada anterior): se anota solo hoy, como antes.
+- **Mínimos PROPUESTA** (Jeff no ha definido metas): 6 vasos de agua, 6 h de sueño, 3.000 pasos. Están en un solo lugar, `lib/habits.ts` (`HABIT_MIN`): cambiarlos ahí cambia toda la app.
+- **Cliente (Hoy → Hábitos de hoy):** avisos arriba de la tarjeta: "Anoche dormiste 5 h…" (el sueño se juzga con lo de anoche), "Ayer tomaste 3 vasos. Intenta llegar a 6 hoy", "Ayer diste 1.200 pasos…" (agua y pasos se juzgan con AYER, que ya terminó: hoy todavía puede cumplir). Abajo, "Tu semana (promedio por día)": agua, sueño y pasos, con borde rojo si el promedio queda por debajo del mínimo. El récord de agua y pasos sigue igual.
+- **Jeff (ficha → Resumen de la semana) y cliente (Progreso → Tu semana):** las tarjetas de agua, pasos y sueño se marcan si el promedio queda bajo, y una franja dice "Hábitos por debajo del mínimo: poco sueño 2 días (sáb, lun) · poca agua 1 día (dom)…". "Enviarle el resumen" incluye ahora sueño y agua. Historial de 30 días: barras rojas en los días bajo el mínimo y cuántos fueron.
+- Verificado en local (red lenta): `tests/e2e/away.js` 5/5 (avisos de sueño y agua, sin aviso de pasos cuando ayer cumplió, promedios, franja de Jeff), `extras.js` 15/15, `hydration.js` y `stuck.js` sin fallos. NO verificado: iPhone real. No hay notificación al teléfono por hábitos (solo en la app); si se quiere, iría en el recordatorio de la noche.
+- Sin migración. Revertir: restaurar `WorkoutExtras.tsx`, `WeekSummary.tsx`, `globals.css` y `portal.css` del commit `959b1cb` y borrar `lib/habits.ts`.
+
+## 2026-11-02 (noche, 3) - Hábitos con historial y récords; "Jeff estuvo pendiente de ti" al volver
+Preguntas de Cristian (19:59): cómo se cuentan y guardan agua, pasos y sueño, que tenga récords; y qué ve el cliente si no entra 3 días y Jeff le mandó avisos.
+**Cómo se guardan los hábitos (sin cambios en la base):** una fila por cliente y por día (`habit_logs`: vasos de agua, pasos, horas de sueño). La base deja anotar hoy y hasta 2 días atrás. Jeff y el cliente leen la misma fila: lo que uno ve es lo que ve el otro.
+- **Anotar ayer o anteayer:** en Hoy, la tarjeta de hábitos tiene "Hoy | Ayer | Anteayer" (antes solo hoy, aunque la base ya lo permitía). `WorkoutExtras.tsx` (`HabitsCard`).
+- **Récord:** al superar su mejor día de agua o de pasos de los últimos 90 días sale "Nuevo récord de pasos: 8.000 en un día (antes 5.000)", una vez al cruzarlo. El sueño no tiene récord (más horas no es necesariamente mejor). El primer día anotado no cuenta como récord.
+- **Historial de 30 días** en Progreso, igual para el cliente y para Jeff (ficha → Progreso): racha de días seguidos anotando y, por hábito, una barra por día, promedio, mejor día con fecha y días anotados. Sin metas (NO DEFINIDO por Jeff). `WeekSummary.tsx` (`HabitsHistory`), `ProgressPanels.tsx`, `globals.css`.
+**Si el cliente no entra varios días:** antes solo veía los avisos de Jeff del día de hoy; los de días anteriores se perdían. Ahora, al volver, sale arriba en Hoy **"Jeff estuvo pendiente de ti"**: los avisos de los últimos 7 días por fecha, las rutinas que le tocaban y no hizo ("eso ya pasó y no se recupera: lo importante es seguir desde hoy"), qué le toca hoy y los botones "Ir a mi rutina de hoy", "Escribirle a Jeff" y "Entendido" (se recuerda en ese teléfono). Mensajes y respuestas a entrenamientos ya se veían (Mensajes y Hoy). `HoyView.tsx` (`WhileAway`), `useMyPastNudges`.
+- Verificado en local (celular, red lenta): `tests/e2e/away.js` (nuevo) 5/5; `extras.js` 15/15, `flows.js` 27/27, `hydration.js` sin redibujar (con un aviso de ayer en pantalla), `stuck.js` sin atascos. NO verificado: iPhone real. Jeff NO ve si el cliente tocó "Entendido" (se guarda solo en el teléfono; si se quiere, necesita migración).
+- Sin migración. Revertir: restaurar `HoyView.tsx`, `WorkoutExtras.tsx`, `WeekSummary.tsx`, `ProgressPanels.tsx`, `lib/queries.ts`, `globals.css` y `portal.css` del commit `93e62a5`.
+
+## 2026-11-02 (noche, 2) - Revisar pendientes: botones en el celular y filtro; logros por rutinas completas
+Pedido de Cristian (19:48).
+- **Botones montados en el celular:** al revisar un entrenamiento, "Guardar y marcar revisado" se montaba sobre "Vídeo" y no se leía. Ahora Audio, Foto y Vídeo van en una fila y el botón de guardar ocupa toda la fila de abajo (en computador sigue todo en una fila). Vale en Revisar pendientes, en la ficha y en el panel. `RecentWorkouts.tsx` (`fb-acts`), `coach.css`. También "Ver ficha" ya no se parte en dos líneas.
+- **Filtro en Revisar pendientes:** "Todo | Entrenamientos | Reportes", cada uno con cuántos quedan. Jeff puede pasar solo por los reportes o solo por los entrenamientos, uno tras otro. `ReviewQueue.tsx`.
+- **Logros:** contaban cada vez que el cliente tocaba "Terminar entrenamiento", aunque hubiera hecho un solo ejercicio. Ahora cuentan **rutinas completas** (todos los ejercicios de esa rutina con todas sus series) y lo dicen así ("1 rutina completa", "Te faltan 4 rutinas completas para llegar a 5"). En la ficha, Jeff ve además cuántos terminó sin hacer la rutina completa. Si Jeff dejó libre después el día de esa rutina, ya no se puede comprobar y no cuenta. `lib/extras.ts` (`useWorkoutCount`, `isFullRoutine`), `WeekSummary.tsx`. Los récords (mejor peso por ejercicio) no cambian.
+- Verificado en local (celular, red lenta): `tests/e2e/review2.js` (nuevo) 4/4: botones sin encimarse, filtro de entrenamientos y de reportes, logros 0 → 1 al completar la rutina; `flows.js` 27/27, `extras.js` 15/15, sin errores de consola ni de red. NO verificado: iPhone real.
+- Sin migración. Revertir: restaurar `RecentWorkouts.tsx`, `ReviewQueue.tsx`, `WeekSummary.tsx`, `lib/extras.ts` y `coach.css` del commit `87a8d4e`.
+
+## 2026-11-02 (noche) - "Jeff te está esperando" se abría vacío
+Reporte de Cristian: "me sale Jeff te está esperando y cuando despliego no se despliega lo demás".
+- Con el aviso "no ha registrado nada" (el de Avisar a un cliente sin actividad), la fila de Hoy se abría sin nada: el mensaje solo se veía cortado en la línea de arriba y no había botones (solo existían para rutina, nutrición o reporte).
+- Ahora al abrirla sale el mensaje completo y un botón por cada cosa que le falta hoy y que su plan incluye: "Ir a mi rutina" (solo si hoy le toca), "Marcar mi nutrición", "Hacer mi reporte". En los otros avisos también se ve el mensaje completo. `HoyView.tsx` (`CoachNudges`), `portal.css`.
+- Verificado en local (celular, red lenta): `tests/e2e/nudge_row.js` (nuevo) muestra texto y 3 botones, "Ir a mi rutina" baja a la rutina, cerrar y abrir de nuevo funciona; `flows.js` 27/27; `hydration.js` sin redibujar. NO verificado: iPhone real.
+- Sin migración. Revertir: restaurar `HoyView.tsx` y `portal.css` del commit `ddc97c7`.
+
+## 2026-11-02 - Avisos: por qué no llegan los de Jeff, botón "Probar avisos" y aviso al cambiar el plan (MIGRACIÓN 0047)
+Reporte de Cristian: las notificaciones automáticas llegan desde las dos apps, pero "Avisar", los mensajes y los cambios de plan no; "Avisar" en Vercel dice siempre que el cliente "no ha activado los avisos en ningún teléfono".
+- **Causa más probable (no se puede confirmar sin ver la base):** cada teléfono (cada app instalada) queda a nombre de la **última cuenta que entró en esa app** (`save_push_subscription`, desde el 21-oct, y `resyncPush` al abrir). Si en la misma app se entra como Jeff para probar, ese teléfono deja de ser del cliente de prueba y el cliente queda sin teléfonos: "Avisar" no tiene a quién enviar. Las automáticas sí llegan porque salen para la cuenta que tiene el teléfono en ese momento. Además, el mensaje "no ha activado los avisos" salía también si a ese sitio le faltaba la clave privada (VAPID): no distinguía.
+- **"Avisar" ahora dice el motivo exacto:** sin claves en este sitio; el cliente no tiene ningún teléfono a su nombre (puede que en su teléfono haya entrado otra cuenta); activó los avisos con las claves del otro sitio; su teléfono ya no tiene la app. `app/api/push/nudge`, `lib/push.ts` (`failReason`), `useNudge`.
+- **"Probar avisos en este teléfono"** (campanita, cuando los avisos están activos): vuelve a poner ESTE teléfono a nombre de la cuenta con sesión y le manda una notificación de prueba; dice si el sitio tiene las claves, cuántos teléfonos tiene la cuenta y si llegó. `app/api/push/test`, `lib/push-client.ts` (`testPush`), `ActionsBar.tsx`.
+- **Aviso al cliente cuando Jeff cambia su plan** (antes NO existía): asignar o quitar la rutina de un día, cambiar un peso, aplicar una sugerencia de peso, asignar un programa → "Tu coach actualizó tu entrenamiento"; guardar o asignar su nutrición → "Tu coach actualizó tu nutrición". Una sola notificación por cliente y tipo cada 30 min (Jeff suele cambiar varias cosas seguidas). `0047_plan_change_push.sql`, `app/api/push/plan`, `notifyPlan` en `lib/queries.ts` y `lib/extras.ts`.
+- Prueba de ataque `rls_plannotice.sql` (cliente, otro coach, cliente pendiente, tipo inválido, tope de 30 min): ninguno. Prueba `tests/e2e/push.js` con claves VAPID de prueba: los 4 casos OK; `stuck.js` sin atascos; `hydration.js` sin redibujar.
+- **NO verificado:** que la notificación llegue a un teléfono real (en local no hay servicio de avisos); mensajes y respuestas a entrenamientos no se cambiaron (usan el mismo camino que "Avisar": si el teléfono no está a nombre del cliente, tampoco llegan).
+- Revertir: código, restaurar del commit `9b1385e` y borrar `app/api/push/plan`, `app/api/push/test`, `tests/e2e/push.js`; base, cabecera de la 0047.
+
+## 2026-10-31 (tarde, 4) - MIGRACIÓN 0046: imágenes de los ejercicios nuevos en la base real y quitar los 15 repetidos
+- Cristian corrió la **primera versión** de la 0045 (sin imágenes y con los 15 repetidos), por eso en Vercel los nuevos salían sin imagen y aparecía, p. ej., "Aperturas inclinadas con mancuernas". Las imágenes ya estaban en la app (`public/ex/`), pero la base no las tenía asignadas.
+- `0046_fix_preset_images.sql`: pone la imagen a los 89 nuevos (solo si no tienen; no pisa la de Jeff) y quita los 15 repetidos (los que ya estén en una rutina o un plan se **archivan**, no se borran). Solo toca ejercicios precargados.
+- Verificado simulando la base real (todo hasta 0044 + la 0045 vieja + una rutina con "Remo Pendlay"): quedan 143 activos, todos con imagen; Remo Pendlay archivado; correrla dos veces no cambia nada; `run_local.sh` TODO OK.
+- Los ejercicios que Jeff creó él mismo ("abdominales", "Abducción externos", "Abducción Internos", "abducción opcional"…) no se tocan.
+- Revertir: ver la cabecera de la 0046.
+
+## 2026-10-31 (tarde, 3) - Se quitan 15 ejercicios nuevos que repetían otros
+Pedido de Cristian: "veo muchos repetidos que no tienen sentido; los que no son necesarios, quítalos".
+- Revisada la lista completa (54 de la 0040 + 104 de la 0045). Ningún nombre estaba repetido (Extensión de cuádriceps está una sola vez, viene de las 54), pero sí había ejercicios casi iguales a otros. Se quitaron de la 0045 (aún sin correr) y se borraron sus imágenes:
+  - Iguales a uno que ya existía: Zancadas caminando (= Zancadas con mancuernas), Puente de glúteo con barra (= Hip thrust / Puente de glúteo), Encogimientos con barra (= Encogimientos), Remo Pendlay y Remo con barra agarre supino (= Remo con barra), Prensa a una pierna (= Prensa de piernas), Press francés con mancuernas (= Press francés), Aperturas inclinadas con mancuernas (= Aperturas con mancuernas).
+  - Solo cambia el agarre o el accesorio (Jeff lo indica en la nota): Extensión de tríceps con cuerda, Curl martillo con cuerda en polea, Flexiones de agarre cerrado.
+  - Poco útiles y sin imagen buena: Cruce de poleas desde abajo, Press de pecho con banda, Elevación de talones en prensa. También Peso muerto con kettlebell (lo cubren Peso muerto, Swing y Sentadilla goblet).
+- Se dejaron a propósito variantes en otra máquina o con otro equipo (p. ej. Press de hombro en máquina, Elevaciones laterales en polea, Jalón con agarre cerrado): sirven como **sustitutos** cuando la máquina está ocupada (0044) y para clientes que entrenan en casa (banda, peso corporal).
+- Resultado: 89 nuevos, **todos con imagen**; el catálogo queda en 143. Verificado: `run_local.sh` TODO OK, cada imagen de la 0045 existe en `public/ex/`.
+- Revertir: restaurar `0045_more_preset_exercises.sql`, `docs/EJERCICIOS_NUEVOS.md` y las imágenes borradas del commit `43bc22d`.
+
+## 2026-10-31 (tarde, 2) - Imágenes de 101 de los 104 ejercicios nuevos
+- Cristian generó las imágenes con el personaje (12 cuadrículas). Revisadas una por una: se rehicieron 56, 59, 63, 71, 122, 131, 136 y 153. **Sin imagen** (3 intentos fallidos, se ven con la portada de marca): 59 Cruce de poleas desde abajo, 63 Press de pecho con banda, 131 Elevación de talones en prensa.
+- Recortadas a 360 × 360 WebP (unos 19 KB cada una, 1,9 MB en total) en `public/ex/55-…` a `158-…`. Las celdas no cuadradas (cuadrícula del 118 al 127 y la de rehechos) se rellenaron con el color del fondo en vez de cortarse.
+- La **0045** (aún sin correr) ahora también pone la imagen: a los nuevos y a uno que Jeff ya tenga con el mismo nombre solo si no tenía imagen. El service worker ya guarda todo lo de `/ex/` en el teléfono (sin cambios).
+- Verificado: hoja de contactos con número y nombre (cada imagen en su ejercicio, nada cortado); `run_local.sh` TODO OK; la 0045 se corre dos veces sin duplicar. NO verificado: verlas en el teléfono.
+- Revertir: borrar `public/ex/` del 55 al 158 y restaurar `0045_more_preset_exercises.sql` del commit `5010ff8` (si ya se corrió: `update public.exercises set image = null where image like 'preset:%' and split_part(substr(image,8),'-',1)::int >= 55;`).
+
+## 2026-10-31 (tarde) - Textos para las imágenes de los 104 ejercicios nuevos
+- `docs/EJERCICIOS_NUEVOS.md`: los textos para Gemini/ChatGPT ahora siguen el mismo formato que los de las 54 (número 55 a 158, nombre en inglés y la pose del personaje). Solo documentación. Revertir: restaurar el archivo del commit `106f863`.
+
+## 2026-10-31 - Ejercicios alternativos (MIGRACIÓN 0044) y 104 ejercicios precargados más (MIGRACIÓN 0045)
+Pedido de Cristian (30-oct, 22:40): "seguimos con los ejercicios alternativos y con más ejercicios precargados".
+**Ejercicios alternativos (0044)**
+- **Jeff** (Catálogo → editar ejercicio): campo "Sustitutos si la máquina está ocupada (hasta 2)". Sugiere primero los del mismo músculo; elegidos quedan como chips negros con brillo rojo y una × para quitarlos. La tarjeta del ejercicio muestra "2 sustitutos". `ExercisesView.tsx` (`AltPicker`), `useSaveExercise`, `set_alternatives()`.
+- **Cliente** (Hoy, al abrir un ejercicio): "¿Máquina ocupada? Cambiar ejercicio" muestra los sustitutos con su imagen; un toque lo cambia. La fila pasa a decir el sustituto "en lugar de" el original, con su imagen, técnica y vídeo; la casilla de peso queda vacía (el peso del plan era para el original). "Volver a …" deshace el cambio. Solo aparece si Jeff aprobó sustitutos para ese ejercicio. `HoyView.tsx` (`SwapBar`, `effective`), `useSwapOptions`, `useSwapExercise`, icono `swap`.
+- **Reglas (las impone la base):** solo un sustituto aprobado; solo hoy; solo ANTES de registrar series de ese ejercicio (para volver hay que deshacer las series); nunca si el entrenamiento ya no se puede corregir (0042). Necesita señal (sin señal lo dice y no lo cambia).
+- **Jeff ve el cambio:** en la revisión del entrenamiento (ficha → Hoy, Entrenamiento y Revisar pendientes) el ejercicio sale con su nombre real y la etiqueta "en lugar de Sentadilla con barra"; si aún no tiene series: "Cambió X por Y (aún sin series)". Las series se guardan con el nombre del sustituto (`log_set` lo hace), así los récords quedan bien.
+- **Sugerencias de peso:** un ejercicio cambiado no se compara con el peso del original (ni en la ficha, ni en "Ajustes de peso sugeridos", ni en la notificación a Jeff).
+- Prueba de ataque nueva `rls_swaps.sql` (otro cliente, otro coach, cliente pendiente, escritura directa, sustituto no aprobado, después de registrar series, después de la revisión de Jeff): ninguno.
+**Ejercicios precargados (0045):** 104 nuevos (de 54 a 158): pecho, espalda, hombro, bíceps, tríceps, cuádriceps, femoral, glúteo, pantorrilla, core y cardio (máquinas de cardio, cuerda, rueda abdominal). Nombre, músculo, equipo, dificultad, series y repeticiones sugeridas (PROPUESTA: Jeff las ajusta) e indicación corta en español. **Sin imagen todavía:** se ven con la portada de marca. La lista, los nombres de archivo y los textos para generar las imágenes en tandas de 9 están en `docs/EJERCICIOS_NUEVOS.md`. No duplica nada y se puede correr dos veces.
+**Verificado en local con red lenta (150 ms):** `tests/e2e/swaps.js` (nuevo) 5 de 5: Jeff aprueba 2 sustitutos → Camila cambia en el celular → registra una serie (queda con el nombre del sustituto) → ya no puede volver → al recargar sigue → Jeff ve "en lugar de" en la ficha; sin errores de consola ni de red. Además `flows.js` 27/27, `extras.js` 15/15, `offline.js`, `catalog.js` (158 ejercicios), `stuck.js` sin atascos, `hydration.js` sin redibujar. Pruebas de ataque: `TODO OK` con 45 migraciones.
+**NO verificado:** iPhone real; con la 0044 sin correr, el campo de sustitutos y el botón de cambiar simplemente no aparecen (se programó así, no se probó contra la base real).
+- Revertir: código, restaurar del commit `26bc74f` y borrar `tests/e2e/swaps.js`; base, pasos en la cabecera de `0044_exercise_alternatives.sql` y `0045_more_preset_exercises.sql`.
+## 2026-10-30 (noche, 4) - Fotos de progreso que no subían y app que abre sin señal
+Reporte de Cristian (22:13): "el antes y después no me deja subir ninguna foto"; y lo de la señal: "que entre o salga se quede guardado así no tenga señal".
+- **Fotos (dos fallas, sobre todo en iPhone):**
+  1. Al aceptar el permiso de fotos, la app abría el selector "por código" después de guardar el permiso; el iPhone lo bloquea (solo abre con un toque directo) y no pasaba nada. Ahora el botón "Acepto y elegir foto" ES el selector: el toque lo abre directo y el permiso se guarda a la vez.
+  2. Safari ignora la opción de reducir la foto al leerla: la foto salía del tamaño original (4-5 MB) y Supabase la rechaza (máx. 5 MB). Ahora siempre se dibuja reducida (1400 px) y, si aun así pesa más de 4 MB, se comprime más. `lib/image.ts`.
+  - El aviso de error ahora dice el motivo (formato, peso, permiso o conexión) en vez de siempre "revisa tu conexión".
+- **Abrir la app sin señal:** antes solo funcionaba si la app ya estaba abierta. Ahora cada vez que el cliente abre sus pantallas con señal, el teléfono guarda una copia (solo `/inicio`, nunca las del coach). Sin señal (o si tarda más de 8 s y hay copia) se abre la copia con su rutina; puede registrar, cerrar la app, volver a entrar y lo registrado sigue ahí; al volver la señal se envía solo. Con señal siempre se usa lo nuevo, y los datos de la copia se marcan como viejos para pedirlos de nuevo. Al cerrar sesión se borran las copias. `public/sw.js`, `Providers.tsx`, `SignOutButton.tsx`, `app/inicio/layout.tsx`.
+  - Límite: se necesita haber abierto la app con señal al menos una vez (después de esta versión). Sin señal funcionan rutina y registro; nutrición, mensajes y lo demás esperan a la señal.
+- Pruebas nuevas: `tests/e2e/photos.js` (permiso + selector + 2 fotos + deslizar; el proxy de pruebas ahora tiene un Storage en memoria) y `tests/e2e/offline.js` (abre sin señal desde la copia, registra, cierra, vuelve a abrir, vuelve la señal y queda en la base).
+- **Verificado en local con red lenta:** photos 4/4, offline 4/4, extras 15/15, flows sin fallos, sin atascos, Hoy y Progreso 20/20 sin redibujar, catálogo OK. **NO verificado:** iPhone real (el selector de fotos y la cámara solo se pueden probar en el teléfono) y señal real en un gimnasio.
+- Sin migración. Revertir: restaurar del commit `fb65bd6`. Si se revierte `sw.js`, las copias guardadas quedan en los teléfonos hasta cerrar sesión (no se usan si `sw.js` ya no las pide).
+
+## 2026-10-30 (noche, 3) - Programas, respuestas guardadas, revisar pendientes, resumen semanal, récords, descanso, sin señal, hábitos y antes/después (MIGRACIÓN 0043)
+Pedido de Cristian (30-oct, 21:03): puntos 3 a 6 para Jeff y 1 a 5 para el cliente. Quedan para otra sesión: ejercicios alternativos y más ejercicios precargados.
+**Jeff**
+- **Programas** (Catálogo → Programas): una semana completa (qué rutina va cada día) con duración de 1 a 16 semanas. En la ficha → Entrenamiento → "Asignar programa": se crea el plan con toda la semana y la "próxima revisión" queda al final del programa (sale en "Planes por revisar"). El plan anterior pasa a finalizado con su historial. Es una semana que se repite; no cambia sola de semana a semana. `ProgramsView.tsx`, `TrainingTab.tsx`, `save_program`/`apply_program`.
+- **Respuestas guardadas**: debajo de la respuesta a un entrenamiento y en Mensajes. "Guardar esta" guarda lo escrito; un toque la agrega; "Editar" para borrar. Solo las ve Jeff. `Snippets.tsx`, tabla `coach_snippets`.
+- **Revisar pendientes** (menú y tarjeta en el panel): entrenamientos sin revisar y reportes sin ver, uno tras otro; al guardar o marcar visto pasa solo al siguiente. `ReviewQueue.tsx`, `/coach/revisar`.
+- **Resumen de la semana** en la ficha (Resumen): entrenos hechos/planificados y esfuerzo, días de nutrición completos, reportes, agua, pasos, sueño, peso y récords. "Enviarle el resumen" abre Mensajes con el texto listo para que Jeff agregue su comentario. `WeekSummary.tsx`.
+**Cliente**
+- **Récords y logros**: al guardar una serie con más peso que su mejor marca anterior sale "Nuevo récord" con la cabecita del guía (la primera vez que hace un ejercicio no cuenta). En Progreso: su mejor marca por ejercicio y logros por entrenamientos completados (1, 5, 10, 25, 50, 100, 200). Jeff ve lo mismo en la ficha. `exercise_records()`.
+- **Temporizador de descanso**: al guardar una serie arranca con el descanso que puso Jeff en la rutina (+15 s, Saltar); al terminar vibra y suena. Sigue bien con la pantalla bloqueada un rato (se calcula con la hora de fin). Sin descanso en la rutina, no aparece.
+- **Entrenar sin señal**: si no hay señal, las series, deshacer y terminar se guardan en el teléfono, en orden, y se envían solas al volver la señal (aviso "Sin señal… N pendientes"). Lo que la base rechace al volver (p. ej. Jeff ya lo revisó) se descarta con aviso. **Límite:** funciona con la app ya abierta; si se cierra la app sin señal, no vuelve a abrir hasta tener señal (las pantallas siempre vienen de internet). `lib/offline.ts`.
+- **Hábitos de hoy** en Hoy: vasos de agua, pasos y horas de sueño, con un toque. Se pueden registrar hoy y hasta 2 días atrás. Sin metas: las metas de Jeff están NO DEFINIDO. Tabla `habit_logs`, `log_habit()`.
+- **Antes/después deslizable** en Progreso: "A la par" o "Deslizar" (una línea que se arrastra sobre las dos fotos). También en la ficha de Jeff.
+- **Tu semana** en Progreso (el mismo resumen que ve Jeff).
+**Arreglos encontrados al probar**
+- La guía "Cómo registrar tu entrenamiento" leía el teléfono al dibujar por primera vez: a quien ya tocó "Entendido", React le redibujaba toda Hoy al abrir (error 418) durante sus 2 primeros entrenamientos. `TrainingGuide.tsx`.
+- Temporizador y aviso de récord se dibujan sobre la página (no dentro de la tarjeta), si no quedaban pegados a la tarjeta y no a la pantalla.
+**Verificado en local con red lenta (150 ms):** `tests/e2e/extras.js` 15 de 15 (incluye cortar la señal a mitad de rutina, recargar con cosas en espera sin error 418, y que Camila vea la respuesta que Jeff armó con una frase guardada), `flows.js` todo OK, `stuck.js` sin atascos, `hydration.js` 20 de 20 en Hoy y en Progreso, `catalog.js` OK, sin errores de consola ni de red. Pruebas de ataque `rls_programs`: ninguno (clientes y otro coach no ven ni tocan programas, respuestas ni hábitos ajenos; récords solo propios).
+**NO verificado:** vibración y sonido en un teléfono real (en iPhone el navegador no vibra), señal real en un gimnasio, notificaciones.
+- Revertir: código, restaurar del commit `d10865c`; base, pasos en la cabecera de `0043_programs_snippets_habits_records.sql` (el código viejo no usa nada de la 0043).
+
+## 2026-10-30 (noche, 2) - La galería de ejercicios arranca Compacta
+Pedido de Cristian: "preestablecido todas compactas". Cada filtro arranca en Compacta; si Jeff pone Normal en uno, se recuerda en ese navegador. Verificado con `tests/e2e/catalog.js` (celular y computador). Revertir: en `ExercisesView.tsx`, `views[f] ?? true` → `!!views[f]`.
+
+## 2026-10-30 (noche) - Galería de ejercicios compacta, sin carita en "Reporte enviado" y avisos más claros
+Pedido de Cristian (30-oct, 19:54).
+- **Galería de ejercicios Normal / Compacta:** en el catálogo de Jeff hay un selector "Normal | Compacta". Compacta pone 2 ejercicios por fila en el celular (y más por fila en el computador) sin cortar el nombre ni quitar etiquetas, dificultad o uso. Se elige **por filtro** (Todos, Tren superior, Tren inferior…): siempre arranca Normal y lo que Jeff elija se recuerda en ese navegador. `ExercisesView.tsx`, `coach.css`, `Icon.tsx` (iconos `rows` y `grid`).
+- **Se quitó la cabecita del guía en "Reporte enviado"** (no se veía bien). Sigue en el entreno y la nutrición completados. `ReportCard.tsx`.
+- **"Avisar" ya no dice "no tiene avisos activos" cuando sí los tiene:** si el cliente tiene avisos pero la notificación no salió (caso típico: los activó en Netlify y Jeff avisa desde Vercel, que hoy tiene otras claves), ahora lo dice así. `lib/queries.ts` (`useNudge`).
+- **Causa de las notificaciones que no llegan en las pruebas:** Netlify y Vercel tienen claves de avisos distintas (decisión del 28-oct). Recomendado: copiar las 3 claves VAPID de Netlify a Vercel (ver `PASO_A_PRODUCCION.md` §3). Lo hace Cristian en el panel de Vercel; no requiere código.
+- Verificado en local (red lenta): la galería arranca Normal, compacta muestra 2 por fila en celular, ningún nombre cortado, sin desborde, otro filtro arranca Normal y la elección se recuerda al recargar (`tests/e2e/catalog.js`). NO verificado: notificaciones reales (no hay teléfonos ni claves en local).
+- Sin migración. Revertir: restaurar del commit `08c0f87`.
+
+## 2026-10-30 (tarde) - Corregir una sola vez, reporte visible en la ficha, vídeos horizontales y cabecita del guía
+Pedido de Cristian (30-oct, 18:30).
+- **Corregir lo terminado (MIGRACIÓN 0042, PROPUESTA por validar con Jeff):** al terminar el entrenamiento, el reporte del día o la nutrición del día, el cliente puede corregir **una sola vez**, y **nunca** después de que Jeff lo revisó. Lo impone la base de datos (no solo la pantalla): una segunda corrección o una después de la revisión se rechaza con un mensaje claro. Al corregir se actualiza la misma fila (no se crea un comentario nuevo), así que Jeff no recibe duplicados; en su panel sale "· corregido por el cliente". `0042_edit_once.sql`, `rls_editonce.sql`, `lib/queries.ts`, `HoyView.tsx`, `ReportCard.tsx`, `MealChecklist.tsx`, `RecentWorkouts.tsx`, `TodayCard.tsx`.
+- **Ficha de Jeff → Hoy → Reporte diario solo mostraba "Marcar visto":** el texto era blanco sobre fondo blanco. Ahora la tarjeta es negra con brillo rojo y el comentario se lee. `coach.css`.
+- **Vídeos horizontales se veían en cuadros verticales:** el reproductor usa la forma real del vídeo (Bunny dice ancho y alto): horizontal ocupa el ancho, vertical queda centrado. También el recorte de vídeo al enviar el reporte y la miniatura del vídeo elegido. `lib/bunny.ts`, `api/video/play`, `BunnyModal.tsx` (`VideoFrame`), `TodayCard.tsx`, `ReportsView.tsx`, `VideoTrimmer.tsx`, `ReportCard.tsx`, `portal.css`.
+- **Cabecita del guía** a un lado cuando algo queda completado/plegado (entreno, nutrición, reporte). Revisada en captura: se ve pequeña y no tapa nada. Si no gusta, se quita la clase `fold-face` de `HoyView.tsx`, `QuickRow.tsx`, `ReportCard.tsx`, `HoySide.tsx`.
+- **Lección del atasco anotada** en `HANDOFF.md` §7 y `AGENT_PLAYBOOK.md` §3 y §7: nunca pausar red/consultas/acciones de forma global; probar el arranque con red lenta (`LATENCY=150`).
+- **Verificado en local con red lenta (150 ms):** todos los flujos OK (incluye: corregir una vez, que no deje una segunda, que no deje tras la revisión de Jeff), reporte visible en la ficha, 0 pantallas atascadas, aperturas sin redibujar, sin errores de consola. Pruebas de ataque: `TODO OK` con 42 migraciones.
+- **NO verificado:** vídeos reales de Bunny (la forma horizontal/vertical depende de que Bunny devuelva ancho y alto; si no, se usa 16:9 como antes), celular real.
+- Revertir: código, restaurar del commit `7a37a6c`. Base: los pasos están en la cabecera de `0042_edit_once.sql` (el código viejo funciona con la 0042 corrida).
+
+## 2026-10-30 - URGENTE: la app se quedaba quieta (consultas y "Avisar" sin responder)
+Reporte de Cristian tras correr la 0041: muchas cosas no cargaban, "Avisar" se quedaba quieto y al refrescar tardaba muchísimo.
+- **Causa (error mío del 29-oct, noche 3):** para evitar que Hoy se redibujara al abrir, React Query arrancaba "sin red" y cada página daba la señal de seguir. Pero esa señal puede llegar ANTES de que React Query esté escuchando: entonces lo que ya estaba en espera se quedaba en pausa (unas cosas cargaban y otras no, y las acciones podían no salir). No tiene que ver con la 0041.
+- **Arreglo:** se quitó ese mecanismo por completo (`components/PageReady.tsx` y su uso en las páginas). Para que Hoy no se redibuje al abrir se usa algo que no puede bloquear nada: la campanita espera un momento (`useAfterBoot`) y la precarga de medidas espera 1,5 s. Hoy y Progreso muestran "cargando" en vez de "no tienes plan / no registras medidas" mientras llegan los datos.
+- **"Avisar" ya no espera indefinidamente la notificación del teléfono:** el aviso se guarda primero; la notificación se espera máx. 7 s (si tarda, dice que sigue enviándose) y el servidor corta a los 6 s a un teléfono que no responde (antes no tenía límite). `lib/push.ts`, `useNudge`.
+- **Verificado en local con demora de red de 150 ms por consulta** (como la red real; la prueba de ayer fue sin demora y por eso no lo vio): todos los flujos OK, 20 de 20 aperturas sin redibujar y ninguna pantalla atascada a los 8 s (`tests/e2e/stuck.js`, `LATENCY=150`). La versión anterior NO se atascó en local, así que no pude reproducir exactamente lo que viste: si vuelve a pasar, dime en qué pantalla y qué hiciste.
+- Revertir: restaurar del commit `f7f3ac5` (no recomendado: ahí está el fallo).
+
+## 2026-10-29 (noche, 3) - Revisión de punta a punta con la app corriendo de verdad
+Por primera vez se probó la app REAL en local contra una base con las 41 migraciones y datos de prueba, recorriéndola con un navegador automático como Jeff (escritorio y celular) y como clientes (celular y escritorio). Quedó guardado en `tests/e2e/` (ver su README) para repetirlo.
+- **Arranque: React redibujaba Hoy entera al abrir (error 418).** Las consultas del marco (campanita, mensajes, precargas) traían datos antes de que el contenido de la página terminara de "despertar"; entonces no coincidía con lo que mandó el servidor y React lo tiraba y dibujaba todo de nuevo. Pasaba en ~1 de cada 2 aperturas en local. Ahora nada sale a la red hasta que la página despertó (`components/PageReady.tsx`, al final de cada página; con seguro a los 2,5 s) y la campanita espera un momento (`useAfterBoot`). Resultado: 40 de 40 aperturas sin redibujar.
+- **"Día completado" falso y "Tu coach todavía no publica tu plan de nutrición" mientras cargaba:** Hoy daba el día por completado (solo con el entreno) antes de saber la nutrición, y la tarjeta de nutrición decía que no había plan aunque sí lo hubiera. Ahora espera a tener los datos (esqueleto mientras tanto). Se corrigió además "Tu entrenamiento de hoy están al día" → "está". `DayDone.tsx`, `HoySide.tsx`.
+- **Consejo de repeticiones:** si ya estaba guardada la serie 3, guardar la serie 1 con menos repeticiones no mostraba el consejo (miraba la serie de número más alto, no la que se acababa de guardar). `HoyView.tsx`.
+- **Revisión del entrenamiento (ficha):** los botones Audio, Foto y Vídeo tenían el icono arriba a la izquierda y el texto abajo; el botón "Bajar a 37.5 kg" salía sin estilo y con punto. `coach.css`, `RecentWorkouts.tsx`.
+- **Accesibilidad:** 13 campos de formularios (medición, publicar horarios, agendar cliente, crear plan y rutina…) tenían la etiqueta sin ligar a la casilla: un lector de pantalla no sabía qué era cada una.
+- Se quitó el último verde (texto "Activo" del plan en la pestaña Entrenamiento). Se revisó con un escaneo de colores en todas las pantallas.
+- **Probado y funcionando:** todas las pantallas de Jeff y del cliente sin errores de consola ni de red; rutina (la serie 3 sola no avanza; con todas sí), terminar entrenamiento, reservar y cancelar en 10 min, mensajes, Avisar, Escribir con mensaje listo, revisar con comentario, cancelar desde la ficha con motivo, vídeo del día + semana a la vez, abrir vídeo de YouTube, eliminar material, filtros del catálogo, registrar medición, cliente nuevo (pide acceso → Jeff asigna plan → bienvenida completa), publicar horarios, panel de Jeff en celular sin desbordes, y que el cliente vea la respuesta, la cancelación y el aviso de Jeff.
+- **No se pudo probar en local:** fotos y audios (Storage), tiempo real, avisos push y vídeos de Bunny.
+- Sin migración. Revertir: restaurar los archivos del commit `11a20ed` y borrar `components/PageReady.tsx` (y quitar `<PageReady />` de las páginas).
+
+## 2026-10-29 (noche, 2) - Material del coach: vídeos que no abrían y eliminar; sugerencias de peso más claras
+Reporte de Cristian en escritorio.
+- **Eliminar y editar no funcionaban:** los dos botones de la tarjeta quedaban DEBAJO de la miniatura (se veían al pasar el ratón, pero el clic caía en la imagen). Ahora van encima, y en celular y tableta se ven siempre. Al eliminar se confirma que de verdad se borró (antes, si la base no borraba nada, igual decía "eliminado") y desaparece al instante. `coach.css`, `useDeleteMaterial`.
+- **"Unos vídeos abren y otros no":** los de YouTube no tenían botón (el círculo de reproducir era solo un dibujo) y en los privados solo respondía el círculo pequeño. Ahora toda la miniatura abre el vídeo, con su portada difuminada. Si un vídeo quedó sin subir ("Sin vídeo aún"), tocarlo abre la edición para subirlo. Si Bunny aún lo procesa, lo dice. `MaterialView.tsx`.
+- **Sugerencias de peso:** agrupadas por entrenamiento (nombre del cliente una sola vez, día, rutina y esfuerzo); cada ejercicio dice lo que pediste y lo que hizo ("hizo 10, 9, 10 con 25 kg"). La flecha salía en una línea aparte: ya va junto al texto. Cuando no hay peso ni en el plan ni registrado, en vez de quedar solo "Descartar" sale "Ajustar en su plan" (abre la ficha en Entrenamiento). `WeightAdviceCard.tsx`, `coach.css`.
+- Sin migración. Revertir: restaurar esos archivos del commit `22391fb`.
+
+## 2026-10-29 (noche) - Pruebas de Cristian en Vercel: atención de clientes, tiempo real, respuestas con foto y vídeo, agenda, vídeos y más
+Solo en `bloque-hoy` (Vercel); NO en `main`. **Migración `0041_live_feedback_media_agenda_attention.sql`: correrla en Supabase.** El código aguanta sin ella (lee sin las columnas nuevas), pero el panel "Necesitan tu atención", las respuestas con foto/vídeo, el motivo de cancelación y el vídeo del día + semana a la vez solo funcionan con la 0041. Prueba nueva: `rls_live.sql`; se ajustaron `rls_agenda.sql` (regla de 10 min) y `rls_matvideo.sql` (día y semana conviven).
+- **Necesitan tu atención (panel del coach, arriba):** pestañas Urgentes (2 días o más sin ninguna actividad, o sin reporte), Falta configurar (plan con rutina o nutrición sin asignar, rutina sin días o con días vacíos), Llamada del mes (desde el día 15 del mes de plan sin llamada hecha ni agendada; sin ninguna llamada: a los 3 días, PROPUESTA) y Plan por revisar (fecha de revisión que Jeff marca en el plan). Botones: Avisar, Escribir (deja un mensaje listo para editar), Asignar rutina/nutrición (abre la ficha en esa pestaña), Agendar. También en la campanita. Datos: `coach_attention()`; reglas en `lib/attention.ts` (`needs`). Archivos: `AttentionCard.tsx`, `DashboardView.tsx`, `ActionsBar.tsx`, `InboxView.tsx` (`?t=`), `ClientFicha.tsx` y su página (`?tab=`).
+- **Tiempo real:** avisos de Jeff, respuestas a entrenamientos, sesiones canceladas, reportes, actividad y reservas llegan sin salir y volver a entrar (Supabase Realtime; la 0041 agrega esas tablas a la publicación). Al volver a la app se relee todo lo que cambia seguido. Archivo: `lib/live.ts` (montado en `ActionsBar`).
+- **Notificaciones que no llegaban:** si la suscripción del teléfono se hizo con otra clave VAPID (Netlify y Vercel tienen claves distintas desde el 28-oct), parecía activa pero el servidor no podía enviarle nada. Ahora la app lo detecta y la rehace sola (o pide activarlas otra vez). El servidor cuenta de verdad cuántas llegaron (401/403 ya no cuentan como enviadas) y lo anota en los registros de la función. Archivos: `lib/push-client.ts`, `lib/push.ts`, rutas `push/nudge` y `push/booking-cancel`.
+- **Rutina de hoy:** el ejercicio solo se pliega y pasa al siguiente cuando TODAS sus series están marcadas (antes bastaba marcar la última por error). `HoyView.tsx`.
+- **Repeticiones fijas ("10") igual que rango ("8-12"):** consejo al cliente al guardar una serie y al abrir el ejercicio; sugerencia en la revisión de Jeff; **notificación a Jeff al terminar** ("Sugerencia de peso: Camila… bajar el peso en Sentadilla (a 57,5 kg)") y tarjeta **"Ajustes de peso sugeridos"** en el panel con "Subir/Bajar a X kg" (cambia el peso del plan) o "Descartar". Reglas PROPUESTA en `lib/progression.ts` (`repTarget`, `workoutAdvice`). Archivos: `WeightAdviceCard.tsx`, `RecentWorkouts.tsx`, `api/push/activity`.
+- **Respuestas de Jeff con foto o vídeo** (además de texto y audio): en la revisión del entrenamiento, botones Audio, Foto y Vídeo. El vídeo sube en segundo plano y la notificación al cliente sale cuando termina. El cliente lo ve en Hoy, en Mensajes ("Respuestas de Jeff", 7 días) y en "Lo que te dijo Jeff la última vez". **La foto, el vídeo y el audio se borran 7 días después de responder** (al abrir Mensajes el coach); el texto queda en la ficha. Archivos: `RecentWorkouts.tsx` (`Detail`), `FeedbackHistory.tsx` (`FeedbackBody`), `HoyView.tsx`, `api/video/play` (`?feedback=`).
+- **Agenda:**
+  - El cliente solo puede cancelar en los **10 minutos siguientes a reservar** (y solo lo que reservó él; lo validan la base y la pantalla, con cuenta regresiva). Después: "Pedir cambio a Jeff".
+  - Jeff cancela desde la Agenda **o desde la ficha del cliente** (pestaña Agenda), con motivo opcional que queda guardado.
+  - Al cliente le llega la notificación (solo si la sesión aún no pasó) y además ve "Jeff canceló tu sesión" en Hoy con el motivo, hasta tocar "Entendido".
+  - Lo que ya terminó deja de salir como próxima sesión (Hoy del cliente, campanita, agenda del cliente) y en el panel del coach pasa a "Ya pasaron"; en la Agenda del coach sale "Ya pasó" y no se puede cancelar. En la ficha, las pasadas salen "Realizada" (y se quitó el verde que tenían).
+  - Archivos: `AgendaView.tsx` (`CancelModal` reutilizable), `AgendaClientView.tsx`, `HoySide.tsx`, `ClientFicha.tsx`, `DashboardView.tsx`, `lib/use-now.ts`.
+- **Vídeo del día y de la semana:**
+  - Pueden estar **los dos a la vez** (antes el segundo quitaba al primero: por eso no salía el de la semana). Hoy muestra los dos, primero el del día.
+  - En Material, el panel ahora son **dos espacios** (día y semana), cada uno con Subir/Cambiar y Quitar; en el celular los botones ya no montan las letras.
+  - **Vista previa** del vídeo antes de subirlo (y miniatura del enlace de YouTube).
+  - **Portada difuminada** en negro y rojo: en el vídeo destacado, en el vídeo de la rutina (Hoy y Mi plan) y en Material. Para vídeos privados la app toma un cuadro diminuto del vídeo al subirlo (`lib/video-poster.ts`); para YouTube usa su miniatura. Los vídeos subidos antes no tienen portada: se ven con el fondo de marca.
+  - **Más rápido:** el vídeo destacado abre sin esperar al servidor; el enlace del reproductor se pide al empezar a tocar; el reproductor arranca solo; los vídeos grandes de Jeff suben en trozos de 25 MB (antes 5). Si Bunny aún está procesando un vídeo recién subido, se dice ("se está procesando, X %") en vez de quedarse cargando.
+  - Archivos: `MaterialView.tsx`, `HoySide.tsx` (`FeaturedVideo`), `MaterialClientView.tsx`, `RoutineVideo.tsx`, `TrainingTab.tsx`, `BunnyModal.tsx`, `lib/bunny.ts`, `lib/upload-video.ts`.
+- **Bienvenida:** el gesto principal dura 4 s y señalar (o quieto) 2 s, y vuelve al gesto. `Onboarding.tsx` (`usePoseCycle`).
+- **Catálogo:** los filtros de Músculo y Equipo ya no son selectores del sistema: son botones como los chips; abren las opciones con su conteo y, elegido, queda en negro con brillo rojo y una × para quitarlo. `ExercisesView.tsx` (`FilterDrop`).
+- **Arranque:**
+  - El portal se arma con **un solo viaje a la base** (`portal_boot()`), antes eran tres seguidos. Sin la 0041 hace lo de antes.
+  - El middleware ya no consulta al servidor de autenticación en cada pantalla: solo lee la cookie (y la renueva si venció); la verificación real la siguen haciendo la base (RLS) y las páginas.
+  - El portal del cliente dejaba de pedir 3 consultas del coach (y repetirlas cada minuto).
+  - No medido en Netlify/Vercel reales.
+- Se quitó un verde de los avatares (`lib/format.ts`).
+- **Cómo probar el plan mensual sin esperar 30 días** (solo con el cliente de prueba, en el SQL Editor): `update public.clients set plan_since = current_date - 28 where id = 'ID-DEL-CLIENTE-DE-PRUEBA';` (sale "por vencer"); con `- 31`, vencido. Para devolverlo: `= current_date`.
+- Revertir: ver la cabecera de la 0041; restaurar los archivos del commit `6c9705d` y borrar `AttentionCard.tsx`, `WeightAdviceCard.tsx`, `lib/live.ts`, `lib/use-now.ts`, `lib/video-poster.ts` y `rls_live.sql` (y sacarla de `run_local.sh`).
+
+## 2026-10-28 (noche) - Imágenes de ejercicios aprobadas
+- Cristian confirma que **se aprobaron las 54 imágenes** tal como están (incluidas 01, 09, 10, 49 y 53, que estaban en revisión). 0039 y 0040 corridas: los ejercicios ya están en el catálogo de Jeff con su imagen.
+- Solo documentación. Revertir: no aplica.
+
+## 2026-10-28 (noche) - Mi plan: tocar el ejercicio abre su imagen
+- **Pedido de Cristian:** en el portal → Mi plan, tocar cualquier parte de la fila del ejercicio abre la imagen con el personaje, el nombre y la indicación de técnica. Antes solo reaccionaba el botón de vídeo. El botón de vídeo sigue abriendo el vídeo.
+- Si un ejercicio no tiene imagen pero sí indicación, se abre solo con el texto. Si no tiene ninguna de las dos, la fila no hace nada.
+- Archivos: `MiPlanView.tsx` y `ExPic.tsx`. Revertir: restaurar del commit `12ee25f`.
+
+## 2026-10-28 (noche) - Rutina de hoy: ejercicios cerrados al entrar
+- **Pedido de Cristian:** al abrir Hoy ya no aparece desplegado el primer ejercicio. Todos salen cerrados y el cliente abre el que va a hacer. Al guardar la última serie de un ejercicio, se sigue abriendo el siguiente, igual que antes.
+- Archivo: `HoyView.tsx` (`Routine`). Revertir: restaurar del commit `684204c`.
+
+## 2026-10-28 (noche) - Imagen de cada ejercicio con el personaje y 54 ejercicios precargados
+- **Pedido de Cristian:** cada ejercicio tiene una imagen fija con el personaje en vez de una animación, porque una animación con técnica imperfecta confunde. Las imágenes las generó Cristian con Gemini; Claude las recortó a 360 × 360 en WebP (unos 15 KB cada una, 54 imágenes = 0,8 MB).
+- **Dónde se ven:**
+  - **Mi plan:** en lugar de las letras.
+  - **Hoy:** junto al nombre de cada ejercicio de la rutina.
+  - **Catálogo de Jeff:** en la tarjeta del ejercicio.
+  - Al tocar la miniatura se abre en grande, con el nombre y la indicación de técnica.
+- **Las 54 imágenes base viven dentro de la app** (`public/ex/`), no en Supabase. El service worker las guarda en el teléfono.
+- **Imágenes propias de Jeff:** puede subir una imagen a cualquier ejercicio, en el catálogo, con "Subir imagen". La app la recorta y la reduce a 360 px antes de subirla (unos 20-40 KB) al bucket público `exercise-images`; solo el coach puede escribir en su carpeta.
+- **Series y repeticiones sugeridas por ejercicio:** al armar una rutina, la fila se rellena sola con ellas.
+- **Migraciones:**
+  - **`0039_exercise_images.sql`:** columnas `image`, `sugg_sets` y `sugg_reps`, y el bucket. **Correrla ANTES**, porque el catálogo y la rutina las leen.
+  - **`0040_preset_exercises.sql`:** carga los 54 ejercicios con nombre, músculo, equipo, dificultad, series, repeticiones, indicación e imagen. No duplica: si Jeff ya tiene uno con el mismo nombre, solo le pone la imagen y las sugerencias. **Correrla cuando Jeff apruebe las imágenes.**
+  - Prueba nueva: `rls_eximg.sql`.
+- Pendiente de revisión de Jeff: 01 (barra cerca del cuello), 09 (jalón tras nuca, se dejó por decisión de Cristian), 10 (torso poco inclinado), 49 (dos personajes, se dejó por decisión de Cristian) y 53.
+- Archivos: `public/ex/*.webp`, `components/ExPic.tsx`, `lib/exercise-image.ts`, `lib/exmeta.ts`, `MiPlanView.tsx`, `HoyView.tsx`, `ExercisesView.tsx`, `RoutineForm.tsx`, `lib/fetchers.ts`, `lib/queries.ts`, `public/sw.js` y los estilos.
+- Revertir: ver las cabeceras de 0039 y 0040, borrar `public/ex` y restaurar esos archivos del commit `f342201`.
+
+## 2026-10-28 (noche) - Catálogo de ejercicios: filtros por músculo y equipo
+- **Pedido de Cristian:** Jeff filtra sus ejercicios según lo que trabajan, para saber rápido qué tiene al armar rutinas.
+- **Filtros:** a la zona (superior, inferior, core, cardio, con vídeo) se suman **Músculo** y **Equipo**, combinables, cada uno con su conteo, más "N de M" y "Quitar filtros". La búsqueda también encuentra por músculo.
+- **Normalización:** el músculo y el equipo se normalizan, así "pecho", "Pecho" y "pectorales" cuentan como Pecho, y "Espalda, bíceps" cuenta como Espalda.
+- **Al crear o editar un ejercicio,** los campos sugieren la lista estándar.
+- **Al armar una rutina,** el selector agrupa los ejercicios por músculo.
+- Archivos: `lib/exmeta.ts` (nuevo), `ExercisesView.tsx`, `RoutineForm.tsx` y `coach.css`. Sin migración.
+- La propuesta del personaje animado por ejercicio y los 50 ejercicios precargados quedan **pendientes de aprobación de Cristian**: no se subió nada de eso.
+- Revertir: restaurar esos archivos del commit `84aac89` y borrar `lib/exmeta.ts`.
+
+## 2026-10-28 (noche) - Respuestas de Jeff guardadas y campanita al día
+- **Campanita:** "Activar avisos" seguía saliendo después de activarlos en la pantalla obligatoria, porque el estado se leía una sola vez al abrir la app. Ahora se revisa otra vez al abrir la campanita y al volver a la app. Si ya están activos, no sale nada. Además el botón ya no parece un interruptor: es un botón con campana. Archivo: `ActionsBar.tsx`.
+- **Las respuestas de Jeff a los entrenamientos quedan guardadas.** Pedido de Cristian: si las marca como vistas, no las debe perder.
+  - **Mensajes:** "Respuestas de Jeff a tus entrenamientos" con las de los últimos 7 días (texto y audio), y "Marcar como visto" en las nuevas. No se responden.
+  - **Rutina de hoy:** cuando vuelve a tocar esa misma rutina, sale "Lo que te dijo Jeff la última vez" (desplegable, hasta 3 semanas atrás).
+  - En la tarjeta de Hoy, el texto avisa que queda guardada en Mensajes.
+  - Los datos no se borran; solo se dejan de mostrar pasados 7 días (o 3 semanas en la rutina), porque Jeff los sigue teniendo en su ficha.
+  - Archivos: `FeedbackHistory.tsx` (nuevo), `HoyView.tsx`, `MessagesClientView.tsx`, `lib/fetchers.ts` (`plan_day_id`) y `portal.css`. Sin migración.
+- Revertir: restaurar esos archivos del commit `9fb7c88` y borrar `FeedbackHistory.tsx`.
+
+## 2026-10-28 (noche) - Sin botón de desactivar avisos
+- **Pedido de Cristian:** en la campanita ya no aparece "desactivar avisos" ni el interruptor de "Avisos activados", ni para el cliente ni para el coach. Solo sale **"Activar avisos"** cuando están apagados, y una nota si el navegador los bloqueó. Quien los quiera quitar lo hace en los ajustes del teléfono o del navegador.
+- **Si el cliente los apaga desde los ajustes,** al volver a la app o abrirla le aparece otra vez la pantalla obligatoria de activar. Eso ya lo hacía `FirstRun`: revisa al abrir y cada vez que la app vuelve a primer plano.
+- Archivo: `ActionsBar.tsx`. Revertir: restaurar del commit `7bdfbcd`.
+
+## 2026-10-28 (noche) - Agenda por días, avisos que se cumplen, vídeo destacado, plan mensual, bienvenida obligatoria, respuestas de Jeff y avisos en computador
+Pedidos de Cristian tras probar producción. Solo en `bloque-hoy` (Vercel); NO en `main`.
+- **Agenda del coach (celular/tableta):** no se podía cambiar de día; se quedaba en el día actual. Había dos fallos de CSS: la clase del día elegido no coincidía y la regla general `.today{display:grid}` dejaba siempre visible el día de hoy. Ahora cada pestaña muestra su día y lleva el número de horarios publicados. Archivos: `coach.css` y `AgendaView.tsx`.
+- **"Jeff te está esperando" en Hoy:** cada aviso se marca solo como hecho ("Reporte enviado", "Rutina hecha", "Nutrición marcada"). Cuando el cliente cumple todo, la fila pasa a "Listo: cumpliste lo que Jeff te pidió" y se pliega. Archivo: `HoyView.tsx`.
+- **Vídeo del día / de la semana:** en Material del coach hay un panel arriba con "Subir vídeo del día", "Subir vídeo de la semana" y "Quitar", y muestra cuál está activo. El vídeo queda destacado en Hoy apenas termina de subir. Antes solo se podía con la estrella de cada vídeo y no se encontraba. Archivos: `MaterialView.tsx`, `useSaveMaterial` y `coach.css`.
+- **Plan mensual (30 días):**
+  - `clients.plan_since` se pone solo al asignar o cambiar el plan.
+  - Al vencer, el plan no se quita solo.
+  - El panel de Jeff muestra la tarjeta "Planes mensuales" (vencidos y los que vencen en 3 días o menos) con "Renovar 30 días" y "Quitar plan".
+  - En Avisos sale "N planes mensuales vencidos".
+  - En la ficha se ve cuándo vence el plan.
+  - La tarea de la mañana le manda a Jeff una notificación por cada vencimiento; esto solo funciona en Netlify, porque el cron apunta allí.
+  - Los clientes que ya tenían plan empiezan a contar desde su activación o desde hoy.
+  - Archivos: `PlansDueCard.tsx`, `lib/planmonth.ts` y `api/cron/reminders`.
+- **Bienvenida:**
+  - Ya no hay botón "Saltar".
+  - El personaje alterna gestos cada 2,5 s: en los paneles, gesto del tema y señalar en bucle; saludo y quieto; músculo y quieto; celebra, quieto y celular.
+  - "Tu punto de partida" pide peso (kg) y estatura (acepta 1,70 o 170), es obligatorio y sale para todos; se quitó la cintura.
+  - Se guarda en la ficha y Jeff lo ve junto al nombre. Si el plan incluye Progreso, también queda como medición del día.
+  - Archivos: `Onboarding.tsx` y `portal.css` (`.gd-swap`).
+- **Respuestas de Jeff a un entrenamiento:**
+  - Salen en Hoy como aviso aparte: "Jeff respondió a tu entrenamiento de torso y brazos · martes 27", con el texto y el audio. Aparecen aunque Jeff responda al día siguiente.
+  - No se responden: el cliente toca "Marcar como visto". Se muestran las de las últimas 2 semanas.
+  - Al cliente le llega una notificación cuando Jeff responde.
+  - En la revisión, Jeff ve "El cliente ya lo vio / aún no lo ve".
+  - Archivos: `HoyView.tsx`, `lib/fetchers.ts`, `RecentWorkouts.tsx` y `api/push/feedback`.
+- **Jeff cancela una sesión:** ya podía hacerlo con la ×. Ahora puede escribir un motivo opcional y al cliente le llega una notificación ("Jeff canceló tu sesión… Reserva otro horario"). El horario queda libre para agendar a alguien más. Archivos: `AgendaView.tsx` y `api/push/booking-cancel`.
+- **Notificaciones en computador:**
+  - En el computador ya no bloquean la app: sale "Seguir sin avisos en este computador", que se recuerda en ese navegador. En el celular siguen siendo obligatorias.
+  - Si fallan, se explica por qué y salen los pasos para Chrome o Safari en Mac.
+  - `enablePush` tiene límite de tiempo y, si había una suscripción vieja hecha con otra clave, la rehace.
+  - Archivos: `FirstRun.tsx`, `lib/push-client.ts` y `ActionsBar.tsx`.
+- **Migración `0038_start_point_feedback_plan_month.sql` (CORRERLA ANTES; sin ella fallan Hoy y Clientes en Vercel).** Prueba nueva: `rls_month.sql`.
+- Revertir: ver la cabecera de la migración y restaurar los archivos del commit `8377db1`.
+
 ## 2026-10-28 (tarde) - PUBLICACIÓN A PRODUCCIÓN (Netlify): `bloque-hoy` → `main` en un solo bloque
 - Autorizado por Cristian ("fusiona"). `main` estaba en `2f2f1d8` (25-oct, migración 0027). Entran 65 cambios: las migraciones 0028-0037 ya estaban corridas en la base compartida y todo se probó antes en Vercel.
 - Antes de fusionar se confirmaron:

@@ -886,9 +886,11 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 
 /* Barra inferior: llega hasta el borde real del teléfono (Safari/Chrome móvil y app instalada) */
 @media (max-width:1020px){
-  .bottom-nav{padding-bottom:max(10px, env(safe-area-inset-bottom)); -webkit-transform:translateZ(0); transform:translateZ(0);}
-  .bottom-nav::after{content:""; position:absolute; left:0; right:0; top:100%; height:120px; background:var(--paper);}
-  .main{padding-bottom:calc(100px + env(safe-area-inset-bottom));}
+  /* 15-nov: en iPhone la franja de la rayita de inicio (~34 pt) quedaba entera bajo los iconos. Se quitan 16 pt: los iconos
+     bajan, quedan ~18 pt de margen (para no tocar la rayita y salir de la app sin querer). En Android con botones (franja 0) queda 8 px. */
+  .bottom-nav{padding-bottom:max(8px, calc(env(safe-area-inset-bottom) - 16px)); -webkit-transform:translateZ(0); transform:translateZ(0);}
+  .bottom-nav::after{content:""; position:absolute; left:0; right:0; top:100%; height:120px; background:var(--ink);}
+  .main{padding-bottom:calc(84px + env(safe-area-inset-bottom));}
 }
 
 /* Guía para clientes nuevos */
@@ -1069,6 +1071,7 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 /* Vista previa del vídeo elegido en el reporte */
 .rep-pick{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--surface);}
 .rep-pick video{width:46px;height:62px;object-fit:cover;border-radius:8px;background:#000;flex:none;}
+.rep-pick video.wide{width:82px;height:46px;}
 .rep-pick span{display:flex;flex-direction:column;min-width:0;flex:1;font-size:12.5px;}
 .rep-pick span i{font-style:normal;color:var(--text-dim);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .rep-pick button{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
@@ -1336,3 +1339,191 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .focus-flash{box-shadow:0 0 0 3px rgba(247,37,75,.35),0 0 24px rgba(247,37,75,.25)!important;transition:box-shadow .4s}
 .nudge-line{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:8px}
 .nudge-line p{margin:0;font-size:14px;line-height:1.5}
+.nudge-done{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--text)}
+.nudge-done svg{color:var(--text)}
+/* Cambio de gesto del personaje mientras se lee un paso (28-oct): suave, sin el salto de entrada */
+.gd-swap{display:inline-flex;animation:gd-swap .35s ease-out both}
+@keyframes gd-swap{from{opacity:.55;transform:translateY(3px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.gd-swap{animation:none!important}}
+.tour-box .modal-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* Respuestas de Jeff a los entrenamientos (28-oct) */
+#respuestas{scroll-margin-top:84px}
+.fb-list{display:flex;flex-direction:column;gap:10px}
+.fb-text{margin:6px 0 0;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.fb-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
+.fb-foot span{font-size:12px;color:var(--text-dim);flex:1;min-width:160px}
+.nf-fail{color:var(--text);background:rgba(247,37,75,.07);border:1px solid rgba(247,37,75,.22);border-radius:10px;padding:8px 10px}
+.nf-skip{background:none;border:0;font:inherit;font-size:13px;font-weight:600;color:var(--text);text-decoration:underline;cursor:pointer;margin-top:2px}
+/* Historial de respuestas de Jeff (Mensajes) y "la última vez" en la rutina (28-oct) */
+.fbh{margin-bottom:16px}
+.fbh-item{padding:12px 0;border-top:1px solid var(--line)}
+.fbh-item:first-child{border-top:0;padding-top:4px}
+.fbh-head{display:flex;justify-content:space-between;gap:10px;font-size:13.5px}
+.fbh-head span{color:var(--text-dim);font-size:12.5px}
+.fbh-item.new .fbh-head b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--neon);margin-left:7px;vertical-align:2px}
+.fbh-more{background:none;border:0;font:inherit;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;margin-top:6px;color:var(--text)}
+.last-fb{margin:12px 0 4px;border:1px solid var(--line);border-radius:12px;background:#F7F8FB}
+.last-fb-head{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;background:none;border:0;font:inherit;text-align:left;cursor:pointer;color:var(--text)}
+.last-fb-head>span{flex:1;display:flex;flex-direction:column;gap:1px}
+.last-fb-head b{font-size:13px}
+.last-fb-head small{font-size:11.5px;color:var(--text-dim)}
+.last-fb.open .last-fb-head>svg:last-child{transform:rotate(180deg)}
+.last-fb-body{padding:0 12px 12px}
+/* Imagen del ejercicio con el personaje (28-oct) */
+.ex-pic{display:block;flex:none;border-radius:11px;object-fit:cover;background:#15121C;box-shadow:0 0 0 1px rgba(10,9,16,.08)}
+.ex-pic.sm{border-radius:9px}
+.ex-pic-btn{flex:none;padding:0;border:0;background:none;cursor:zoom-in;border-radius:11px;line-height:0}
+.ex-pic-btn:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+.ex-row .ex-pic-btn{margin-right:2px}
+.expv{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,6,14,.72);backdrop-filter:blur(4px);animation:say-in .2s ease-out both}
+.expv-box{width:100%;max-width:340px;background:#0F0D15;border-radius:20px;overflow:hidden;box-shadow:0 30px 70px -20px rgba(0,0,0,.6),0 0 40px -10px rgba(247,37,75,.4)}
+.expv-box img{display:block;width:100%;height:auto;aspect-ratio:1}
+.expv-txt{display:flex;flex-direction:column;gap:4px;padding:14px 16px 4px;color:#F1F0F5}
+.expv-txt b{font-family:var(--font-display),sans-serif;font-size:16px}
+.expv-txt span{font-size:13.5px;line-height:1.5;color:#C9C5D4}
+.expv-close{display:block;width:calc(100% - 32px);margin:12px 16px 16px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+/* ===== 29-oct: vídeo del día y de la semana juntos, con portada difuminada ===== */
+.fv-stack{display:flex;flex-direction:column;gap:12px;margin-bottom:22px}
+.fv-stack .featured-video-card{margin-bottom:0}
+.fv-thumb{overflow:hidden}
+.fv-play{z-index:1}
+.rv .rv-tag,.rv .rv-center,.rv .rv-label{z-index:2}
+.rv.has-poster::after{z-index:1}
+.content-thumb{overflow:hidden}
+.content-thumb .play,.content-thumb .content-new-tag{position:relative;z-index:1}
+.content-thumb .content-new-tag{position:absolute}
+/* ===== 29-oct: respuesta de Jeff con foto o vídeo ===== */
+.fb-img{display:block;margin-top:10px;padding:0;border:0;background:#0A0910;border-radius:12px;overflow:hidden;cursor:zoom-in;max-width:100%}
+.fb-img img{display:block;max-width:100%;max-height:240px;object-fit:contain}
+.fb-vid{display:inline-flex;align-items:center;gap:7px;margin-top:10px;height:36px;padding:0 14px;border-radius:10px;border:0;font:inherit;font-size:13px;font-weight:700;color:#fff;cursor:pointer;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.fb-big{position:fixed;inset:0;z-index:300;background:rgba(10,9,16,.92);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.fb-big img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+.fb-big button{position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top));width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;display:flex;align-items:center;justify-content:center}
+
+/* Cabecita del guía en lo terminado/plegado (30-oct): a un lado, pequeña, sin empujar el texto. */
+.fold-face{flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:0}
+.fold-face svg{display:block}
+.fold-note{font-size:12px;color:var(--text-dim);padding:0 18px 14px;margin:0;line-height:1.4}
+
+/* ---- 30-oct, noche: descanso, récord, sin señal y hábitos ---- */
+.rest-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:28px;z-index:60;width:min(440px,calc(100% - 24px));display:flex;align-items:center;gap:10px;padding:10px 10px 10px 14px;border-radius:16px;overflow:hidden;color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);box-shadow:0 18px 40px -16px rgba(10,9,16,.6)}
+.rest-fill{position:absolute;left:0;bottom:0;height:3px;background:var(--neon);transition:width .25s linear}
+.rest-ico{display:inline-flex;opacity:.85}
+.rest-txt{display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.15}
+.rest-txt b{font-family:var(--font-mono),monospace;font-size:20px;letter-spacing:.02em}
+.rest-txt small{font-size:11.5px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rest-bar button{flex:none;height:34px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.rest-bar.done .rest-txt b{font-family:var(--font-display),sans-serif;font-size:16px}
+@media (max-width:1020px){.rest-bar{bottom:max(76px, calc(62px + env(safe-area-inset-bottom)))}}
+.rec-pop{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:70;width:min(420px,calc(100% - 24px));display:flex;align-items:center;gap:12px;padding:12px 16px 12px 12px;border:0;border-radius:18px;text-align:left;cursor:pointer;color:#fff;font:inherit;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.55),transparent 62%),var(--ink);box-shadow:0 20px 44px -16px rgba(10,9,16,.65)}
+.rec-pop.gd-pop{animation:rec-in .5s cubic-bezier(.3,1.5,.5,1) both}
+@keyframes rec-in{from{opacity:0;transform:translate(-50%,-14px) scale(.9)}to{opacity:1;transform:translate(-50%,0)}}
+.rec-face{flex:none;display:inline-flex;line-height:0}
+.rec-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rec-txt small{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#ff8aa0}
+.rec-txt b{font-size:15px}
+.rec-txt span{font-size:12px;opacity:.8;line-height:1.35}
+.off-banner{display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;padding:9px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:12.5px;line-height:1.4;color:var(--text)}
+.off-banner svg{flex:none;margin-top:2px}
+.habits-card .hab-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.hab-lbl{display:flex;flex-direction:column;line-height:1.2}
+.hab-lbl b{font-size:14px}
+.hab-lbl small{font-size:11.5px;color:var(--text-dim)}
+.hab-step{display:flex;align-items:center;gap:10px}
+.hab-step b{min-width:34px;text-align:center;font-family:var(--font-mono),monospace;font-size:16px}
+.hab-step button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font:inherit;font-size:18px;font-weight:700;cursor:pointer;color:var(--text)}
+.hab-step button:disabled{opacity:.35;cursor:default}
+.hab-input{width:110px;height:36px;border-radius:10px;border:1px solid var(--line);padding:0 10px;font:inherit;font-size:15px;text-align:right;background:var(--paper);color:var(--text)}
+.hab-glasses{display:flex;flex-wrap:wrap;gap:5px;padding:0 0 10px}
+.hab-glasses i{width:14px;height:18px;border-radius:3px 3px 5px 5px;border:1.5px solid var(--line)}
+.hab-glasses i.on{border-color:var(--ink);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.hab-week{font-size:12px;color:var(--text-dim);margin:6px 0 0}
+.has-rest .main{padding-bottom:190px}
+
+/* Ejercicios alternativos (0044): cambiar por un sustituto aprobado por Jeff */
+.ex-swapped{display:flex; align-items:center; gap:4px; margin-top:2px; font-size:11px; font-weight:600; color:var(--text-dim); text-decoration:none}
+.ex-row.done .ex-swapped{text-decoration:none}
+.swap-bar{margin:4px 0 8px}
+.swap-bar.on{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 12px; border-radius:12px; color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%, rgba(247,37,75,.5), transparent 62%), var(--ink)}
+.swap-bar.on .mini-btn.ghost{background:#fff; color:var(--ink); border-color:#fff}
+.swap-txt{display:flex; align-items:flex-start; gap:7px; margin:0 0 8px; font-size:12.5px; line-height:1.45; color:var(--text-dim)}
+.swap-bar.on .swap-txt{margin:0; color:#fff; flex:1 1 200px}
+.swap-txt svg{flex:0 0 auto; margin-top:2px}
+.swap-txt b{font-weight:700}
+.swap-open svg{width:13px; height:13px; fill:none; stroke:var(--accent)}
+.swap-list{display:grid; gap:8px; margin-bottom:10px}
+.swap-opt{display:flex; align-items:center; gap:10px; width:100%; min-width:0; padding:8px 10px; border-radius:12px; border:1px solid var(--line); background:var(--paper); text-align:left; cursor:pointer; font:inherit; color:inherit}
+.swap-opt:hover{border-color:var(--accent)}
+.swap-opt:disabled{opacity:.6; cursor:wait}
+.swap-opt>span:not(.swap-ph){flex:1; min-width:0; display:flex; flex-direction:column}
+.swap-opt b{font-size:13.5px; font-weight:700; overflow-wrap:anywhere}
+.swap-opt small{font-size:11.5px; color:var(--text-dim)}
+.swap-ph{flex:0 0 40px; width:40px; height:40px; border-radius:10px; display:grid; place-items:center; color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%, rgba(247,37,75,.5), transparent 62%), var(--ink)}
+.nudge-acts{display:flex;flex-wrap:wrap;gap:8px}
+/* Hábitos: avisos y promedio de la semana (2-nov) */
+.hab-alert{display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;padding:9px 11px;border-radius:11px;font-size:13px;line-height:1.45;color:#fff;background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.hab-alert svg{flex:none;margin-top:2px}
+.hab-check{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:var(--paper);font:inherit;font-size:13px;font-weight:700;color:var(--text);cursor:pointer}
+.hab-check.on{color:#fff;border-color:var(--ink);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.hab-week-box{margin-top:6px;padding-top:12px;border-top:1px solid var(--line)}
+.hab-avgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.hab-avg{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:11px;background:var(--surface);min-width:0}
+.hab-avg small{font-size:11px;color:var(--text-dim)}
+.hab-avg b{font-family:var(--font-mono),monospace;font-size:14px}
+.hab-avg span{font-size:10.5px;color:var(--text-faint)}
+.hab-avg.low{box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* "Jeff estuvo pendiente de ti" (2-nov, compacto) */
+.away-list{list-style:none;margin:0 0 4px;padding:0}
+.away-list li{display:flex;gap:8px;padding:5px 0;font-size:13.5px;line-height:1.4;color:var(--text-dim)}
+.away-list b{flex:none;min-width:58px;color:var(--text);font-weight:600}
+
+/* ---- Hoy con la estética de la marca (14-nov, demo con Jeff) ---- */
+.day-hero{position:relative;overflow:hidden;border-radius:22px;padding:22px 22px 16px;margin:4px 0 20px;color:#fff;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(247,37,75,.34),transparent 55%),radial-gradient(90% 120% at 100% 100%,rgba(205,177,112,.14),transparent 60%),var(--ink);
+  box-shadow:0 18px 40px -24px rgba(42,10,22,.65)}
+.day-hero::after{content:"";position:absolute;width:220px;height:220px;right:-80px;top:-90px;border-radius:50%;background:radial-gradient(circle,rgba(247,37,75,.28),transparent 65%);pointer-events:none}
+.dh-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.dh-eyebrow{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.58)}
+.dh-greet h1{font-family:var(--font-display),sans-serif;font-size:27px;line-height:1.1;margin:6px 0 6px;color:#fff;letter-spacing:-.01em}
+.dh-greet p{margin:0;font-size:14px;line-height:1.45;color:rgba(255,255,255,.74)}
+.dh-ring{position:relative;flex:none;width:62px;height:62px}
+.dh-ring svg{display:block}
+.dh-ring-bg{fill:none;stroke:rgba(255,255,255,.12);stroke-width:5}
+.dh-ring-fg{fill:none;stroke:var(--neon);stroke-width:5;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(247,37,75,.75));transition:stroke-dashoffset .5s ease}
+.dh-ring span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono),monospace;font-size:12px;color:rgba(255,255,255,.7)}
+.dh-ring span b{font-size:17px;color:#fff}
+.dh-tasks{position:relative;z-index:1;margin-top:16px}
+.dh-label{font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px}
+.dh-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dh-chip{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px 0 9px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.dh-chip:hover{background:rgba(255,255,255,.12)}
+.dh-chip i{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;border:1.5px solid rgba(255,255,255,.42)}
+.dh-chip.done{background:linear-gradient(135deg,var(--neon),var(--rose));border-color:transparent;box-shadow:0 6px 16px -8px rgba(247,37,75,.8)}
+.dh-chip.done i{border-color:transparent;background:rgba(255,255,255,.26);color:#fff}
+.dh-streak{position:relative;z-index:1}
+.day-hero .streak-strip{background:none;border:0;border-top:1px solid rgba(255,255,255,.1);border-radius:0;box-shadow:none;padding:14px 0 0;margin:16px 0 0}
+@media (max-width:640px){.day-hero{margin-left:-2px;margin-right:-2px;padding:20px 18px 14px}.dh-greet h1{font-size:24px}}
+
+/* Barra de abajo oscura, como el menú de Jeff */
+@media (max-width:1024px){
+  .bottom-nav{background:radial-gradient(80% 160% at 50% 120%,rgba(247,37,75,.22),transparent 60%),var(--ink);border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -10px 30px -18px rgba(0,0,0,.6)}
+  .bottom-nav .bn-link{color:rgba(255,255,255,.5)}
+  .bottom-nav .bn-link.active{color:#fff}
+  .bottom-nav .bn-link.active svg{stroke:var(--neon);filter:drop-shadow(0 0 6px rgba(247,37,75,.75))}
+}
+
+/* Acentos oscuros en las tarjetas de Hoy */
+.routine-progress-bar{background:var(--surface)}
+.routine-progress-fill{background:linear-gradient(90deg,var(--ink),var(--neon));box-shadow:0 0 10px rgba(247,37,75,.45)}
+.hab-avg{background:var(--ink);color:#fff}
+.hab-avg small{color:rgba(255,255,255,.6)}
+.hab-avg span{color:rgba(255,255,255,.5)}
+.hab-avg.low{background:radial-gradient(120% 180% at 0% 0%,rgba(247,37,75,.55),transparent 65%),var(--ink);box-shadow:inset 0 0 0 1.5px var(--neon)}
+.habits-card,.card-nutrition{background-image:radial-gradient(130% 70% at 100% 0%,rgba(247,37,75,.07),transparent 55%)}
+/* Rótulos de tarjeta en píldora oscura con brillo rojo y acento superior más largo (14-nov) */
+.card > .card-tag,.card .card-head .card-tag{background:radial-gradient(140% 220% at 0% 0%,rgba(247,37,75,.55),transparent 62%),var(--ink);color:#fff;padding:4px 11px 4px 10px;letter-spacing:.1em;display:inline-flex;align-self:flex-start;width:max-content;max-width:100%;border-radius:20px}
+.card::before{width:72px;height:3px;opacity:1;box-shadow:0 0 10px rgba(247,37,75,.45)}

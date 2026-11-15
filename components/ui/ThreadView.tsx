@@ -1,4 +1,5 @@
 "use client";
+import { Snippets } from "@/components/coach/Snippets";
 import { useEffect, useMemo, useRef, useState } from "react";
 import "@/app/messages.css";
 import { Modal } from "@/components/ui/Modal";
@@ -87,6 +88,7 @@ export function ThreadView({ clientId, ownClientId, otherName, coach = false, te
       <section className="mb-compose" aria-label={coach ? `Escribir a ${otherName}` : "Escribir a tu coach"}>
         {blocked ? <div className="mb-wait"><Icon name="clock" size={18} /><div><b>Ya usaste tus mensajes de hoy.</b><span>Mañana puedes escribirle de nuevo. Tu reporte diario va aparte y siempre lo puedes enviar.</span></div></div> : <>
           <textarea rows={3} maxLength={maxChars} aria-label="Escribe tu mensaje" placeholder={coach ? `Responder a ${otherName}…` : "Cuéntale a tu coach: una duda, cómo te sientes, algo que notaste…"} value={text} onChange={(e) => setText(e.target.value)} />
+          {coach && <Snippets text={text} onPick={(t) => setText(t.slice(0, maxChars))} />}
           {rec.recording && <div className="mb-rec" role="status"><i aria-hidden /><b>Grabando</b><span>{Math.floor(rec.secs / 60)}:{String(rec.secs % 60).padStart(2, "0")} / {Math.floor(MAX_AUDIO_SECONDS / 60)}:00</span><button type="button" onClick={() => rec.stop(true)}>Cancelar</button><button type="button" className="go" onClick={() => rec.stop()}><Icon name="stop" size={13} /> Terminar</button></div>}
           {audio && audioUrl && !rec.recording && <div className="mb-attach mb-attach-audio"><Icon name="mic" size={14} /><audio controls src={audioUrl} /><button type="button" aria-label="Quitar audio" onClick={() => setAudio(null)}><Icon name="close" size={14} /></button></div>}
           {(preview || video || ytId) && <div className="mb-attach">{preview && <img src={preview} alt="Vista previa" />}<span><Icon name={image ? "camera" : video ? "video" : "play"} size={14} />{image ? "Foto lista para enviar" : video ? video.name.slice(0, 26) : "Vídeo de YouTube"}</span><button type="button" aria-label="Quitar adjunto" onClick={() => { setImage(null); setVideo(null); setYt(""); setShowYt(false); }}><Icon name="close" size={14} /></button></div>}

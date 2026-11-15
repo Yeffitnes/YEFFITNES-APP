@@ -5,14 +5,18 @@ import { useRef, useState } from "react";
 import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, assignDayVideo, useSetWeight, useTrainingPlans, type PlanDay } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS } from "@/lib/upload-video";
+import { posterFromVideo } from "@/lib/video-poster";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
+import Link from "next/link";
+import { useApplyProgram, usePrograms } from "@/lib/extras";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function TrainingTab({ clientId, clientName }: { clientId: string; clientName: string }) {
   const { data, isPending, isError, refetch } = useTrainingPlans(clientId);
   const [day, setDay] = useState((new Date().getDay() + 6) % 7 + 1);
+  const [prog, setProg] = useState(false);
   const [hist, setHist] = useState(false), [newPlan, setNewPlan] = useState(false), [assign, setAssign] = useState(false), [confirm, setConfirm] = useState(false);
   const setWeight = useSetWeight(clientId), clear = useClearDay(clientId);
   if (isPending) return <Skeleton rows={2} />;
@@ -26,10 +30,11 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, flexWrap: "wrap", gap: 12 }}>
           <div>
             <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 16 }}>{active ? active.name : "Sin plan de entrenamiento"}</div>
-            <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>{active ? <>Activo desde {fmt(active.startsOn)} · <span style={{ color: "#1C9A5B", fontWeight: 700 }}>● En curso</span></> : `Crea un plan para ${clientName} y asígnale rutinas por día.`}</div>
+            <div style={{ fontSize: 12, color: "var(--text-dim)", marginTop: 2 }}>{active ? <>Activo desde {fmt(active.startsOn)} · <span style={{ color: "var(--text)", fontWeight: 700 }}>● En curso</span></> : `Crea un plan para ${clientName} y asígnale rutinas por día.`}</div>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {!!past.length && <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setHist(!hist)}>Ver planes anteriores</button>}
+            <button className="ghost-btn" style={{ height: 34, padding: "0 13px", fontSize: 11.5 }} onClick={() => setProg(true)}>Asignar programa</button>
             <button className="primary-btn" style={{ height: 34, fontSize: 11.5 }} onClick={() => setNewPlan(true)}>Crear nuevo plan</button>
           </div>
         </div>
@@ -61,6 +66,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
             </>
           ) : <p style={{ fontSize: 13.5, color: "var(--text-dim)", margin: "6px 0 2px" }}>Este día aún no tiene rutina. Si lo dejas libre, {clientName} lo verá como día de descanso.</p>}
         </div>)}
+      {prog && <ProgramModal clientId={clientId} first={clientName.split(" ")[0]} hasActive={!!active} onClose={() => setProg(false)} onDone={() => setDay((new Date().getDay() + 6) % 7 + 1)} />}
       {newPlan && <NewPlan clientId={clientId} hasActive={!!active} onClose={() => setNewPlan(false)} />}
       {assign && active && <AssignModal clientId={clientId} planId={active.id} weekday={day} dayLabel={DAYS[day - 1]} replacing={!!d} onClose={() => setAssign(false)} />}
     </div>
@@ -71,7 +77,7 @@ function NewPlan({ clientId, hasActive, onClose }: { clientId: string; hasActive
   const go = () => { if (!name.trim()) return setErr("Ponle un nombre al plan."); create.mutate(name.trim(), { onSuccess: onClose }); };
   return (
     <Modal title="Crear nuevo plan" sub={hasActive ? "El plan actual pasará a “Finalizado” y este será el activo. Las rutinas se asignan después, día por día." : "Después le asignas una rutina a cada día de la semana."} onClose={onClose}>
-      <div className="modal-field"><label>Nombre del plan</label><input autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="Ej. Fuerza — semana 1" /></div>
+      <div className="modal-field"><label>Nombre del plan</label><input aria-label="Nombre del plan" autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="Ej. Fuerza — semana 1" /></div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={create.isPending} onClick={go}>{create.isPending ? "Creando…" : "Crear plan"}</button></div>
     </Modal>
@@ -99,7 +105,7 @@ function AssignModal({ clientId, planId, weekday, dayLabel, replacing, onClose }
 function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
   const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
   const bg = useBackgroundUpload();
-  const upload = (f: File) => { setErr(""); bg({ file: f, label: `Vídeo para ${clientName.split(" ")[0]}`, opts: { purpose: "message", clientId }, finish: (id, qc) => assignDayVideo(qc, clientId, day.id, id) }); };
+  const upload = (f: File) => { setErr(""); const poster = posterFromVideo(f); bg({ file: f, label: `Vídeo para ${clientName.split(" ")[0]}`, opts: { purpose: "message", clientId }, finish: (id, qc) => assignDayVideo(qc, clientId, day.id, id, poster) }); };
   const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxSourceSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: upload, onError: setErr });
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
@@ -116,5 +122,22 @@ function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientNa
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{err}</p>}
       {play && <BunnyModal param={`day=${day.id}`} title={`Vídeo para ${clientName}`} sub={day.name} onClose={() => setPlay(false)} />}
     </div>
+  );
+}
+
+// Asignar un programa completo (30-oct, noche): crea su plan nuevo con la semana armada y la revisión al final del programa.
+function ProgramModal({ clientId, first, hasActive, onClose, onDone }: { clientId: string; first: string; hasActive: boolean; onClose: () => void; onDone: () => void }) {
+  const q = usePrograms(), apply = useApplyProgram(clientId), [sel, setSel] = useState("");
+  const p = q.data?.find((x) => x.id === sel);
+  return (
+    <Modal title={`Asignar programa a ${first}`} sub={hasActive ? "Se crea un plan nuevo con toda la semana; el plan actual pasa a “Finalizado” (su historial no se pierde)." : "Se crea su plan con toda la semana armada."} onClose={onClose}>
+      {q.isPending ? <Skeleton rows={2} /> : q.data === null ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Los programas se activan cuando se corra la migración 0043.</p>
+        : !q.data?.length ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 14 }}>Aún no tienes programas. <Link href="/coach/catalogo/programas" style={{ color: "var(--accent)", fontWeight: 700 }}>Crear uno en Catálogo → Programas</Link></p>
+        : <div style={{ marginTop: 14, maxHeight: 320, overflowY: "auto" }}>{q.data.map((x) => (
+          <label key={x.id} className="info-list-row" style={{ cursor: "pointer", gap: 10, justifyContent: "flex-start" }}>
+            <input type="radio" name="prg" checked={sel === x.id} onChange={() => setSel(x.id)} /><span style={{ fontWeight: 700 }}>{x.name}</span><span style={{ color: "var(--text-faint)", fontSize: 12 }}>{x.weeks} sem · {x.days.length} días</span></label>))}</div>}
+      {p && <p className="modal-cap-hint">{p.days.map((d) => `${DAYS[d.weekday - 1]}: ${d.routine}`).join(" · ")}. Revisión del plan en {p.weeks} semana{p.weeks === 1 ? "" : "s"}.</p>}
+      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={!sel || apply.isPending} onClick={() => apply.mutate(sel, { onSuccess: () => { onDone(); onClose(); } })}>{apply.isPending ? "Asignando…" : "Asignar programa"}</button></div>
+    </Modal>
   );
 }

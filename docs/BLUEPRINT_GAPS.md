@@ -10,7 +10,7 @@ Cruce hecho el 26-oct-2026, noche, sobre la rama `bloque-hoy` (commit `93cebbd`)
 | Cliente sin plan | Entra a la app y ve **cada panel bloqueado y borroso con candado** (FeatureGate de DaniFit); botón "Solicitar acceso a Jeff" que le avisa; Jeff elige el plan. | Hecho (0034) |
 | Notificaciones | **Obligatorias** al entrar, antes de la bienvenida. | Hecho (sin migración) |
 | Bienvenida | Más dinámica, con **personaje guía** que muestra cada panel; incluye **consentimiento de fotos**. | Hecho; el personaje es provisional (diseño NO DEFINIDO) |
-| Vídeos del reporte | Se borran **sí o sí**: 32 h si Jeff no los ve; **12 h** después de verlos, y Jeff ve el aviso. | Hecho (0033); falta programar la tarea al fusionar |
+| Vídeos del reporte | Se borran **sí o sí**: 32 h si Jeff no los ve; **12 h** después de verlos, y Jeff ve el aviso. | Hecho (0033); tarea `yeffitnes-videos` programada el 28-oct |
 | Rutinas | Series fijas; repeticiones en rango ("8-12"). Si pasa del máximo, sugerir subir el peso al cliente y recomendárselo a Jeff, que lo ajusta. | Hecho (27-oct, noche; `lib/progression.ts`) |
 | Primera llamada | Todo cliente agenda primero su llamada; rutina y nutrición llegan después. Paneles "Falta poco" sin candado. | Hecho (27-oct, noche) |
 | Fotos de progreso | Solo las sube el cliente (no hay sesiones presenciales). A futuro, Jeff debería poder editar lo que registra el cliente. | Se deja como está |
@@ -54,7 +54,7 @@ Estados: **Cumple** = existe y hace lo que pide el blueprint · **Distinto** = e
 | Anuncios a todos | Cumple | Fijar y vencimiento. |
 | Notas visibles al cliente + notas privadas | Distinto | Hay notas privadas (`client_notes`, el cliente nunca las ve). Lo "visible" se hace por Mensajes y comentario del entreno. |
 | Mensajes sin chat: el cliente escribe una vez por noche, ligado al reporte, sin "visto" | Distinto | Existe Mensajes: 600 caracteres, 3 sin leer, 12 por día, foto, vídeo y audio de Jeff. Es más abierto que el blueprint. **Confirmar con Cristian que es la decisión vigente.** |
-| Borrado automático de vídeos (24 h tras visto, tope 7 días) | Parcial | Las reglas existen, pero el borrado corre **cuando Jeff abre Reportes**, no como tarea programada. Si Jeff no entra, los vídeos no se borran. |
+| Borrado automático de vídeos (el blueprint decía 24 h tras visto, tope 7 días) | Distinto | Regla vigente, confirmada por Cristian el 4-nov: 32 h sin ver y 12 h tras verlos (0033). Corre cada hora con la tarea `yeffitnes-videos`, aunque Jeff no abra Reportes. |
 
 ## P2
 

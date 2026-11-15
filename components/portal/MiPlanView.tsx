@@ -7,10 +7,12 @@ import { FeatureGate } from "@/components/FeatureGate";
 import {} from "@/lib/features";
 import { DAY_LONG, DAY_SHORT, categoryLabel, todayWeekday, weekDates } from "@/lib/week";
 import { gradient, initials } from "@/lib/format";
-import { VideoModal, PLAY_PATH } from "./VideoModal";
-import { BunnyModal } from "@/components/ui/BunnyModal";
+import { ExPic, ExPicViewer } from "@/components/ExPic";
+import { VideoModal, PLAY_PATH, warmYoutube } from "./VideoModal";
+import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
 import { RoutineVideo } from "./RoutineVideo";
+import { ytThumb } from "@/lib/video-poster";
 
 const LEVELS = [["beginner", "Principiante"], ["intermediate", "Intermedio"], ["advanced", "Avanzado"]] as const;
 function relReview(d: string) {
@@ -92,7 +94,7 @@ export function MiPlanView() {
   );
 }
 function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: number; isToday: boolean; onVideo: (i: PlanItem) => void }) {
-  const [dv, setDv] = useState<"personal" | "yt" | null>(null);
+  const [dv, setDv] = useState<"personal" | "yt" | null>(null), [pic, setPic] = useState<PlanItem | null>(null);
   if (!day) return (
     <div className="card card-day rest-card">
       <div className="rest-icon"><svg viewBox="0 0 20 20"><path d={REST_ICON} /></svg></div>
@@ -106,16 +108,19 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       <div className="card-tag"><span style={{ width: 7, height: 7, borderRadius: "50%", background: isToday ? "var(--accent)" : "#D7DAE3" }} />{DAY_LONG[weekday - 1]}{isToday ? " · Hoy" : ""}</div>
       <div className="card-title">{day.name}</div>
       <div className="card-meta">{meta}</div>
-      {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
+      {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} poster={day.hasPersonalVideo ? day.poster : ytThumb(day.videoRef)} onWarm={() => (day.hasPersonalVideo ? prefetchPlay(`day=${day.id}`) : warmYoutube())} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
       {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setDv(null)} />}
+      {pic && <ExPicViewer image={pic.image} name={pic.name} note={pic.instructions} onClose={() => setPic(null)} />}
       {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}
       {!day.items.length ? <p className="empty-note" style={{ marginTop: 16 }}>Esta rutina todavía no tiene ejercicios.</p> : (
         <div className="exercise-list">{day.items.map((i, k) => (
-          <div key={i.id} className="ex-row" style={{ cursor: "default" }}>
-            <div className="ex-thumb" style={{ background: gradient(k) }}>{initials(i.name)}</div>
+          // Toda la fila abre la imagen y la indicación del ejercicio (pedido de Cristian, 28-oct); el botón de vídeo sigue aparte.
+          <div key={i.id} className={`ex-row${i.image || i.instructions ? " tap" : ""}`} style={{ cursor: i.image || i.instructions ? "pointer" : "default" }}
+            {...(i.image || i.instructions ? { role: "button", tabIndex: 0, "aria-label": `Ver cómo se hace: ${i.name}`, onClick: () => setPic(i), onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPic(i); } } } : {})}>
+            <ExPic image={i.image} name={i.name} size={48} onClick={() => setPic(i)} fallback={<div className="ex-thumb" style={{ background: gradient(k) }}>{initials(i.name)}</div>} />
             <div className="ex-body"><div className="ex-name">{i.name}</div><div className="ex-sub">{[i.muscle, i.equipment].filter(Boolean).join(" · ") || "—"}</div></div>
             <div className="ex-meta">{i.sets}×{i.reps}{i.rest ? <><br />{i.rest}s desc.</> : null}{i.weight ? <><br />{i.weight} kg</> : null}</div>
-            {i.videoRef && <button className="ex-play" aria-label={`Ver técnica: ${i.name}`} onClick={() => onVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></button>}
+            {i.videoRef && <button className="ex-play" aria-label={`Ver técnica: ${i.name}`} onClick={(e) => { e.stopPropagation(); onVideo(i); }}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></button>}
           </div>))}</div>
       )}
     </div>

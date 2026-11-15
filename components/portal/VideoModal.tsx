@@ -22,3 +22,9 @@ export function VideoModal({ ytId, title, sub, onClose }: { ytId: string; title:
   );
 }
 export const PLAY_PATH = "M6 4l11 6-11 6V4z";
+// Abre la conexión con YouTube antes de tocar "ver" (una vez): el vídeo arranca antes.
+let ytWarm = false;
+export function warmYoutube() {
+  if (ytWarm || typeof document === "undefined") return; ytWarm = true;
+  for (const h of ["https://www.youtube-nocookie.com", "https://i.ytimg.com", "https://www.google.com"]) { const l = document.createElement("link"); l.rel = "preconnect"; l.href = h; l.crossOrigin = "anonymous"; document.head.appendChild(l); }
+}

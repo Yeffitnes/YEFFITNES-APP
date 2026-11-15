@@ -1,33 +1,39 @@
 "use client";
+import { useCallback } from "react";
+import { applyQueue, enqueue, hasQueue, isNetErr, offlineNow, queued, useQueueVersion, type Op } from "@/lib/offline";
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
 import { bogotaDay, type NudgeKind } from "@/lib/nudges";
-import { loadLogs, loadTrainingPlans, localDate } from "@/lib/fetchers";
+import { loadLogs, loadTrainingPlans, localDate, missingColumn, missingTable } from "@/lib/fetchers";
 
 export type Plan = { id: string; name: string; features: string[] };
-export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean };
-export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number };
+export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
+export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
-type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plans: unknown; profiles: unknown };
-type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; template_items: unknown };
+type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plan_since?: string | null; height_cm?: number | null; start_weight_kg?: number | null; plans: unknown; profiles: unknown };
+type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; image?: string | null; sugg_sets?: number | null; sugg_reps?: string | null; template_items: unknown; exercise_alternatives?: { alt_exercise_id: string; position: number }[] };
 type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
   const { data, error } = await db().from("plans").select("id,name,features").eq("active", true).order("name");
   if (error) throw error; return data as Plan[];
 };
 export const fetchClients = async (): Promise<ClientRow[]> => {
-  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,objective_video_id,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
+  const { data, error } = await db().from("clients").select("id,status,plan_id,created_at,objective,objective_at,access_requested_at,objective_video_id,plan_since,height_cm,start_weight_kg,plans(name),profiles!inner(full_name,role)").eq("profiles.role", "client").order("created_at", { ascending: false });
   if (error) throw error;
-  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id }));
+  return (data as unknown as ClientRaw[]).map((c) => ({ id: c.id, name: (c.profiles as unknown as { full_name: string }).full_name || "Sin nombre", planId: c.plan_id, plan: (c.plans as unknown as { name: string } | null)?.name ?? null, status: c.status as ClientRow["status"], createdAt: c.created_at, objective: c.objective, objectiveAt: c.objective_at, accessRequestedAt: c.access_requested_at ?? null, objectiveVideo: !!c.objective_video_id, planSince: c.plan_since ?? null, heightCm: c.height_cm ?? null, startWeight: c.start_weight_kg ?? null }));
 };
 export const fetchExercises = async (): Promise<Ex[]> => {
-  const { data, error } = await db().from("exercises").select("id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,template_items(count)").eq("active", true).order("name");
+  // Con los sustitutos aprobados (0044); si la base aún no la tiene, se lee como antes.
+  const q = (extra: string) => db().from("exercises").select(`id,name,category,muscle_group,equipment,difficulty,instructions,video_ref,image,sugg_sets,sugg_reps,template_items(count)${extra}`).eq("active", true).order("name");
+  let { data, error } = await q(",exercise_alternatives!exercise_alternatives_exercise_id_fkey(alt_exercise_id,position)");
+  if (error && missingTable(error)) ({ data, error } = await q(""));
   if (error) throw error;
-  return (data as unknown as ExRaw[]).map((e) => ({ id: e.id, name: e.name, category: e.category, muscle: e.muscle_group, equipment: e.equipment, difficulty: e.difficulty, instructions: e.instructions, videoRef: e.video_ref, used: (e.template_items as unknown as { count: number }[])?.[0]?.count ?? 0 }));
+  return (data as unknown as ExRaw[]).map((e) => ({ id: e.id, name: e.name, category: e.category, muscle: e.muscle_group, equipment: e.equipment, difficulty: e.difficulty, instructions: e.instructions, videoRef: e.video_ref, image: e.image ?? null, suggSets: e.sugg_sets ?? null, suggReps: e.sugg_reps ?? null, used: (e.template_items as unknown as { count: number }[])?.[0]?.count ?? 0,
+    alts: e.exercise_alternatives ? [...e.exercise_alternatives].sort((a, b) => a.position - b.position).map((a) => a.alt_exercise_id) : undefined }));
 };
 export const fetchRoutines = async (): Promise<Routine[]> => {
   const { data, error } = await db().from("routine_templates").select("id,name,category,est_minutes,video_ref,template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref))").eq("active", true).order("created_at", { ascending: false });
@@ -38,7 +44,7 @@ export const fetchRoutines = async (): Promise<Routine[]> => {
 };
 
 export const KEYS = { plans: ["plans"], clients: ["clients"], exercises: ["exercises"], routines: ["routines"] } as const;
-export const useClients = () => useQuery({ queryKey: KEYS.clients, queryFn: fetchClients, staleTime: 15_000, refetchInterval: 45_000 });
+export const useClients = (enabled = true) => useQuery({ queryKey: KEYS.clients, queryFn: fetchClients, staleTime: 15_000, refetchInterval: 45_000, enabled });
 export const usePlans = () => useQuery({ queryKey: KEYS.plans, queryFn: fetchPlans, staleTime: 300_000 });
 export const useExercises = () => useQuery({ queryKey: KEYS.exercises, queryFn: fetchExercises, staleTime: 120_000 });
 export const useRoutines = () => useQuery({ queryKey: KEYS.routines, queryFn: fetchRoutines, staleTime: 120_000 });
@@ -66,14 +72,16 @@ export function useSetPlan() {
   });
 }
 
-export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null };
+export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
 export function useSaveExercise(workspaceId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (x: ExerciseInput) => {
-      const row = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, video_provider: x.videoRef ? "youtube" : null, video_ref: x.videoRef };
-      const { error } = x.id ? await db().from("exercises").update(row).eq("id", x.id) : await db().from("exercises").insert({ ...row, workspace_id: workspaceId });
+      const row = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, video_provider: x.videoRef ? "youtube" : null, video_ref: x.videoRef, image: x.image ?? null, sugg_sets: x.suggSets ?? null, sugg_reps: x.suggReps?.trim() || null };
+      const { data, error } = x.id ? await db().from("exercises").update(row).eq("id", x.id).select("id").single() : await db().from("exercises").insert({ ...row, workspace_id: workspaceId }).select("id").single();
       if (error) throw error;
+      // Sustitutos aprobados (0044): solo si Jeff los tocó en el formulario.
+      if (x.alts) { const { error: e2 } = await db().rpc("set_alternatives", { p_exercise: (data as { id: string }).id, p_alts: x.alts }); if (e2) throw e2; }
     },
     onSuccess: () => { toast("Ejercicio guardado"); qc.invalidateQueries({ queryKey: KEYS.exercises }); qc.invalidateQueries({ queryKey: KEYS.routines }); },
     onError: () => toast("No pudimos guardar el ejercicio. Revisa tu conexión e inténtalo de nuevo.", true),
@@ -104,13 +112,19 @@ export function useSaveRoutine() {
 }
 
 // ---- Entrenamiento por días ----
-export type PlanItem = { id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
-export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; items: PlanItem[] };
+export type PlanItem = { image?: string | null; id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
+export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; poster?: string | null; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; days: PlanDay[] };
 export const fetchTrainingPlans = (clientId: string): Promise<TrainingPlan[]> => loadTrainingPlans(db(), clientId);
 // Asigna el vídeo personalizado de un día (lo usa la subida en segundo plano, que ya no depende de la pantalla).
-export async function assignDayVideo(qc: QueryClient, clientId: string, dayId: string, videoId: string) { const { error } = await db().rpc("set_day_video", { p_day: dayId, p_video: videoId }); if (error) throw error; await qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); }
+export async function assignDayVideo(qc: QueryClient, clientId: string, dayId: string, videoId: string, poster?: Promise<string | null>) {
+  const { error } = await db().rpc("set_day_video", { p_day: dayId, p_video: videoId }); if (error) throw error;
+  // Portada difuminada (0041). Si falla (p. ej. la base aún sin la 0041), el vídeo queda igual, solo sin portada.
+  const p = poster ? await poster.catch(() => null) : null;
+  await db().from("plan_days").update({ video_poster: p }).eq("id", dayId).then(() => undefined, () => undefined);
+  await qc.invalidateQueries({ queryKey: ["plans-of", clientId] });
+}
 export function useSetDayVideo(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
@@ -121,6 +135,8 @@ export function useSetDayVideo(clientId: string) {
   });
 }
 export const useTrainingPlans = (clientId: string) => useQuery({ queryKey: ["plans-of", clientId], queryFn: () => fetchTrainingPlans(clientId), staleTime: 60_000, enabled: !!clientId });
+// Aviso al cliente cuando Jeff cambia su plan (0047). La base decide si toca (máx. 1 cada 30 min por tipo); si falla, no pasa nada.
+export const notifyPlan = (clientId: string | null | undefined, kind: "training" | "nutrition") => { if (clientId) void fetch("/api/push/plan", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, kind }) }).catch(() => {}); };
 export function useCreatePlan(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
@@ -136,7 +152,7 @@ export function useAssignDay(clientId: string) {
       const res = await Promise.all(v.weekdays.map((w) => db().rpc("assign_day", { p_plan: v.planId, p_weekday: w, p_template: v.templateId })));
       const bad = res.find((r) => r.error); if (bad?.error) throw bad.error;
     },
-    onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); },
+    onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); notifyPlan(clientId, "training"); },
     onError: () => toast("No pudimos asignar la rutina a todos los días. Revisa cuáles quedaron e inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }), // si falló uno, otros días pudieron guardarse
   });
@@ -152,7 +168,7 @@ export function useClearDay(clientId: string) {
       if (prev) qc.setQueryData<TrainingPlan[]>(key, prev.map((pl) => ({ ...pl, days: pl.days.filter((x) => x.id !== dayId) })));
       return { prev };
     },
-    onSuccess: () => toast("Día libre: queda como descanso"),
+    onSuccess: () => { toast("Día libre: queda como descanso"); notifyPlan(clientId, "training"); },
     onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast("No pudimos dejar el día libre. Inténtalo de nuevo.", true); },
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
@@ -164,6 +180,7 @@ export function useSetWeight(clientId: string) {
     onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<TrainingPlan[]>(key);
       qc.setQueryData<TrainingPlan[]>(key, (l) => l?.map((p) => ({ ...p, days: p.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === v.itemId ? { ...i, weight: v.weight } : i)) })) }))); return { prev }; },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar el peso. Inténtalo de nuevo.", true); },
+    onSuccess: () => notifyPlan(clientId, "training"),
   });
 }
 
@@ -186,16 +203,27 @@ export function useRequestAccess(profileId: string) {
 }
 export const useMe = (profileId: string) => useQuery({ queryKey: ["me", profileId], staleTime: 60_000, enabled: !!profileId, queryFn: () => fetchMe(profileId) });
 export type SetLog = { itemId: string | null; setNumber: number; reps: number | null; weight: number | null };
-export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; sets: SetLog[] };
+export type WorkoutLog = { id: string; date: string; effort: number | null; note: string | null; completed: boolean; coachComment: string | null; coachCommentAudio: string | null; coachCommentImage?: string | null; coachCommentVideo?: boolean; edits?: number; sets: SetLog[]; routine?: string | null; dayId?: string | null; coachAt?: string | null; feedbackSeenAt?: string | null };
 export { localDate };
 export const fetchLogs = (clientId: string): Promise<WorkoutLog[]> => loadLogs(db(), clientId);
-export const useLogs = (clientId: string) => useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId) });
+// Con lo guardado sin señal aplicado encima (lib/offline.ts): una relectura no "borra" las series que aún esperan señal.
+export function useLogs(clientId: string) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: WorkoutLog[]) => (v > 0 ? applyQueue(clientId, d) : d), [clientId, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useQuery({ queryKey: ["logs", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: () => fetchLogs(clientId), select });
+}
+/** Ejecuta la acción; sin señal (o con cosas ya en espera, para no desordenarlas) la deja en la cola del teléfono. */
+export async function viaQueue(clientId: string, op: Op, run: () => PromiseLike<{ error: unknown }>): Promise<"sent" | "queued"> {
+  if (offlineNow() || hasQueue(clientId)) { enqueue(clientId, op); return "queued"; }
+  try { const { error } = await run(); if (error) { if (isNetErr(error)) { enqueue(clientId, op); return "queued"; } throw error; } return "sent"; }
+  catch (e) { if (isNetErr(e)) { enqueue(clientId, op); return "queued"; } throw e; }
+}
 export function useLogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
   return useMutation({
-    mutationFn: async (v: { date: string; itemId: string; setNumber: number; reps: number; weight: number | null }) => {
-      const { error } = await db().rpc("log_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber, p_reps: v.reps, p_weight: v.weight }); if (error) throw error;
-    },
+    networkMode: "always",
+    mutationFn: (v: { date: string; itemId: string; setNumber: number; reps: number; weight: number | null }) =>
+      viaQueue(clientId, { t: "set", ...v }, () => db().rpc("log_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber, p_reps: v.reps, p_weight: v.weight })),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
       qc.setQueryData<WorkoutLog[]>(key, (l = []) => {
@@ -206,29 +234,74 @@ export function useLogSet(clientId: string) {
       });
       return { prev };
     },
-    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar la serie. Revisa tu conexión e inténtalo de nuevo.", true); },
+    onError: (e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast(isLock(e) ? LOCK_TXT : "No pudimos guardar la serie. Revisa tu conexión e inténtalo de nuevo.", true); if (isLock(e)) void qc.invalidateQueries({ queryKey: key }); },
     // Sin releer todo tras cada serie (más rápido). Solo se vuelve a leer si falló o si el registro aún es provisional.
-    onSuccess: () => { if (qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
+    onSuccess: (r) => { if (r === "sent" && qc.getQueryData<WorkoutLog[]>(key)?.some((l) => l.id === "tmp")) qc.invalidateQueries({ queryKey: key }); },
+  });
+}
+// ---- Ejercicios alternativos (0044) ----
+// El cliente cambia un ejercicio de hoy por un sustituto que aprobó Jeff ("la máquina está ocupada"). Necesita señal: no entra en la cola.
+export type SwapAlt = { id: string; name: string; image: string | null; muscle: string | null; equipment: string | null; instructions: string | null; videoRef: string | null };
+export type SwapOptions = { alts: Record<string, SwapAlt[]>; swaps: Record<string, { toId: string | null; to: string; from: string }> };
+export const useSwapOptions = (clientId: string, date: string) => useQuery({ queryKey: ["swap-options", clientId, date], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<SwapOptions> => {
+  const { data, error } = await db().rpc("my_swap_options", { p_date: date });
+  if (error && (error.code === "PGRST202" || error.code === "42883")) return { alts: {}, swaps: {} };   // base sin la 0044: sin botón de cambiar (todo lo demás igual)
+  if (error) throw error;   // sin señal u otro fallo: se queda con lo último que tenía y lo reintenta
+  type Raw = { alts: { item_id: string; alts: { id: string; name: string; image: string | null; muscle_group: string | null; equipment: string | null; instructions: string | null; video_ref: string | null }[] }[]; swaps: { item_id: string; to_id: string | null; to_name: string; from_name: string }[] };
+  const r = (data ?? { alts: [], swaps: [] }) as Raw, out: SwapOptions = { alts: {}, swaps: {} };
+  r.alts.forEach((x) => { out.alts[x.item_id] = x.alts.map((e) => ({ id: e.id, name: e.name, image: e.image, muscle: e.muscle_group, equipment: e.equipment, instructions: e.instructions, videoRef: e.video_ref })); });
+  r.swaps.forEach((x) => { out.swaps[x.item_id] = { toId: x.to_id, to: x.to_name, from: x.from_name }; });
+  return out;
+} });
+const SWAP_ERR: Record<string, string> = {
+  has_sets: "Ya registraste series de este ejercicio. Para cambiarlo, primero deshaz esas series.",
+  locked: "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Jeff ya lo revisó.",
+  not_alternative: "Ese ejercicio ya no está entre los sustitutos que aprobó Jeff.",
+};
+export function useSwapExercise(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { date: string; itemId: string; alt: SwapAlt | null; from: string }) => {
+      if (offlineNow()) throw new Error("offline");
+      const { error } = await db().rpc("swap_exercise", { p_date: v.date, p_item: v.itemId, p_alt: v.alt?.id ?? null }); if (error) throw error;
+    },
+    onMutate: async (v) => {
+      const key = ["swap-options", clientId, v.date]; await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<SwapOptions>(key);
+      qc.setQueryData<SwapOptions>(key, (o) => { if (!o) return o; const swaps = { ...o.swaps }; if (v.alt) swaps[v.itemId] = { toId: v.alt.id, to: v.alt.name, from: v.from }; else delete swaps[v.itemId]; return { ...o, swaps }; });
+      return { prev, key };
+    },
+    onError: (e, _v, ctx) => {
+      if (ctx) qc.setQueryData(ctx.key, ctx.prev);
+      const m = (e as { message?: string })?.message ?? "", k = Object.keys(SWAP_ERR).find((x) => m.includes(x));
+      toast(m === "offline" ? "Sin señal no se puede cambiar el ejercicio. Inténtalo cuando vuelva la señal." : k ? SWAP_ERR[k] : "No pudimos cambiar el ejercicio. Revisa tu conexión e inténtalo de nuevo.", true);
+    },
+    onSuccess: (_d, v) => toast(v.alt ? `Cambiado: hoy haces ${v.alt.name}. Jeff lo verá.` : `Volviste a ${v.from}.`),
+    onSettled: (_d, _e, v) => { void qc.invalidateQueries({ queryKey: ["swap-options", clientId, v.date] }); void qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
   });
 }
 export function useUnlogSet(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
   return useMutation({
-    mutationFn: async (v: { date: string; itemId: string; setNumber: number }) => { const { error } = await db().rpc("unlog_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber }); if (error) throw error; },
+    networkMode: "always",
+    mutationFn: (v: { date: string; itemId: string; setNumber: number }) => viaQueue(clientId, { t: "unset", ...v }, () => db().rpc("unlog_set", { p_date: v.date, p_item: v.itemId, p_set: v.setNumber })),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
       qc.setQueryData<WorkoutLog[]>(key, (l = []) => l.map((x) => (x.date === v.date ? { ...x, sets: x.sets.filter((y) => !(y.itemId === v.itemId && y.setNumber === v.setNumber)) } : x)));
       return { prev };
     },
-    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos deshacer la serie. Inténtalo de nuevo.", true); },
+    onError: (e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast(isLock(e) ? LOCK_TXT : "No pudimos deshacer la serie. Inténtalo de nuevo.", true); if (isLock(e)) void qc.invalidateQueries({ queryKey: key }); },
   });
 }
 export function useFinish(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { date: string; effort: number; note: string }) => { const { error } = await db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note }); if (error) throw error; },
-    onSuccess: (_d, v) => { toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); notifyActivity(v.date); },
-    onError: () => toast("No pudimos guardar tu entrenamiento. Revisa tu conexión e inténtalo de nuevo.", true),
+    networkMode: "always",
+    mutationFn: (v: { date: string; effort: number; note: string; editing?: boolean }) => viaQueue(clientId, { t: "finish", date: v.date, effort: v.effort, note: v.note, editing: !!v.editing }, () => db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note })),
+    onSuccess: (r, v) => {
+      if (r === "queued") { toast("Guardado en tu teléfono. Se le envía a Jeff solo cuando vuelva la señal."); return; }   // la cola ya lo muestra como terminado
+      toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); qc.invalidateQueries({ queryKey: ["records", clientId] }); qc.invalidateQueries({ queryKey: ["workout-count", clientId] }); notifyActivity(v.date);
+    },
+    onError: (e) => { toast(isLock(e) ? LOCK_TXT : "No pudimos guardar tu entrenamiento. Revisa tu conexión e inténtalo de nuevo.", true); if (isLock(e)) void qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
   });
 }
 
@@ -246,17 +319,32 @@ export const fetchActivePlanClients = async (): Promise<string[]> => {
   const { data, error } = await db().from("training_plans").select("client_id").eq("status", "active"); if (error) throw error; return (data as unknown as { client_id: string }[]).map((r) => r.client_id);
 };
 export const useActivePlanClients = () => useQuery({ queryKey: ["active-plan-clients"], staleTime: 60_000, queryFn: fetchActivePlanClients });
-export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[] };
-type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[] };
+export type ClientLog = { id: string; date: string; routine: string | null; effort: number | null; note: string | null; completed: boolean; seen: boolean; comment: string | null; commentAudio: string | null; commentImage?: string | null; commentVideo?: string | null; edits?: number; clientSaw?: boolean; sets: { exercise: string; n: number; reps: number | null; weight: number | null; itemId: string | null; warmup: boolean }[]; swaps?: Swap[] };
+// Cambio de ejercicio que hizo el cliente ese día (0044): en lugar de "from" hizo "to".
+export type Swap = { itemId: string; from: string; to: string };
+type SwapRaw = { plan_item_id: string; from_name: string; to_name: string };
+const mapSwaps = (r?: SwapRaw[] | null): Swap[] => (r ?? []).map((x) => ({ itemId: x.plan_item_id, from: x.from_name, to: x.to_name }));
+type ClientLogRaw = { id: string; log_date: string; effort: number | null; note: string | null; completed_at: string | null; coach_seen_at: string | null; coach_comment: string | null; coach_comment_audio: string | null; coach_comment_image?: string | null; coach_comment_video?: string | null; feedback_seen_at?: string | null; plan_days: { name: string } | null; set_logs: { exercise_name: string; set_number: number; reps: number | null; weight: number | null; plan_item_id: string | null; kind: string }[]; exercise_swaps?: SwapRaw[] };
 export const useClientLogs = (clientId: string) => useQuery({ queryKey: ["client-logs", clientId], staleTime: 30_000, queryFn: async (): Promise<ClientLog[]> => {
-  const { data, error } = await db().from("workout_logs").select("id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)").eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
+  const q = (extra: string) => db().from("workout_logs").select(`id,log_date,effort,note,completed_at,coach_seen_at,coach_comment,coach_comment_audio${extra},feedback_seen_at,plan_days(name),set_logs(exercise_name,set_number,reps,weight,plan_item_id,kind)`).eq("client_id", clientId).order("log_date", { ascending: false }).limit(15);
+  let { data, error } = await q(",coach_comment_image,coach_comment_video,edits,exercise_swaps(plan_item_id,from_name,to_name)");
+  if (error && missingTable(error)) ({ data, error } = await q(",coach_comment_image,coach_comment_video,edits"));   // base sin la 0044
+  if (error && missingColumn(error)) ({ data, error } = await q(",coach_comment_image,coach_comment_video"));
+  if (error && missingColumn(error)) ({ data, error } = await q(""));   // base sin la 0041
   if (error) throw error;
-  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })) }));
+  return (data as unknown as ClientLogRaw[]).map((l) => ({ id: l.id, date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, note: l.note, completed: !!l.completed_at, seen: !!l.coach_seen_at, comment: l.coach_comment, commentAudio: l.coach_comment_audio, commentImage: l.coach_comment_image ?? null, commentVideo: l.coach_comment_video ?? null, edits: (l as { edits?: number }).edits ?? 0, clientSaw: !!l.feedback_seen_at && !!l.coach_seen_at && l.feedback_seen_at >= l.coach_seen_at, sets: l.set_logs.map((x) => ({ exercise: x.exercise_name, n: x.set_number, reps: x.reps, weight: x.weight, itemId: x.plan_item_id, warmup: x.kind === "warmup" })), swaps: mapSwaps(l.exercise_swaps) }));
 } });
+export const notifyFeedback = (logId: string) => { void fetch("/api/push/feedback", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ logId }) }).catch(() => {}); };
 export function useReviewWorkout(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { id: string; comment: string; audio?: string | null }) => { const { error } = await db().rpc("review_workout", { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null }); if (error) throw error; },
+    // 0041: la respuesta también puede llevar foto y vídeo (media = true los guarda; null = quitar). notify = false cuando el vídeo
+    // aún se está subiendo: la notificación sale cuando termina (así al cliente no le llegan dos).
+    mutationFn: async (v: { id: string; comment: string; audio?: string | null; image?: string | null; video?: string | null; media?: boolean; notify?: boolean }) => {
+      const { error } = await db().rpc("review_workout", v.media ? { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null, p_image: v.image ?? null, p_video: v.video ?? null, p_media: true } : { p_log: v.id, p_comment: v.comment, p_audio: v.audio ?? null }); if (error) throw error;
+      // Si Jeff dejó algo (texto, audio, foto o vídeo), al cliente le llega "Jeff respondió a tu entrenamiento" (la base decide si toca).
+      if (v.notify !== false && (v.comment.trim() || v.audio || v.image || v.video)) notifyFeedback(v.id);
+    },
     onSuccess: () => { toast("Revisión guardada"); qc.invalidateQueries({ queryKey: ["client-logs", clientId] }); qc.invalidateQueries({ queryKey: ["recent-logs"] }); },
     onError: () => toast("No pudimos guardar la revisión. Inténtalo de nuevo.", true),
   });
@@ -305,7 +393,9 @@ export function useUploadPhoto(clientId: string, workspaceId: string) {
     // La foto aparece al instante (vista previa local) mientras sube; al terminar se reemplaza por la guardada.
     onMutate: async (blob) => { const key = ["photos", clientId]; await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<unknown[]>(key); qc.setQueryData<unknown[]>(key, (l = []) => [...l, { id: "tmp-upload", date: localDate(), url: URL.createObjectURL(blob), path: "" }]); return { prev }; },
     onSuccess: () => { toast("Foto guardada"); },
-    onError: (_e, _b, ctx) => { if (ctx) qc.setQueryData(["photos", clientId], ctx.prev); toast("No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true); },
+    // Dice el motivo real (30-oct: "no me deja subir ninguna foto" y el aviso solo hablaba de la conexión).
+    onError: (e, _b, ctx) => { if (ctx) qc.setQueryData(["photos", clientId], ctx.prev); const m = `${(e as { message?: string })?.message ?? ""} ${(e as { statusCode?: string })?.statusCode ?? ""}`;
+      toast(/mime|415/i.test(m) ? "Ese formato de foto no se puede subir. Prueba con otra (JPG)." : /size|exceed|413|too large/i.test(m) ? "La foto es muy pesada. Prueba con otra." : /row-level|security|403|unauthor|policy/i.test(m) ? "No se pudo guardar: acepta el permiso de fotos o revisa que tu plan incluya Progreso." : "No pudimos subir la foto. Revisa tu conexión e inténtalo de nuevo.", true); },
     onSettled: () => qc.invalidateQueries({ queryKey: ["photos", clientId] }),
   });
 }
@@ -335,7 +425,8 @@ export const KIND_LABEL: Record<string, string> = { initial: "Llamada inicial", 
 export const KIND_COLOR: Record<string, string> = { initial: "#F7254B", followup: "#B08A3E" };
 const AG_ERR: Record<string, string> = {
   slot_taken: "Ese horario acaba de ser reservado por otra persona. Elige otro.", slot_unavailable: "Ese horario ya no está disponible. Elige otro.",
-  already_has_booking: "Ya tienes una sesión reservada. Cancélala (hasta 24 h antes) si quieres cambiarla.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
+  already_has_booking: "Ya tienes una sesión reservada. Si quieres cambiarla, escríbele a Jeff.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
+  cancel_closed: "Ya pasaron los 10 minutos para cancelar. Escríbele a Jeff para cambiarla.",
   not_active: "Tu cuenta aún no está activa.", has_booking: "Ese hueco tiene una reserva: primero cancela la reserva.",
 };
 export const agendaError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(AG_ERR).find((x) => m.includes(x)); return k ? AG_ERR[k] : "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo."; };
@@ -349,12 +440,30 @@ export const useOpenSlots = (offset: number) => useQuery({ queryKey: ["open-slot
   const { data, error } = await db().rpc("list_open_slots", { p_from: from.toISOString(), p_to: to.toISOString() }); if (error) throw error;
   return (data as { id: string; starts_at: string; duration_min: number; kind: string; taken: boolean; mine: boolean; capacity: number; booked: number }[]).map((s) => ({ id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, taken: s.taken, mine: s.mine, capacity: s.capacity, booked: s.booked }));
 } });
-export type MyBooking = { id: string; startsAt: string; duration: number; kind: string };
+// createdAt y bookedBy (29-oct): el cliente puede cancelar solo en los 10 min siguientes a reservar lo que reservó él.
+export type MyBooking = { id: string; startsAt: string; duration: number; kind: string; createdAt?: string; bookedBy?: string };
+export const CANCEL_WINDOW_MS = 10 * 60_000;
+export const sessionEnded = (b: { startsAt: string; duration: number }, now = new Date()) => new Date(b.startsAt).getTime() + b.duration * 60_000 <= now.getTime();
+// Lo que ya terminó NO es "próxima sesión" aunque la pantalla lleve horas abierta: filtrar con la hora actual (useNow) al pintar.
+export const upcomingOnly = <T extends { startsAt: string; duration: number }>(l: T[] | undefined, now = new Date()) => (l ?? []).filter((b) => !sessionEnded(b, now));
 export const useMyBookings = (clientId: string) => useQuery({ queryKey: ["my-bookings", clientId], staleTime: 20_000, enabled: !!clientId, queryFn: async (): Promise<MyBooking[]> => {
-  const { data, error } = await db().from("bookings").select("id,availability_slots(starts_at,duration_min,kind)").eq("client_id", clientId).eq("status", "confirmed"); if (error) throw error;
-  return (data as unknown as { id: string; availability_slots: { starts_at: string; duration_min: number; kind: string } | null }[])
-    .filter((b) => b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind }))
+  const { data, error } = await db().from("bookings").select("id,created_at,booked_by,availability_slots(starts_at,duration_min,kind)").eq("client_id", clientId).eq("status", "confirmed"); if (error) throw error;
+  return (data as unknown as { id: string; created_at: string; booked_by: string; availability_slots: { starts_at: string; duration_min: number; kind: string } | null }[])
+    .filter((b) => b.availability_slots && !sessionEnded({ startsAt: b.availability_slots.starts_at, duration: b.availability_slots.duration_min }))
+    .map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, createdAt: b.created_at, bookedBy: b.booked_by }))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+} });
+// Sesiones que Jeff le canceló al cliente en los últimos 7 días (aviso en Hoy aunque no le haya llegado la notificación).
+export type CoachCancel = { id: string; startsAt: string; reason: string | null; at: string };
+export const useCoachCancels = (clientId: string) => useQuery({ queryKey: ["coach-cancels", clientId], staleTime: 60_000, enabled: !!clientId, queryFn: async (): Promise<CoachCancel[]> => {
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const q = (cols: string) => db().from("bookings").select(cols).eq("client_id", clientId).eq("status", "cancelled").eq("cancelled_by", "coach").gte("cancelled_at", since).order("cancelled_at", { ascending: false });
+  let { data, error } = await q("id,cancelled_at,cancel_reason,availability_slots(starts_at)");
+  if (error && missingColumn(error)) ({ data, error } = await q("id,cancelled_at,availability_slots(starts_at)"));
+  if (error) throw error;
+  return ((data ?? []) as unknown as { id: string; cancelled_at: string; cancel_reason?: string | null; availability_slots: { starts_at: string } | null }[])
+    .filter((b) => b.availability_slots && new Date(b.availability_slots.starts_at).getTime() > Date.now() - 86_400_000)
+    .map((b) => ({ id: b.id, startsAt: b.availability_slots!.starts_at, reason: b.cancel_reason ?? null, at: b.cancelled_at }));
 } });
 // Primera llamada (decisión de Cristian, 27-oct): todo cliente agenda primero una llamada con Jeff; su rutina y nutrición llegan después.
 // any = ya tuvo o tiene una sesión (confirmada o hecha); next = la próxima confirmada.
@@ -365,7 +474,7 @@ export const useFirstCall = (clientId: string) => useQuery({ queryKey: ["first-c
   const next = rows.filter((b) => b.status === "confirmed" && b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => b.availability_slots!.starts_at).sort()[0];
   return { any: rows.length > 0, next: next ? { startsAt: next } : null };
 } });
-function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "first-call"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
+function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "first-call", "client-bookings", "coach-attention"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
 export function useBookSlot() {
   const toast = useToast(), inv = useAgendaInvalidate();
   return useMutation({ mutationFn: async (slotId: string) => { const { error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; },
@@ -373,14 +482,16 @@ export function useBookSlot() {
 }
 export function useCancelBooking() {
   const toast = useToast(), inv = useAgendaInvalidate();
-  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("cancel_booking", { p_booking: id }); if (error) throw error; },
+  // reason: motivo de Jeff para el cliente (0041); se guarda en la reserva y sale en la notificación y en la pantalla Hoy del cliente.
+  return useMutation({ mutationFn: async (v: string | { id: string; reason?: string }) => { const id = typeof v === "string" ? v : v.id, reason = typeof v === "string" ? "" : v.reason?.trim() ?? "";
+      const { error } = await db().rpc("cancel_booking", reason ? { p_booking: id, p_reason: reason } : { p_booking: id }); if (error) throw error; },
     onSuccess: () => toast("Sesión cancelada"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
-export type ClientBookingRow = { id: string; startsAt: string; duration: number; kind: string; status: string; capacity: number };
+export type ClientBookingRow = { id: string; startsAt: string; duration: number; kind: string; status: string; capacity: number; bookedBy?: string };
 export const useClientBookings = (clientId: string) => useQuery({ queryKey: ["client-bookings", clientId], staleTime: 30_000, enabled: !!clientId, queryFn: async (): Promise<ClientBookingRow[]> => {
-  const { data, error } = await db().from("bookings").select("id,status,availability_slots(starts_at,duration_min,kind,capacity)").eq("client_id", clientId); if (error) throw error;
-  return (data as unknown as { id: string; status: string; availability_slots: { starts_at: string; duration_min: number; kind: string; capacity: number } | null }[]).filter((b) => b.availability_slots)
-    .map((b) => ({ id: b.id, status: b.status, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, capacity: b.availability_slots!.capacity })).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+  const { data, error } = await db().from("bookings").select("id,status,booked_by,availability_slots(starts_at,duration_min,kind,capacity)").eq("client_id", clientId); if (error) throw error;
+  return (data as unknown as { id: string; status: string; booked_by: string; availability_slots: { starts_at: string; duration_min: number; kind: string; capacity: number } | null }[]).filter((b) => b.availability_slots)
+    .map((b) => ({ id: b.id, status: b.status, bookedBy: b.booked_by, startsAt: b.availability_slots!.starts_at, duration: b.availability_slots!.duration_min, kind: b.availability_slots!.kind, capacity: b.availability_slots!.capacity })).sort((a, b) => b.startsAt.localeCompare(a.startsAt));
 } });
 export type CoachBooking = { id: string; clientName: string; by: string };
 export type CoachSlot = { id: string; startsAt: string; duration: number; kind: string; capacity: number; bookings: CoachBooking[]; booking: CoachBooking | null };
@@ -411,17 +522,20 @@ export function useCoachBook() {
 // ---- Material educativo ----
 export const MAT_CATS = ["Técnica", "Nutrición", "Movilidad", "Recuperación", "Motivación"];
 export type FeaturedPeriod = "day" | "week";
-export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; tier: "basic" | "full"; featured: boolean; featuredPeriod: FeaturedPeriod; featuredUntil: string | null; published: boolean; date: string; views: number };
+export type CoachMaterial = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; tier: "basic" | "full"; featured: boolean; featuredPeriod: FeaturedPeriod; featuredUntil: string | null; published: boolean; date: string; views: number; poster?: string | null };
 const bogotaToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
 export const useCoachMaterials = () => useQuery({ queryKey: ["coach-materials"], staleTime: 30_000, queryFn: async (): Promise<CoachMaterial[]> => {
-  const { data, error } = await db().from("materials").select("id,kind,title,category,body,video_ref,video_id,tier,is_featured,featured_period,featured_until,published,published_on,material_views(count)").order("published_on", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
-  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; video_id: string | null; tier: "basic" | "full"; is_featured: boolean; featured_period: FeaturedPeriod; featured_until: string | null; published: boolean; published_on: string; material_views: { count: number }[] };
+  const q = (extra: string) => db().from("materials").select(`id,kind,title,category,body,video_ref,video_id,tier,is_featured,featured_period,featured_until,published,published_on${extra},material_views(count)`).order("published_on", { ascending: false }).order("created_at", { ascending: false });
+  let { data, error } = await q(",poster");
+  if (error && missingColumn(error)) ({ data, error } = await q(""));   // base sin la 0041
+  if (error) throw error;
+  type Raw = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; video_ref: string | null; video_id: string | null; tier: "basic" | "full"; is_featured: boolean; featured_period: FeaturedPeriod; featured_until: string | null; published: boolean; published_on: string; poster?: string | null; material_views: { count: number }[] };
   const today = bogotaToday();
   return (data as unknown as Raw[]).map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, body: m.body, videoRef: m.video_ref, privateVideo: !!m.video_id, tier: m.tier,
-    featured: m.is_featured && (!m.featured_until || m.featured_until >= today), featuredPeriod: m.featured_period ?? "week", featuredUntil: m.featured_until, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0 }));
+    featured: m.is_featured && (!m.featured_until || m.featured_until >= today), featuredPeriod: m.featured_period ?? "week", featuredUntil: m.featured_until, published: m.published, date: m.published_on, views: m.material_views?.[0]?.count ?? 0, poster: m.poster ?? null }));
 } });
 // file: vídeo privado nuevo (Bunny). Se guarda como borrador, se sube en segundo plano y al terminar se engancha y se publica (0035).
-export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean };
+export type MaterialInput = { id?: string; kind: "video" | "article"; title: string; category: string; body: string; videoRef: string; tier: "basic" | "full"; published: boolean; file?: File | null; keepPrivate?: boolean; feature?: FeaturedPeriod; poster?: string | null };
 export function useSaveMaterial(workspaceId: string) {
   const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
   return useMutation({
@@ -429,23 +543,33 @@ export function useSaveMaterial(workspaceId: string) {
       const priv = v.kind === "video" && (!!v.file || !!v.keepPrivate);
       const row: Record<string, unknown> = { title: v.title.trim(), kind: v.kind, category: v.category, tier: v.tier, published: v.file ? false : v.published, body: v.kind === "article" ? v.body.trim() : null };
       if (v.kind !== "video" || !priv) { row.video_ref = v.kind === "video" ? v.videoRef : null; row.video_id = null; }
-      const res = v.id ? await db().from("materials").update(row).eq("id", v.id).select("id").single() : await db().from("materials").insert({ ...row, workspace_id: workspaceId }).select("id").single();
+      // Portada difuminada (0041): la del vídeo nuevo; un vídeo de YouTube usa la miniatura de YouTube (no se guarda).
+      if (v.poster !== undefined) row.poster = v.poster;
+      const write = (r: Record<string, unknown>) => (v.id ? db().from("materials").update(r).eq("id", v.id).select("id").single() : db().from("materials").insert({ ...r, workspace_id: workspaceId }).select("id").single());
+      let res = await write(row);
+      if (res.error && "poster" in row && missingColumn(res.error)) { delete row.poster; res = await write(row); }   // base sin la 0041
       if (res.error) throw res.error;
       const id = (res.data as { id: string }).id;
       if (v.file) upload({ file: v.file, label: `Vídeo "${v.title.trim().slice(0, 28)}"`, opts: { purpose: "material" }, finish: async (vid, q) => {
         const { error } = await db().rpc("attach_material_video", { p_material: id, p_video: vid, p_publish: v.published }); if (error) throw error;
+        // Vídeo del día / de la semana: se destaca en Hoy apenas termina de subir.
+        if (v.feature) { const f = await db().rpc("set_featured_material", { p_id: id, p_on: true, p_period: v.feature }); if (f.error) throw f.error; }
         void q.invalidateQueries({ queryKey: ["coach-materials"] });
       } });
+      else if (v.feature) { const f = await db().rpc("set_featured_material", { p_id: id, p_on: true, p_period: v.feature }); if (f.error) throw f.error; }
     },
-    onSuccess: (_d, v) => toast(v.file ? "Guardado. El vídeo se está subiendo; se publica solo al terminar." : v.id ? "Contenido actualizado" : "Contenido publicado"),
+    onSuccess: (_d, v) => toast(v.file ? (v.feature ? `Guardado. El vídeo se está subiendo; al terminar sale en Hoy como ${v.feature === "day" ? "vídeo del día" : "vídeo de la semana"}.` : "Guardado. El vídeo se está subiendo; se publica solo al terminar.") : v.feature ? `Listo: ya sale en Hoy como ${v.feature === "day" ? "vídeo del día" : "vídeo de la semana"}.` : v.id ? "Contenido actualizado" : "Contenido publicado"),
     onError: () => toast("No pudimos guardar el contenido. Revisa los datos e inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }),
   });
 }
 export function useDeleteMaterial() {
   const qc = useQueryClient(), toast = useToast();
-  return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("materials").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => toast("Contenido eliminado"), onError: () => toast("No pudimos eliminarlo. Inténtalo de nuevo.", true), onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
+  // Se confirma que de verdad se borró (antes, si la base no borraba nada, igual decía "eliminado").
+  return useMutation({ mutationFn: async (id: string) => { const { data, error } = await db().from("materials").delete().eq("id", id).select("id"); if (error) throw error; if (!data?.length) throw new Error("not_deleted"); },
+    onMutate: async (id) => { await qc.cancelQueries({ queryKey: ["coach-materials"] }); const prev = qc.getQueryData<CoachMaterial[]>(["coach-materials"]); qc.setQueryData<CoachMaterial[]>(["coach-materials"], (l) => l?.filter((m) => m.id !== id)); return { prev }; },
+    onSuccess: () => toast("Contenido eliminado"), onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(["coach-materials"], ctx.prev); toast("No pudimos eliminarlo. Inténtalo de nuevo.", true); },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["coach-materials"] }); void qc.invalidateQueries({ queryKey: ["materials"] }); } });
 }
 export function useFeatureMaterial() {
   const qc = useQueryClient(), toast = useToast();
@@ -454,11 +578,11 @@ export function useFeatureMaterial() {
     onError: (e) => toast((e as { message?: string })?.message?.includes("not_featurable") ? "Solo un vídeo publicado y de acceso para todos los planes se puede destacar." : "No pudimos destacarlo. Inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["coach-materials"] }) });
 }
-export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; featuredPeriod: FeaturedPeriod; privateVideo: boolean; unlocked: boolean; isNew: boolean };
+export type MaterialItem = { id: string; kind: "video" | "article"; title: string; category: string; tier: string; date: string; featured: boolean; featuredPeriod: FeaturedPeriod; privateVideo: boolean; unlocked: boolean; isNew: boolean; poster?: string | null; videoRef?: string | null };
 export const useMaterialList = () => useQuery({ queryKey: ["materials"], staleTime: 60_000, queryFn: async (): Promise<MaterialItem[]> => {
   const { data, error } = await db().rpc("list_materials"); if (error) throw error;
-  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean; featured_period?: FeaturedPeriod; private_video?: boolean }[])
-    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, featuredPeriod: m.featured_period ?? "week", privateVideo: !!m.private_video, unlocked: m.unlocked, isNew: m.is_new }));
+  return (data as { id: string; kind: "video" | "article"; title: string; category: string; tier: string; published_on: string; is_featured: boolean; unlocked: boolean; is_new: boolean; featured_period?: FeaturedPeriod; private_video?: boolean; poster?: string | null; video_ref?: string | null }[])
+    .map((m) => ({ id: m.id, kind: m.kind, title: m.title, category: m.category, tier: m.tier, date: m.published_on, featured: m.is_featured, featuredPeriod: m.featured_period ?? "week", privateVideo: !!m.private_video, unlocked: m.unlocked, isNew: m.is_new, poster: m.poster ?? null, videoRef: m.video_ref ?? null }));
 } });
 export type MaterialOpen = { id: string; kind: "video" | "article"; title: string; category: string; body: string | null; videoRef: string | null; privateVideo: boolean; date: string };
 export function useOpenMaterial() {
@@ -518,17 +642,32 @@ export function useDeleteNote(clientId: string) {
 export const useVideoEnabled = () => useQuery({ queryKey: ["video-enabled"], staleTime: 600_000, queryFn: async (): Promise<boolean> => {
   const r = await fetch("/api/video/config"); if (!r.ok) return false; return !!((await r.json()) as { enabled?: boolean }).enabled;
 } });
-export type MyReport = { id: string; date: string; comment: string | null; hasVideo: boolean; seen: boolean };
-export const useTodayReport = (clientId: string, date: string, enabled = true) => useQuery({ queryKey: ["report", clientId, date], staleTime: 30_000, enabled: !!clientId && enabled, queryFn: async (): Promise<MyReport | null> => {
-  const { data, error } = await db().from("daily_reports").select("id,report_date,comment,video_state,coach_seen_at").eq("client_id", clientId).eq("report_date", date).maybeSingle(); if (error) throw error;
-  return data ? { id: data.id, date: data.report_date, comment: data.comment, hasVideo: data.video_state !== "none", seen: !!data.coach_seen_at } : null;
+export type MyReport = { id: string; date: string; comment: string | null; hasVideo: boolean; seen: boolean; edits?: number; pending?: boolean };
+// Un reporte de solo texto enviado sin señal se muestra como enviado mientras espera (12-nov).
+export function useTodayReport(clientId: string, date: string, enabled = true) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: MyReport | null) => { if (v === 0 || d) return d; const o = queued(clientId, "report").find((x) => x.date === date); return o ? { id: "tmp", date, comment: o.comment, hasVideo: false, seen: false, edits: 0, pending: true } : d; }, [clientId, date, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useTodayReportQ(clientId, date, enabled, select);
+}
+const useTodayReportQ = (clientId: string, date: string, enabled: boolean, select: (d: MyReport | null) => MyReport | null) => useQuery({ queryKey: ["report", clientId, date], staleTime: 30_000, enabled: !!clientId && enabled, select, queryFn: async (): Promise<MyReport | null> => {
+  const q = (cols: string) => db().from("daily_reports").select(cols).eq("client_id", clientId).eq("report_date", date).maybeSingle();
+  let { data, error } = await q("id,report_date,comment,video_state,coach_seen_at,edits");
+  if (error && missingColumn(error)) ({ data, error } = await q("id,report_date,comment,video_state,coach_seen_at"));   // base sin la 0042
+  if (error) throw error;
+  const r = data as unknown as { id: string; report_date: string; comment: string | null; video_state: string; coach_seen_at: string | null; edits?: number } | null;
+  return r ? { id: r.id, date: r.report_date, comment: r.comment, hasVideo: r.video_state !== "none", seen: !!r.coach_seen_at, edits: r.edits ?? 0 } : null;
 } });
-const REPORT_ERR: Record<string, string> = { already_reviewed: "Tu coach ya revisó este reporte; no se puede cambiar.", bad_date: "La fecha del reporte no es válida.", not_allowed: "Tu plan no incluye el reporte diario." };
+const REPORT_ERR: Record<string, string> = { already_edited: "Ya corregiste este reporte una vez; no se puede cambiar de nuevo.", already_reviewed: "Tu coach ya revisó este reporte; no se puede cambiar.", bad_date: "La fecha del reporte no es válida.", not_allowed: "Tu plan no incluye el reporte diario." };
 export const reportError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(REPORT_ERR).find((x) => m.includes(x)); return k ? REPORT_ERR[k] : "No pudimos enviar tu reporte. Revisa tu conexión e inténtalo de nuevo."; };
 export function useSubmitReport(clientId: string, date: string) {
   const qc = useQueryClient(), toast = useToast();
-  return useMutation({ mutationFn: async (v: { comment: string; videoId: string | null }) => { const { error } = await db().rpc("submit_report", { p_date: date, p_comment: v.comment, p_video_id: v.videoId }); if (error) throw error; },
-    onSuccess: () => toast("¡Reporte enviado!"), onError: (e) => toast(reportError(e), true), onSettled: () => qc.invalidateQueries({ queryKey: ["report", clientId, date] }) });
+  return useMutation({ networkMode: "always",
+    // Solo texto: sin señal queda en el teléfono y se envía al volver (12-nov). Con vídeo necesita internet.
+    mutationFn: async (v: { comment: string; videoId: string | null; edit?: boolean }): Promise<"sent" | "queued"> => {
+      const run = () => db().rpc("submit_report", { p_date: date, p_comment: v.comment, p_video_id: v.videoId });
+      if (!v.videoId) return viaQueue(clientId, { t: "report", date, comment: v.comment }, run);
+      const { error } = await run(); if (error) throw error; return "sent"; },
+    onSuccess: (r, v) => toast(r === "queued" ? "Sin señal: tu reporte quedó guardado en el teléfono y se enviará solo cuando vuelva la señal." : v.edit ? "Reporte corregido. Ya no se puede volver a cambiar." : "¡Reporte enviado!"), onError: (e) => toast(reportError(e), true), onSettled: () => qc.invalidateQueries({ queryKey: ["report", clientId, date] }) });
 }
 export type CoachReport = { id: string; clientId: string; clientName: string; date: string; comment: string | null; videoState: "none" | "uploaded" | "deleted"; seen: boolean; sentAt: string; deleteAfter: string | null };
 // Texto de cuándo se borra el vídeo (migración 0033: 32 h sin verlo, 12 h después de verlo).
@@ -538,7 +677,7 @@ export function videoExpiry(r: CoachReport): string | null {
   const when = h <= 1 ? "en menos de 1 h" : `en ${h} h`;
   return r.seen ? `El vídeo se borra ${when}.` : `Si no lo ves, el vídeo se borra solo ${when}.`;
 }
-export const useCoachReports = () => useQuery({ queryKey: ["coach-reports"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<CoachReport[]> => {
+export const useCoachReports = (enabled = true) => useQuery({ queryKey: ["coach-reports"], staleTime: 20_000, refetchInterval: 60_000, enabled, queryFn: async (): Promise<CoachReport[]> => {
   const since = new Date(); since.setDate(since.getDate() - 14);
   const { data, error } = await db().from("daily_reports").select("id,client_id,report_date,comment,video_state,coach_seen_at,created_at,delete_after,clients(profiles(full_name))").gte("report_date", localDate(since)).order("report_date", { ascending: false }).order("created_at", { ascending: false }); if (error) throw error;
   type Raw = { id: string; client_id: string; report_date: string; comment: string | null; video_state: "none" | "uploaded" | "deleted"; coach_seen_at: string | null; created_at: string; delete_after: string | null; clients: { profiles: { full_name: string } | null } | null };
@@ -549,11 +688,15 @@ export function useReviewReport() {
   return useMutation({ mutationFn: async (id: string) => { const { error } = await db().rpc("review_report", { p_id: id }); if (error) throw error; },
     onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<CoachReport[]>(key); const r = prev?.find((x) => x.id === id);
       qc.setQueryData<CoachReport[]>(key, (l) => l?.map((x) => (x.id === id ? { ...x, seen: true, deleteAfter: x.videoState === "uploaded" ? new Date(Math.min(Date.now() + 12 * 3600000, x.deleteAfter ? +new Date(x.deleteAfter) : Infinity)).toISOString() : x.deleteAfter } : x))); return { prev, hadVideo: r?.videoState === "uploaded" }; },
-    onSuccess: (_d, _v, ctx) => { if (ctx?.hadVideo) toast("Visto. El vídeo se borrará en las próximas 12 horas."); },
+    onSuccess: (_d, _v, ctx) => { toast(ctx?.hadVideo ? "Visto. El vídeo se borrará en las próximas 12 horas." : "Reporte revisado"); },
     onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos marcarlo como visto.", true); }, onSettled: () => qc.invalidateQueries({ queryKey: key }) });
 }
-export async function fetchReportVideoUrl(id: string): Promise<string> {
-  const r = await fetch(`/api/video/play?report=${id}`); if (!r.ok) throw new Error("no_video"); return ((await r.json()) as { url: string }).url;
+export async function fetchReportVideoUrl(id: string): Promise<string> { return (await fetchReportVideo(id)).url; }
+/** Igual, con la forma real del vídeo (ancho/alto) para mostrar bien los horizontales (30-oct). */
+export async function fetchReportVideo(id: string): Promise<{ url: string; width: number | null; height: number | null }> {
+  const r = await fetch(`/api/video/play?report=${id}`); if (!r.ok) throw new Error("no_video");
+  const j = (await r.json()) as { url?: string; width?: number | null; height?: number | null }; if (!j.url) throw new Error("no_video");
+  return { url: j.url, width: j.width ?? null, height: j.height ?? null };
 }
 
 // ---- Nutrición (plantillas del coach que se clonan por cliente) ----
@@ -580,12 +723,12 @@ export function useSaveNutrition() {
       const { error } = await db().rpc("save_nutrition", { p_id: v.id ?? null, p_client: v.clientId ?? null, p_name: v.name.trim(), p_kcal: num(v.kcal), p_protein: num(v.protein), p_carbs: num(v.carbs), p_fat: num(v.fat), p_notes: v.notes, p_meals: v.meals.filter((m) => m.name.trim() || m.content.trim()).map((m) => ({ name: m.name, content: m.content, weekday: m.weekday })) });
       if (error) throw error;
     },
-    onSuccess: () => toast("Plan de nutrición guardado"), onError: () => toast("No pudimos guardar el plan. Revisa los valores (calorías 500–10000) e inténtalo de nuevo.", true), onSettled: inv });
+    onSuccess: (_d, v) => { toast("Plan de nutrición guardado"); notifyPlan(v.clientId, "nutrition"); }, onError: () => toast("No pudimos guardar el plan. Revisa los valores (calorías 500–10000) e inténtalo de nuevo.", true), onSettled: inv });
 }
 export function useAssignNutrition() {
   const toast = useToast(), inv = useNutInvalidate();
   return useMutation({ mutationFn: async (v: { templateId: string; clientId: string }) => { const { error } = await db().rpc("assign_nutrition", { p_template: v.templateId, p_client: v.clientId }); if (error) throw error; },
-    onSuccess: () => toast("Plan de nutrición asignado"), onError: () => toast("No pudimos asignar el plan. Inténtalo de nuevo.", true), onSettled: inv });
+    onSuccess: (_d, v) => { toast("Plan de nutrición asignado"); notifyPlan(v.clientId, "nutrition"); }, onError: () => toast("No pudimos asignar el plan. Inténtalo de nuevo.", true), onSettled: inv });
 }
 export function useDeleteNutrition() {
   const toast = useToast(), inv = useNutInvalidate();
@@ -608,19 +751,29 @@ export function useSetObjective(clientId: string) {
 
 // ---- Checks de nutrición del día + actividad para el coach (migración 0025) ----
 export type MealProgress = { done: number; total: number; complete: boolean };
-export const useMealLogs = (clientId: string, date: string) => useQuery({ queryKey: ["meal-logs", clientId, date], enabled: !!clientId, staleTime: 30_000, queryFn: async (): Promise<string[]> => {
-  const { data, error } = await db().from("meal_logs").select("meal_id").eq("client_id", clientId).eq("log_date", date); if (error) throw error; return ((data ?? []) as { meal_id: string }[]).map((r) => r.meal_id);
-} });
+// Con las comidas marcadas sin señal encima (12-nov, lib/offline.ts).
+export function useMealLogs(clientId: string, date: string) {
+  const v = useQueueVersion(clientId);
+  const select = useCallback((d: string[]) => { if (v === 0) return d; let out = d; for (const o of queued(clientId, "meal")) if (o.date === date) out = o.done ? (out.includes(o.mealId) ? out : [...out, o.mealId]) : out.filter((x) => x !== o.mealId); return out; }, [clientId, date, v]); // eslint-disable-line react-hooks/exhaustive-deps
+  return useQuery({ queryKey: ["meal-logs", clientId, date], enabled: !!clientId, staleTime: 30_000, select, queryFn: async (): Promise<string[]> => {
+    const { data, error } = await db().from("meal_logs").select("meal_id").eq("client_id", clientId).eq("log_date", date); if (error) throw error; return ((data ?? []) as { meal_id: string }[]).map((r) => r.meal_id);
+  } });
+}
 // Avisa al coach (push) de lo que el cliente acaba de completar. Si falla o no hay push configurado, no pasa nada.
 export const notifyActivity = (date: string) => { void fetch("/api/push/activity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date }) }).catch(() => {}); };
 export function useLogMeal(clientId: string, date: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["meal-logs", clientId, date];
   return useMutation({
-    mutationFn: async (v: { mealId: string; done: boolean }): Promise<MealProgress> => { const { data, error } = await db().rpc("log_meal", { p_meal: v.mealId, p_date: date, p_done: v.done }); if (error) throw error; return data as MealProgress; },
+    networkMode: "always",
+    // Sin señal queda en el teléfono y se envía al volver (12-nov). Entonces no hay progreso que mostrar todavía (null).
+    mutationFn: async (v: { mealId: string; done: boolean }): Promise<MealProgress | null> => {
+      let out: MealProgress | null = null;
+      const r = await viaQueue(clientId, { t: "meal", date, mealId: v.mealId, done: v.done }, async () => { const x = await db().rpc("log_meal", { p_meal: v.mealId, p_date: date, p_done: v.done }); out = x.data as MealProgress; return x; });
+      return r === "sent" ? out : null; },
     onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<string[]>(key) ?? []; qc.setQueryData<string[]>(key, v.done ? (prev.includes(v.mealId) ? prev : prev.concat(v.mealId)) : prev.filter((x) => x !== v.mealId)); return { prev }; },
-    onError: (_e, _v, ctx) => { if (ctx) qc.setQueryData(key, ctx.prev); toast("No pudimos guardar la comida. Revisa tu conexión e inténtalo de nuevo.", true); },
-    onSuccess: (r, v) => { if (v.done && r.complete) { toast("¡Nutrición del día completada!"); notifyActivity(date); } },
-    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+    onError: (e, _v, ctx) => { if (ctx) qc.setQueryData(key, ctx.prev); toast(isLock(e) ? "Ya corregiste tu nutrición de hoy una vez; no se puede volver a cambiar." : "No pudimos guardar la comida. Revisa tu conexión e inténtalo de nuevo.", true); },
+    onSuccess: (r, v) => { if (r && v.done && r.complete) { toast("¡Nutrición del día completada!"); notifyActivity(date); } },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: key }); void qc.invalidateQueries({ queryKey: ["meal-lock", clientId, date] }); },
   });
 }
 // Quién completó entrenamiento / nutrición hoy (eventos del día, para las listas del dashboard).
@@ -639,7 +792,7 @@ export const useActivityFeed = () => useQuery({ queryKey: ["activity"], staleTim
   const { data, error } = await db().rpc("activity_feed", { p_limit: 20 }); if (error) throw error;
   return ((data ?? []) as { id: string; client_id: string; client_name: string; kind: ActivityKind; event_date: string; created_at: string; seen: boolean }[]).map((r) => ({ id: r.id, clientId: r.client_id, clientName: r.client_name, kind: r.kind, date: r.event_date, at: r.created_at, seen: r.seen }));
 } });
-export const useUnseenActivity = () => useQuery({ queryKey: ["activity-unseen"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async () => { const { data, error } = await db().rpc("unseen_activity"); if (error) throw error; return Number(data ?? 0); } });
+export const useUnseenActivity = (enabled = true) => useQuery({ queryKey: ["activity-unseen"], staleTime: 20_000, refetchInterval: 60_000, enabled, queryFn: async () => { const { data, error } = await db().rpc("unseen_activity"); if (error) throw error; return Number(data ?? 0); } });
 export function useMarkActivitySeen() {
   const qc = useQueryClient();
   return useMutation({ mutationFn: async () => { const { error } = await db().rpc("mark_activity_seen"); if (error) throw error; }, onSettled: () => { qc.invalidateQueries({ queryKey: ["activity"] }); qc.invalidateQueries({ queryKey: ["activity-unseen"] }); } });
@@ -659,18 +812,29 @@ export const useTodayNudges = () => useQuery({ queryKey: ["nudges"], staleTime: 
   const { data, error } = await db().from("nudges").select("client_id,kind").eq("day", bogotaDay()); if (error) throw error;
   return ((data ?? []) as { client_id: string; kind: string }[]).map((r) => `${r.client_id}:${r.kind}`);
 } });
+type NudgeOut = { sent: number; reason: string | null };
 export function useNudge() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (v: { clientId: string; kind: NudgeKind }) => {
       const { data, error } = await db().rpc("send_nudge", { p_client: v.clientId, p_kind: v.kind });
       if (error) throw new Error(/already_sent/.test(error.message) ? "already_sent" : "failed");
-      const r = await fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) }).catch(() => null);
-      const j = r && r.ok ? ((await r.json().catch(() => ({}))) as { sent?: number }) : {};
-      return j.sent ?? 0;
+      // El aviso YA quedó guardado (el cliente lo ve en Hoy). La notificación del teléfono se espera máx. 7 s: si tarda, el botón no se queda quieto.
+      // Resultado: >0 llegó; 0 sin avisos activos; -1 todavía enviándose; -2 tiene avisos pero NO llegó (p. ej. los activó en la
+      // otra versión de la app: Netlify y Vercel usan claves distintas). Antes -2 se mostraba como "no tiene avisos" y confundía (30-oct).
+      const push = fetch("/api/push/nudge", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nudgeId: data }) })
+        .then(async (r): Promise<NudgeOut> => { if (!r.ok) return { sent: -2, reason: "other" }; const j = (await r.json().catch(() => ({}))) as { sent?: number; failed?: number; reason?: string | null }; return { sent: (j.sent ?? 0) > 0 ? j.sent! : (j.failed ?? 0) > 0 ? -2 : 0, reason: j.reason ?? null }; }).catch((): NudgeOut => ({ sent: -2, reason: "other" }));
+      return Promise.race([push, new Promise<NudgeOut>((res) => setTimeout(() => res({ sent: -1, reason: null }), 7000))]);
     },
     onMutate: (v) => { qc.setQueryData<string[]>(["nudges"], (l) => [...(l ?? []), `${v.clientId}:${v.kind}`]); },
-    onSuccess: (sent) => toast(sent ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy." : "Aviso guardado: lo verá en su pantalla Hoy (su teléfono no tiene avisos activos)."),
+    // Desde el 2-nov dice el motivo exacto (antes "no ha activado los avisos" salía también si a ESTE sitio le faltaban las claves).
+    onSuccess: ({ sent, reason }) => toast(sent > 0 ? "Aviso enviado: le llegó al teléfono y lo ve en su pantalla Hoy."
+      : sent === -1 ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación al teléfono sigue enviándose."
+      : reason === "not_configured" ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación no salió porque a esta versión de la app le faltan las claves de avisos (VAPID)."
+      : reason === "keys" ? "Aviso guardado: lo ve en su pantalla Hoy. La notificación no salió: activó los avisos en la otra versión de la app y las claves VAPID de los dos sitios no son iguales."
+      : reason === "gone" ? "Aviso guardado: lo ve en su pantalla Hoy. Su teléfono ya no tiene los avisos (borró la app o los quitó)."
+      : sent === -2 ? "Aviso guardado: lo ve en su pantalla Hoy. Tiene avisos activos, pero la notificación no salió. Inténtalo más tarde."
+      : "Aviso guardado: lo verá en su pantalla Hoy. Su cuenta no tiene ningún teléfono con avisos (puede que en su teléfono haya entrado después otra cuenta)."),
     onError: (e) => { if ((e as Error).message === "already_sent") { toast("Ya le avisaste esto hoy."); return; } toast("No pudimos guardar el aviso. Inténtalo de nuevo.", true); },
     onSettled: () => { void qc.invalidateQueries({ queryKey: ["nudges"] }); },
   });
@@ -679,6 +843,13 @@ export function useNudge() {
 export const useMyNudges = (clientId: string) => useQuery({ queryKey: ["my-nudges", clientId], enabled: !!clientId, staleTime: 60_000, refetchInterval: 120_000, queryFn: async (): Promise<NudgeKind[]> => {
   const { data, error } = await db().from("nudges").select("kind").eq("client_id", clientId).eq("day", bogotaDay()); if (error) throw error;
   return ((data ?? []) as { kind: NudgeKind }[]).map((r) => r.kind);
+} });
+// Avisos de Jeff de los últimos 7 días ANTES de hoy (2-nov): si el cliente no entró esos días, al volver los ve juntos en Hoy
+// ("Jeff estuvo pendiente de ti"). Antes solo veía los de hoy y los anteriores se perdían.
+export const useMyPastNudges = (clientId: string) => useQuery({ queryKey: ["my-nudges", clientId, "past"], enabled: !!clientId, staleTime: 5 * 60_000, queryFn: async (): Promise<{ id: string; kind: NudgeKind; day: string }[]> => {
+  const today = bogotaDay(), d = new Date(`${today}T12:00:00`); d.setDate(d.getDate() - 7); const from = d.toISOString().slice(0, 10);
+  const { data, error } = await db().from("nudges").select("id,kind,day").eq("client_id", clientId).gte("day", from).lt("day", today).order("day"); if (error) throw error;
+  return (data ?? []) as { id: string; kind: NudgeKind; day: string }[];
 } });
 // Vídeo del objetivo (0036): Jeff lo sube para un cliente (se registra como vídeo de ese cliente) y queda en clients.objective_video_id.
 export function useObjectiveVideo(clientId: string) {
@@ -689,3 +860,108 @@ export function useObjectiveVideo(clientId: string) {
     remove: useMutation({ mutationFn: () => set(null), onSuccess: () => toast("Vídeo quitado"), onError: () => toast("No pudimos quitar el vídeo.", true) }),
   };
 }
+
+// ---- Plan mensual (0038): renovar 30 días más ----
+export function useRenewPlan() {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (clientId: string) => { const { data, error } = await db().rpc("renew_plan", { p_client: clientId }); if (error) throw error; return data as string; },
+    onMutate: async (clientId) => { await qc.cancelQueries({ queryKey: KEYS.clients }); const today = bogotaDay(); qc.setQueryData<ClientRow[]>(KEYS.clients, (l) => l?.map((c) => (c.id === clientId ? { ...c, planSince: today } : c))); },
+    onSuccess: () => toast("Plan renovado: cuenta 30 días desde hoy."),
+    onError: () => toast("No pudimos renovar el plan. Inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: KEYS.clients }),
+  });
+}
+
+// ---- Punto de partida obligatorio de la bienvenida (0038): peso y estatura ----
+export function useSaveStartPoint() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { weight: number; height: number }) => { const { error } = await db().rpc("save_start_point", { p_weight: v.weight, p_height: v.height }); if (error) throw error; },
+    onSettled: () => { void qc.invalidateQueries({ queryKey: ["measures"] }); },
+  });
+}
+
+// ---- Respuesta de Jeff a un entrenamiento (0038) ----
+// Se muestra como aviso aparte en Hoy hasta que el cliente la marca como vista. No se responde.
+// Corregir UNA vez (0042): después de terminar, el cliente puede corregir su entrenamiento una sola vez y nunca si Jeff ya lo revisó.
+export type EditState = "open" | "once" | "used" | "reviewed";
+export const workoutEditState = (l?: WorkoutLog | null): EditState => !l?.completed ? "open" : l.coachAt ? "reviewed" : (l.edits ?? 0) >= 1 ? "used" : "once";
+const LOCK_TXT = "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Jeff ya lo revisó.";
+const isLock = (e: unknown) => /locked/.test((e as { message?: string })?.message ?? "");
+export const hasFeedback = (l: WorkoutLog) => !!(l.coachComment || l.coachCommentAudio || l.coachCommentImage || l.coachCommentVideo);
+export const feedbackUnseen = (l: WorkoutLog) => hasFeedback(l) && (!l.feedbackSeenAt || (!!l.coachAt && l.feedbackSeenAt < l.coachAt));
+export function useMarkFeedbackSeen(clientId: string) {
+  const qc = useQueryClient(), toast = useToast(), key = ["logs", clientId];
+  return useMutation({
+    mutationFn: async (logId: string) => { const { error } = await db().rpc("mark_feedback_seen", { p_log: logId }); if (error) throw error; },
+    onMutate: async (logId) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<WorkoutLog[]>(key);
+      qc.setQueryData<WorkoutLog[]>(key, (l) => l?.map((x) => (x.id === logId ? { ...x, feedbackSeenAt: new Date().toISOString() } : x))); return { prev }; },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(key, ctx.prev); toast("No pudimos marcarlo como visto. Inténtalo de nuevo.", true); },
+    onSettled: () => qc.invalidateQueries({ queryKey: key }),
+  });
+}
+
+// ---- Panel "Necesitan tu atención" (0041) ----
+// La base devuelve los datos de cada cliente activo; las reglas (qué es urgente, qué falta configurar) viven en lib/attention.ts.
+export type AttnData = { clientId: string; features: string[]; planSince: string | null; activatedAt: string | null; createdAt: string; trainingPlan: boolean; planDays: number; emptyDays: number; reviewOn: string | null; nutrition: boolean; lastWorkout: string | null; lastReport: string | null; lastMeal: string | null; lastMessage: string | null; lastCall: string | null; nextCall: string | null };
+export const useCoachAttention = (enabled = true) => useQuery({ queryKey: ["coach-attention"], staleTime: 30_000, refetchInterval: 120_000, enabled, queryFn: async (): Promise<AttnData[]> => {
+  const { data, error } = await db().rpc("coach_attention"); if (error) throw error;
+  type Raw = { client_id: string; features: string[]; plan_since: string | null; activated_at: string | null; created_at: string; training_plan: boolean; plan_days: number; empty_days: number; review_on: string | null; nutrition: boolean; last_workout: string | null; last_report: string | null; last_meal: string | null; last_message: string | null; last_call: string | null; next_call: string | null };
+  return ((data ?? []) as Raw[]).map((r) => ({ clientId: r.client_id, features: r.features ?? [], planSince: r.plan_since, activatedAt: r.activated_at, createdAt: r.created_at, trainingPlan: r.training_plan, planDays: r.plan_days, emptyDays: r.empty_days, reviewOn: r.review_on, nutrition: r.nutrition, lastWorkout: r.last_workout, lastReport: r.last_report, lastMeal: r.last_meal, lastMessage: r.last_message, lastCall: r.last_call, nextCall: r.next_call }));
+} });
+
+// ---- Sugerencias de peso para Jeff (29-oct): entrenamientos de los últimos 7 días donde hizo más o menos repeticiones de las pedidas ----
+export type AdviceFeedRow = { logId: string; clientId: string; clientName: string; date: string; routine: string | null; effort: number | null; seen: boolean;
+  sets: { itemId: string | null; reps: number | null; weight: number | null; warmup: boolean }[]; items: { id: string; name: string; reps: string; weight: number | null; active: boolean }[] };
+export const useAdviceFeed = () => useQuery({ queryKey: ["advice-feed"], staleTime: 30_000, queryFn: async (): Promise<AdviceFeedRow[]> => {
+  const since = new Date(); since.setDate(since.getDate() - 7);
+  const q = (extra: string) => db().from("workout_logs").select(`id,client_id,log_date,effort,coach_seen_at,plan_days(name),clients(profiles(full_name)),set_logs(plan_item_id,reps,weight,kind,plan_items(id,reps,target_weight,exercises(name),plan_days(training_plans(status))))${extra}`)
+    .not("completed_at", "is", null).gte("log_date", localDate(since)).order("log_date", { ascending: false }).limit(80);
+  let { data, error } = await q(",exercise_swaps(plan_item_id)");
+  if (error && missingTable(error)) ({ data, error } = await q(""));   // base sin la 0044
+  if (error) throw error;
+  type Raw = { id: string; client_id: string; log_date: string; effort: number | null; coach_seen_at: string | null; plan_days: { name: string } | null; clients: { profiles: { full_name: string } | null } | null;
+    set_logs: { plan_item_id: string | null; reps: number | null; weight: number | null; kind: string; plan_items: { id: string; reps: string; target_weight: number | null; exercises: { name: string } | null; plan_days: { training_plans: { status: string } | null } | null } | null }[]; exercise_swaps?: { plan_item_id: string }[] };
+  return (data as unknown as Raw[]).map((l) => {
+    // Un ejercicio que el cliente cambió por un sustituto no se compara con el peso del original (0044).
+    const swapped = new Set((l.exercise_swaps ?? []).map((x) => x.plan_item_id)); l.set_logs = l.set_logs.filter((s) => !s.plan_item_id || !swapped.has(s.plan_item_id));
+    const items = new Map<string, { id: string; name: string; reps: string; weight: number | null; active: boolean }>();
+    l.set_logs.forEach((s) => { if (s.plan_items) items.set(s.plan_items.id, { id: s.plan_items.id, name: s.plan_items.exercises?.name ?? "Ejercicio", reps: s.plan_items.reps, weight: s.plan_items.target_weight, active: s.plan_items.plan_days?.training_plans?.status === "active" }); });
+    return { logId: l.id, clientId: l.client_id, clientName: l.clients?.profiles?.full_name || "Cliente", date: l.log_date, routine: l.plan_days?.name ?? null, effort: l.effort, seen: !!l.coach_seen_at,
+      sets: l.set_logs.map((s) => ({ itemId: s.plan_item_id, reps: s.reps, weight: s.weight, warmup: s.kind === "warmup" })), items: Array.from(items.values()) };
+  });
+} });
+// Lo que Jeff ya decidió (0049): aceptar con un peso o descartar. Vive en la base, así vale en todos sus aparatos.
+export type AdviceDecision = { logId: string; itemId: string; weight: number | null; reps: string | null };
+export const useAdviceDecisions = () => useQuery({ queryKey: ["advice-decisions"], staleTime: 30_000, queryFn: async (): Promise<AdviceDecision[]> => {
+  const q = (cols: string) => db().from("weight_advice_decisions").select(cols).order("decided_at", { ascending: false }).limit(1000);
+  let { data, error } = await q("log_id,plan_item_id,weight,reps");
+  if (error && error.code === "42703") ({ data, error } = await q("log_id,plan_item_id,weight"));   // base sin la 0050
+  if (error) { if (missingTable(error) || error.code === "PGRST205") return []; throw error; }   // base sin la 0049
+  return (data as unknown as { log_id: string; plan_item_id: string; weight: number | null; reps?: string | null }[]).map((d) => ({ logId: d.log_id, itemId: d.plan_item_id, weight: d.weight, reps: d.reps ?? null }));
+} });
+// Jeff decide: con peso, cambia el peso de ese ejercicio en el plan del cliente (lo verá en su próxima rutina); sin peso, la descarta.
+export function useDecideAdvice() {
+  const qc = useQueryClient(), toast = useToast(), key = ["advice-decisions"];
+  return useMutation({
+    // Con `reps` (0050) cambia las repeticiones del plan en vez del peso.
+    mutationFn: async (v: { clientId: string; logId: string; itemId: string; weight: number | null; reps?: string | null; name: string }) => {
+      const { error } = v.reps ? await db().rpc("decide_reps_advice", { p_log: v.logId, p_item: v.itemId, p_reps: v.reps }) : await db().rpc("decide_weight_advice", { p_log: v.logId, p_item: v.itemId, p_weight: v.weight });
+      if (error) throw error; },
+    onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<AdviceDecision[]>(key); qc.setQueryData<AdviceDecision[]>(key, (l = []) => [{ logId: v.logId, itemId: v.itemId, weight: v.reps ? null : v.weight, reps: v.reps ?? null }, ...l]); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardarlo. Inténtalo de nuevo.", true); },
+    onSuccess: (_d, v) => {
+      toast(v.reps ? `Plan actualizado: ${v.name}, ${v.reps} repeticiones` : v.weight != null ? `Plan actualizado: ${v.name}, ${String(v.weight).replace(".", ",")} kg` : "Sugerencia descartada");
+      void qc.invalidateQueries({ queryKey: ["advice-feed"] }); void qc.invalidateQueries({ queryKey: ["plans-of", v.clientId] }); void qc.invalidateQueries({ queryKey: key });
+      if (v.weight != null || v.reps) notifyPlan(v.clientId, "training");
+    },
+  });
+}
+
+// Correcciones de la nutrición del día (0042): 0 = aún puede corregir una vez después de completarla; 1 = ya corrigió.
+export const useMealLock = (clientId: string, date: string) => useQuery({ queryKey: ["meal-lock", clientId, date], enabled: !!clientId, staleTime: 30_000, queryFn: async (): Promise<number> => {
+  const { data, error } = await db().from("meal_day_locks").select("reopens").eq("client_id", clientId).eq("log_date", date).maybeSingle();
+  if (error) return 0;   // base sin la 0042: sin límite (como antes)
+  return (data as { reopens: number } | null)?.reopens ?? 0;
+} });

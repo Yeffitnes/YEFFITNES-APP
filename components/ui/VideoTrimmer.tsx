@@ -8,6 +8,7 @@ const MIN = 1;
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 export function VideoTrimmer({ file, duration, maxSeconds, onDone, onCancel }: { file: File; duration: number; maxSeconds: number; onDone: (f: File) => void; onCancel: () => void }) {
   const [url, setUrl] = useState("");
+  const [ar, setAr] = useState<number | null>(null);   // forma real del vídeo (30-oct): horizontal se ve horizontal
   useEffect(() => { const u = URL.createObjectURL(file); setUrl(u); return () => URL.revokeObjectURL(u); }, [file]);
   const vid = useRef<HTMLVideoElement>(null), track = useRef<HTMLDivElement>(null), abort = useRef<AbortController | null>(null);
   const [range, setRange] = useState<[number, number]>([0, Math.min(maxSeconds, duration)]);
@@ -46,9 +47,9 @@ export function VideoTrimmer({ file, duration, maxSeconds, onDone, onCancel }: {
       <div className="vt-box">
         <div className="vt-head"><b>Recorta tu vídeo</b><button type="button" className="vt-x" aria-label="Cancelar" onClick={() => { abort.current?.abort(); onCancel(); }}><Icon name="close" size={18} /></button></div>
         <p className="vt-sub">Tu vídeo dura {fmt(duration)}. Elige el tramo que quieres enviar (máximo {maxSeconds} s).</p>
-        <div className="vt-stage">
+        <div className="vt-stage" style={ar ? { aspectRatio: `${ar}`, width: ar > 1 ? "100%" : undefined } : undefined}>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video ref={vid} src={url ? `${url}#t=0.1` : undefined} playsInline preload="metadata" onLoadedMetadata={() => seek(0)} onClick={toggle} />
+          <video ref={vid} src={url ? `${url}#t=0.1` : undefined} playsInline preload="metadata" onLoadedMetadata={(e) => { const v = e.currentTarget; if (v.videoWidth && v.videoHeight) setAr(v.videoWidth / v.videoHeight); seek(0); }} onClick={toggle} />
           {!playing && !busy && <button type="button" className="vt-play" aria-label="Reproducir" onClick={toggle}><Icon name="play" size={22} /></button>}
           {busy && <div className="vt-busy"><BrandLoader dark label={`Preparando tu vídeo… ${pct}%`} /></div>}
         </div>

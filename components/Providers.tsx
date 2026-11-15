@@ -9,12 +9,15 @@ const Ws = createContext<string>("");
 const Prof = createContext<{ profileId: string; name: string }>({ profileId: "", name: "" });
 export const useProfile = () => useContext(Prof);
 export const useWorkspaceId = () => useContext(Ws);
-export function Providers({ workspaceId, profileId = "", name = "", prefetch = true, me, seed, children }: { workspaceId: string; profileId?: string; name?: string; prefetch?: boolean; me?: Me | null; seed?: { plans: TrainingPlan[] | null; logs: WorkoutLog[] | null }; children: React.ReactNode }) {
+export function Providers({ workspaceId, profileId = "", name = "", prefetch = true, me, seed, children }: { workspaceId: string; profileId?: string; name?: string; prefetch?: boolean; me?: Me | null; seed?: { plans: TrainingPlan[] | null; logs: WorkoutLog[] | null; at?: number }; children: React.ReactNode }) {
   const [qc] = useState(() => {
     const c = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 30_000, gcTime: 10 * 60_000 } } });
-    if (me) c.setQueryData(["me", profileId], me); // el servidor ya lo leyó: la primera pantalla no espera ese viaje
-    if (me?.id && seed?.plans) c.setQueryData(["plans-of", me.id], seed.plans); // igual la rutina y los registros: Hoy sale de una
-    if (me?.id && seed?.logs) c.setQueryData(["logs", me.id], seed.logs);
+    // Con la hora en que el servidor los leyó: si la pantalla viene de la copia guardada para usar sin señal (sw.js), quedan
+    // "viejos" y se vuelven a pedir apenas haya señal, en vez de darse por frescos.
+    const at = { updatedAt: seed?.at ?? Date.now() };
+    if (me) c.setQueryData(["me", profileId], me, at); // el servidor ya lo leyó: la primera pantalla no espera ese viaje
+    if (me?.id && seed?.plans) c.setQueryData(["plans-of", me.id], seed.plans, at); // igual la rutina y los registros: Hoy sale de una
+    if (me?.id && seed?.logs) c.setQueryData(["logs", me.id], seed.logs, at);
     return c;
   });
   const [toast, setToast] = useState<{ msg: string; err: boolean } | null>(null);
@@ -30,7 +33,8 @@ export function Providers({ workspaceId, profileId = "", name = "", prefetch = t
   useEffect(() => { if (!me?.id) return; const id = me.id;
     void qc.prefetchQuery({ queryKey: ["plans-of", id], queryFn: () => fetchTrainingPlans(id), staleTime: 60_000 });
     void qc.prefetchQuery({ queryKey: ["logs", id], queryFn: () => fetchLogs(id), staleTime: 30_000 });
-    void qc.prefetchQuery({ queryKey: ["measures", id], queryFn: () => fetchMeasures(id) }); }, [qc, me?.id]);
+    const t = setTimeout(() => void qc.prefetchQuery({ queryKey: ["measures", id], queryFn: () => fetchMeasures(id) }), 1500);   // sin chocar con Hoy al abrir
+    return () => clearTimeout(t); }, [qc, me?.id]);
   return (
     <QueryClientProvider client={qc}><Ws.Provider value={workspaceId}><Prof.Provider value={{ profileId, name }}><Toast.Provider value={show}><UploadProvider toast={show}>
       {children}</UploadProvider>{toast && <div role="status" className={`toast${toast.err ? " err" : ""}`}>{toast.msg}</div>}

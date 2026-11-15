@@ -1,17 +1,19 @@
 "use client";
 import { useFocusAnchor } from "@/lib/focus";
 import { useState } from "react";
-import { Guide } from "./Guide";
+import { Guide, GuideFace } from "./Guide";
 import { PlanWait } from "./LockedPanel";
 import Link from "next/link";
-import { localDate, useClientNutrition, useMaterialList, useMealLogs, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialOpen } from "@/lib/queries";
+import { localDate, upcomingOnly, useClientNutrition, useMaterialList, useMealLogs, useMeasures, useMyBookings, useOpenMaterial, useMe, type MaterialItem } from "@/lib/queries";
+import { ytThumb } from "@/lib/video-poster";
+import { useNow } from "@/lib/use-now";
 import { useProfile } from "@/components/Providers";
 import { FeatureGate } from "@/components/FeatureGate";
 import { KIND_LABEL } from "@/lib/queries";
 import { DAY3, hhmm } from "@/lib/dates";
 import { todayWeekday } from "@/lib/week";
-import { VideoModal } from "./VideoModal";
-import { BunnyModal } from "@/components/ui/BunnyModal";
+import { VideoModal, warmYoutube } from "./VideoModal";
+import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
 import { Icon } from "@/components/ui/Icon";
 import { icsHref } from "@/lib/ics";
@@ -19,7 +21,8 @@ const ARROW = <svg viewBox="0 0 10 10"><path d="M2 5h6M5 2l3 3-3 3" /></svg>;
 // Tarjetas laterales de "Hoy" (diseño portal-hoy): próxima sesión, objetivo, nutrición de hoy y progreso reciente.
 const rel = (iso: string) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d1 = new Date(iso); d1.setHours(0, 0, 0, 0); const n = Math.round((d1.getTime() - d0.getTime()) / 86400000); return n <= 0 ? "Hoy" : n === 1 ? "Mañana" : n < 14 ? `En ${n} días` : n < 60 ? `En ${Math.round(n / 7)} semanas` : `En ${Math.round(n / 30)} meses`; };
 export function SessionCard({ cid }: { cid: string }) {
-  const { data, isPending } = useMyBookings(cid), b = data?.[0], more = (data?.length ?? 0) - 1;
+  // Con la hora actual: una sesión que ya terminó deja de salir como "Próxima sesión" (pedido de Cristian, 29-oct).
+  const { data: raw, isPending } = useMyBookings(cid), now = useNow(), data = upcomingOnly(raw, now), b = data[0], more = data.length - 1;
   return (
     <div className="card card-session">{b && <span className="sess-guide gd-pop" title="¡Nos vemos!"><Guide size={40} pose="wave" talking={false} /></span>}<div className="card-tag"><span className="live-dot" />Próxima sesión</div>
       {isPending ? <div className="sk" style={{ height: 70 }} /> : !b ? <><p className="empty-note" style={{ marginTop: 10 }}>Aún no tienes una sesión reservada. Elige un horario para tu llamada con tu coach.</p><div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none" }}>Reservar</Link></div></>
@@ -42,9 +45,11 @@ export function ObjectiveCard() {
   );
 }
 export function NutritionTodayCard({ cid, features, name }: { cid: string; features: string[]; name: string }) {
-  const has = features.includes("nutrition"), { data } = useClientNutrition(has ? cid : ""), wd = todayWeekday(), logs = useMealLogs(has ? cid : "", localDate()), [unfold, setUnfold] = useState(false);
+  const has = features.includes("nutrition"), { data, isPending } = useClientNutrition(has ? cid : ""), wd = todayWeekday(), logs = useMealLogs(has ? cid : "", localDate()), [unfold, setUnfold] = useState(false);
   useFocusAnchor("nutricion", () => setUnfold(true));
   if (!has) return <div className="card-nutrition"><FeatureGate features={features} feature="nutrition" name={name}><span /></FeatureGate></div>;
+  // Cargando: esqueleto (antes decía "Tu coach todavía no publica tu plan de nutrición" mientras cargaba, aunque sí lo tuviera).
+  if (isPending && cid) return <div id="nutricion" className="card card-nutrition"><div className="card-tag">Tu plan de hoy</div><div className="card-title" style={{ fontSize: 15 }}>Nutrición</div><div className="sk" style={{ height: 90, marginTop: 12 }} /></div>;
   const meals = data ? [...data.meals.filter((m) => m.weekday === null), ...data.meals.filter((m) => m.weekday === wd)] : [];
   if (data === null) return <div className="card-nutrition"><PlanWait kind="nutrition" /></div>;
   // Todas las comidas marcadas: se pliega en un resumen y se despliega con un toque (pedido de Cristian, 27-oct).
@@ -53,7 +58,8 @@ export function NutritionTodayCard({ cid, features, name }: { cid: string; featu
     <div id="nutricion" className="card card-nutrition fold-card">
       <button type="button" className="fold-head" aria-expanded={false} onClick={() => setUnfold(true)}>
         <span className="fold-ok"><Icon name="check" size={16} stroke={2.4} /></span>
-        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Nutrición de hoy · completada</span><b>{meals.length} de {meals.length} comidas</b><small>Toca para ver o cambiar</small></span>
+        <span className="fold-txt"><span className="card-tag" style={{ marginBottom: 2 }}>Nutrición de hoy · completada</span><b>{meals.length} de {meals.length} comidas</b><small>Toca para verla</small></span>
+        <span className="fold-face gd-pop" aria-hidden><GuideFace size={34} /></span>
         <Icon name="down" size={16} />
       </button>
     </div>);
@@ -67,8 +73,9 @@ export function NutritionTodayCard({ cid, features, name }: { cid: string; featu
   );
 }
 export function ProgressCard({ cid, features, name }: { cid: string; features: string[]; name: string }) {
-  const has = features.includes("progress"), { data } = useMeasures(has ? cid : "");
+  const has = features.includes("progress"), { data, isPending } = useMeasures(has ? cid : "");
   if (!has) return <div className="card-progress"><FeatureGate features={features} feature="progress" name={name}><span /></FeatureGate></div>;
+  if (isPending && cid) return <div className="card card-progress"><div className="card-tag">Progreso reciente</div><div className="sk" style={{ height: 70, marginTop: 12 }} /></div>;   // cargando (no "aún no registras")
   const last = (k: "weight" | "waist") => { const v = (data ?? []).filter((m) => m[k] != null); return v.length ? { cur: v[v.length - 1][k] as number, prev: v.length > 1 ? (v[v.length - 2][k] as number) : null } : null; };
   const rows = [["Peso", "kg", last("weight")], ["Cintura", "cm", last("waist")]] as const;
   const pts = (data ?? []).filter((m) => m.weight != null).slice(-6).map((m) => m.weight as number);
@@ -82,16 +89,28 @@ export function ProgressCard({ cid, features, name }: { cid: string; features: s
     </div>
   );
 }
+// Vídeo del día Y vídeo de la semana (pueden estar los dos a la vez desde el 29-oct; antes uno reemplazaba al otro).
+// Con portada difuminada en negro y rojo (la del propio vídeo o la miniatura de YouTube) y apertura inmediata: el vídeo se abre
+// sin esperar al servidor y la vista se anota por detrás.
 export function FeaturedVideo() {
-  const { data } = useMaterialList(), open = useOpenMaterial(), [shown, setShown] = useState<MaterialOpen | null>(null), f = data?.find((m) => m.featured && m.unlocked && m.kind === "video");
-  if (!f) return null;   // se oculta por completo si no hay vídeo destacado
+  const { data } = useMaterialList(), open = useOpenMaterial(), [shown, setShown] = useState<{ id: string; title: string; category: string; ytId: string | null; priv: boolean } | null>(null);
+  const list = (data ?? []).filter((m) => m.featured && m.unlocked && m.kind === "video").sort((a, b) => (a.featuredPeriod === b.featuredPeriod ? 0 : a.featuredPeriod === "day" ? -1 : 1));
+  if (!list.length) return null;   // se oculta por completo si no hay vídeo destacado
+  const play = (f: MaterialItem) => {
+    if (f.privateVideo || f.videoRef) { setShown({ id: f.id, title: f.title, category: f.category, ytId: f.videoRef ?? null, priv: f.privateVideo }); open.mutate(f.id); return; }
+    open.mutate(f.id, { onSuccess: (m) => setShown({ id: m.id, title: m.title, category: m.category, ytId: m.videoRef, priv: m.privateVideo }) });   // base sin la 0041
+  };
+  const warm = (f: MaterialItem) => (f.privateVideo ? prefetchPlay(`material=${f.id}`) : warmYoutube());
   return (
-    <>
-      <button className="featured-video-card" style={{ border: 0, width: "100%", textAlign: "left", font: "inherit" }} disabled={open.isPending} onClick={() => open.mutate(f.id, { onSuccess: setShown })}>
-        <div className="fv-text"><div className="fv-tag">{f.featuredPeriod === "day" ? "Vídeo del día" : "Vídeo de la semana"}</div><div className="fv-title">{f.title}</div><div className="fv-caption">{f.featuredPeriod === "day" ? "El mensaje de tu coach para hoy." : "Tu coach comparte un mensaje corto para toda su comunidad esta semana."}</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
-        <div className="fv-thumb"><div className="fv-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div></div></button>
-      {shown?.videoRef && <VideoModal ytId={shown.videoRef} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
-      {shown && !shown.videoRef && shown.privateVideo && <BunnyModal param={`material=${shown.id}`} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
-    </>
+    <div className="fv-stack">
+      {list.map((f) => { const poster = f.poster ?? ytThumb(f.videoRef);
+        return (
+          <button key={f.id} className={`featured-video-card${poster ? " has-poster" : ""}`} style={{ border: 0, width: "100%", textAlign: "left", font: "inherit" }} disabled={open.isPending && !f.privateVideo && !f.videoRef} onClick={() => play(f)} onPointerDown={() => warm(f)} onMouseEnter={() => warm(f)}>
+            <div className="fv-text"><div className="fv-tag">{f.featuredPeriod === "day" ? "Vídeo del día" : "Vídeo de la semana"}</div><div className="fv-title">{f.title}</div><div className="fv-caption">{f.featuredPeriod === "day" ? "El mensaje de tu coach para hoy." : "Tu coach comparte un mensaje corto para toda su comunidad esta semana."}</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
+            <div className="fv-thumb">{poster && <span className="vposter" aria-hidden style={{ backgroundImage: `url("${poster}")` }} />}<div className="fv-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div></div></button>);
+      })}
+      {shown?.ytId && <VideoModal ytId={shown.ytId} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
+      {shown && !shown.ytId && shown.priv && <BunnyModal param={`material=${shown.id}`} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
+    </div>
   );
 }

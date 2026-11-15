@@ -1,11 +1,14 @@
 "use client";
+import { WeekSummary } from "@/components/WeekSummary";
+import { ClientHabitGoals } from "./ClientHabitGoals";
 import { Icon } from "@/components/ui/Icon";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useClientBookings, useClients, useObjectiveVideo, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
+import { useClientBookings, useClients, useRenewPlan, useObjectiveVideo, usePlans, useSetObjective, useSetPlan } from "@/lib/queries";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/lib/upload-video";
 import { ago, initials } from "@/lib/format";
+import { PLAN_DAYS, planMonth, planMonthText, shortDate } from "@/lib/planmonth";
 import type { ClientRow, Plan } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/Modal";
 import { TrainingTab } from "./TrainingTab";
@@ -15,12 +18,14 @@ import { NutritionTab } from "./NutritionTab";
 import { ThreadView } from "@/components/ui/ThreadView";
 import { hhmm } from "@/lib/dates";
 import { TodayCard } from "./TodayCard";
+import { CancelModal, type CancelTarget } from "./AgendaView";
+import { useNow } from "@/lib/use-now";
 import { ProgressPanels } from "@/components/portal/ProgressPanels";
 const TABS = ["Hoy", "Resumen", "Entrenamiento", "Nutrición", "Progreso", "Mensajes", "Agenda", "Notas privadas"];
 const SOON: Record<string, string> = {};
-export function ClientFicha({ id }: { id: string }) {
+export function ClientFicha({ id, tab: start }: { id: string; tab?: string }) {
   const { data, isPending } = useClients(), { data: plans } = usePlans();
-  const [tab, setTab] = useState("Hoy");
+  const [tab, setTab] = useState(start && TABS.includes(start) ? start : "Hoy");
   const c = data?.find((x) => x.id === id);
   if (isPending) return <Skeleton rows={3} />;
   if (!c) return <div><Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link><div className="card"><p style={{ fontSize: 14 }}>No encontramos a este cliente.</p></div></div>;
@@ -30,7 +35,7 @@ export function ClientFicha({ id }: { id: string }) {
     <div>
       <Link href="/coach/clientes" className="back-link"><Icon name="back" size={14} /> Volver a clientes</Link>
       <div className="ficha-header"><div className="ficha-avatar">{initials(c.name)}</div>
-        <div style={{ minWidth: 0, flex: 1 }}><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {status}</div></div>
+        <div style={{ minWidth: 0, flex: 1 }}><div className="ficha-name">{c.name}</div><div className="ficha-meta">Cliente desde {since} · {status}{c.heightCm ? ` · ${(c.heightCm / 100).toFixed(2).replace(".", ",")} m` : ""}{c.startWeight ? ` · empezó con ${String(c.startWeight).replace(".", ",")} kg` : ""}</div><PlanMonthLine c={c} /></div>
         <PlanPicker c={c} plans={plans ?? []} /></div>
       <div className="tab-row">{TABS.map((t) => <button key={t} className={`tab-btn${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>{t}</button>)}</div>
       {tab === "Hoy" ? <TodayCard clientId={c.id} first={c.name.split(" ")[0]} onGo={setTab} /> : tab === "Resumen" ? (
@@ -39,6 +44,8 @@ export function ClientFicha({ id }: { id: string }) {
             <div className="mini-kpi"><div className="mini-kpi-label">Estado</div><div className="mini-kpi-val">{status}</div></div>
             <div className="mini-kpi"><div className="mini-kpi-label">Registro</div><div className="mini-kpi-val">{new Date(c.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</div></div>
           </div>
+          <WeekSummary clientId={c.id} first={c.name.split(" ")[0]} mode="coach" />
+          <ClientHabitGoals clientId={c.id} first={c.name.split(" ")[0]} />
           <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} hasVideo={!!c.objectiveVideo} />
           <RecentWorkouts clientId={c.id} />
         </>
@@ -49,6 +56,15 @@ export function ClientFicha({ id }: { id: string }) {
 
 // Plan del cliente, arriba junto a su nombre (pedido de Cristian, 27-oct): se ve de primeras y se cambia con dos toques.
 // Asignar un plan activa al cliente (y le llega "Tu plan está activo"); "Sin plan" lo deja pendiente con todo bloqueado.
+// Mes de plan (0038): cuándo vence y botón para renovar otros 30 días.
+function PlanMonthLine({ c }: { c: ClientRow }) {
+  const renew = useRenewPlan(), m = c.status === "active" && c.planId ? planMonth(c.planSince) : null;
+  if (!m) return null;
+  return <div className={`plan-month${m.expired ? " expired" : m.soon ? " soon" : ""}`}>
+    <span>Plan del {shortDate(m.since)}{m.expired ? "" : ` · día ${m.day} de ${PLAN_DAYS}`} · {planMonthText(m)}</span>
+    {m.expired && <button type="button" disabled={renew.isPending} onClick={() => renew.mutate(c.id)}>{renew.isPending ? "Renovando…" : "Renovar 30 días"}</button>}
+  </div>;
+}
 function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {
   const setPlan = useSetPlan(), [open, setOpen] = useState(false), box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -97,15 +113,24 @@ function ObjectiveCard({ clientId, value, first, hasVideo }: { clientId: string;
 }
 
 const BK: Record<string, string> = { confirmed: "Confirmada", cancelled: "Cancelada", completed: "Realizada", no_show: "No asistió" };
+// Sesiones del cliente (pedido de Cristian, 29-oct): Jeff también puede cancelar desde aquí, sin ir a la Agenda. Las que ya pasaron
+// salen como "Realizada" (antes seguían como "Confirmada").
 function AgendaTab({ clientId, first }: { clientId: string; first: string }) {
-  const { data, isPending, isError, refetch } = useClientBookings(clientId);
+  const { data, isPending, isError, refetch } = useClientBookings(clientId), now = useNow(), [cancel, setCancel] = useState<CancelTarget | null>(null), { data: clients } = useClients();
   if (isPending) return <Skeleton rows={2} />;
   if (isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>;
+  const name = clients?.find((c) => c.id === clientId)?.name ?? first;
   return (
     <div className="card" style={{ maxWidth: 620 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><div className="card-tag" style={{ marginBottom: 0 }}>Sesiones de {first}</div><Link href="/coach/agenda" className="card-link">Ir a la agenda <Icon name="arrow" size={12} /></Link></div>
       {!data.length && <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 12 }}>{first} aún no tiene sesiones.</p>}
-      {data.map((b) => <div key={b.id} className="info-list-row"><span style={{ fontWeight: 700 }}>{new Date(b.startsAt).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })} · {hhmm(b.startsAt)}</span><span style={{ color: "var(--text-dim)" }}>{b.capacity > 1 ? "Clase grupal" : ""} {b.duration} min</span><span style={{ color: b.status === "confirmed" ? "#1C9A5B" : "var(--text-faint)", fontWeight: 700, fontSize: 12 }}>{BK[b.status] ?? b.status}</span></div>)}
+      {data.map((b) => {
+        const ended = new Date(b.startsAt).getTime() + b.duration * 60_000 <= now.getTime(), st = b.status === "confirmed" && ended ? "completed" : b.status;
+        return <div key={b.id} className={`info-list-row bk-row ${st}`}><span style={{ fontWeight: 700 }}>{new Date(b.startsAt).toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })} · {hhmm(b.startsAt)}</span><span style={{ color: "var(--text-dim)" }}>{b.capacity > 1 ? "Clase grupal · " : ""}{b.duration} min{b.bookedBy === "coach" ? " · la agendaste tú" : ""}</span>
+          <span className="bk-st">{BK[st] ?? st}</span>
+          {st === "confirmed" && <button type="button" className="bk-cancel" onClick={() => setCancel({ bookingId: b.id, clientName: name, startsAt: b.startsAt })}>Cancelar</button>}</div>;
+      })}
+      {cancel && <CancelModal t={cancel} onClose={() => setCancel(null)} />}
     </div>
   );
 }

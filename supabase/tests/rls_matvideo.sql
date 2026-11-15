@@ -58,7 +58,7 @@ begin
   select count(*) into n from public.list_materials() where id=mp and is_featured and featured_period='day'; if n<>1 then bad:=bad||' [no se ve el vídeo del día]'; end if;
   perform pg_temp.reset(); update public.materials set featured_until = current_date - 2 where id=mp;
   perform pg_temp.as_user(a);
-  select count(*) into n from public.list_materials() where is_featured; if n<>0 then bad:=bad||' [se muestra un destacado vencido]'; end if;
+  select count(*) into n from public.list_materials() where id=mp and is_featured; if n<>0 then bad:=bad||' [se muestra un destacado vencido]'; end if;   -- 0041: el de la semana puede seguir destacado
   perform pg_temp.reset();
   raise notice 'RESULTADO ATAQUES MATVIDEO: %', coalesce(nullif(bad,''),'ninguno');
 end $$;

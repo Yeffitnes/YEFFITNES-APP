@@ -7,13 +7,15 @@ import { VideoModal } from "./VideoModal";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { upgradeLink } from "@/lib/features";
 import { PendingSection } from "./LockedPanel";
+import { FeaturedVideo } from "./HoySide";
+import { ytThumb } from "@/lib/video-poster";
 import { useProfile } from "@/components/Providers";
 import { Icon } from "@/components/ui/Icon";
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
 export function MaterialClientView() {
   const { data, isPending, isError, refetch } = useMaterialList(), open = useOpenMaterial(), { profileId } = useProfile(), me = useMe(profileId);
   const [q, setQ] = useState(""), [f, setF] = useState<"all" | "article" | "video">("all"), [shown, setShown] = useState<MaterialOpen | null>(null), [locked, setLocked] = useState<MaterialItem | null>(null);
-  const all = data ?? [], feat = all.find((m) => m.featured && m.unlocked);
+  const all = data ?? [];
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   const go = (m: MaterialItem) => { if (!m.unlocked) return setLocked(m); open.mutate(m.id, { onSuccess: setShown }); };
   const lockLink = upgradeLink("education_full");
@@ -25,9 +27,7 @@ export function MaterialClientView() {
   return (
     <>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Material educativo</div><h1>Aprende con tu coach</h1><p className="greeting-sub">{data ? `${all.length} publicacion${all.length === 1 ? "" : "es"} para acompañar tu proceso` : "Cargando…"}</p></div></div>
-      {feat && <button className="featured-video-card" style={{ border: 0, width: "100%", textAlign: "left", font: "inherit" }} onClick={() => go(feat)}>
-        <div className="fv-text"><div className="fv-tag">{feat.featuredPeriod === "day" ? "Vídeo del día" : "Vídeo de la semana"}</div><div className="fv-title">{feat.title}</div><div className="fv-author"><span className="fv-avatar">J</span>Tu coach</div></div>
-        <div className="fv-thumb"><div className="fv-play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div></div></button>}
+      <FeaturedVideo />
       <div className="filter-row">
         <div className="search-box"><svg viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" /><line x1="13.2" y1="13.2" x2="17" y2="17" /></svg><input type="text" placeholder="Buscar contenido..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar contenido" /></div>
         {([["all", "Todos"], ["article", "Artículos"], ["video", "Vídeos"]] as const).map(([k, t]) => <button key={k} className={`filter-chip${f === k ? " active" : ""}`} onClick={() => setF(k)}>{t}</button>)}
@@ -41,6 +41,7 @@ export function MaterialClientView() {
           <div className={`content-thumb ${m.kind === "video" ? "video" : "articulo"}`} style={m.unlocked ? undefined : { filter: "saturate(.4)" }}>
             {m.isNew && m.unlocked && <div className="content-new-tag">Nuevo</div>}
             {!m.unlocked && <div className="content-new-tag" style={{ background: "var(--text)" }}><Icon name="lock" size={11} /> Plan completo</div>}
+            {m.kind === "video" && m.unlocked && (m.poster || m.videoRef) && <span className="vposter" aria-hidden style={{ backgroundImage: `url("${m.poster ?? ytThumb(m.videoRef)}")` }} />}
             {m.kind === "video" ? <div className="play"><svg viewBox="0 0 20 20"><path d="M6 4l11 6-11 6V4z" /></svg></div> : <svg viewBox="0 0 24 24"><path d="M5 4h14v16l-3-2-2 2-2-2-2 2-2-2-3 2V4z" /></svg>}
           </div>
           <div className="content-body"><div className="content-title">{m.title}</div><div className="content-cat">{m.category}</div><div className="content-date">{fmt(m.date)}</div></div>
