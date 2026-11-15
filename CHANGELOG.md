@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-11-15 - Menú inferior del portal más bajo en iPhone
+En iPhone, la franja de la rayita de inicio (~34 pt) quedaba entera debajo de los iconos del menú inferior y lo hacía ocupar mucho. Ahora se quitan 16 pt de esa franja: los iconos son del mismo tamaño y bajan, y quedan ~18 pt de margen para no tocar la rayita y salir de la app sin querer. Barra de 89 a 73 pt de alto en un iPhone (simulado). En Android con botones el margen es 8 px (antes 10). El relleno bajo la barra (al estirar la página) ahora es oscuro como la barra, y la barra del descanso y el espacio al final de la página se ajustan al nuevo alto.
+Archivo: `app/inicio/portal.css` (bloque "Barra inferior" y `.rest-bar`). Solo el portal del cliente; el de Jeff no cambia.
+Revertir: `git revert` de este commit (vuelve a `padding-bottom:max(10px, env(safe-area-inset-bottom))`).
+
 ## 2026-11-15 - Vídeos: clave de Bunny sin espacios y comprobación más clara
 La comprobación /api/video/health seguía dando 401 después de cambiar la clave en Vercel. Cambios:
 - `lib/bunny.ts`: la clave y el número de biblioteca se usan sin espacios ni saltos de línea al principio o al final (`trim`). Una clave pegada con un salto de línea al final da 401 aunque sea la correcta.
