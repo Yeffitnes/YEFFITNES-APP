@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-11-15 - Diagnóstico de vídeos: "El servicio de vídeo no responde"
+Cristian no pudo enviar un reporte ("El servicio de vídeo no responde"). Ese mensaje sale cuando Bunny rechaza crear el vídeo. El código de vídeos no cambió desde el 30-oct y la API de Bunny estaba en línea (sin clave responde 401, lo normal), así que el rechazo es de la clave o de la cuenta (saldo, clave o biblioteca cambiada). Antes no quedaba registrado el motivo.
+- `app/api/video/health` (nuevo, solo coach): abre `/api/video/health` con la sesión de Jeff y dice qué responde Bunny con la clave de ESE sitio (401 clave, 403 cuenta/saldo, 404 biblioteca). No muestra claves ni crea nada.
+- `app/api/video/upload-url`: guarda en los registros del servidor qué respondió Bunny y lo devuelve (`detail`).
+- NO verificado contra Bunny real (el asistente no tiene la clave). Revertir: borrar `app/api/video/health` y restaurar `upload-url/route.ts` del commit `68b1d7f`.
+
 ## 2026-11-14 (noche) - Hábitos como llamada a la acción (MIGRACIÓN 0054)
 Pedido de Cristian: que los hábitos lleven a actuar, para el cliente y para Jeff.
 - **Cliente, en la noche** (tarea `yeffitnes-noche`): si no anotó todos sus hábitos de hoy, "¿Ya anotaste tus hábitos de hoy? Te falta: pasos, sueño." Si también le falta el reporte, va en el mismo aviso ("Envía tu reporte y anota tus hábitos…"), no en dos.

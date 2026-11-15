@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
   if (purpose === "report") { const { data: ok } = await supabase.rpc("can_report"); if (!ok) return NextResponse.json({ error: "not_allowed" }, { status: 403 }); }
   let videoId: string;
   try { videoId = await createVideo(`${purpose === "report" ? "reporte" : purpose === "material" ? "material" : "mensaje"}-${auth.user.id.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}`); }
-  catch { return NextResponse.json({ error: "video_service_unavailable" }, { status: 502 }); }
+  // 15-nov: se registra QUÉ respondió Bunny (antes se perdía) para poder diagnosticar; diagnóstico rápido en /api/video/health.
+  catch (e) { const detail = e instanceof Error ? e.message : "unknown"; console.error("bunny createVideo", detail); return NextResponse.json({ error: "video_service_unavailable", detail }, { status: 502 }); }
   const { error } = purpose === "report"
     ? await supabase.rpc("register_video_upload", { p_video_id: videoId })
     : purpose === "material"
