@@ -16,7 +16,7 @@ export async function GET() {
   try {
     const r = await fetch(`https://video.bunnycdn.com/library/${lib}/videos?page=1&itemsPerPage=1`, { headers: { AccessKey: key, accept: "application/json" }, cache: "no-store" });
     const txt = (await r.text()).slice(0, 200);
-    const motivo = r.ok ? "Bunny acepta la clave: los vídeos deberían funcionar." : r.status === 401 ? "Bunny rechaza la clave (401): la clave de la biblioteca en este sitio no es la correcta o se cambió en Bunny."
+    const motivo = r.ok ? "Bunny acepta la clave: los vídeos deberían funcionar." : r.status === 401 ? "Bunny rechaza la petición (401). Primero revisa el saldo de la cuenta en Bunny (Billing): sin saldo responde así. Si hay saldo, la clave de la biblioteca en este sitio no es la correcta."
       : r.status === 403 ? "Bunny niega el acceso (403): revisa el saldo y el estado de la cuenta en Bunny." : r.status === 404 ? "Bunny no encuentra la biblioteca (404): el número de biblioteca en este sitio no es el correcto."
       : `Bunny respondió ${r.status}.`;
     return json({ ok: r.ok, estado: r.status, motivo, ms: Date.now() - t0, biblioteca: lib, respuesta: r.ok ? undefined : txt });

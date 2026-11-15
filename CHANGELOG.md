@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-15 - Comprobación de vídeo: el 401 apunta primero al saldo
+`/api/video/health`: con 401 ahora dice que revisen primero el saldo de Bunny (sin saldo, Bunny responde 401, no 403). Notas en `docs/PASO_A_PRODUCCION.md` §4 y `docs/HANDOFF.md`.
+Revertir: `git revert` de este commit (solo cambia un texto y la documentación).
+
 ## 2026-11-15 - Menú inferior del portal más bajo en iPhone
 En iPhone, la franja de la rayita de inicio (~34 pt) quedaba entera debajo de los iconos del menú inferior y lo hacía ocupar mucho. Ahora se quitan 16 pt de esa franja: los iconos son del mismo tamaño y bajan, y quedan ~18 pt de margen para no tocar la rayita y salir de la app sin querer. Barra de 89 a 73 pt de alto en un iPhone (simulado). En Android con botones el margen es 8 px (antes 10). El relleno bajo la barra (al estirar la página) ahora es oscuro como la barra, y la barra del descanso y el espacio al final de la página se ajustan al nuevo alto.
 Archivo: `app/inicio/portal.css` (bloque "Barra inferior" y `.rest-bar`). Solo el portal del cliente; el de Jeff no cambia.

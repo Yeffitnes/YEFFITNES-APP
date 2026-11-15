@@ -71,6 +71,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
 - [ ] Si se activa protección por dominio o token en Bunny, **añadir la dirección de Netlify** (y la de Vercel si se prueba allí).
 - [ ] Probar: vídeo de rutina (coach sube, cliente ve), vídeo del reporte (máx. **20 s**; de la galería hasta 60 s con recorte) y vídeo privado de Material (Jeff sube, cliente con el plan lo ve; sin el plan, no).
+- **La cuenta es de prepago** (mínimo 1 USD al mes). Si el saldo llega a 0, Bunny responde **401** a todo y los reportes fallan con "El servicio de vídeo no responde" (pasó el 15-nov, el día de la demo). Activar recarga automática o aviso de saldo bajo en Billing. Diagnóstico: `/api/video/health` con la sesión de Jeff.
 - [ ] Borrado de vídeos de reporte: 32 h sin verlos, 12 h tras verlos. Lo garantiza la tarea `yeffitnes-videos` (§2); abrir Reportes lo hace también como respaldo.
 
 ## 5. Dominio propio (opcional)
