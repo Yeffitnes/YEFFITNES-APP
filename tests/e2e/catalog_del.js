@@ -29,10 +29,10 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
       await c.getByRole("button", { name: "Cancelar" }).click(); await p.waitForTimeout(300); if (await c.locator(".cat-confirm").count()) throw new Error("sigue la pregunta");
     });
     await step(`[${tag}] Sí, eliminar: sale del catálogo, no vuelve al recargar y el plan de los clientes no cambia`, async () => {
-      const before = await p.locator(".routine-card").count(), c = p.locator(".routine-card").first(), name = (await c.locator(".routine-name").innerText()).trim();
+      const before = await p.locator(".routine-card").count(), c = p.locator(".routine-card").first(), name = (await c.locator(".routine-name").innerText()).trim(), same = await p.locator(".routine-name", { hasText: name }).count();
       await c.getByRole("button", { name: "Eliminar", exact: true }).click(); await c.getByRole("button", { name: "Sí, eliminar" }).click(); await p.waitForTimeout(1200);
       if (await p.locator(".routine-card").count() !== before - 1) throw new Error("no salió");
-      await p.reload({ waitUntil: "networkidle" }); await p.waitForTimeout(1000); if (await p.locator(".routine-name", { hasText: name }).count()) throw new Error("volvió");
+      await p.reload({ waitUntil: "networkidle" }); await p.waitForTimeout(1000); if (await p.locator(".routine-name", { hasText: name }).count() !== same - 1) throw new Error("volvió");   // puede haber dos con el mismo nombre (0055 + semilla)
       if (sql(`select count(*) from plan_items`) !== items0) throw new Error("cambió el plan de algún cliente"); return name;
     });
     await step(`[${tag}] programas: Editar y Eliminar a la vista; eliminar quita uno`, async () => {
