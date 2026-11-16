@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-16 - Panel del coach con la estética oscura del portal del cliente
+A Yeff le gustó el Hoy oscuro del cliente; Cristian pidió llevarlo al panel del coach, con delicadeza.
+- **Celular**: la cabecera (logo, menú y búsqueda) es una banda negra con brillo rojo y esquinas redondeadas abajo. El menú va en píldoras oscuras y **la sección elegida en blanco** (antes era al revés). Búsqueda y botones de mensajes y avisos en oscuro. Logo claro sobre negro.
+- **Celular y computador**: los rótulos de las tarjetas ("Necesitan tu atención", "Mensajes", "Agenda"...) en píldora negra con brillo rojo, como en el portal del cliente; la primera cifra del inicio ("Clientes activos") en negro también en computador.
+Archivos: `app/coach/layout.tsx` (envoltura `.m-top`; en computador no cambia nada porque es `display: contents`), `app/coach/coach.css` (bloque "16-nov").
+Revertir: `git revert` de este commit.
+
 ## 2026-11-16 - Android: la pestaña de Chrome ya no queda usable después de instalar; aviso del acceso directo
 Cristian probó en Android: (1) después de instalar, la app se podía seguir usando en Chrome; (2) el icono quedó con el logo de Chrome encima.
 - (1) `components/InstallGate.tsx`: al terminar de instalar ("appinstalled"), la pestaña del navegador ya no deja pasar: muestra "Abre la app desde su icono" y lo recuerda en el teléfono (también al volver a abrir Chrome). Si Chrome vuelve a ofrecer instalar (la borraron), vuelve a guiar la instalación. Computador sin cambios.
