@@ -25,8 +25,8 @@ export function LockedPanel({ tag, title, sub, children, lines = 3 }: { tag: str
 export function RequestAccessButton({ compact = false }: { compact?: boolean }) {
   const { profileId } = useProfile(), me = useMe(profileId), req = useRequestAccess(profileId);
   const at = me.data?.accessRequestedAt ?? null, recent = !!at && Date.now() - new Date(at).getTime() < 12 * 3600_000;
-  if (recent) return <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> {compact ? "Solicitud enviada" : `Solicitud enviada ${ago(at).toLowerCase()}. Te avisamos cuando Jeff active tu plan.`}</span>;
-  return <button type="button" className="lk-cta" disabled={req.isPending} onClick={() => req.mutate()}><Icon name="send" size={13} /> {req.isPending ? "Enviando…" : at ? "Volver a avisar a Jeff" : "Solicitar acceso a Jeff"}</button>;
+  if (recent) return <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> {compact ? "Solicitud enviada" : `Solicitud enviada ${ago(at).toLowerCase()}. Te avisamos cuando Yeff active tu plan.`}</span>;
+  return <button type="button" className="lk-cta" disabled={req.isPending} onClick={() => req.mutate()}><Icon name="send" size={13} /> {req.isPending ? "Enviando…" : at ? "Volver a avisar a Yeff" : "Solicitar acceso a Yeff"}</button>;
 }
 // Llamada a la acción de un panel bloqueado: pendiente → pedir acceso; con plan → hablar con el coach para ampliarlo.
 export function LockedCta({ upgradeHref }: { upgradeHref?: string }) {
@@ -38,7 +38,7 @@ export function LockedCta({ upgradeHref }: { upgradeHref?: string }) {
 export function PendingSection({ eyebrow, title, panels }: { eyebrow: string; title: string; panels: { tag: string; title: string; sub: string }[] }) {
   return (
     <>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">{eyebrow}</div><h1>{title}</h1><p className="greeting-sub">Se desbloquea cuando Jeff active tu plan.</p></div></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">{eyebrow}</div><h1>{title}</h1><p className="greeting-sub">Se desbloquea cuando Yeff active tu plan.</p></div></div>
       <div className="lk-grid">{panels.map((p) => <LockedPanel key={p.title} {...p}><RequestAccessButton compact /></LockedPanel>)}</div>
     </>
   );
@@ -50,7 +50,7 @@ export function PendingBanner() {
   return (
     <section className="lk-banner" aria-label="Cuenta pendiente de activar">
       <span className="lk-ico"><Icon name="lock" size={16} stroke={1.8} /></span>
-      <div className="lk-banner-txt"><b>Tu cuenta está creada.</b><span>Puedes recorrer la app; todo se desbloquea cuando Jeff active tu plan.</span></div>
+      <div className="lk-banner-txt"><b>Tu cuenta está creada.</b><span>Puedes recorrer la app; todo se desbloquea cuando Yeff active tu plan.</span></div>
       <RequestAccessButton />
     </section>
   );
@@ -58,15 +58,15 @@ export function PendingBanner() {
 
 // ───── Antes de la primera llamada (27-oct): el plan está activo pero la rutina y la nutrición las arma Jeff después de la llamada ─────
 const WAIT: Record<"training" | "nutrition" | "report", { tag: string; title: string; sub: string }> = {
-  training: { tag: "Tu rutina", title: "Jeff creará tu rutina para ti", sub: "Después de tu primera llamada, Jeff arma tu entrenamiento según tu objetivo, tu nivel y tu tiempo." },
-  nutrition: { tag: "Tu nutrición", title: "Jeff creará tu nutrición para ti", sub: "Después de tu primera llamada, Jeff arma tu plan de comidas a tu medida." },
-  report: { tag: "Reporte diario", title: "Tu reporte empieza con tu rutina", sub: "Cuando tengas tu rutina, al terminar cada entrenamiento le envías a Jeff un vídeo corto y un comentario." },
+  training: { tag: "Tu rutina", title: "Yeff creará tu rutina para ti", sub: "Después de tu primera llamada, Yeff arma tu entrenamiento según tu objetivo, tu nivel y tu tiempo." },
+  nutrition: { tag: "Tu nutrición", title: "Yeff creará tu nutrición para ti", sub: "Después de tu primera llamada, Yeff arma tu plan de comidas a tu medida." },
+  report: { tag: "Reporte diario", title: "Tu reporte empieza con tu rutina", sub: "Cuando tengas tu rutina, al terminar cada entrenamiento le envías a Yeff un vídeo corto y un comentario." },
 };
 const callWhen = (iso: string) => `${new Date(iso).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })} a las ${new Date(iso).toLocaleTimeString("es", { hour: "numeric", minute: "2-digit" })}`;
 function CallCta() {
   const { profileId } = useProfile(), me = useMe(profileId), call = useFirstCall(me.data?.id ?? "");
   if (call.data?.next) return <span className="lk-sent"><Icon name="calendar" size={13} /> Tu llamada: {callWhen(call.data.next.startsAt)}</span>;
-  if (call.data?.any) return <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> Ya hablaste con Jeff: tu plan está en camino.</span>;
+  if (call.data?.any) return <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> Ya hablaste con Yeff: tu plan está en camino.</span>;
   return <Link href="/inicio/agenda" className="lk-cta"><Icon name="calendar" size={13} /> Agendar mi llamada</Link>;
 }
 // Mismo diseño del panel bloqueado, sin candado: aquí no falta pagar nada, falta poco.
@@ -92,7 +92,7 @@ export function FirstCallBanner() {
   return (
     <section className="lk-banner fc-banner" aria-label="Agenda tu primera llamada">
       <Guide size={54} pose="wave" />
-      <div className="lk-banner-txt"><b>Primer paso: agenda tu llamada con Jeff.</b><span>Ahí se conocen y después Jeff arma tu rutina y tu nutrición especialmente para ti.</span></div>
+      <div className="lk-banner-txt"><b>Primer paso: agenda tu llamada con Yeff.</b><span>Ahí se conocen y después Yeff arma tu rutina y tu nutrición especialmente para ti.</span></div>
       <Link href="/inicio/agenda" className="lk-cta"><Icon name="calendar" size={13} /> Agendar mi llamada</Link>
     </section>
   );

@@ -69,7 +69,7 @@ export function WeekReport({ clientId, first, n, from, note, mode }: { clientId:
         {!!better.length && <p className="wr-better"><Icon name="up" size={13} /> Frente a la semana anterior: {better.slice(0, 4).join(", ")}.</p>}
         {!hasPrev && <p className="wr-better">Es {mode === "client" ? "tu" : "su"} primera semana: desde la próxima verás la comparación.</p>}
       </div>
-      {note && <blockquote className="wr-note"><span>Jeff</span>{note}</blockquote>}
+      {note && <blockquote className="wr-note"><span>Yeff</span>{note}</blockquote>}
       {!tiles.length ? <p className="empty-note">{mode === "client" ? "No registraste nada esa semana." : `${first} no registró nada esa semana.`}</p> : (
         <div className="wr-grid">{tiles.map((t) => <div key={t.k} className={`wr-tile${t.low ? " low" : ""}`}><small>{t.k}</small><b>{t.v}</b><span>{t.s}</span><Chip d={t.d} /></div>)}</div>)}
       {(w.volume > 0 || (hasPrev && p.volume > 0)) && <section className="wr-sec">

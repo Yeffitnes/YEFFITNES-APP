@@ -284,8 +284,8 @@ export const useSwapOptions = (clientId: string, date: string) => useQuery({ que
 } });
 const SWAP_ERR: Record<string, string> = {
   has_sets: "Ya registraste series de este ejercicio. Para cambiarlo, primero deshaz esas series.",
-  locked: "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Jeff ya lo revisó.",
-  not_alternative: "Ese ejercicio ya no está entre los sustitutos que aprobó Jeff.",
+  locked: "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Yeff ya lo revisó.",
+  not_alternative: "Ese ejercicio ya no está entre los sustitutos que aprobó Yeff.",
 };
 export function useSwapExercise(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
@@ -304,7 +304,7 @@ export function useSwapExercise(clientId: string) {
       const m = (e as { message?: string })?.message ?? "", k = Object.keys(SWAP_ERR).find((x) => m.includes(x));
       toast(m === "offline" ? "Sin señal no se puede cambiar el ejercicio. Inténtalo cuando vuelva la señal." : k ? SWAP_ERR[k] : "No pudimos cambiar el ejercicio. Revisa tu conexión e inténtalo de nuevo.", true);
     },
-    onSuccess: (_d, v) => toast(v.alt ? `Cambiado: hoy haces ${v.alt.name}. Jeff lo verá.` : `Volviste a ${v.from}.`),
+    onSuccess: (_d, v) => toast(v.alt ? `Cambiado: hoy haces ${v.alt.name}. Yeff lo verá.` : `Volviste a ${v.from}.`),
     onSettled: (_d, _e, v) => { void qc.invalidateQueries({ queryKey: ["swap-options", clientId, v.date] }); void qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
   });
 }
@@ -327,7 +327,7 @@ export function useFinish(clientId: string) {
     networkMode: "always",
     mutationFn: (v: { date: string; effort: number; note: string; editing?: boolean }) => viaQueue(clientId, { t: "finish", date: v.date, effort: v.effort, note: v.note, editing: !!v.editing }, () => db().rpc("finish_workout", { p_date: v.date, p_effort: v.effort, p_note: v.note })),
     onSuccess: (r, v) => {
-      if (r === "queued") { toast("Guardado en tu teléfono. Se le envía a Jeff solo cuando vuelva la señal."); return; }   // la cola ya lo muestra como terminado
+      if (r === "queued") { toast("Guardado en tu teléfono. Se le envía a Yeff solo cuando vuelva la señal."); return; }   // la cola ya lo muestra como terminado
       toast("¡Entrenamiento guardado! Buen trabajo."); qc.invalidateQueries({ queryKey: ["logs", clientId] }); qc.invalidateQueries({ queryKey: ["records", clientId] }); qc.invalidateQueries({ queryKey: ["workout-count", clientId] }); notifyActivity(v.date);
     },
     onError: (e) => { toast(isLock(e) ? LOCK_TXT : "No pudimos guardar tu entrenamiento. Revisa tu conexión e inténtalo de nuevo.", true); if (isLock(e)) void qc.invalidateQueries({ queryKey: ["logs", clientId] }); },
@@ -454,8 +454,8 @@ export const KIND_LABEL: Record<string, string> = { initial: "Llamada inicial", 
 export const KIND_COLOR: Record<string, string> = { initial: "#F7254B", followup: "#B08A3E" };
 const AG_ERR: Record<string, string> = {
   slot_taken: "Ese horario acaba de ser reservado por otra persona. Elige otro.", slot_unavailable: "Ese horario ya no está disponible. Elige otro.",
-  already_has_booking: "Ya tienes una sesión reservada. Si quieres cambiarla, escríbele a Jeff.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
-  cancel_closed: "Ya pasaron los 10 minutos para cancelar. Escríbele a Jeff para cambiarla.",
+  already_has_booking: "Ya tienes una sesión reservada. Si quieres cambiarla, escríbele a Yeff.", too_late: "Faltan menos de 24 horas: escribe a tu coach para cambiarla.",
+  cancel_closed: "Ya pasaron los 10 minutos para cancelar. Escríbele a Yeff para cambiarla.",
   not_active: "Tu cuenta aún no está activa.", has_booking: "Ese hueco tiene una reserva: primero cancela la reserva.",
 };
 export const agendaError = (e: unknown) => { const m = (e as { message?: string })?.message ?? ""; const k = Object.keys(AG_ERR).find((x) => m.includes(x)); return k ? AG_ERR[k] : "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo."; };
@@ -916,7 +916,7 @@ export function useSaveStartPoint() {
 // Corregir UNA vez (0042): después de terminar, el cliente puede corregir su entrenamiento una sola vez y nunca si Jeff ya lo revisó.
 export type EditState = "open" | "once" | "used" | "reviewed";
 export const workoutEditState = (l?: WorkoutLog | null): EditState => !l?.completed ? "open" : l.coachAt ? "reviewed" : (l.edits ?? 0) >= 1 ? "used" : "once";
-const LOCK_TXT = "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Jeff ya lo revisó.";
+const LOCK_TXT = "Este entrenamiento ya no se puede cambiar: ya usaste tu corrección o Yeff ya lo revisó.";
 const isLock = (e: unknown) => /locked/.test((e as { message?: string })?.message ?? "");
 export const hasFeedback = (l: WorkoutLog) => !!(l.coachComment || l.coachCommentAudio || l.coachCommentImage || l.coachCommentVideo);
 export const feedbackUnseen = (l: WorkoutLog) => hasFeedback(l) && (!l.feedbackSeenAt || (!!l.coachAt && l.feedbackSeenAt < l.coachAt));

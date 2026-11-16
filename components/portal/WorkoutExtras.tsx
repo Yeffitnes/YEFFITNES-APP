@@ -63,7 +63,7 @@ export function RecordPop({ hit, onClose }: { hit: RecordHit | null; onClose: ()
   return toBody(
     <button type="button" className="rec-pop gd-pop" role="status" onClick={onClose} aria-label="Cerrar">
       <span className="rec-face" aria-hidden><GuideFace size={46} /></span>
-      <span className="rec-txt"><small>Nuevo récord</small><b>{hit.exercise}: {kgTxt(hit.weight)}</b><span>Tu mejor marca era {kgTxt(hit.prev)}. Jeff lo verá en tu resumen de la semana.</span></span>
+      <span className="rec-txt"><small>Nuevo récord</small><b>{hit.exercise}: {kgTxt(hit.weight)}</b><span>Tu mejor marca era {kgTxt(hit.prev)}. Yeff lo verá en tu resumen de la semana.</span></span>
     </button>
   );
 }
@@ -129,7 +129,7 @@ export function HabitsCard({ cid }: { cid: string }) {
     <div className="card habits-card" id="habitos">
       <div className="card-tag">Hábitos de hoy</div>
       <div className="card-title" style={{ fontSize: 16 }}>{list.length <= 3 ? list.map((s) => s.name).join(list.length === 2 ? " y " : ", ").replace(/, ([^,]*)$/, " y $1") : "Tus hábitos"}</div>
-      <p className="card-meta" style={{ marginBottom: 12 }}>Anótalos cada día. Jeff ve cómo vas en la semana.</p>
+      <p className="card-meta" style={{ marginBottom: 12 }}>Anótalos cada día. Yeff ve cómo vas en la semana.</p>
       {alerts.map((a) => <p key={a} className="hab-alert" role="status"><Icon name="bell" size={14} />{a}</p>)}
       {list.map((s) => {
         const meta = s.goal != null ? <small>{s.kind === "check" ? `meta: ${goalText(s)}` : `meta ${fmtHabit(s, s.goal)}`}</small> : null;

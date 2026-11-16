@@ -15,7 +15,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     <Providers workspaceId={profile.workspace_id} profileId={profile.id} name={profile.full_name}>
     <div className="shell">
       <aside className="sidebar">
-        <div className="side-logo"><img src="/brand/logo.svg" alt="YEFFITNES TRAINING" height={29} /></div>
+        <div className="side-logo"><img src="/brand/logo.svg" alt="Yeffitness" height={29} /></div>
         <SideNav clientCount={count ?? 0} />
         <div className="side-spacer" />
         <div className="side-coach">
@@ -24,7 +24,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
           <SignOutButton label="Salir" style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }} />
         </div>
       </aside>
-      <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="YEFFITNES TRAINING" height={29} /><ProfileMenu name={profile.full_name} role="Coach" /></div></div><MobileNav /><ActionsBar side="coach" />{children}</main>
+      <main className="main"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo-claro.svg" alt="Yeffitness" height={29} /><ProfileMenu name={profile.full_name} role="Coach" /></div></div><MobileNav /><ActionsBar side="coach" />{children}</main>
     </div>
     </Providers>
   );

@@ -10,7 +10,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   await c.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" }); await c.waitForTimeout(1500);
   const g = c.getByRole("button", { name: "Entendido" }); if (await g.count()) await g.first().click();
   await c.locator(".ex-row", { hasText: "Sentadilla" }).click(); await c.waitForSelector(".ex-panel");
-  await step("al abrir: explica repeticiones sin hablar de peso", async () => { const t = await c.locator(".rep-pop").innerText(); if (/peso/.test(t) || !/Jeff te ajusta las repeticiones/.test(t)) throw new Error(t); return t.slice(0, 80); });
+  await step("al abrir: explica repeticiones sin hablar de peso", async () => { const t = await c.locator(".rep-pop").innerText(); if (/peso/.test(t) || !/Yeff te ajusta las repeticiones/.test(t)) throw new Error(t); return t.slice(0, 80); });
   await step("hizo 14 de 10 sin peso: consejo de repeticiones", async () => {
     await c.getByRole("spinbutton", { name: "Repeticiones serie 1" }).fill("14"); await c.getByRole("button", { name: "Guardar serie 1" }).click(); await c.waitForTimeout(900);
     const t = await c.locator(".rep-pop").innerText(); await c.screenshot({ path: `${S}/tip_noweight.png` }); if (/peso/.test(t) || !/subirte las repeticiones/.test(t)) throw new Error(t); return t.slice(0, 90);

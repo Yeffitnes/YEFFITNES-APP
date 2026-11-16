@@ -32,18 +32,18 @@ export function useLiveSync(side: "client" | "coach", clientId?: string) {
     if (side === "client") {
       const f = `client_id=eq.${clientId}`;
       ch = c.channel(`live-client-${clientId}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "nudges", filter: f }, () => { inv(["my-nudges", clientId!]); say("Jeff te envió un aviso"); })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "nudges", filter: f }, () => { inv(["my-nudges", clientId!]); say("Yeff te envió un aviso"); })
         // Cada serie que registra el propio cliente también cambia su registro del día: solo se relee si cambió lo de Jeff.
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "workout_logs", filter: f }, (p: { new: Row }) => {
           const n = p.new, cached = qc.getQueryData<WorkoutLog[]>(["logs", clientId!])?.find((l) => l.id === n.id);
           const coachAt = (n.coach_seen_at as string | null) ?? null;
           if (!coachAt || (cached && cached.coachAt === coachAt)) return;
           inv(["logs", clientId!]);
-          if (n.coach_comment || n.coach_comment_audio || n.coach_comment_image || n.coach_comment_video) say("Jeff respondió a tu entrenamiento");
+          if (n.coach_comment || n.coach_comment_audio || n.coach_comment_image || n.coach_comment_video) say("Yeff respondió a tu entrenamiento");
         })
         .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: f }, (p: { new: Row }) => {
           inv(["my-bookings", clientId!], ["first-call", clientId!], ["coach-cancels", clientId!], ["open-slots"]);
-          if (p.new?.status === "cancelled" && p.new?.cancelled_by === "coach") say("Jeff canceló una de tus sesiones");
+          if (p.new?.status === "cancelled" && p.new?.cancelled_by === "coach") say("Yeff canceló una de tus sesiones");
         })
         .subscribe();
     } else {

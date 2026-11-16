@@ -38,7 +38,7 @@ import { ANCHORS, focusAnchor, useFocusAnchor } from "@/lib/focus";
 import { feedbackUnseen, hasFeedback, useClientNutrition, useCoachCancels, useMarkFeedbackSeen, useMealLogs, useMyNudges, useMyPastNudges, useTodayReport, type NudgeKind, type TrainingPlan } from "@/lib/queries";
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // Corregir UNA vez (30-oct): después de terminar, una sola corrección y nunca si Jeff ya lo revisó.
-const EDIT_NOTE: Record<EditState, string> = { open: "", once: "Puedes corregirlo una vez mientras Jeff no lo revise.", used: "Ya usaste tu corrección.", reviewed: "Jeff ya lo revisó: queda así." };
+const EDIT_NOTE: Record<EditState, string> = { open: "", once: "Puedes corregirlo una vez mientras Yeff no lo revise.", used: "Ya usaste tu corrección.", reviewed: "Yeff ya lo revisó: queda así." };
 const LBL = ["L", "M", "M", "J", "V", "S", "D"];
 // Estado de cada día de la semana, para pintarlo: hecho / perdido / por hacer / descanso.
 // Un día pasado sin registro NO se pinta en rojo: puede ser anterior al plan o un día sin entrenar. Solo se marca lo hecho.
@@ -65,7 +65,7 @@ export function HoyView() {
   // Lo guardado sin señal se envía solo al volver la señal (lib/offline.ts).
   useOfflineSync(cid, qc, (r) => {
     if (r.finished.length) { r.finished.forEach((d) => void fetch("/api/push/activity", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ date: d }) }).catch(() => {})); void qc.invalidateQueries({ queryKey: ["records", cid] }); }
-    if (r.dropped) toast("Algo de lo que guardaste sin señal ya no se pudo enviar (por ejemplo, Jeff ya lo había revisado).", true);
+    if (r.dropped) toast("Algo de lo que guardaste sin señal ya no se pudo enviar (por ejemplo, Yeff ya lo había revisado).", true);
     else if (r.sent) { const k = r.kinds, what = [k.some((x) => x === "set" || x === "unset" || x === "finish") && "tu entrenamiento", k.some((x) => x === "habit" || x === "habitx") && "tus hábitos", k.includes("meal") && "tu nutrición", k.includes("report") && "tu reporte"].filter(Boolean) as string[];
       toast(`Volvió la señal: ${what.length ? what.join(", ").replace(/, ([^,]*)$/, " y $1") : "todo"} quedó enviado.`); }
     if (r.kinds.includes("report")) void qc.invalidateQueries({ queryKey: ["report", cid] });
@@ -73,18 +73,18 @@ export function HoyView() {
   if (me.isPending || (cid && (plans.isPending || logs.isPending))) return <div aria-busy="true"><div className="sk" style={{ height: 30, width: 200, marginBottom: 22 }} /><div className="sk" style={{ height: 80, marginBottom: 18 }} /><div className="sk" style={{ height: 260 }} /></div>;
   if ((me.isError && !me.data) || (plans.isError && !plans.data) || (logs.isError && !logs.data)) return <div className="card"><p role="alert" className="empty-note">No pudimos cargar tu día. Revisa tu conexión e inténtalo de nuevo.</p><button className="mini-btn primary" style={{ marginTop: 12 }} onClick={() => { me.refetch(); plans.refetch(); logs.refetch(); }}>Reintentar</button></div>;
   if (me.data?.status === "pending") return <PendingSection eyebrow={cap(new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))} title={`Hola, ${name.split(" ")[0] || ""}`} panels={[
-    { tag: "Hoy", title: "Tu entrenamiento del día", sub: "Rutina, series y peso de cada ejercicio, armados por Jeff para ti." },
-    { tag: "Reporte", title: "Reporte diario", sub: "Un vídeo corto y un comentario para que Jeff vea cómo vas." },
+    { tag: "Hoy", title: "Tu entrenamiento del día", sub: "Rutina, series y peso de cada ejercicio, armados por Yeff para ti." },
+    { tag: "Reporte", title: "Reporte diario", sub: "Un vídeo corto y un comentario para que Yeff vea cómo vas." },
     { tag: "Nutrición", title: "Tu nutrición de hoy", sub: "Tus comidas del día para marcarlas a medida que cumples." },
     { tag: "Progreso", title: "Tu progreso", sub: "Peso, medidas y fotos para ver tu cambio semana a semana." },
-    { tag: "Agenda", title: "Llamada con Jeff", sub: "Reserva tu llamada para conocerse y ajustar tu plan." },
-    { tag: "Vídeo", title: "Vídeo de la semana", sub: "El mensaje de Jeff para empezar la semana." },
+    { tag: "Agenda", title: "Llamada con Yeff", sub: "Reserva tu llamada para conocerse y ajustar tu plan." },
+    { tag: "Vídeo", title: "Vídeo de la semana", sub: "El mensaje de Yeff para empezar la semana." },
   ]} />;
   const today = localDate(), wd = (new Date().getDay() + 6) % 7 + 1;
   const plan = plans.data?.find((p) => p.status === "active"), day = plan?.days.find((d) => d.weekday === wd);
   const logList = logs.data ?? [], logToday = logList.find((l) => l.date === today);
   const first = name.split(" ")[0] || "";
-  const sub = !plan ? "Después de tu primera llamada, Jeff arma tu rutina y tu nutrición para ti." : day ? `Hoy toca ${day.name.toLowerCase()}.` : "Hoy es día de descanso. Recupérate bien.";
+  const sub = !plan ? "Después de tu primera llamada, Yeff arma tu rutina y tu nutrición para ti." : day ? `Hoy toca ${day.name.toLowerCase()}.` : "Hoy es día de descanso. Recupérate bien.";
   const planWd = plan?.days.map((d) => d.weekday) ?? [], wk = weekDates(), n = streak(plan?.days.map((d) => d.weekday) ?? [], logList);
   return (
     <>
@@ -213,7 +213,7 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
           <>
             <div className="card-tag" style={{ marginBottom: 0 }}>¿Qué tan exigente fue? (1 = suave, 10 = máximo)</div>
             <div className="effort-row">{Array.from({ length: 10 }, (_, k) => <button key={k} className={`effort-btn${effort === k + 1 ? " on" : ""}`} aria-label={`Esfuerzo ${k + 1}`} onClick={() => setEffort(k + 1)}>{k + 1}</button>)}</div>
-            <textarea className="set-input" style={{ height: 70, padding: 10, resize: "vertical" }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario para Jeff (opcional)" aria-label="Comentario para tu coach" />
+            <textarea className="set-input" style={{ height: 70, padding: 10, resize: "vertical" }} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Comentario para Yeff (opcional)" aria-label="Comentario para tu coach" />
             <button className="mini-btn primary" style={{ marginTop: 12, width: "100%", height: 44 }} disabled={!anySet || !effort || finish.isPending}
               onClick={() => { setRest(null); finish.mutate({ date: today, effort, note, editing }, { onSuccess: () => { setEditing(false); setUnfold(false); } }); }}>{finish.isPending ? "Guardando…" : editing ? "Guardar corrección" : "Terminar entrenamiento"}</button>
             {editing && <p className="routine-progress-count">Es tu única corrección: después ya no se podrá cambiar.</p>}
@@ -237,7 +237,7 @@ function SwapBar({ cid, item, alts, today, locked, hasSets }: { cid: string; ite
   return (
     <div className="swap-bar">
       {!open ? <button type="button" className="tech-link swap-open" onClick={() => setOpen(true)}><Icon name="swap" size={13} />¿Máquina ocupada? Cambiar ejercicio</button> : <>
-        <p className="swap-txt">Jeff aprobó {alts.length === 1 ? "este cambio" : "estos cambios"} para {item.name}. Él verá que lo cambiaste.</p>
+        <p className="swap-txt">Yeff aprobó {alts.length === 1 ? "este cambio" : "estos cambios"} para {item.name}. Él verá que lo cambiaste.</p>
         <div className="swap-list">{alts.map((a) => (
           <button key={a.id} type="button" className="swap-opt" disabled={swap.isPending} onClick={() => swap.mutate({ date: today, itemId: item.id, alt: a, from: item.name }, { onSuccess: () => setOpen(false) })}>
             <ExPic image={a.image} name={a.name} size={40} className="sm" fallback={<span className="swap-ph" aria-hidden><Icon name="dumbbell" size={17} /></span>} /><span><b>{a.name}</b><small>{[a.muscle, a.equipment].filter(Boolean).join(" · ") || "Sustituto aprobado"}</small></span><Icon name="arrow" size={13} />
@@ -270,10 +270,10 @@ function RepTip({ item, just }: { item: PlanItem; just: JustSaved | null }) {
   if (!r || shown !== key) return null;
   const w = item.weight != null ? ` con ${item.weight} kg` : "";
   const text = tip ?? (noWeight
-    ? `Haz tus ${item.sets} series de ${r.fixed ? r.min : `entre ${r.min} y ${r.max}`} repeticiones. Escribe las que hiciste de verdad: si te sobran o te faltan, Jeff te ajusta las repeticiones.`
+    ? `Haz tus ${item.sets} series de ${r.fixed ? r.min : `entre ${r.min} y ${r.max}`} repeticiones. Escribe las que hiciste de verdad: si te sobran o te faltan, Yeff te ajusta las repeticiones.`
     : r.fixed
-    ? `Haz tus ${item.sets} series${w} de ${r.min} repeticiones. Si haces más, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Escribe las repeticiones que hiciste de verdad. Si tienes dudas, pregúntale a Jeff.`
-    : `Haz tus ${item.sets} series${w} buscando entre ${r.min} y ${r.max} repeticiones. Si pasas de ${r.max}, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Si tienes dudas, pregúntale a Jeff.`);
+    ? `Haz tus ${item.sets} series${w} de ${r.min} repeticiones. Si haces más, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Escribe las repeticiones que hiciste de verdad. Si tienes dudas, pregúntale a Yeff.`
+    : `Haz tus ${item.sets} series${w} buscando entre ${r.min} y ${r.max} repeticiones. Si pasas de ${r.max}, la próxima vez sube un poco el peso; si no llegas a ${r.min}, bájalo. Si tienes dudas, pregúntale a Yeff.`);
   return (
     <button type="button" className={`rep-pop${tip ? " warn" : ""}`} role="status" onClick={() => setShown(null)} aria-label="Cerrar consejo">
       <Icon name={tip ? (last!.reps > r.max ? "up" : "down") : "dumbbell"} size={15} />
@@ -342,7 +342,7 @@ function CoachNudges({ cid, trainingDone, trainingToday, features }: { cid: stri
   const GO_TXT = { train: "Ir a mi rutina", meals: "Marcar mi nutrición", report: "Hacer mi reporte", habits: "Anotar mis hábitos" } as const;
   return (
     <QuickRow key={allDone ? "ok" : "todo"} anchor="avisos" icon={allDone ? "check" : "bell"} tone={allDone ? "ok" : "new"}
-      title={allDone ? "Listo: cumpliste lo que Jeff te pidió" : "Jeff te está esperando"}
+      title={allDone ? "Listo: cumpliste lo que Yeff te pidió" : "Yeff te está esperando"}
       sub={allDone ? list.map((k) => DONE_TXT[k]).join(" · ") : NUDGE_TXT[list.find((k) => !done[k]) ?? list[0]].body}
       chip={allDone ? undefined : "Hoy"} defaultOpen={!allDone}>
       {list.map((k) => <div key={k} className={`nudge-line${done[k] ? " ok" : ""}`}>
@@ -367,7 +367,7 @@ function CoachFeedback({ cid, logs }: { cid: string; logs: WorkoutLog[] }) {
         const day = cap(new Date(`${l.date}T12:00:00`).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "short" }));
         return (
           <QuickRow key={l.id} icon="message" tone="new" chip="Nuevo" defaultOpen={list.length === 1}
-            title={`Jeff respondió a tu entrenamiento${l.routine ? ` de ${l.routine.toLowerCase()}` : ""}`}
+            title={`Yeff respondió a tu entrenamiento${l.routine ? ` de ${l.routine.toLowerCase()}` : ""}`}
             sub={`${day}${extras(l)}`}>
             <FeedbackBody log={l} />
             <div className="fb-foot"><span>No se responde. Queda guardada 7 días en Mensajes y te la recuerdo la próxima vez que toque esta rutina.</span>
@@ -391,7 +391,7 @@ function CoachCancels({ cid }: { cid: string }) {
   return <>{list.map((c) => {
     const when = `${cap(new Date(c.startsAt).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "short" }))} a las ${new Date(c.startsAt).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
     return (
-      <QuickRow key={c.id} icon="calendar" tone="new" chip="Agenda" defaultOpen title="Jeff canceló tu sesión" sub={when}>
+      <QuickRow key={c.id} icon="calendar" tone="new" chip="Agenda" defaultOpen title="Yeff canceló tu sesión" sub={when}>
         {c.reason && <p className="fb-text">“{c.reason}”</p>}
         <div className="fb-foot"><span>El horario quedó libre. Reserva otro cuando quieras.</span>
           <span style={{ display: "flex", gap: 8 }}><button type="button" className="mini-btn ghost" onClick={() => ok(c.id)}>Entendido</button><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none" }} onClick={() => ok(c.id)}>Reservar otro horario</Link></span></div>
@@ -418,7 +418,7 @@ function WhileAway({ cid, plan, logs, today }: { cid: string; plan?: TrainingPla
   }
   const ok = () => { const n = [...(seen ?? []), ...list.map((x) => x.id)].slice(-100); setSeen(n); try { localStorage.setItem(AWAY_KEY, JSON.stringify(n)); } catch { /* sin almacenamiento */ } };
   return (
-    <QuickRow icon="bell" tone="new" chip={`${days.length} ${days.length === 1 ? "día" : "días"}`} title="Jeff estuvo pendiente de ti" sub={`Te escribió mientras no entrabas (${days.map((d) => wd(d).toLowerCase()).join(", ")})`}>
+    <QuickRow icon="bell" tone="new" chip={`${days.length} ${days.length === 1 ? "día" : "días"}`} title="Yeff estuvo pendiente de ti" sub={`Te escribió mientras no entrabas (${days.map((d) => wd(d).toLowerCase()).join(", ")})`}>
       <ul className="away-list">{days.map((d) => <li key={d}><b>{wd(d)}</b>{Array.from(new Set(list.filter((n) => n.day === d).map((n) => AWAY_SHORT[n.kind]))).join(" y ")}</li>)}</ul>
       <div className="fb-foot"><span>{missed.length ? `Sin hacer: ${missed.join(", ")}. Ya pasó; sigue con lo de hoy.` : "Sigue con lo de hoy."}</span>
         <button type="button" className="mini-btn ghost" onClick={ok}>Entendido</button></div>

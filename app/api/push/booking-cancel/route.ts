@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   // El motivo sale de la base (0041: bookings.cancel_reason); el del cuerpo de la petición queda solo para el código viejo.
   const why = (rows[0].reason ?? reason ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
   const r = await sendPushReport(rows.map(({ endpoint, p256dh, auth }) => ({ endpoint, p256dh, auth })), {
-    title: "Jeff canceló tu sesión", body: `Era el ${when}.${why ? ` ${why}` : ""} Reserva otro horario en Agenda.`, url: "/inicio/agenda", tag: `bk-${bookingId}`,
+    title: "Yeff canceló tu sesión", body: `Era el ${when}.${why ? ` ${why}` : ""} Reserva otro horario en Agenda.`, url: "/inicio/agenda", tag: `bk-${bookingId}`,
   });
   if (r.dead.length) await supabase.rpc("prune_push", { p_endpoints: r.dead });
   return NextResponse.json({ ok: true, sent: r.ok, failed: r.failed });

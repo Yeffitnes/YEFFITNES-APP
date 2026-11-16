@@ -46,8 +46,8 @@ export function nextWeight(current: number | null | undefined, dir: "up" | "down
 export function setTip(range: RepRange, reps: number, noWeight = false): string | null {
   // Sin peso (12-nov): no hay peso que subir o bajar; Jeff ajusta las repeticiones.
   if (noWeight) {
-    if (reps > range.max) return `Hiciste ${reps} y la meta era ${range.fixed ? range.max : `entre ${range.min} y ${range.max}`}. Bien: Jeff verá que te quedó fácil y puede subirte las repeticiones.`;
-    if (reps < range.min) return `Hiciste ${reps} de ${range.min}. Descansa un poco más antes de la siguiente serie. Si no llegas, Jeff puede ajustarte las repeticiones.`;
+    if (reps > range.max) return `Hiciste ${reps} y la meta era ${range.fixed ? range.max : `entre ${range.min} y ${range.max}`}. Bien: Yeff verá que te quedó fácil y puede subirte las repeticiones.`;
+    if (reps < range.min) return `Hiciste ${reps} de ${range.min}. Descansa un poco más antes de la siguiente serie. Si no llegas, Yeff puede ajustarte las repeticiones.`;
     return null;
   }
   if (range.fixed) {

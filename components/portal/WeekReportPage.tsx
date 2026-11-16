@@ -18,7 +18,7 @@ export function WeekReportPage({ id }: { id: string }) {
     <>
       <div className="topbar"><div className="greeting"><Link href="/inicio/progreso" className="tech-link" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginBottom: 8 }}><Icon name="back" size={12} /> Progreso</Link>
         <div className="greeting-eyebrow">Resumen de tu semana</div><h1>{s.data ? `Semana ${s.data.n}` : "Tu semana"}</h1>
-        <p className="greeting-sub">Lo que lograste, comparado con la semana anterior. Te lo envió Jeff.</p></div></div>
+        <p className="greeting-sub">Lo que lograste, comparado con la semana anterior. Te lo envió Yeff.</p></div></div>
       {s.isPending || me.isPending ? <div className="sk" style={{ height: 320 }} />
         : s.isError ? <div className="card"><p role="alert" className="empty-note">No pudimos abrir tu resumen. Revisa tu conexión. <button type="button" className="tech-link" onClick={() => s.refetch()}>Reintentar</button></p></div>
         : !s.data || !me.data ? <div className="card"><p className="empty-note">Este resumen ya no está disponible. Tus resúmenes están en Progreso.</p></div>
@@ -31,7 +31,7 @@ export function NewWeekSummary({ cid }: { cid: string }) {
   const l = useSentWeeks(cid), s = l.data?.find((x) => !x.seenAt);
   if (!s) return null;
   return (
-    <QuickRow icon="chart" tone="todo" title={`Jeff te envió el resumen de tu semana ${s.n}`} sub="Lo que lograste y cómo vas frente a la anterior" defaultOpen>
+    <QuickRow icon="chart" tone="todo" title={`Yeff te envió el resumen de tu semana ${s.n}`} sub="Lo que lograste y cómo vas frente a la anterior" defaultOpen>
       {s.note && <p style={{ fontSize: 14, lineHeight: 1.55, margin: "8px 0 0" }}>“{s.note.length > 160 ? `${s.note.slice(0, 157)}…` : s.note}”</p>}
       <Link href={`/inicio/resumen/${s.id}`} className="report-btn" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 10, textDecoration: "none" }}>Ver mi resumen <Icon name="arrow" size={14} /></Link>
     </QuickRow>
@@ -43,7 +43,7 @@ export function SentWeeksList({ cid }: { cid: string }) {
   if (!l.data?.length) return null;
   return (
     <div className="card" style={{ marginBottom: 18 }}>
-      <div className="card-tag">Resúmenes de Jeff</div>
+      <div className="card-tag">Resúmenes de Yeff</div>
       {l.data.map((s: SentWeek) => <Link key={s.id} href={`/inicio/resumen/${s.id}`} className="wr-list-row"><span><b>Semana {s.n}</b><small>{new Date(`${s.from}T12:00:00Z`).toLocaleDateString("es", { day: "numeric", month: "short", timeZone: "UTC" })} al {new Date(`${s.to}T12:00:00Z`).toLocaleDateString("es", { day: "numeric", month: "short", timeZone: "UTC" })}{s.seenAt ? "" : " · nuevo"}</small></span><Icon name="arrow" size={13} /></Link>)}
     </div>
   );

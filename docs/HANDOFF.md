@@ -16,6 +16,7 @@ Estado al **4-nov-2026** (última fusión a `main`: 28-oct, `37970c1`; lo constr
 - **Antigüedad:** `docs/CONTEXT.md` (24-oct) y `docs/PROJECT_STATE.md` (25-oct) quedaron **desactualizados**; lo que pasó después está en `CHANGELOG.md` y en este archivo. Si algo se contradice, mandan este archivo y el `CHANGELOG.md`.
 
 ## 2. Reglas fijas (Cristian las repitió varias veces; no las olvides)
+- **Marca:** "Yeffitness" (Y mayúscula, resto minúscula, doble s) y el coach "Yeff" (con Y) en todo lo que ve un usuario. Nunca "YEFFITNES" ni "Jeff" en pantallas, avisos o mensajes (15-nov).
 1. **Sin emojis ni símbolos genéricos.** Usa los iconos de marca (`components/ui/Icon.tsx`). Si falta uno, se agrega ahí.
 2. **Sin verde.** No le gustan los chulos ni las letras verdes. Lo completado va en la marca: rojo (`--neon` a `--rose`) y negro (`--ink` #0A0910). Ya se quitó el verde en panel del coach y del cliente; si ves uno nuevo, quítalo. Excepciones deliberadas: el color de una línea de la gráfica de progreso y la flecha de mejora en métricas.
 3. **Acentos negros con brillo rojo suave** (`radial-gradient(120% 220% at 0% 0%, rgba(247,37,75,.5), transparent 62%), var(--ink)`) en lo activo y en lo que pide acción. Es el lenguaje del panel del cliente y a Jeff le gusta. **No mezcles** el mismo estilo en fondo e icono a la vez (icono claro sobre tarjeta oscura). No saturar: ya se le dijo "te pasaste" una vez.

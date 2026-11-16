@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!rows.length) return NextResponse.json({ ok: true, sent: 0 });
   const day = new Date(`${rows[0].log_date}T12:00:00Z`).toLocaleDateString("es", { weekday: "long", day: "numeric", timeZone: "UTC" });
   const dead = await sendPush(rows.map(({ endpoint, p256dh, auth }) => ({ endpoint, p256dh, auth })), {
-    title: "Jeff respondió a tu entrenamiento", body: `${rows[0].day_name} · ${day}. Ábrelo en la app.`, url: "/inicio#respuestas", tag: `fb-${logId}`,
+    title: "Yeff respondió a tu entrenamiento", body: `${rows[0].day_name} · ${day}. Ábrelo en la app.`, url: "/inicio#respuestas", tag: `fb-${logId}`,
   });
   if (dead.length) await supabase.rpc("prune_push", { p_endpoints: dead });
   return NextResponse.json({ ok: true, sent: rows.length - dead.length });

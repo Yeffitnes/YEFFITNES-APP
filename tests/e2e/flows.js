@@ -92,14 +92,14 @@ const step = async (name, fn) => { try { const r = await fn(); log("OK  ", name,
   });
   // ---------- De vuelta al cliente: ve lo de Jeff ----------
   await c.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" }); await c.waitForTimeout(1200);
-  await step("cliente: ve la respuesta de Jeff", async () => { const t = await c.locator("body").innerText(); if (!/Jeff respondió/.test(t)) throw new Error("no"); });
+  await step("cliente: ve la respuesta de Jeff", async () => { const t = await c.locator("body").innerText(); if (!/Yeff respondió/.test(t)) throw new Error("no"); });
   await step("cliente: revisado por Jeff ya no se puede corregir", async () => { if (await c.getByRole("button", { name: /Corregir/ }).count()) throw new Error("ofrece corregir"); });
-  await step("cliente: ve la sesión cancelada con motivo", async () => { const t = await c.locator("body").innerText(); if (!/Jeff canceló tu sesión/.test(t) || !/imprevisto/.test(t)) throw new Error("no"); });
+  await step("cliente: ve la sesión cancelada con motivo", async () => { const t = await c.locator("body").innerText(); if (!/Yeff canceló tu sesión/.test(t) || !/imprevisto/.test(t)) throw new Error("no"); });
   await step("cliente: ve vídeo del día y de la semana", async () => { const t = await c.locator(".fv-stack").innerText().catch(() => ""); if (!/Vídeo de la semana/i.test(t)) throw new Error(t.slice(0, 80)); });
   await c.screenshot({ path: `${S}/f_camila_hoy2.png`, fullPage: true });
   const ac = await ctxFor(b, "andres", true), a = await ac.newPage(); watch(a, "andres", errs);
   await a.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" });
-  await step("Andrés: ve el aviso de Jeff", async () => { const t = await a.locator("body").innerText(); if (!/Jeff te está esperando/.test(t)) throw new Error("no"); });
+  await step("Andrés: ve el aviso de Jeff", async () => { const t = await a.locator("body").innerText(); if (!/Yeff te está esperando/.test(t)) throw new Error("no"); });
   await a.screenshot({ path: `${S}/f_andres.png`, fullPage: true });
   await b.close();
   console.log("\n=== ERRORES DE CONSOLA/RED ===\n" + (errs.length ? [...new Set(errs)].join("\n") : "ninguno"));

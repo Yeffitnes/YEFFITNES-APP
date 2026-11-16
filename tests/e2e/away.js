@@ -13,17 +13,17 @@ const CID = process.env.CLIENT_ID, D = (n) => `(now() at time zone 'America/Bogo
   await c.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" }); await c.waitForTimeout(1500);
   const g = c.getByRole("button", { name: "Entendido" }); 
   await step("al volver ve 'Jeff estuvo pendiente de ti' con los avisos y lo que quedó sin hacer", async () => {
-    const row = c.locator(".qrow", { hasText: "Jeff estuvo pendiente de ti" }); await row.scrollIntoViewIfNeeded();
+    const row = c.locator(".qrow", { hasText: "Yeff estuvo pendiente de ti" }); await row.scrollIntoViewIfNeeded();
     const closed = await row.locator(".qrow-body").count(); await row.screenshot({ path: `${S}/away_closed.png` });
     await row.locator(".qrow-head").click(); await c.waitForTimeout(300);
     const t = (await row.innerText()).replace(/\n/g, " "), btns = await row.locator(".qrow-body button, .qrow-body a").count(); await row.screenshot({ path: `${S}/away.png` });
     if (closed || btns !== 1 || !/esperaba tu entrenamiento/.test(t) || !/registraras tu día/.test(t)) throw new Error(`cerrada=${!closed} botones=${btns} ${t.slice(0, 300)}`); return t.slice(0, 200);
   });
   await step("'Entendido' la quita y no vuelve al recargar", async () => {
-    await c.locator(".qrow", { hasText: "Jeff estuvo pendiente de ti" }).getByRole("button", { name: "Entendido" }).click(); await c.waitForTimeout(300);
-    if (await c.locator(".qrow", { hasText: "Jeff estuvo pendiente de ti" }).count()) throw new Error("sigue");
+    await c.locator(".qrow", { hasText: "Yeff estuvo pendiente de ti" }).getByRole("button", { name: "Entendido" }).click(); await c.waitForTimeout(300);
+    if (await c.locator(".qrow", { hasText: "Yeff estuvo pendiente de ti" }).count()) throw new Error("sigue");
     await c.reload({ waitUntil: "networkidle" }); await c.waitForTimeout(1200);
-    if (await c.locator(".qrow", { hasText: "Jeff estuvo pendiente de ti" }).count()) throw new Error("volvió al recargar"); return "ok";
+    if (await c.locator(".qrow", { hasText: "Yeff estuvo pendiente de ti" }).count()) throw new Error("volvió al recargar"); return "ok";
   });
   if (await g.count()) await g.first().click().catch(() => {});
   await step("hábitos: avisos (ayer poca agua y pocos pasos, anoche poco sueño), récord y promedio de la semana", async () => {

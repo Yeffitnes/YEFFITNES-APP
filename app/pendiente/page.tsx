@@ -15,7 +15,7 @@ export default async function Pendiente() {
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-6">
           <span className="font-mono text-xs text-pearl">CUENTA EN PAUSA</span>
           <h1 className="mt-3 font-display text-2xl font-semibold">Tu plan está en pausa</h1>
-          <p className="mx-auto mt-2 max-w-xs text-sm text-white/60">Cuando Jeff lo reactive, aquí aparecerá todo tu contenido. Abajo ves los mensajes que te deje.</p>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-white/60">Cuando Yeff lo reactive, aquí aparecerá todo tu contenido. Abajo ves los mensajes que te deje.</p>
         </div>
         <div className="w-full max-w-md text-left"><PendingThread /></div>
         <form action={signOut}><button className="text-sm text-white/50 underline">Salir</button></form>

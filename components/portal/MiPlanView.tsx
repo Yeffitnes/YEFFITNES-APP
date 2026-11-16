@@ -48,7 +48,7 @@ export function MiPlanView() {
   const byDay = new Map<number, PlanDay>((plan?.days ?? []).map((d) => [d.weekday, d]));
   const trainDays = plan?.days.length ?? 0;
   const todayDay = byDay.get(wd);
-  const sub = !plan ? "Después de tu primera llamada, Jeff arma tu plan para ti." : `${trainDays} ${trainDays === 1 ? "día" : "días"} de entrenamiento por semana. ${todayDay ? `Hoy toca ${todayDay.name.toLowerCase()}.` : "Hoy es día de descanso."}`;
+  const sub = !plan ? "Después de tu primera llamada, Yeff arma tu plan para ti." : `${trainDays} ${trainDays === 1 ? "día" : "días"} de entrenamiento por semana. ${todayDay ? `Hoy toca ${todayDay.name.toLowerCase()}.` : "Hoy es día de descanso."}`;
   return (
     <>
       <div className="topbar">

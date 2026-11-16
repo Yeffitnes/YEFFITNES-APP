@@ -20,13 +20,13 @@ export function AgendaClientView() {
   const list = (slots.data ?? []).filter((s) => new Date(s.startsAt) > now && (filter === "all" || s.kind === filter));
   const when = (iso: string) => `${new Date(iso).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })} · ${hhmm(iso)}`;
   const upcoming = upcomingOnly(mine.data, now);
-  if (me.data?.status === "pending") return <PendingSection eyebrow="Agenda" title="Tus sesiones con Jeff" panels={[
-    { tag: "Agenda", title: "Horarios disponibles", sub: "Jeff publica sus horarios y tú eliges el que te sirva." },
+  if (me.data?.status === "pending") return <PendingSection eyebrow="Agenda" title="Tus sesiones con Yeff" panels={[
+    { tag: "Agenda", title: "Horarios disponibles", sub: "Yeff publica sus horarios y tú eliges el que te sirva." },
     { tag: "Reservas", title: "Tus próximas sesiones", sub: "Tus llamadas reservadas, con recordatorio antes de empezar." },
   ]} />;
   return (
     <>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Reserva tu próxima sesión</h1><p className="greeting-sub">Tu coach publica horarios cada semana. Elige el que te sirve y confirma al instante. Puedes tener una sesión reservada a la vez. Si te equivocaste, tienes 10 minutos para cancelarla; después, escríbele a Jeff para cambiarla.</p></div></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Reserva tu próxima sesión</h1><p className="greeting-sub">Tu coach publica horarios cada semana. Elige el que te sirve y confirma al instante. Puedes tener una sesión reservada a la vez. Si te equivocaste, tienes 10 minutos para cancelarla; después, escríbele a Yeff para cambiarla.</p></div></div>
       <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" disabled={off <= 0} onClick={() => { setOff(off - 1); setSel(null); }}><Icon name="chevronLeft" size={16} /></button>
         <div className="week-nav-label"><div className="week-nav-range">{weekLabel(from)}</div><div className="week-nav-tag">{off === 0 ? "Semana actual" : off === 1 ? "Próxima semana" : `En ${off} semanas`}</div></div>
         <button className="week-nav-btn" aria-label="Semana siguiente" disabled={off >= 6} onClick={() => { setOff(off + 1); setSel(null); }}><Icon name="chevron" size={16} /></button></div>
@@ -60,10 +60,10 @@ export function AgendaClientView() {
             {mine.data && !upcoming.length && <div className="sess-empty-note">Aún no tienes sesiones reservadas. Elige un horario en el calendario.</div>}
             <div style={{ marginTop: 6 }}>{upcoming.map((b) => { const d = new Date(b.startsAt), left = cancelLeft(b, now), live = d.getTime() <= now.getTime();
               return (<div key={b.id} className="sess-row"><div className="sess-date"><div className="dow">{DAY3[(d.getDay() + 6) % 7]}</div><div className="dnum">{d.getDate()}</div></div>
-                <div className="sess-body"><div className="sess-time">{hhmm(d)} — {b.duration} min</div><div className="sess-type">{KIND_LABEL[b.kind]}{b.bookedBy === "coach" ? " · Agendada por Jeff" : ""}</div></div><span className="sess-tag">{live ? "Ahora" : "Confirmada"}</span>
+                <div className="sess-body"><div className="sess-time">{hhmm(d)} — {b.duration} min</div><div className="sess-type">{KIND_LABEL[b.kind]}{b.bookedBy === "coach" ? " · Agendada por Yeff" : ""}</div></div><span className="sess-tag">{live ? "Ahora" : "Confirmada"}</span>
                 <a className="mini-btn ghost" href={icsHref(b)} download="sesion-yeffitnes.ics"><Icon name="bell" size={14} /> Alarma</a>
                 {left > 0 ? <button className="mini-btn ghost" disabled={cancel.isPending} onClick={() => cancel.mutate(b.id)} title="Solo puedes cancelar en los 10 minutos siguientes a reservar">Cancelar ({Math.ceil(left / 60_000)} min)</button>
-                  : !live && <Link className="mini-btn ghost" href={changeSessionLink(when(b.startsAt))}>Pedir cambio a Jeff</Link>}</div>); })}</div>
+                  : !live && <Link className="mini-btn ghost" href={changeSessionLink(when(b.startsAt))}>Pedir cambio a Yeff</Link>}</div>); })}</div>
           </div>
         </div>
       </div>

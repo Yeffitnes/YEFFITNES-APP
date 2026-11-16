@@ -1,4 +1,4 @@
-/* YEFFITNES TRAINING — avisos push y archivos fijos en el teléfono.
+/* Yeffitness — avisos push y archivos fijos en el teléfono.
    Solo guarda archivos que nunca cambian de contenido (/_next/static lleva la versión en el nombre) y, aparte, logos e iconos
    (se muestran del teléfono y se actualizan por detrás). Las pantallas y los datos SIEMPRE vienen de internet:
    así nunca se queda una versión vieja de la app.
@@ -47,7 +47,7 @@ async function page(req, key) {
 self.addEventListener("message", (e) => { if (e.data === "yf-clear-pages") e.waitUntil(caches.delete(PAGES)); });
 self.addEventListener("push", (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch (_) {}
-  e.waitUntil(self.registration.showNotification(d.title || "YEFFITNES TRAINING", {
+  e.waitUntil(self.registration.showNotification(d.title || "Yeffitness", {
     body: d.body || "", icon: "/icon-192.png", badge: "/icon-192.png", tag: d.tag || "yeffitnes", renotify: true, data: { url: d.url || "/" },
   }));
 });

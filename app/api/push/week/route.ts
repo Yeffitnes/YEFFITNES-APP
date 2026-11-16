@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   if (!s?.message_id) return NextResponse.json({ ok: true, sent: 0 });
   const { data: targets } = await supabase.rpc("push_targets", { p_message: s.message_id });
   if (!targets?.length) return NextResponse.json({ ok: true, sent: 0 });
-  const dead = await sendPush(targets as Target[], { title: "Tu resumen de la semana", body: `Jeff te envió el resumen de tu semana ${s.week_n}: lo que lograste y cómo vas frente a la anterior.`, url: `/inicio/resumen/${summaryId}`, tag: `week-${summaryId}` });
+  const dead = await sendPush(targets as Target[], { title: "Tu resumen de la semana", body: `Yeff te envió el resumen de tu semana ${s.week_n}: lo que lograste y cómo vas frente a la anterior.`, url: `/inicio/resumen/${summaryId}`, tag: `week-${summaryId}` });
   if (dead.length) await supabase.rpc("prune_push", { p_endpoints: dead });
   return NextResponse.json({ ok: true, sent: (targets as Target[]).length - dead.length });
 }

@@ -74,7 +74,7 @@ export function Onboarding() {
         <div className="tour-top"><span key={i} className="gd-pop"><span key={pose} className="gd-swap"><Guide size={step.kind === "hello" || step.kind === "call" ? 92 : 70} pose={pose} /></span></span></div>
         <div key={`t${i}`}>
         {step.kind === "hello" && <>
-          <div className="modal-title say">¡Hola{first ? `, ${first}` : ""}! Soy Jeff.</div>
+          <div className="modal-title say">¡Hola{first ? `, ${first}` : ""}! Soy Yeff.</div>
           <div className="modal-sub say say-2">Tu plan ya está activo. Así vamos a trabajar:</div>
           <ol className="ob-steps say say-3">
             <li><b>1</b><span>Agendas tu <b>primera llamada</b> conmigo para conocernos.</span></li>

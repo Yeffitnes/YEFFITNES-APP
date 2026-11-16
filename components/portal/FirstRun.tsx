@@ -61,8 +61,8 @@ function NotifyGate({ state, onState, recheck, onSkip }: { state: "off" | "denie
         <h2 id="nf-title" className="nf-title">{state === "install" ? "Instala la app para seguir" : "Activa las notificaciones"}</h2>
         <p className="nf-sub">{state === "install"
           ? "Las notificaciones son obligatorias y en el celular solo funcionan con la app instalada. Instálala y ábrela desde el icono."
-          : isMobile() ? "Es lo único obligatorio para usar la app. Así te llegan los recordatorios de tu rutina y tu reporte, y las respuestas de Jeff."
-          : "Así te llegan los recordatorios y las respuestas de Jeff también en este computador. En el celular son obligatorias; aquí puedes seguir sin ellas."}</p>
+          : isMobile() ? "Es lo único obligatorio para usar la app. Así te llegan los recordatorios de tu rutina y tu reporte, y las respuestas de Yeff."
+          : "Así te llegan los recordatorios y las respuestas de Yeff también en este computador. En el celular son obligatorias; aquí puedes seguir sin ellas."}</p>
         {state !== "install" && <>
           <button type="button" className="lk-cta nf-btn" disabled={busy} onClick={() => void turnOn()}>{busy ? "Activando…" : "Activar notificaciones"}</button>
           {fail && <p className="nf-hint nf-fail" role="alert">{fail}</p>}
@@ -75,8 +75,8 @@ function NotifyGate({ state, onState, recheck, onSkip }: { state: "off" | "denie
                   ? <><li>En el menú de arriba: <b>Safari → Ajustes</b> (o Preferencias) → <b>Sitios web</b>.</li><li>A la izquierda, <b>Notificaciones</b>. Busca esta dirección y elige <b>Permitir</b>.</li>{isMac() && <li>Si aun así no llegan: <b>Ajustes del Sistema → Notificaciones → Safari</b> y activa <b>Permitir notificaciones</b>.</li>}</>
                   : <><li>Toca el <b>candado</b> (o el icono de ajustes) a la izquierda de la dirección, arriba.</li><li>En <b>Notificaciones</b>, elige <b>Permitir</b> y recarga la página.</li>{isMac() && <li>Si aun así no llegan: <b>Ajustes del Sistema → Notificaciones → Google Chrome</b> y activa <b>Permitir notificaciones</b>.</li>}</>
               : ios
-                ? <><li>Abre <b>Ajustes</b> del iPhone.</li><li>Entra a <b>Notificaciones</b> y busca <b>YEFFITNES</b>.</li><li>Activa <b>Permitir notificaciones</b>.</li></>
-                : <><li>Mantén presionado el icono de <b>YEFFITNES</b> y toca <b>Información de la app</b>.</li><li>Entra a <b>Notificaciones</b>.</li><li>Activa <b>Todas las notificaciones</b>.</li></>}
+                ? <><li>Abre <b>Ajustes</b> del iPhone.</li><li>Entra a <b>Notificaciones</b> y busca <b>Yeffitness</b>.</li><li>Activa <b>Permitir notificaciones</b>.</li></>
+                : <><li>Mantén presionado el icono de <b>Yeffitness</b> y toca <b>Información de la app</b>.</li><li>Entra a <b>Notificaciones</b>.</li><li>Activa <b>Todas las notificaciones</b>.</li></>}
             </ol>
             <button type="button" className="nf-again" onClick={recheck}>{isMobile() ? "Ya las activé en Ajustes" : "Ya las permití"}</button>
           </>}
@@ -84,8 +84,8 @@ function NotifyGate({ state, onState, recheck, onSkip }: { state: "off" | "denie
         {state === "install" && <>
           <ol className="nf-steps">
             {ios
-              ? <><li>Abre esta dirección en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Añadir a pantalla de inicio</b> y abre <b>YEFFITNES</b> desde el icono nuevo.</li></>
-              : <><li>Abre esta dirección en <b>Chrome</b>.</li><li>Toca el menú (los tres puntos) y elige <b>Instalar app</b>.</li><li>Abre <b>YEFFITNES</b> desde el icono nuevo.</li></>}
+              ? <><li>Abre esta dirección en <b>Safari</b>.</li><li>Toca <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li><li>Elige <b>Añadir a pantalla de inicio</b> y abre <b>Yeffitness</b> desde el icono nuevo.</li></>
+              : <><li>Abre esta dirección en <b>Chrome</b>.</li><li>Toca el menú (los tres puntos) y elige <b>Instalar app</b>.</li><li>Abre <b>Yeffitness</b> desde el icono nuevo.</li></>}
           </ol>
           <button type="button" className="lk-cta nf-btn" onClick={recheck}>Ya la instalé</button>
         </>}

@@ -10,7 +10,7 @@ export function ObjectiveView() {
   const w = (m.data ?? []).filter((x) => x.weight != null).sort((a, b) => a.date.localeCompare(b.date)), first = w[0], last = w[w.length - 1];
   const diff = first && last && first !== last ? Math.round((last.weight! - first.weight!) * 10) / 10 : null;
   if (me.data?.status === "pending") return <PendingSection eyebrow="Objetivos" title="Hacia dónde vas" panels={[
-    { tag: "Objetivo", title: "Tu objetivo", sub: "Jeff lo define contigo en la primera llamada." },
+    { tag: "Objetivo", title: "Tu objetivo", sub: "Yeff lo define contigo en la primera llamada." },
     { tag: "Avance", title: "Cuánto has avanzado", sub: "Tu cambio de peso desde el primer registro." },
   ]} />;
   return (

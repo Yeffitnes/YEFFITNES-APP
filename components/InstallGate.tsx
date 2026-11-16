@@ -37,15 +37,15 @@ export function InstallGate({ children }: { children: React.ReactNode }) {
   if (!ON || mode === "ok" || mode === "check" || path.startsWith("/auth")) return <>{children}</>;
   return (
     <main className="ig">
-      <img src="/brand/logo.svg" alt="YEFFITNES TRAINING" width={190} height={46} className="ig-logo" />
+      <img src="/brand/logo.svg" alt="Yeffitness" width={190} height={46} className="ig-logo" />
       <h1>Instala la app para continuar</h1>
-      <p className="ig-sub">YEFFITNES se usa desde la app instalada en tu celular, no desde el navegador.</p>
+      <p className="ig-sub">Yeffitness se usa desde la app instalada en tu celular, no desde el navegador.</p>
       {mode === "ios" && (
         <ol className="ig-steps">
           <li>Abre esta dirección en <b>Safari</b>.</li>
           <li>Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).</li>
           <li>Elige <b>Añadir a pantalla de inicio</b> y confirma.</li>
-          <li>Abre <b>YEFFITNES</b> desde el icono nuevo.</li>
+          <li>Abre <b>Yeffitness</b> desde el icono nuevo.</li>
         </ol>
       )}
       {mode === "android" && (
@@ -53,7 +53,7 @@ export function InstallGate({ children }: { children: React.ReactNode }) {
           {evt && <button className="ig-btn" onClick={async () => { await evt.prompt(); setEvt(null); }}>Instalar la app</button>}
           <ol className="ig-steps">
             {!evt && <li>Toca el menú <b>⋮</b> de tu navegador y elige <b>Instalar app</b> (o <b>Añadir a pantalla de inicio</b>).</li>}
-            <li>Abre <b>YEFFITNES</b> desde el icono nuevo.</li>
+            <li>Abre <b>Yeffitness</b> desde el icono nuevo.</li>
           </ol>
         </>
       )}

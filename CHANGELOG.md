@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-11-15 - Marca Yeffitness, "Yeff" en todo lo que ve el cliente y login nuevo
+Cristian: el nombre oficial es **Yeffitness** (Y mayúscula, el resto en minúscula, doble s) y el coach se escribe **Yeff** (con Y) en todo lo que se ve.
+- **Logo**: `public/brand/logo.svg` y `logo-claro.svg` con la palabra "Yeffitness" (trazada con Instrument Sans 700, misma fuente de títulos) y el emblema y "TRAINING" de siempre. Emblema suelto en `public/brand/emblema.webp` (para el login). Imágenes para compartir `public/og.png` y `og-test.png` rehechas con la marca nueva.
+- **Textos**: "YEFFITNES"/"YEFFITNES TRAINING" pasa a "Yeffitness" (título, nombre de la app instalada, manifest, avisos push, calendario .ics, instrucciones de instalar). "Jeff" pasa a "Yeff" en todo lo que ve el cliente: pantallas, avisos (push y en la app), mensajes de error y ayudas. Los comentarios del código siguen diciendo Jeff (no se ven). El nombre del perfil del coach es un dato de la base (ver abajo).
+- **Login nuevo** (`app/login/page.tsx`): fondo oscuro con brillo rojo suave, emblema, "Yeffitness", "Portal privado de clientes"; en computador, a la izquierda qué hay adentro. Formulario con pestañas Entrar / Crear cuenta, etiquetas, "Mostrar" contraseña y errores en recuadro. La lógica de entrar y registrarse no cambia.
+- Pruebas: `tests/e2e/login_brand.js` (nueva, en `all.sh`); textos actualizados en `away.js`, `flows.js`, `tip_noweight.js`.
+Falta en datos (no es código): el nombre del perfil del coach ("Jeff González") y la variable `NEXT_PUBLIC_APP_NAME` de Vercel ("YEFFITNES Test" → "Yeffitness Test").
+Revertir: `git revert` de este commit.
+
 ## 2026-11-15 - Catálogo compacto, programas por semanas, series por cliente y editor de rutina ordenado (0056)
 Pedido de Cristian después de la demo con Jeff.
 - **Rutinas y programas compactos**: cada uno es una fila que se despliega; adentro salen los ejercicios (o las semanas) y Editar / Eliminar. En computador van en dos columnas. La etiqueta "Vídeo" sale solo si la rutina tiene su propio vídeo (antes la miniatura se encendía si algún ejercicio tenía vídeo, por eso unas salían con carátula y otras no). Archivos: `RoutineCard.tsx`, `RoutinesView.tsx`, `ProgramsView.tsx`, `coach.css` (`.cat-*`).

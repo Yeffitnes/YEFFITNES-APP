@@ -6,5 +6,5 @@ import { useMessagesRealtime } from "@/lib/messages";
 const VARS = { color: "#0a0910", "--line": "#e3e5ec", "--neon": "#F7254B", "--rose": "#F2406B", "--text": "#0a0910", "--text-dim": "#6b6f80", "--paper": "#f5f6fa", "--card-bg": "#fff" } as CSSProperties;
 export function PendingThread() {
   useMessagesRealtime("client");   // la respuesta de Jeff aparece sin recargar
-  return <div style={VARS}><ThreadView otherName="Jeff" textOnly /></div>;
+  return <div style={VARS}><ThreadView otherName="Yeff" textOnly /></div>;
 }

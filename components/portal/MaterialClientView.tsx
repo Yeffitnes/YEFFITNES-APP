@@ -19,10 +19,10 @@ export function MaterialClientView() {
   const list = all.filter((m) => (f === "all" || m.kind === f) && m.title.toLowerCase().includes(q.trim().toLowerCase()));
   const go = (m: MaterialItem) => { if (!m.unlocked) return setLocked(m); open.mutate(m.id, { onSuccess: setShown }); };
   const lockLink = upgradeLink("education_full");
-  if (me.data?.status === "pending") return <PendingSection eyebrow="Material" title="Material de Jeff" panels={[
-    { tag: "Vídeo", title: "Técnica de ejercicios", sub: "Cómo hacer cada movimiento bien, explicado por Jeff." },
+  if (me.data?.status === "pending") return <PendingSection eyebrow="Material" title="Material de Yeff" panels={[
+    { tag: "Vídeo", title: "Técnica de ejercicios", sub: "Cómo hacer cada movimiento bien, explicado por Yeff." },
     { tag: "Artículo", title: "Guías y consejos", sub: "Lo que necesitas saber para entrenar y comer mejor." },
-    { tag: "Vídeo", title: "Vídeos de Jeff", sub: "Mensajes y clases que Jeff publica para sus clientes." },
+    { tag: "Vídeo", title: "Vídeos de Yeff", sub: "Mensajes y clases que Yeff publica para sus clientes." },
   ]} />;
   return (
     <>

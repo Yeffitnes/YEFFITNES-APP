@@ -16,20 +16,20 @@ const mono = localFont({ variable: "--font-mono", display: "swap", src: [
 const VERCEL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL; // Vercel (pruebas) no define URL: sin esto la imagen al compartir apuntaba a localhost
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || (VERCEL ? `https://${VERCEL}` : "http://localhost:3000");
 // Nombre de la app instalada. En el sitio de pruebas (Vercel) se pone NEXT_PUBLIC_APP_NAME="YEFFITNES Test" para distinguirla.
-const SHORT = process.env.NEXT_PUBLIC_APP_NAME || "YEFFITNES";
+const SHORT = process.env.NEXT_PUBLIC_APP_NAME || "Yeffitness";
 const OG = process.env.NEXT_PUBLIC_APP_NAME ? "/og-test.png" : "/og.png"; // en pruebas la imagen lleva la etiqueta TEST
 const SB = process.env.NEXT_PUBLIC_SUPABASE_URL;
 // El servidor dibuja la primera pantalla (Hoy) con la fecha de Colombia, igual que el teléfono del cliente.
 // Sin esto, de 7 p. m. a medianoche el servidor (hora UTC) pintaba el día siguiente y el teléfono lo tenía que corregir.
 if (typeof window === "undefined") process.env.TZ = "America/Bogota";
-const DESC = "Tu coaching online, hecho a tu medida. Entrenamiento, nutrición y seguimiento con Jeff González.";
+const DESC = "Tu coaching online, hecho a tu medida. Entrenamiento, nutrición y seguimiento con Yeff González.";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: { default: "YEFFITNES TRAINING", template: "%s · YEFFITNES TRAINING" },
-  description: DESC, applicationName: "YEFFITNES TRAINING",
+  title: { default: "Yeffitness", template: "%s · Yeffitness" },
+  description: DESC, applicationName: "Yeffitness",
   // Al compartir el enlace (WhatsApp, Instagram, iMessage…) sale esta imagen con la marca.
-  openGraph: { type: "website", locale: "es_CO", siteName: "YEFFITNES TRAINING", title: "YEFFITNES TRAINING", description: DESC, url: "/", images: [{ url: OG, width: 1200, height: 630, alt: "YEFFITNES TRAINING" }] },
-  twitter: { card: "summary_large_image", title: "YEFFITNES TRAINING", description: DESC, images: [OG] },
+  openGraph: { type: "website", locale: "es_CO", siteName: "Yeffitness", title: "Yeffitness", description: DESC, url: "/", images: [{ url: OG, width: 1200, height: 630, alt: "Yeffitness" }] },
+  twitter: { card: "summary_large_image", title: "Yeffitness", description: DESC, images: [OG] },
   icons: { icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }, { url: "/icon-512.png", sizes: "512x512", type: "image/png" }], apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: SHORT, statusBarStyle: "black-translucent" },
   formatDetection: { telephone: false },

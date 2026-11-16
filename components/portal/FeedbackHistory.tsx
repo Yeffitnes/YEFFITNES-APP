@@ -25,10 +25,10 @@ export function FeedbackBody({ log }: { log: WorkoutLog }) {
     <>
       {log.coachComment && <p className="fb-text">{log.coachComment}</p>}
       {log.coachCommentAudio && <CoachAudio path={log.coachCommentAudio} />}
-      {log.coachCommentImage && (img.data ? <button type="button" className="fb-img" onClick={() => setBig(true)} aria-label="Ver la foto en grande"><img src={img.data} alt="Foto de Jeff" /></button> : <div className="sk" style={{ height: 120, marginTop: 8 }} />)}
-      {log.coachCommentVideo && <button type="button" className="fb-vid" onMouseEnter={() => prefetchPlay(`feedback=${log.id}`)} onFocus={() => prefetchPlay(`feedback=${log.id}`)} onClick={() => setWatch(true)}><Icon name="play" size={13} /> Ver el vídeo de Jeff</button>}
-      {big && img.data && createPortal(<div className="fb-big" role="dialog" aria-modal="true" aria-label="Foto de Jeff" onClick={() => setBig(false)}><img src={img.data} alt="Foto de Jeff" /><button type="button" aria-label="Cerrar"><Icon name="close" size={18} /></button></div>, document.body)}
-      {watch && <BunnyModal param={`feedback=${log.id}`} title="Vídeo de Jeff" sub="Respuesta a tu entrenamiento" onClose={() => setWatch(false)} />}
+      {log.coachCommentImage && (img.data ? <button type="button" className="fb-img" onClick={() => setBig(true)} aria-label="Ver la foto en grande"><img src={img.data} alt="Foto de Yeff" /></button> : <div className="sk" style={{ height: 120, marginTop: 8 }} />)}
+      {log.coachCommentVideo && <button type="button" className="fb-vid" onMouseEnter={() => prefetchPlay(`feedback=${log.id}`)} onFocus={() => prefetchPlay(`feedback=${log.id}`)} onClick={() => setWatch(true)}><Icon name="play" size={13} /> Ver el vídeo de Yeff</button>}
+      {big && img.data && createPortal(<div className="fb-big" role="dialog" aria-modal="true" aria-label="Foto de Yeff" onClick={() => setBig(false)}><img src={img.data} alt="Foto de Yeff" /><button type="button" aria-label="Cerrar"><Icon name="close" size={18} /></button></div>, document.body)}
+      {watch && <BunnyModal param={`feedback=${log.id}`} title="Vídeo de Yeff" sub="Respuesta a tu entrenamiento" onClose={() => setWatch(false)} />}
     </>
   );
 }
@@ -41,7 +41,7 @@ export function FeedbackHistory({ cid }: { cid: string }) {
   return (
     <div className="fbh">
       <QuickRow icon="message" tone={unseen ? "new" : "idle"} chip={unseen ? `${unseen} nueva${unseen === 1 ? "" : "s"}` : undefined} defaultOpen={unseen > 0}
-        title="Respuestas de Jeff a tus entrenamientos" sub={`Las de los últimos ${FEEDBACK_KEEP_DAYS} días (texto, audio, foto o vídeo). No se responden; quedan aquí para volver a verlas.`}>
+        title="Respuestas de Yeff a tus entrenamientos" sub={`Las de los últimos ${FEEDBACK_KEEP_DAYS} días (texto, audio, foto o vídeo). No se responden; quedan aquí para volver a verlas.`}>
         {shown.map((l: WorkoutLog) => (
           <div key={l.id} className={`fbh-item${feedbackUnseen(l) ? " new" : ""}`}>
             <div className="fbh-head"><b>{l.routine ?? "Entrenamiento"}</b><span>{dayLabel(l.date)}</span></div>
@@ -62,7 +62,7 @@ export function LastTimeFeedback({ logs, dayId, dayName, today }: { logs: Workou
   return (
     <div className={`last-fb${open ? " open" : ""}`}>
       <button type="button" className="last-fb-head" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Icon name="message" size={14} /><span><b>Lo que te dijo Jeff la última vez</b><small>{dayLabel(prev.date)}{extras(prev)}</small></span><Icon name="down" size={14} />
+        <Icon name="message" size={14} /><span><b>Lo que te dijo Yeff la última vez</b><small>{dayLabel(prev.date)}{extras(prev)}</small></span><Icon name="down" size={14} />
       </button>
       {open && <div className="last-fb-body"><FeedbackBody log={prev} /></div>}
     </div>
