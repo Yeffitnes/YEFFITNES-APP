@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-16 - Cabecera oscura del coach en iPhone: más arriba y sin degradado blanco
+En iPhone el logo quedaba muy abajo y sobre la cabecera se veía un degradado blanco. La cabecera ahora empieza 4 pt dentro de la zona de la hora (en Android, 12 px desde arriba) y el fondo del documento es negro en el celular del coach, así lo que iOS pinta detrás de la hora (y al estirar la página) ya no es blanco; el contenido sigue sobre el gris claro (`.shell`). Solo `app/coach/coach.css`.
+Revertir: `git revert` de este commit.
+
 ## 2026-11-16 - Panel del coach con la estética oscura del portal del cliente
 A Yeff le gustó el Hoy oscuro del cliente; Cristian pidió llevarlo al panel del coach, con delicadeza.
 - **Celular**: la cabecera (logo, menú y búsqueda) es una banda negra con brillo rojo y esquinas redondeadas abajo. El menú va en píldoras oscuras y **la sección elegida en blanco** (antes era al revés). Búsqueda y botones de mensajes y avisos en oscuro. Logo claro sobre negro.

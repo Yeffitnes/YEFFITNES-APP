@@ -1309,7 +1309,7 @@ html{scroll-behavior:smooth;}
 .m-top{display:contents}
 @media (max-width:1080px){
   /* Cabecera del celular: banda negra con brillo rojo; menú en píldoras oscuras y la elegida en blanco */
-  .m-top{display:block;position:relative;margin:calc(-20px - env(safe-area-inset-top,0px)) -16px 18px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;
+  .m-top{display:block;position:relative;margin:calc(-20px - env(safe-area-inset-top,0px)) -16px 18px;padding:max(12px, calc(env(safe-area-inset-top,0px) - 4px)) 16px 14px;
     background:radial-gradient(120% 140% at 0% 0%,rgba(247,37,75,.34),transparent 60%),radial-gradient(90% 120% at 100% 0%,rgba(205,177,112,.10),transparent 60%),var(--ink);
     border-radius:0 0 22px 22px;color:#fff;box-shadow:0 12px 30px rgba(10,9,16,.18)}
   .main > .m-top > .m-logo{display:block;margin:0 0 14px}
@@ -1330,3 +1330,10 @@ html{scroll-behavior:smooth;}
 .kpi-card:first-child{background:radial-gradient(120% 160% at 0% 0%,rgba(247,37,75,.3),transparent 60%),var(--ink);border-color:var(--ink)}
 .kpi-card:first-child .kpi-label{color:rgba(255,255,255,.7)}
 .kpi-card:first-child .kpi-val{color:#fff}
+/* 16-nov (iPhone): el logo quedaba muy abajo y arriba se veía un degradado blanco. La cabecera sube (4 pt dentro de la zona de la
+   hora, que en iPhone ya trae su margen) y el fondo del documento pasa a negro en el celular del coach: lo que iOS pinta detrás de la
+   hora y al estirar la página hacia abajo ya no es blanco. El contenido sigue sobre el gris claro de siempre (.shell). */
+@media (max-width:1080px){
+  html:has(.m-top),body:has(.m-top){background:var(--ink)}
+  .shell:has(.m-top){background:var(--surface)}
+}
