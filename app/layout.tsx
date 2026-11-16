@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Sans, Manrope, IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { NoZoom } from "@/components/NoZoom";
 import { InstallGate } from "@/components/InstallGate";
-const display = Instrument_Sans({ subsets: ["latin"], variable: "--font-display", weight: ["500", "600", "700"] });
-const body = Manrope({ subsets: ["latin"], variable: "--font-body" });
-const mono = IBM_Plex_Mono({ subsets: ["latin"], variable: "--font-mono", weight: ["400", "500"] });
+// 15-nov: tipografías guardadas en el repo (app/fonts, licencia OFL) en vez de descargarlas de Google al compilar. El build de Vercel
+// falló con "An error occurred in next/font" (Google respondió algo que next/font no entiende) y sin red no compila. Mismas fuentes,
+// mismos pesos y mismas variables CSS, así que la app se ve igual. Archivos sacados de los paquetes @fontsource.
+const display = localFont({ variable: "--font-display", display: "swap", src: [
+  { path: "./fonts/instrument-sans-latin-500-normal.woff2", weight: "500" }, { path: "./fonts/instrument-sans-latin-600-normal.woff2", weight: "600" },
+  { path: "./fonts/instrument-sans-latin-700-normal.woff2", weight: "700" }] });
+const body = localFont({ variable: "--font-body", display: "swap", src: "./fonts/manrope-latin-wght-normal.woff2", weight: "200 800" });
+const mono = localFont({ variable: "--font-mono", display: "swap", src: [
+  { path: "./fonts/ibm-plex-mono-latin-400-normal.woff2", weight: "400" }, { path: "./fonts/ibm-plex-mono-latin-500-normal.woff2", weight: "500" }] });
 // Dirección pública: en Netlify la da la variable URL; en otro lugar se define NEXT_PUBLIC_SITE_URL (dominio propio).
 const VERCEL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL; // Vercel (pruebas) no define URL: sin esto la imagen al compartir apuntaba a localhost
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || process.env.URL || (VERCEL ? `https://${VERCEL}` : "http://localhost:3000");

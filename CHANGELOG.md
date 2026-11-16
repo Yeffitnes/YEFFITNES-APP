@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-15 - Tipografías guardadas en el repo (el build de Vercel fallaba en next/font)
+El build de Vercel de "Editar y Eliminar" falló con `An error occurred in next/font` / `Cannot read properties of null (reading '1')` en el cargador de Google Fonts: Google respondió una dirección de fuente que `next/font/google` no entiende. No era del código (en local compilaba). Para no depender de Google al compilar, las tres fuentes (Instrument Sans 500/600/700, Manrope variable, IBM Plex Mono 400/500, subconjunto latín) quedan en `app/fonts/` (sacadas de los paquetes @fontsource, licencia OFL incluida) y `app/layout.tsx` usa `next/font/local` con las mismas variables CSS. Se ve igual (comprobado con capturas: mismas familias y pesos cargados).
+Revertir: `git revert` de este commit (vuelve a `next/font/google`).
+
 ## 2026-11-15 - Rutinas y programas: Editar y Eliminar a la vista (pedido de Jeff en la demo)
 Antes, en el celular el botón "Editar" de las rutinas estaba oculto (solo se abría la tarjeta) y "Archivar" solo aparecía al fondo de la ventana de edición, así que Jeff no encontraba cómo editar ni borrar. Ahora cada rutina y cada programa tiene **Editar** y **Eliminar** a la vista, en celular y computador. Eliminar pide confirmación y explica que los clientes que ya la tienen no pierden su plan.
 Eliminar = archivar (`active = false`), como antes: sale del catálogo y no se puede asignar más; el plan de los clientes no cambia porque al asignar la rutina se copia. Se recupera con `update routine_templates set active = true where name = '...'` (o `program_templates`).
