@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-11-15 - Botones de rutinas y programas más pequeños; cuatro rutinas base (0055)
+- Editar y Eliminar en rutinas y programas: más pequeños y discretos (Cristian: "innecesariamente grandes"). Solo `app/coach/coach.css` (`.cat-*`).
+- **Migración 0055** (`supabase/migrations/0055_rutinas_base.sql`): crea 4 rutinas en el catálogo de Jeff con ejercicios que ya existen (los precargados con imagen): **Pecho y tríceps** (6 ejercicios), **Espalda y bíceps** (6), **Pierna completa** (7) y **Funcional** (7: burpees, swing con kettlebell, thruster, saltos al cajón, escaladores, giros rusos, saltos de tijera). Series, repeticiones y descansos son un punto de partida general (PROPUESTA): Jeff los edita o elimina. Se puede correr más de una vez (no duplica si ya hay una activa con ese nombre) y salta un ejercicio que no encuentre.
+Revertir: la parte visual con `git revert`; las rutinas con `update routine_templates set active = false where name in ('Pecho y tríceps', 'Espalda y bíceps', 'Pierna completa', 'Funcional');`.
+
 ## 2026-11-15 - Tipografías guardadas en el repo (el build de Vercel fallaba en next/font)
 El build de Vercel de "Editar y Eliminar" falló con `An error occurred in next/font` / `Cannot read properties of null (reading '1')` en el cargador de Google Fonts: Google respondió una dirección de fuente que `next/font/google` no entiende. No era del código (en local compilaba). Para no depender de Google al compilar, las tres fuentes (Instrument Sans 500/600/700, Manrope variable, IBM Plex Mono 400/500, subconjunto latín) quedan en `app/fonts/` (sacadas de los paquetes @fontsource, licencia OFL incluida) y `app/layout.tsx` usa `next/font/local` con las mismas variables CSS. Se ve igual (comprobado con capturas: mismas familias y pesos cargados).
 Revertir: `git revert` de este commit (vuelve a `next/font/google`).
