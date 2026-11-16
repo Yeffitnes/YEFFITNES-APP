@@ -93,8 +93,8 @@ export function useArchive(table: "exercises" | "routine_templates") {
   return useMutation({
     mutationFn: async (id: string) => { const { error } = await db().from(table).update({ active: false }).eq("id", id); if (error) throw error; },
     onMutate: async (id) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<{ id: string }[]>(key); qc.setQueryData<{ id: string }[]>(key, (l) => l?.filter((i) => i.id !== id)); return { prev }; },
-    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos archivarlo. Inténtalo de nuevo.", true); },
-    onSuccess: () => toast("Archivado"),
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast(table === "exercises" ? "No pudimos archivarlo. Inténtalo de nuevo." : "No pudimos eliminarla. Inténtalo de nuevo.", true); },
+    onSuccess: () => toast(table === "exercises" ? "Archivado" : "Rutina eliminada"),
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 }

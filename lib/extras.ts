@@ -35,7 +35,7 @@ export function useArchiveProgram() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
     mutationFn: async (id: string) => { const { error } = await db().from("program_templates").update({ active: false }).eq("id", id); if (error) throw error; },
-    onSuccess: () => toast("Programa archivado"), onError: () => toast("No pudimos archivarlo. Inténtalo de nuevo.", true),
+    onSuccess: () => toast("Programa eliminado"), onError: () => toast("No pudimos eliminarlo. Inténtalo de nuevo.", true),
     onSettled: () => qc.invalidateQueries({ queryKey: ["programs"] }),
   });
 }

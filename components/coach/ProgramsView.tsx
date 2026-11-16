@@ -7,11 +7,12 @@ import { useRoutines } from "@/lib/queries";
 import { useArchiveProgram, usePrograms, useSaveProgram, type Program } from "@/lib/extras";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { CatalogTop } from "./CatalogTop";
+import { CatalogActions } from "./CatalogActions";
 
 export const DAYS_LONG = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const DAYS_SHORT = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 export function ProgramsView() {
-  const q = usePrograms(), [edit, setEdit] = useState<Program | "new" | null>(null);
+  const q = usePrograms(), [edit, setEdit] = useState<Program | "new" | null>(null), del = useArchiveProgram();
   const list = q.data ?? [];
   return (
     <div>
@@ -21,12 +22,13 @@ export function ProgramsView() {
       {q.data === null && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Los programas se activan cuando se corra la migración 0043 en Supabase.</p></div>}
       {q.data && !list.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)", lineHeight: 1.6 }}>Un programa es una semana completa: eliges qué rutina va cada día y cuántas semanas dura. Después se lo asignas a un cliente con un toque desde su ficha (Entrenamiento → “Asignar programa”) y queda con toda su semana armada.</p></div>}
       <div className="prg-list">{list.map((p) => (
-        <button key={p.id} type="button" className="card prg-card" onClick={() => setEdit(p)}>
+        <div key={p.id} className="card prg-card" role="button" tabIndex={0} onClick={() => setEdit(p)} onKeyDown={(e) => { if (e.key === "Enter") setEdit(p); }}>
           <div className="card-tag">{p.weeks} semana{p.weeks === 1 ? "" : "s"} · {p.days.length} día{p.days.length === 1 ? "" : "s"} de entreno</div>
           <div className="card-title" style={{ fontSize: 16 }}>{p.name}</div>
           <div className="prg-days">{DAYS_SHORT.map((d, i) => { const x = p.days.find((y) => y.weekday === i + 1); return <span key={d} className={`prg-day${x ? " on" : ""}`}><b>{d}</b><small>{x ? x.routine : "Descanso"}</small></span>; })}</div>
           {p.notes && <p className="card-meta" style={{ marginTop: 8 }}>{p.notes}</p>}
-        </button>))}</div>
+          <CatalogActions what="programa" name={p.name} onEdit={() => setEdit(p)} onDelete={() => del.mutate(p.id)} busy={del.isPending && del.variables === p.id} />
+        </div>))}</div>
       {edit && <ProgramModal p={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}
     </div>
   );
@@ -57,8 +59,8 @@ function ProgramModal({ p, onClose }: { p: Program | null; onClose: () => void }
         {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}
         <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : "Guardar"}</button></div>
         {p && (confirm
-          ? <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setConfirm(false)}>No archivar</button><button className="modal-btn danger" disabled={archive.isPending} onClick={() => archive.mutate(p.id, { onSuccess: onClose })}>Sí, archivar</button></div>
-          : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Archivar este programa (los clientes que ya lo tienen no cambian)</button>)}
+          ? <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setConfirm(false)}>No eliminar</button><button className="modal-btn danger" disabled={archive.isPending} onClick={() => archive.mutate(p.id, { onSuccess: onClose })}>Sí, eliminar</button></div>
+          : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Eliminar este programa (los clientes que ya lo tienen no cambian)</button>)}
       </>}
     </Modal>
   );

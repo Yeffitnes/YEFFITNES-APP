@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-11-15 - Rutinas y programas: Editar y Eliminar a la vista (pedido de Jeff en la demo)
+Antes, en el celular el botón "Editar" de las rutinas estaba oculto (solo se abría la tarjeta) y "Archivar" solo aparecía al fondo de la ventana de edición, así que Jeff no encontraba cómo editar ni borrar. Ahora cada rutina y cada programa tiene **Editar** y **Eliminar** a la vista, en celular y computador. Eliminar pide confirmación y explica que los clientes que ya la tienen no pierden su plan.
+Eliminar = archivar (`active = false`), como antes: sale del catálogo y no se puede asignar más; el plan de los clientes no cambia porque al asignar la rutina se copia. Se recupera con `update routine_templates set active = true where name = '...'` (o `program_templates`).
+Archivos: `components/coach/CatalogActions.tsx` (nuevo), `RoutineCard.tsx`, `RoutinesView.tsx`, `ProgramsView.tsx`, `lib/queries.ts` y `lib/extras.ts` (textos de aviso), `app/coach/coach.css` (`.cat-*`). Prueba: `tests/e2e/catalog_del.js` (en `all.sh`).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-15 - PUBLICACIÓN A PRODUCCIÓN: `bloque-hoy` a `main` (Netlify)
 Cristian dijo "fusiona" con las migraciones 0038 a 0054 corridas (confirmó 0050-0054 con la consulta de solo lectura). Entra todo lo hecho del 29-oct al 15-nov. Antes: 4 chequeos y `tests/e2e/all.sh` (todo OK tras arreglar la semilla de pruebas, abajo).
 Prueba de punta a punta, semilla: `tests/e2e/seed.sql` escogía el entreno de "hace 3 días" con `order by weekday`; los domingos tomaba el día de mañana (lunes), que no tiene el ejercicio de 10 repeticiones, y `advice.js` y `extras.js` fallaban. Ahora escoge el día que tiene ese ejercicio. Solo pruebas, la app no cambia.

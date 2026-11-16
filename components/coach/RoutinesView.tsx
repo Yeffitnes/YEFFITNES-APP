@@ -9,7 +9,7 @@ import { RoutineCard } from "./RoutineCard";
 import { RoutineForm } from "./RoutineForm";
 type Item = { exercise_id: string; sets: number; reps: string; rest_seconds: number | null };
 export function RoutinesView() {
-  const { data, isPending, isError, refetch } = useRoutines(), { data: exs } = useExercises();
+  const { data, isPending, isError, refetch } = useRoutines(), { data: exs } = useExercises(), del = useArchive("routine_templates");
   const [edit, setEdit] = useState<Routine | "new" | null>(null);
   const list = data ?? [];
   return (
@@ -18,7 +18,7 @@ export function RoutinesView() {
       {isPending && <Skeleton rows={3} />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar las rutinas. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && !list.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Aún no hay rutinas. Crea una con “Nueva rutina” juntando ejercicios de tu catálogo; luego se la asignarás a tus clientes.</p></div>}
-      {list.map((r) => <RoutineCard key={r.id} name={r.name} hasVideo={r.items.some((i) => i.hasVideo)} onEdit={() => setEdit(r)}
+      {list.map((r) => <RoutineCard key={r.id} name={r.name} hasVideo={r.items.some((i) => i.hasVideo)} onEdit={() => setEdit(r)} onDelete={() => del.mutate(r.id)} deleting={del.isPending && del.variables === r.id}
         meta={[`${r.items.length} ejercicios`, r.minutes ? `${r.minutes} min aprox.` : null, r.category].filter(Boolean).join(" · ")}
         rows={r.items.map((i) => ({ name: i.name, sets: i.sets, reps: i.reps, rest: i.rest }))} />)}
       {edit && <RoutineModal r={edit === "new" ? null : edit} noExercises={!!exs && !exs.length} exercises={exs?.map((e) => ({ id: e.id, name: e.name })) ?? []} onClose={() => setEdit(null)} />}
@@ -49,8 +49,8 @@ function RoutineModal({ r, exercises, noExercises, onClose }: { r: Routine | nul
           {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}
           <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : "Guardar"}</button></div>
           {r && (confirm
-            ? <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setConfirm(false)}>No archivar</button><button className="modal-btn danger" disabled={archive.isPending} onClick={() => archive.mutate(r.id, { onSuccess: onClose })}>Sí, archivar</button></div>
-            : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Archivar esta rutina</button>)}
+            ? <div className="modal-actions"><button className="modal-btn ghost" onClick={() => setConfirm(false)}>No eliminar</button><button className="modal-btn danger" disabled={archive.isPending} onClick={() => archive.mutate(r.id, { onSuccess: onClose })}>Sí, eliminar</button></div>
+            : <button className="modal-cap-hint" style={{ background: "none", border: 0, textDecoration: "underline", cursor: "pointer", color: "var(--danger)" }} onClick={() => setConfirm(true)}>Eliminar esta rutina (los clientes que ya la tienen no cambian)</button>)}
         </>)}
     </Modal>
   );

@@ -1191,3 +1191,13 @@ html{scroll-behavior:smooth;}
 .hb-nudge{display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:4px 9px;border-radius:999px;border:0;font:inherit;font-size:11px;font-weight:700;color:#fff;cursor:pointer;background:radial-gradient(140% 220% at 0% 0%,rgba(247,37,75,.55),transparent 62%),var(--ink)}
 .hb-nudge:disabled{opacity:.6;cursor:default}
 .hb-sent{display:block;margin-top:6px;font-size:11px;font-weight:600;color:var(--text-faint)}
+
+/* 15-nov: Editar / Eliminar visibles en rutinas y programas (CatalogActions) */
+.cat-acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.cat-act{font:inherit;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:18px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.cat-act.del{color:var(--accent);border-color:rgba(212,26,64,.3)}
+.cat-act.del.strong{background:var(--accent);border-color:var(--accent);color:#fff}
+.cat-act:disabled{opacity:.6;cursor:default}
+.cat-confirm{margin-top:12px;padding:12px;border-radius:12px;background:var(--surface)}
+.cat-confirm p{font-size:13px;line-height:1.45;color:var(--text)}
+.prg-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
