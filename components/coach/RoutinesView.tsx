@@ -18,9 +18,9 @@ export function RoutinesView() {
       {isPending && <Skeleton rows={3} />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar las rutinas. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && !list.length && <div className="card"><p style={{ fontSize: 14, color: "var(--text-dim)" }}>Aún no hay rutinas. Crea una con “Nueva rutina” juntando ejercicios de tu catálogo; luego se la asignarás a tus clientes.</p></div>}
-      {list.map((r) => <RoutineCard key={r.id} name={r.name} hasVideo={r.items.some((i) => i.hasVideo)} onEdit={() => setEdit(r)} onDelete={() => del.mutate(r.id)} deleting={del.isPending && del.variables === r.id}
-        meta={[`${r.items.length} ejercicios`, r.minutes ? `${r.minutes} min aprox.` : null, r.category].filter(Boolean).join(" · ")}
-        rows={r.items.map((i) => ({ name: i.name, sets: i.sets, reps: i.reps, rest: i.rest }))} />)}
+      <div className="cat-list">{list.map((r) => <RoutineCard key={r.id} name={r.name} hasVideo={!!r.video} onEdit={() => setEdit(r)} onDelete={() => del.mutate(r.id)} deleting={del.isPending && del.variables === r.id}
+        meta={[`${r.items.length} ejercicio${r.items.length === 1 ? "" : "s"}`, r.minutes ? `${r.minutes} min` : null, r.category].filter(Boolean).join(" · ")}
+        rows={r.items.map((i) => ({ name: i.name, sets: i.sets, reps: i.reps, rest: i.rest }))} />)}</div>
       {edit && <RoutineModal r={edit === "new" ? null : edit} noExercises={!!exs && !exs.length} exercises={exs?.map((e) => ({ id: e.id, name: e.name })) ?? []} onClose={() => setEdit(null)} />}
     </div>
   );

@@ -68,13 +68,13 @@ const U = "http://localhost:3000";
     const opt = async (i, label) => j.locator(`#prg-d${i}`).selectOption({ label });
     await opt(0, "Pierna completa"); await opt(2, "Torso"); await opt(wd, "Pierna completa");
     await j.getByRole("button", { name: "Guardar" }).click(); await j.waitForTimeout(1200);
-    const t = (await j.locator(".prg-card").first().innerText()).replace(/\n/g, " "); await j.screenshot({ path: `${S}/x_programas.png` });
+    const t = (await j.locator(".cat-row").first().innerText()).replace(/\n/g, " "); await j.screenshot({ path: `${S}/x_programas.png` });
     if (!/Base 3 días/.test(t) || !/6 semanas/i.test(t)) throw new Error(t.slice(0, 120)); return t.slice(0, 90);
   });
   let andres = "";
   await step("programa: asignarlo a Andrés desde su ficha", async () => {
     await j.goto(`${U}/coach/clientes`, { waitUntil: "networkidle" }); await j.locator("a, .client-row", { hasText: "Andrés" }).first().click(); await j.waitForURL(/clientes\/.+/); andres = j.url().split("/clientes/")[1].split("?")[0];
-    await j.locator(".tab-btn", { hasText: "Entrenamiento" }).click(); await j.getByRole("button", { name: "Asignar programa" }).click();
+    await j.locator(".tab-btn", { hasText: "Entrenamiento" }).click(); await j.getByRole("button", { name: /^(Asignar programa|Usar un programa)/ }).first().click();
     await j.getByLabel("Base 3 días").check(); await j.locator(".modal-actions").getByRole("button", { name: "Asignar programa" }).click(); await j.waitForTimeout(1500);
     const t = (await j.locator("body").innerText()); if (!/Base 3 días/.test(t)) throw new Error("no aparece el plan"); return "plan Base 3 días activo";
   });

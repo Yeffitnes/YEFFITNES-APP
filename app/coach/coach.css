@@ -1201,3 +1201,86 @@ html{scroll-behavior:smooth;}
 .cat-confirm{margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--surface)}
 .cat-confirm p{font-size:12.5px;line-height:1.45;color:var(--text)}
 .prg-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* 15-nov: catálogo compacto (rutinas y programas se despliegan; acciones adentro) */
+.cat-list{display:grid;gap:8px}
+@media (min-width:1081px){.cat-list{grid-template-columns:repeat(auto-fill,minmax(380px,1fr));align-items:start}}
+.cat-row{background:var(--paper);border:1px solid var(--line);border-radius:14px}
+.cat-row.open{border-color:#D3D6E0}
+.cat-row-head{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;background:none;border:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.cat-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.cat-row-main b{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.cat-row-main small{font-size:12px;color:var(--text-dim)}
+.cat-tag{font-style:normal;font-family:var(--font-mono),monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:6px;background:var(--ink);color:#fff;font-weight:500}
+.cat-chev{width:9px;height:9px;stroke:var(--text-faint);fill:none;stroke-width:2;flex-shrink:0;transition:transform .2s ease}
+.cat-row.open .cat-chev{transform:rotate(90deg)}
+.cat-row-body{padding:2px 14px 12px;border-top:1px solid #EFF0F4}
+.cat-row-body .ex-row-static{padding:8px 0}
+.prg-wlabel{font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-top:12px}
+.prg-day.gone small{color:var(--accent)}
+.prg-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.prg-mode button{text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--paper);display:flex;flex-direction:column;gap:2px;cursor:pointer;font:inherit;color:var(--text)}
+.prg-mode button b{font-size:13px}
+.prg-mode button small{font-size:11.5px;color:var(--text-dim)}
+.prg-mode button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.prg-mode button.on small{color:rgba(255,255,255,.72)}
+/* 15-nov: ficha · entrenamiento */
+.ghost-btn.sm{height:32px;padding:0 12px;font-size:11.5px}
+.ghost-btn.sm.danger{color:var(--accent);border-color:rgba(212,26,64,.35)}
+.primary-btn.sm{height:34px;font-size:12px}
+.tp-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+.tp-name{font-family:var(--font-display);font-weight:600;font-size:16px}
+.tp-sub{font-size:12px;color:var(--text-dim);margin-top:2px;line-height:1.45}
+.tp-sub b{color:var(--text)}
+.tp-actions{display:flex;gap:6px;flex-wrap:wrap}
+.tp-start{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tp-start button{text-align:left;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:4px;cursor:pointer;font:inherit;color:var(--text)}
+.tp-start button b{font-size:14px}
+.tp-start button span{font-size:12.5px;color:var(--text-dim);line-height:1.45}
+.tp-start button:hover{border-color:var(--ink)}
+.tp-weeks{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.tp-wtabs{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tp-wtab{flex:0 0 auto;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font:inherit;font-size:12px;font-weight:700;color:var(--text-dim);cursor:pointer}
+.tp-wtab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tp-wtab i{font-style:normal;font-weight:500;opacity:.75}
+.tp-wtools{display:flex;gap:14px;flex-wrap:wrap}
+.tp-link{background:none;border:0;padding:0;font:inherit;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;text-decoration:underline}
+.tp-link.danger{color:var(--text-dim)}
+.tp-link:disabled{opacity:.5;cursor:default}
+.tp-dayhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-bottom:10px}
+.tp-dayname{font-weight:700;font-size:15px}
+.tp-items{display:grid;gap:8px;margin-bottom:14px}
+.tp-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.tp-item-top{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.tp-pic{border-radius:8px;object-fit:cover;flex-shrink:0}
+.tp-rest{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;border-radius:12px;background:var(--surface)}
+.tp-rest p{font-size:13.5px;color:var(--text-dim)}
+.tp-pick{margin-top:14px;max-height:320px;overflow-y:auto;display:grid;gap:6px}
+.tp-pick-row{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.tp-pick-row.on{border-color:var(--ink)}
+.tp-pick-row span{display:flex;flex-direction:column;gap:1px;font-size:13.5px}
+.tp-pick-row small{font-size:12px;color:var(--text-dim)}
+/* 15-nov: editor de rutina (también los ejercicios del plan de un cliente) */
+.rf-item{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:#fff}
+.rf-top{display:flex;gap:8px;align-items:center}
+.rf-num{width:22px;height:22px;border-radius:50%;background:var(--surface);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text-dim);flex-shrink:0}
+.rf-top select{flex:1;min-width:0;height:38px;border-radius:10px;border:1px solid var(--line);padding:0 10px;font:inherit;font-size:13px;background:#fff;color:var(--text)}
+.rf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:8px;margin-top:8px;align-items:end}
+.rf-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.rf-grid label{display:flex;flex-direction:column;gap:4px;font-size:10.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.03em;min-width:0}
+.rf-grid input{height:36px;border-radius:9px;border:1px solid var(--line);padding:0 8px;font:inherit;font-size:13px;text-transform:none;letter-spacing:0;font-weight:500;width:100%;min-width:0;background:#fff;color:var(--text)}
+.rf-tools{display:flex;gap:4px;flex-shrink:0}
+.rf-tools button{width:30px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--paper);cursor:pointer;font-size:14px;color:var(--text-dim)}
+.rf-tools button:disabled{opacity:.35;cursor:default}
+@media (max-width:520px){
+  .rf-grid{gap:6px}
+  .rf-grid label{font-size:9.5px}
+  .rf-grid input{height:34px;padding:0 6px;font-size:12.5px}
+  .rf-tools{gap:3px}
+  .rf-tools button{width:24px;height:34px;font-size:13px}
+  .tp-start,.prg-mode{grid-template-columns:1fr}
+}
+@media (min-width:700px){
+  .tp-item{display:grid;grid-template-columns:minmax(0,1fr) 380px;align-items:center;gap:12px;padding:8px 12px}
+  .tp-item .rf-grid{margin-top:0}
+  .tp-items{gap:6px}
+}

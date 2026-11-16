@@ -14,17 +14,26 @@ export const missingObject = (e: { code?: string; message?: string } | null | un
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return localDate(d); };
 
 // ---------- Programas ----------
-export type Program = { id: string; name: string; weeks: number; notes: string | null; days: { weekday: number; templateId: string; routine: string }[] };
+// 0056: cada día lleva su semana (1..N). "distinct" = cuántas semanas distintas tiene (1 = la misma semana se repite).
+// "gone": la rutina de ese día fue eliminada del catálogo (archivada); se muestra así para que Jeff la cambie.
+export type ProgramDay = { week: number; weekday: number; templateId: string; routine: string; gone: boolean };
+export type Program = { id: string; name: string; weeks: number; notes: string | null; distinct: number; days: ProgramDay[] };
 export const usePrograms = () => useQuery({ queryKey: ["programs"], staleTime: 120_000, queryFn: async (): Promise<Program[] | null> => {
-  const { data, error } = await db().from("program_templates").select("id,name,weeks,notes,program_days(weekday,template_id,routine_templates(name))").eq("active", true).order("created_at", { ascending: false });
+  const q = (week: string) => db().from("program_templates").select(`id,name,weeks,notes,program_days(${week}weekday,template_id,routine_templates(name,active))`).eq("active", true).order("created_at", { ascending: false });
+  let { data, error } = await q("week,");
+  if (error && /column|week/i.test(error.message ?? "") && !missingObject(error)) ({ data, error } = await q(""));   // base sin la 0056
   if (error) { if (missingObject(error)) return null; throw error; }
-  type Raw = { id: string; name: string; weeks: number; notes: string | null; program_days: { weekday: number; template_id: string; routine_templates: { name: string } | null }[] };
-  return (data as unknown as Raw[]).map((p) => ({ id: p.id, name: p.name, weeks: p.weeks, notes: p.notes, days: p.program_days.map((d) => ({ weekday: d.weekday, templateId: d.template_id, routine: d.routine_templates?.name ?? "Rutina" })).sort((a, b) => a.weekday - b.weekday) }));
+  type Raw = { id: string; name: string; weeks: number; notes: string | null; program_days: { week?: number; weekday: number; template_id: string; routine_templates: { name: string; active: boolean } | null }[] };
+  return (data as unknown as Raw[]).map((p) => {
+    const days = p.program_days.map((d) => ({ week: d.week ?? 1, weekday: d.weekday, templateId: d.template_id, routine: d.routine_templates?.name ?? "Rutina", gone: d.routine_templates?.active === false }))
+      .sort((a, b) => a.week - b.week || a.weekday - b.weekday);
+    return { id: p.id, name: p.name, weeks: p.weeks, notes: p.notes, distinct: Math.max(1, ...days.map((d) => d.week)), days };
+  });
 } });
 export function useSaveProgram() {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (p: { id?: string; name: string; weeks: number; notes: string; days: { weekday: number; template_id: string }[] }) => {
+    mutationFn: async (p: { id?: string; name: string; weeks: number; notes: string; days: { week: number; weekday: number; template_id: string }[] }) => {
       const { error } = await db().rpc("save_program", { p_id: p.id ?? null, p_name: p.name, p_weeks: p.weeks, p_notes: p.notes, p_days: p.days }); if (error) throw error;
     },
     onSuccess: () => toast("Programa guardado"), onError: () => toast("No pudimos guardar el programa. Revisa el nombre y que tenga al menos un día.", true),

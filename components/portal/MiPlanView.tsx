@@ -79,6 +79,7 @@ export function MiPlanView() {
                 <div style={{ marginTop: 14 }}>
                   <div className="plan-meta-row"><span>Inicio</span><span>{new Date(`${plan.startsOn}T12:00:00`).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}</span></div>
                   <div className="plan-meta-row"><span>Entrenamientos por semana</span><span>{trainDays}</span></div>
+                  {(plan.cycleWeeks ?? 1) > 1 && <div className="plan-meta-row"><span>Semana del plan</span><span>{plan.week} de {plan.cycleWeeks}</span></div>}
                   {plan.reviewOn && <div className="plan-meta-row"><span>Próxima revisión</span><span>{relReview(plan.reviewOn)}</span></div>}
                 </div>
                 {plan.level && <LevelBlock level={plan.level} reason={plan.levelReason} />}

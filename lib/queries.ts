@@ -113,9 +113,9 @@ export function useSaveRoutine() {
 
 // ---- Entrenamiento por días ----
 export type PlanItem = { image?: string | null; id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
-export type PlanDay = { id: string; weekday: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; poster?: string | null; items: PlanItem[] };
+export type PlanDay = { id: string; weekday: number; week: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; poster?: string | null; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
-export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; days: PlanDay[] };
+export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; cycleWeeks: number; week: number; allDays: PlanDay[]; days: PlanDay[] };
 export const fetchTrainingPlans = (clientId: string): Promise<TrainingPlan[]> => loadTrainingPlans(db(), clientId);
 // Asigna el vídeo personalizado de un día (lo usa la subida en segundo plano, que ya no depende de la pantalla).
 export async function assignDayVideo(qc: QueryClient, clientId: string, dayId: string, videoId: string, poster?: Promise<string | null>) {
@@ -145,11 +145,13 @@ export function useCreatePlan(clientId: string) {
     onError: () => toast("No pudimos crear el plan. Inténtalo de nuevo.", true),
   });
 }
+// Aplica un cambio a los días de un plan en caché (la semana que corre y todas las semanas).
+const patchPlans = (l: TrainingPlan[] | undefined, fn: (d: PlanDay[]) => PlanDay[]) => l?.map((p) => ({ ...p, days: fn(p.days), allDays: fn(p.allDays ?? p.days) }));
 export function useAssignDay(clientId: string) {
   const qc = useQueryClient(), toast = useToast();
   return useMutation({
-    mutationFn: async (v: { planId: string; weekdays: number[]; templateId: string }) => {
-      const res = await Promise.all(v.weekdays.map((w) => db().rpc("assign_day", { p_plan: v.planId, p_weekday: w, p_template: v.templateId })));
+    mutationFn: async (v: { planId: string; weekdays: number[]; templateId: string; week?: number }) => {
+      const res = await Promise.all(v.weekdays.map((w) => db().rpc("assign_day", v.week && v.week > 1 ? { p_plan: v.planId, p_weekday: w, p_template: v.templateId, p_week: v.week } : { p_plan: v.planId, p_weekday: w, p_template: v.templateId })));
       const bad = res.find((r) => r.error); if (bad?.error) throw bad.error;
     },
     onSuccess: (_d, v) => { toast(v.weekdays.length > 1 ? `Rutina asignada a ${v.weekdays.length} días` : "Rutina asignada"); qc.invalidateQueries({ queryKey: ["plans-of", clientId] }); notifyPlan(clientId, "training"); },
@@ -165,7 +167,7 @@ export function useClearDay(clientId: string) {
     onMutate: async (dayId: string) => { // el día se libera al instante
       await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<TrainingPlan[]>(key);
-      if (prev) qc.setQueryData<TrainingPlan[]>(key, prev.map((pl) => ({ ...pl, days: pl.days.filter((x) => x.id !== dayId) })));
+      if (prev) qc.setQueryData<TrainingPlan[]>(key, patchPlans(prev, (ds) => ds.filter((x) => x.id !== dayId)));
       return { prev };
     },
     onSuccess: () => { toast("Día libre: queda como descanso"); notifyPlan(clientId, "training"); },
@@ -173,14 +175,41 @@ export function useClearDay(clientId: string) {
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 }
-export function useSetWeight(clientId: string) {
+// 15-nov: Jeff ajusta series, repeticiones, descanso y peso de cada ejercicio en el plan de ESE cliente (no toca el catálogo).
+export type ItemPatch = { sets?: number; reps?: string; rest?: number | null; weight?: number | null };
+export function useSetItem(clientId: string) {
   const qc = useQueryClient(), toast = useToast(), key = ["plans-of", clientId];
   return useMutation({
-    mutationFn: async (v: { itemId: string; weight: number | null }) => { const { error } = await db().from("plan_items").update({ target_weight: v.weight }).eq("id", v.itemId); if (error) throw error; },
+    mutationFn: async (v: { itemId: string; patch: ItemPatch }) => {
+      const row: Record<string, unknown> = {};
+      if (v.patch.sets !== undefined) row.sets = v.patch.sets; if (v.patch.reps !== undefined) row.reps = v.patch.reps;
+      if (v.patch.rest !== undefined) row.rest_seconds = v.patch.rest; if (v.patch.weight !== undefined) row.target_weight = v.patch.weight;
+      const { error } = await db().from("plan_items").update(row).eq("id", v.itemId); if (error) throw error;
+    },
     onMutate: async (v) => { await qc.cancelQueries({ queryKey: key }); const prev = qc.getQueryData<TrainingPlan[]>(key);
-      qc.setQueryData<TrainingPlan[]>(key, (l) => l?.map((p) => ({ ...p, days: p.days.map((d) => ({ ...d, items: d.items.map((i) => (i.id === v.itemId ? { ...i, weight: v.weight } : i)) })) }))); return { prev }; },
-    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar el peso. Inténtalo de nuevo.", true); },
+      qc.setQueryData<TrainingPlan[]>(key, (l) => patchPlans(l, (ds) => ds.map((d) => ({ ...d, items: d.items.map((i) => (i.id === v.itemId ? { ...i, ...v.patch } : i)) })))); return { prev }; },
+    onError: (_e, _v, ctx) => { qc.setQueryData(key, ctx?.prev); toast("No pudimos guardar el cambio. Inténtalo de nuevo.", true); },
     onSuccess: () => notifyPlan(clientId, "training"),
+  });
+}
+export function useSetPlanWeeks(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { planId: string; weeks: number; copyFrom?: number }) => {
+      const { error } = await db().rpc("set_plan_weeks", { p_plan: v.planId, p_weeks: v.weeks }); if (error) throw error;
+      if (v.copyFrom) { const { error: e2 } = await db().rpc("copy_plan_week", { p_plan: v.planId, p_from: v.copyFrom, p_to: v.weeks }); if (e2) throw e2; }
+    },
+    onError: () => toast("No pudimos cambiar las semanas del plan. Inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }),
+  });
+}
+export function useCopyPlanWeek(clientId: string) {
+  const qc = useQueryClient(), toast = useToast();
+  return useMutation({
+    mutationFn: async (v: { planId: string; from: number; to: number }) => { const { error } = await db().rpc("copy_plan_week", { p_plan: v.planId, p_from: v.from, p_to: v.to }); if (error) throw error; },
+    onSuccess: (_d, v) => { toast(`Semana ${v.from} copiada en la semana ${v.to}`); notifyPlan(clientId, "training"); },
+    onError: () => toast("No pudimos copiar la semana. Inténtalo de nuevo.", true),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["plans-of", clientId] }),
   });
 }
 
