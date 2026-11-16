@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-16 - Cabecera del coach en iPhone: un poco más abajo
+Pegada a la hora, el logo quedaba dentro del difuminado automático de iOS y se veía borroso. Ahora empieza 10 pt por debajo de la zona de la hora (antes de esta mañana eran 14; en la versión de hace un rato, 4 pt dentro). Android sin cambios (12 px). El fondo negro detrás de la hora se mantiene. Solo `app/coach/coach.css` (`.m-top`).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-16 - Cabecera oscura del coach en iPhone: más arriba y sin degradado blanco
 En iPhone el logo quedaba muy abajo y sobre la cabecera se veía un degradado blanco. La cabecera ahora empieza 4 pt dentro de la zona de la hora (en Android, 12 px desde arriba) y el fondo del documento es negro en el celular del coach, así lo que iOS pinta detrás de la hora (y al estirar la página) ya no es blanco; el contenido sigue sobre el gris claro (`.shell`). Solo `app/coach/coach.css`.
 Revertir: `git revert` de este commit.
