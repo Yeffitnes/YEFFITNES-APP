@@ -28,11 +28,16 @@ export function ProgramsView() {
         const on = open === p.id, trainDays = new Set(p.days.filter((d) => d.week === 1).map((d) => d.weekday)).size, gone = p.days.some((d) => d.gone);
         return (
           <div key={p.id} className={`cat-row${on ? " open" : ""}`}>
-            <button type="button" className="cat-row-head" aria-expanded={on} onClick={() => setOpen(on ? null : p.id)}>
-              <span className="cat-row-main"><b>{p.name}</b>
-                <small>{p.weeks} semana{p.weeks === 1 ? "" : "s"} · {trainDays} día{trainDays === 1 ? "" : "s"} por semana{p.distinct > 1 ? ` · ${p.distinct} semanas distintas` : ""}{gone ? " · tiene una rutina eliminada" : ""}</small></span>
-              <svg className="cat-chev" viewBox="0 0 10 8" fill="none" aria-hidden="true"><path d="M1 4h8M6 1l3 3-3 3" strokeLinecap="round" /></svg>
-            </button>
+            <div className="cat-row-line">
+              <button type="button" className="cat-weeks" aria-hidden="true" tabIndex={-1} onClick={() => setOpen(on ? null : p.id)}><b>{p.weeks}</b><small>{p.weeks === 1 ? "semana" : "semanas"}</small></button>
+              <button type="button" className="cat-row-head" aria-expanded={on} onClick={() => setOpen(on ? null : p.id)}>
+                <span className="cat-row-main"><b>{p.name}</b>
+                  <small>{trainDays} día{trainDays === 1 ? "" : "s"} por semana{p.distinct > 1 ? ` · ${p.distinct} semanas distintas` : " · la misma semana"}{gone ? " · tiene una rutina eliminada" : ""}</small>
+                  <span className="cat-strip" aria-label={`Semana 1: ${DAYS_LONG.filter((_, i) => p.days.some((d) => d.week === 1 && d.weekday === i + 1)).join(", ") || "sin días"}`}>
+                    {DAYS_SHORT.map((d, i) => <i key={d} className={p.days.some((x) => x.week === 1 && x.weekday === i + 1) ? "on" : ""}>{d.slice(0, 1)}</i>)}</span></span>
+                <svg className="cat-chev" viewBox="0 0 10 8" fill="none" aria-hidden="true"><path d="M1 4h8M6 1l3 3-3 3" strokeLinecap="round" /></svg>
+              </button>
+            </div>
             {on && <div className="cat-row-body">
               {range(p.distinct).map((w) => (
                 <div key={w}>{p.distinct > 1 && <div className="prg-wlabel">Semana {w}</div>}

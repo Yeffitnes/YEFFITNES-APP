@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-15 - Rutinas y programas con más presencia
+Cristian: la lista se veía "muy planita". Vuelve el cuadro de vídeo a la izquierda, pero ahora del **vídeo de la rutina** (no de los ejercicios): con vídeo, la miniatura de YouTube con el botón rojo; sin vídeo, un cuadro punteado "+ Vídeo" que abre la edición para ponérselo. Debajo del nombre, los músculos que trabaja (en rojo suave). Programas: cuadro negro con brillo rojo con las semanas ("4 SEMANAS") y una tira L M M J V S D con los días que entrena. Archivos: `RoutineCard.tsx`, `ProgramsView.tsx`, `lib/queries.ts` (la rutina trae imagen y músculo de cada ejercicio), `coach.css` (`.cat-vid`, `.cat-play`, `.cat-muscles`, `.cat-weeks`, `.cat-strip`).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-15 - Marca Yeffitness, "Yeff" en todo lo que ve el cliente y login nuevo
 Cristian: el nombre oficial es **Yeffitness** (Y mayúscula, el resto en minúscula, doble s) y el coach se escribe **Yeff** (con Y) en todo lo que se ve.
 - **Logo**: `public/brand/logo.svg` y `logo-claro.svg` con la palabra "Yeffitness" (trazada con Instrument Sans 700, misma fuente de títulos) y el emblema y "TRAINING" de siempre. Emblema suelto en `public/brand/emblema.webp` (para el login). Imágenes para compartir `public/og.png` y `og-test.png` rehechas con la marca nueva.

@@ -1284,3 +1284,26 @@ html{scroll-behavior:smooth;}
   .tp-item .rf-grid{margin-top:0}
   .tp-items{gap:6px}
 }
+/* 15-nov (2): presencia en rutinas y programas: cuadro de vídeo de la rutina, músculos, caras de ejercicios; semanas y tira de días */
+.cat-row-line{display:flex;align-items:center;gap:12px;padding-left:12px}
+.cat-row-line .cat-row-head{padding-left:0}
+.cat-vid{position:relative;flex-shrink:0;width:64px;height:64px;border-radius:12px;border:1.5px dashed #CDD0DA;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--text-faint);overflow:hidden;padding:0;font:inherit}
+.cat-vid svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.cat-vid small{font-size:9.5px;font-weight:700;letter-spacing:.02em}
+.cat-vid:hover{border-color:var(--accent);color:var(--accent)}
+.cat-vid.has{border:0;background:var(--ink)}
+.cat-vid.has img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
+.cat-play{position:relative;width:28px;height:28px;border-radius:50%;background:var(--neon,#F7254B);box-shadow:0 0 16px rgba(247,37,75,.75)}
+.cat-play::after{content:"";position:absolute;left:11px;top:8.5px;border-left:9px solid #fff;border-top:5.5px solid transparent;border-bottom:5.5px solid transparent}
+.cat-muscles{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.cat-muscles i{font-style:normal;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(212,26,64,.08);color:var(--accent)}
+.cat-faces{display:flex;flex-shrink:0;margin-right:4px}
+.cat-faces .ex-pic{width:30px;height:30px;border-radius:50%;border:2px solid var(--paper);background:var(--surface);object-fit:cover;margin-left:-9px}
+.cat-faces .ex-pic:first-child{margin-left:0}
+.cat-weeks{flex-shrink:0;width:64px;height:64px;border-radius:12px;border:0;cursor:pointer;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font:inherit;background:radial-gradient(120% 220% at 0% 0%, rgba(247,37,75,.5), transparent 62%), var(--ink)}
+.cat-weeks b{font-family:var(--font-display);font-size:24px;line-height:1}
+.cat-weeks small{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-top:2px}
+.cat-strip{display:flex;gap:3px;margin-top:6px}
+.cat-strip i{font-style:normal;width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;background:var(--surface);color:var(--text-faint)}
+.cat-strip i.on{background:var(--ink);color:#fff;box-shadow:inset 0 -2px 0 var(--neon,#F7254B)}
+@media (max-width:520px){.cat-faces{display:none}.cat-vid,.cat-weeks{width:56px;height:56px}}

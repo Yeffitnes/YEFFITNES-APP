@@ -11,7 +11,7 @@ import { loadLogs, loadTrainingPlans, localDate, missingColumn, missingTable } f
 export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
-export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null };
+export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null; image?: string | null; muscle?: string | null };
 export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
 
 type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plan_since?: string | null; height_cm?: number | null; start_weight_kg?: number | null; plans: unknown; profiles: unknown };
@@ -36,11 +36,11 @@ export const fetchExercises = async (): Promise<Ex[]> => {
     alts: e.exercise_alternatives ? [...e.exercise_alternatives].sort((a, b) => a.position - b.position).map((a) => a.alt_exercise_id) : undefined }));
 };
 export const fetchRoutines = async (): Promise<Routine[]> => {
-  const { data, error } = await db().from("routine_templates").select("id,name,category,est_minutes,video_ref,template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref))").eq("active", true).order("created_at", { ascending: false });
+  const { data, error } = await db().from("routine_templates").select("id,name,category,est_minutes,video_ref,template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref,image,muscle_group))").eq("active", true).order("created_at", { ascending: false });
   if (error) throw error;
-  type It = { position: number; exercise_id: string; sets: number; reps: string; rest_seconds: number | null; exercises: { name: string; video_ref: string | null } | null };
+  type It = { position: number; exercise_id: string; sets: number; reps: string; rest_seconds: number | null; exercises: { name: string; video_ref: string | null; image?: string | null; muscle_group?: string | null } | null };
   return (data as unknown as RoutineRaw[]).map((r) => ({ id: r.id, name: r.name, category: r.category, minutes: r.est_minutes, video: r.video_ref,
-    items: ((r.template_items as unknown as It[]) ?? []).sort((a, b) => a.position - b.position).map((i) => ({ exerciseId: i.exercise_id, name: i.exercises?.name ?? "—", hasVideo: !!i.exercises?.video_ref, sets: i.sets, reps: i.reps, rest: i.rest_seconds })) }));
+    items: ((r.template_items as unknown as It[]) ?? []).sort((a, b) => a.position - b.position).map((i) => ({ exerciseId: i.exercise_id, name: i.exercises?.name ?? "—", hasVideo: !!i.exercises?.video_ref, sets: i.sets, reps: i.reps, rest: i.rest_seconds, image: i.exercises?.image ?? null, muscle: i.exercises?.muscle_group ?? null })) }));
 };
 
 export const KEYS = { plans: ["plans"], clients: ["clients"], exercises: ["exercises"], routines: ["routines"] } as const;
