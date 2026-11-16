@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-16 - Rutinas: sin las etiquetas de músculos
+Cristian no las quiere (agrandaban cada rutina). Se quitan de `RoutineCard.tsx` y `coach.css`; queda el cuadro de vídeo de la rutina, nombre y datos.
+Revertir: `git revert` de este commit.
+
 ## 2026-11-15 - Rutinas y programas con más presencia
 Cristian: la lista se veía "muy planita". Vuelve el cuadro de vídeo a la izquierda, pero ahora del **vídeo de la rutina** (no de los ejercicios): con vídeo, la miniatura de YouTube con el botón rojo; sin vídeo, un cuadro punteado "+ Vídeo" que abre la edición para ponérselo. Debajo del nombre, los músculos que trabaja (en rojo suave). Programas: cuadro negro con brillo rojo con las semanas ("4 SEMANAS") y una tira L M M J V S D con los días que entrena. Archivos: `RoutineCard.tsx`, `ProgramsView.tsx`, `lib/queries.ts` (la rutina trae imagen y músculo de cada ejercicio), `coach.css` (`.cat-vid`, `.cat-play`, `.cat-muscles`, `.cat-weeks`, `.cat-strip`).
 Revertir: `git revert` de este commit.

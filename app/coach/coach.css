@@ -1295,8 +1295,6 @@ html{scroll-behavior:smooth;}
 .cat-vid.has img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
 .cat-play{position:relative;width:28px;height:28px;border-radius:50%;background:var(--neon,#F7254B);box-shadow:0 0 16px rgba(247,37,75,.75)}
 .cat-play::after{content:"";position:absolute;left:11px;top:8.5px;border-left:9px solid #fff;border-top:5.5px solid transparent;border-bottom:5.5px solid transparent}
-.cat-muscles{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
-.cat-muscles i{font-style:normal;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(212,26,64,.08);color:var(--accent)}
 .cat-faces{display:flex;flex-shrink:0;margin-right:4px}
 .cat-faces .ex-pic{width:30px;height:30px;border-radius:50%;border:2px solid var(--paper);background:var(--surface);object-fit:cover;margin-left:-9px}
 .cat-faces .ex-pic:first-child{margin-left:0}

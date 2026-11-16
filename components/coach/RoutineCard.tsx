@@ -1,15 +1,13 @@
 "use client";
 // 15-nov (2): tarjeta compacta con presencia. A la izquierda el cuadro del VÍDEO DE LA RUTINA (no de los ejercicios): con vídeo,
 // la miniatura de YouTube con el botón rojo; sin vídeo, un cuadro punteado "Añadir vídeo" que abre la edición. En medio el nombre,
-// y los datos y músculos que trabaja. Al desplegar: ejercicios, Editar y Eliminar.
+// y los datos (16-nov: sin etiquetas de músculos, Cristian no las quiere). Al desplegar: ejercicios, Editar y Eliminar.
 import { useState } from "react";
 import { CatalogActions } from "./CatalogActions";
-import { muscleOf } from "@/lib/exmeta";
 import { ytThumb } from "@/lib/video-poster";
 export type Row = { name: string; sets: number; reps: string; rest: number | null; image?: string | null; muscle?: string | null };
 export function RoutineCard({ name, meta, video, rows, onEdit, onDelete, deleting }: { onEdit: () => void; onDelete: () => void; deleting?: boolean; name: string; meta: string; video: string | null; rows: Row[] }) {
   const [open, setOpen] = useState(false);
-  const muscles = Array.from(new Set(rows.map((r) => muscleOf(r.muscle)).filter((m): m is string => !!m))).slice(0, 3);
   const thumb = ytThumb(video);
   return (
     <div className={`cat-row${open ? " open" : ""}`}>
@@ -26,7 +24,7 @@ export function RoutineCard({ name, meta, video, rows, onEdit, onDelete, deletin
         )}
         <button type="button" className="cat-row-head" aria-expanded={open} onClick={() => setOpen(!open)}>
           <span className="cat-row-main"><b>{name}</b><small>{meta}</small>
-            {!!muscles.length && <span className="cat-muscles">{muscles.map((m) => <i key={m}>{m}</i>)}</span>}</span>
+</span>
           <svg className="cat-chev" viewBox="0 0 10 8" fill="none" aria-hidden="true"><path d="M1 4h8M6 1l3 3-3 3" strokeLinecap="round" /></svg>
         </button>
       </div>
