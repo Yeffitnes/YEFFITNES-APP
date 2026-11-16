@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-16 - Android: la pestaña de Chrome ya no queda usable después de instalar; aviso del acceso directo
+Cristian probó en Android: (1) después de instalar, la app se podía seguir usando en Chrome; (2) el icono quedó con el logo de Chrome encima.
+- (1) `components/InstallGate.tsx`: al terminar de instalar ("appinstalled"), la pestaña del navegador ya no deja pasar: muestra "Abre la app desde su icono" y lo recuerda en el teléfono (también al volver a abrir Chrome). Si Chrome vuelve a ofrecer instalar (la borraron), vuelve a guiar la instalación. Computador sin cambios.
+- (2) El logo de Chrome encima sale cuando Android crea un **acceso directo** en vez de instalar la app ("Añadir a pantalla de inicio" → "Crear acceso directo"). El manifiesto cumple todo para instalarse como app (comprobado: Chrome no reporta errores de instalación). La guía ahora dice "Instalar app" y avisa que no se elija "Crear acceso directo". Para quitarlo en un teléfono que ya lo tiene: borrar ese icono e instalar con "Instalar app".
+- Prueba: `tests/e2e/install_gate.js` (necesita el build con `NEXT_PUBLIC_REQUIRE_INSTALL=1`; no está en `all.sh`).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-16 - Rutinas: sin las etiquetas de músculos
 Cristian no las quiere (agrandaban cada rutina). Se quitan de `RoutineCard.tsx` y `coach.css`; queda el cuadro de vídeo de la rutina, nombre y datos.
 Revertir: `git revert` de este commit.

@@ -21,6 +21,7 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `away.js` (2-nov): hábitos (ayer, récord, historial para cliente y Jeff) y "Jeff estuvo pendiente de ti". Base recién creada.
 - `review3.js` (2-nov): Revisar cliente por cliente (computador y celular), tarjeta del panel legible, "Revisar" segundo en el menú del celular. Base recién creada. `report_time.js`: hora del reporte (ver cabecera).
 - `habits_cta.js` (14-nov): campanita de hábitos, "Recordarle" y lo que ve el cliente. `habits_cron.js`: recordatorio de la noche y resumen a Jeff en la mañana (claves VAPID de prueba, como `plan_cron.js`). Base recién creada.
+- `install_gate.js` (16-nov): en Android, después de instalar, Chrome manda al icono. Necesita `NEXT_PUBLIC_REQUIRE_INSTALL=1 bash tests/e2e/run.sh setup` (no va en `all.sh`).
 - `login_brand.js` (15-nov): login nuevo y marca Yeffitness (sin "YEFFITNES" ni "Jeff" en pantallas públicas).
 - `plan_weeks.js` (15-nov): programas con semanas distintas, programa con una rutina eliminada, ficha con semanas y series/reps por cliente, editor de rutina en el celular.
 - `catalog_del.js` (15-nov): Editar y Eliminar a la vista en rutinas y programas (celular y computador); eliminar pide confirmar y no toca el plan de los clientes.
