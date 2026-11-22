@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-11-22 - Agenda: "Próximas sesiones" como botón y panel oscuro
+Cristian: que la lista no vaya encima de la agenda. Ahora es un botón oscuro con brillo rojo junto a "Agendar cliente" y "Publicar disponibilidad", con el número de sesiones y la siguiente ("Martes 24 de noviembre 10:00 · Camila"). Al tocarlo se abre un panel oscuro (a la derecha en computador, desde abajo en el celular) con todas las sesiones por día, buscador desde 7 sesiones, enlace a la ficha y la × para cancelar (la confirmación sale encima y el panel sigue abierto). En el celular el botón ocupa todo el ancho y debajo van las otras dos acciones.
+Archivos: `components/coach/AgendaView.tsx`, `app/coach/coach.css` (bloque "Próximas sesiones"), `tests/e2e/agenda_fix.js`.
+Revertir: `git revert` de este commit (vuelve la tarjeta encima de la agenda).
+
 ## 2026-11-22 - Agenda: sesiones pendientes, publicar sin fallas y eliminar clientes
 Reporte de Cristian y Yeff.
 - **En el celular no se veían las sesiones reservadas.** La semana del celular muestra un día a la vez (el de hoy) y la semana va de lunes a domingo: un domingo, las reservas del martes estaban en la "semana siguiente". Nuevo bloque **"Sesiones pendientes"** arriba de la agenda (celular y computador): todas las reservas que vienen, de cualquier semana, por día ("Hoy", "Mañana", "Martes 24 de noviembre"), con hora, cliente (lleva a su ficha), tipo y botón para cancelar. Con muchas, muestra 8 y "Ver las N", y un buscador por nombre. Además, en las pestañas de los días, los que tienen reservas llevan el número en rojo.

@@ -19,10 +19,16 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   const j = await (await ctxFor(b, "jeff", true)).newPage(); watch(j, "jeff-cel", errs);
   await step("celular: 'Sesiones pendientes' muestra las dos reservas, también la de otra semana", async () => {
     await j.goto(`${U}/coach/agenda`, { waitUntil: "networkidle" }); await j.waitForTimeout(1200);
+    if (await j.locator("#pendientes").count()) throw new Error("no debería estar encima de la agenda");
+    const bt = await j.locator(".ag-up-btn").innerText(); if (!/Próximas sesiones/.test(bt) || !/\b2\b/.test(bt)) throw new Error("botón: " + bt);
+    await j.screenshot({ path: `${S}/agenda_boton_cel.png` });
+    await j.locator(".ag-up-btn").click(); await j.waitForTimeout(500);
     const t = await j.locator("#pendientes").innerText();
     if (!/Camila/.test(t) || !/Andrés/.test(t)) throw new Error(t.slice(0, 300));
     if (!/10:00/.test(t) || !/16:00/.test(t)) throw new Error("faltan las horas: " + t.slice(0, 200));
     await j.screenshot({ path: `${S}/agenda_pendientes_cel.png` });
+    await j.getByRole("button", { name: "Cerrar" }).click(); await j.waitForTimeout(300);
+    if (await j.locator("#pendientes").count()) throw new Error("no se cerró");
   });
   await step("celular: el día con reserva se marca en rojo en las pestañas", async () => {
     const n = await j.locator(".day-tab-n.booked").count(); if (!n) throw new Error("ningún día marcado"); return `${n} día(s)`;
@@ -59,12 +65,18 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     if (await j.locator(".client-name", { hasText: "Andrés" }).count()) throw new Error("sigue en la lista");   // (el aviso "fue eliminado" sí lleva el nombre)
     if (sql(`select count(*) from clients where id='${AN}'`) !== "0" || sql(`select count(*) from auth.users where id='00000000-0000-0000-0000-00000000000b'`) !== "0") throw new Error("sigue en la base");
     if (sql(`select count(*) from bookings where client_id='${AN}'`) !== "0") throw new Error("quedaron sus reservas");
-    await j.goto(`${U}/coach/agenda`, { waitUntil: "networkidle" }); await j.waitForTimeout(800);
+    await j.goto(`${U}/coach/agenda`, { waitUntil: "networkidle" }); await j.waitForTimeout(800); await j.locator(".ag-up-btn").click(); await j.waitForTimeout(400);
     if (/Andrés/.test(await j.locator("#pendientes").innerText())) throw new Error("sigue en sesiones pendientes");
   });
+  await step("celular: cancelar desde el panel abre 'Cancelar sesión' encima y la quita de la lista", async () => {
+    await j.locator("#pendientes .ag-x").first().click(); await j.getByRole("button", { name: "Sí, cancelar sesión" }).click(); await j.waitForTimeout(1500);
+    if (!(await j.locator("#pendientes").count())) throw new Error("se cerró el panel");
+    if (/Camila/.test(await j.locator("#pendientes").innerText())) throw new Error("sigue Camila");
+  });
   const pc = await (await ctxFor(b, "jeff", false)).newPage(); watch(pc, "jeff-pc", errs);
-  await step("computador: 'Sesiones pendientes' arriba de la semana", async () => {
+  await step("computador: el botón abre el panel de próximas sesiones", async () => {
     await pc.goto(`${U}/coach/agenda`, { waitUntil: "networkidle" }); await pc.waitForTimeout(1000);
-    if (!/Camila/.test(await pc.locator("#pendientes").innerText())) throw new Error("no está Camila"); await pc.screenshot({ path: `${S}/agenda_pendientes_pc.png` });
+    await pc.screenshot({ path: `${S}/agenda_boton_pc.png` }); await pc.locator(".ag-up-btn").click(); await pc.waitForTimeout(500);
+    if (!/Próximas sesiones/.test(await pc.locator("#pendientes").innerText())) throw new Error("no abrió"); await pc.screenshot({ path: `${S}/agenda_pendientes_pc.png` });
   });
   console.log(errs.length ? errs.join("\n") : "Sin errores de consola ni de red"); await b.close(); process.exit(fails || errs.length ? 1 : 0); })();

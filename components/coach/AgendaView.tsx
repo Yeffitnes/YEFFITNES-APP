@@ -1,6 +1,6 @@
 "use client";
 import { Icon } from "@/components/ui/Icon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { KIND_LABEL, useCancelBooking, useClients, useCoachBook, useCoachSlots, usePublishSlots, useRemoveSlot, useUpcomingSessions, weekBounds, type CoachSlot, type UpcomingSession } from "@/lib/queries";
 import { useWorkspaceId } from "@/components/Providers";
@@ -11,7 +11,7 @@ import { useNow } from "@/lib/use-now";
 const offsetOf = (date: string) => { const d = new Date(`${date}T12:00`), mon = weekBounds(0).from; return Math.floor((d.getTime() - mon.getTime()) / (7 * 86_400_000)); };
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export function AgendaView() {
-  const [off, setOff] = useState(0), [sel, setSel] = useState(dayIdx(new Date())), [pub, setPub] = useState<string | null>(null), [assign, setAssign] = useState(false), [cancel, setCancel] = useState<CancelTarget | null>(null);
+  const [off, setOff] = useState(0), [sel, setSel] = useState(dayIdx(new Date())), [pub, setPub] = useState<string | null>(null), [assign, setAssign] = useState(false), [cancel, setCancel] = useState<CancelTarget | null>(null), [up, setUp] = useState(false);
   const { data, isPending, isError, refetch } = useCoachSlots(off), remove = useRemoveSlot();
   const { from } = weekBounds(off), days = weekDays(from), now = useNow();
   // Lo que ya terminó se ve como "Ya pasó" y no se puede cancelar (pedido de Cristian, 29-oct): antes seguía como pendiente.
@@ -21,8 +21,8 @@ export function AgendaView() {
   return (
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} ${conf === 1 ? "sesión confirmada" : "sesiones confirmadas"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
-        <div className="topbar-actions"><button className="ghost-btn" onClick={() => setAssign(true)}>Agendar cliente</button><button className="primary-btn" onClick={() => setPub(ymd(new Date()))}>Publicar disponibilidad</button></div></div>
-      <PendingSessions onCancel={setCancel} />
+        <div className="topbar-actions ag-actions"><UpcomingButton onOpen={() => setUp(true)} /><button className="ghost-btn" onClick={() => setAssign(true)}>Agendar cliente</button><button className="primary-btn" onClick={() => setPub(ymd(new Date()))}>Publicar disponibilidad</button></div></div>
+      {up && <UpcomingPanel onClose={() => setUp(false)} onCancel={setCancel} />}
       <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" onClick={() => setOff(off - 1)}><Icon name="chevronLeft" size={16} /></button><div className="week-nav-label">{weekLabel(from)}</div><button className="week-nav-btn" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}><Icon name="chevron" size={16} /></button><button className="week-today-btn" onClick={() => { setOff(0); setSel(dayIdx(new Date())); }}>Hoy</button></div>
       <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}{(() => { const ds = slots.filter((s) => sameDay(new Date(s.startsAt), d)), bk = ds.reduce((a, s) => a + s.bookings.length, 0);
         return bk ? <span className="day-tab-n booked" aria-label={`${bk} reservada${bk === 1 ? "" : "s"}`}>{bk}</span> : ds.length ? <span className="day-tab-n" aria-label={`${ds.length} horarios libres`}>{ds.length}</span> : null; })()}</div>)}</div>
@@ -96,38 +96,62 @@ function AssignModal({ slots, onClose }: { slots: CoachSlot[]; onClose: () => vo
     </Modal>
   );
 }
-// "Sesiones pendientes" (22-nov, pedido de Yeff): todas las reservas que vienen, de cualquier semana, en una lista por día.
-// En el celular la semana muestra un día a la vez y no se veía quién estaba agendado; aquí está todo de un vistazo, con buscador.
+// "Próximas sesiones" (22-nov, pedido de Yeff): todas las reservas que vienen, de cualquier semana, en un panel oscuro que se abre
+// desde el botón junto a "Agendar cliente" (no encima de la agenda). En el celular la semana muestra un día a la vez y no se veía
+// quién estaba agendado; aquí está todo de un vistazo, por día, con buscador.
 const dayLabel = (iso: string, now: Date) => {
   const d = new Date(iso), t = new Date(now); t.setHours(0, 0, 0, 0); const k = Math.round((new Date(d).setHours(0, 0, 0, 0) - t.getTime()) / 86_400_000);
   return k === 0 ? "Hoy" : k === 1 ? "Mañana" : `${DAYLONG[dayIdx(d)]} ${d.getDate()} de ${d.toLocaleDateString("es", { month: "long" })}`;
 };
-function PendingSessions({ onCancel }: { onCancel: (t: CancelTarget) => void }) {
-  const q = useUpcomingSessions(), now = useNow(), [all, setAll] = useState(false), [find, setFind] = useState("");
-  const list = (q.data ?? []).filter((x) => new Date(x.startsAt).getTime() + x.duration * 60_000 > now.getTime());
-  const f = find.trim().toLowerCase(), shown = f ? list.filter((x) => x.clientName.toLowerCase().includes(f)) : list;
-  const LIMIT = 8, cut = all || f ? shown : shown.slice(0, LIMIT);
-  const groups = cut.reduce((m, x) => { const k = dayLabel(x.startsAt, now); m.set(k, [...(m.get(k) ?? []), x]); return m; }, new Map<string, UpcomingSession[]>());
-  if (q.isPending) return <div className="card" style={{ marginBottom: 18 }}><Skeleton rows={2} /></div>;
-  if (q.isError) return null;
-  const clients = new Set(list.map((x) => x.clientId)).size;
+function useUpcomingList() {
+  const q = useUpcomingSessions(), now = useNow();
+  return { q, now, list: (q.data ?? []).filter((x) => new Date(x.startsAt).getTime() + x.duration * 60_000 > now.getTime()) };
+}
+function UpcomingButton({ onOpen }: { onOpen: () => void }) {
+  const { list, now } = useUpcomingList(), next = list[0];
   return (
-    <div className="card pend-card" id="pendientes">
-      <div className="card-head"><div><div className="card-tag">Sesiones pendientes</div>
-        <div className="card-title">{list.length ? `${list.length} ${list.length === 1 ? "sesión" : "sesiones"} por hacer · ${clients} cliente${clients === 1 ? "" : "s"}` : "No tienes sesiones reservadas"}</div></div></div>
-      {list.length > LIMIT && <input className="pend-find" aria-label="Buscar cliente en las sesiones" placeholder="Buscar cliente…" value={find} onChange={(e) => setFind(e.target.value)} />}
-      {!list.length && <p className="dsh-empty">Cuando un cliente reserve (o lo agendes tú), aparece aquí con su día y hora.</p>}
-      {f && !shown.length && <p className="dsh-empty">Nadie con ese nombre tiene sesión.</p>}
-      {Array.from(groups).map(([day, xs]) => (
-        <div key={day} className="pend-day"><div className="pend-day-h">{day}</div>
-          {xs.map((x) => (
-            <div key={x.bookingId} className="pend-row">
-              <span className="pend-time">{hhmm(x.startsAt)}</span>
-              <Link href={`/coach/clientes/${x.clientId}?tab=Agenda`} className="pend-main"><b>{x.clientName}</b><small>{KIND_LABEL[x.kind]} · {x.duration} min{x.capacity > 1 ? " · clase grupal" : ""}{x.by === "coach" ? " · la agendaste tú" : ""}</small></Link>
-              <button type="button" className="pend-x" aria-label={`Cancelar la sesión de ${x.clientName}`} title="Cancelar sesión" onClick={() => onCancel({ bookingId: x.bookingId, clientName: x.clientName, startsAt: x.startsAt })}>×</button>
+    <button type="button" className="ag-up-btn" onClick={onOpen} aria-label={`Próximas sesiones: ${list.length}`}>
+      <span className="ag-up-n">{list.length}</span>
+      <span className="ag-up-txt"><b>Próximas sesiones</b><small>{next ? `${dayLabel(next.startsAt, now)} ${hhmm(next.startsAt)} · ${next.clientName.split(" ")[0]}` : "Sin reservas por ahora"}</small></span>
+      <Icon name="chevron" size={14} />
+    </button>
+  );
+}
+function UpcomingPanel({ onClose, onCancel }: { onClose: () => void; onCancel: (t: CancelTarget) => void }) {
+  const { q, now, list } = useUpcomingList(), [find, setFind] = useState("");
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape" && !document.querySelector(".modal-backdrop")) onClose(); };   // con "Cancelar sesión" abierta, Escape cierra solo esa
+    window.addEventListener("keydown", k); document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", k); document.body.style.overflow = ""; };
+  }, [onClose]);
+  const f = find.trim().toLowerCase(), shown = f ? list.filter((x) => x.clientName.toLowerCase().includes(f)) : list;
+  const groups = shown.reduce((m, x) => { const k = dayLabel(x.startsAt, now); m.set(k, [...(m.get(k) ?? []), x]); return m; }, new Map<string, UpcomingSession[]>());
+  const clients = new Set(list.map((x) => x.clientId)).size, today = list.filter((x) => dayLabel(x.startsAt, now) === "Hoy").length;
+  return (
+    <div className="ag-sheet-back" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="ag-sheet" role="dialog" aria-modal="true" aria-label="Próximas sesiones" id="pendientes">
+        <div className="ag-sheet-head">
+          <div><div className="ag-sheet-eyebrow">Agenda</div><h2>Próximas sesiones</h2>
+            <p>{list.length ? `${list.length} ${list.length === 1 ? "sesión" : "sesiones"} · ${clients} cliente${clients === 1 ? "" : "s"}${today ? ` · ${today} hoy` : ""}` : "No tienes sesiones reservadas"}</p></div>
+          <button type="button" className="ag-sheet-x" aria-label="Cerrar" onClick={onClose}><Icon name="close" size={16} /></button>
+        </div>
+        {list.length > 6 && <input className="ag-find" aria-label="Buscar cliente en las sesiones" placeholder="Buscar cliente…" value={find} onChange={(e) => setFind(e.target.value)} />}
+        <div className="ag-sheet-body">
+          {q.isPending && <div className="ag-empty">Cargando…</div>}
+          {q.isError && <div className="ag-empty">No pudimos cargar las sesiones. <button type="button" className="ag-link" onClick={() => q.refetch()}>Reintentar</button></div>}
+          {q.data && !list.length && <div className="ag-empty">Cuando un cliente reserve (o lo agendes tú), aparece aquí con su día y hora.</div>}
+          {f && !shown.length && <div className="ag-empty">Nadie con ese nombre tiene sesión.</div>}
+          {Array.from(groups).map(([day, xs]) => (
+            <div key={day} className="ag-day"><div className="ag-day-h">{day}<span>{xs.length}</span></div>
+              {xs.map((x) => (
+                <div key={x.bookingId} className="ag-row">
+                  <span className="ag-time">{hhmm(x.startsAt)}</span>
+                  <Link href={`/coach/clientes/${x.clientId}?tab=Agenda`} className="ag-main" onClick={onClose}><b>{x.clientName}</b><small>{KIND_LABEL[x.kind]} · {x.duration} min{x.capacity > 1 ? " · clase grupal" : ""}{x.by === "coach" ? " · la agendaste tú" : ""}</small></Link>
+                  <button type="button" className="ag-x" aria-label={`Cancelar la sesión de ${x.clientName}`} title="Cancelar sesión" onClick={() => onCancel({ bookingId: x.bookingId, clientName: x.clientName, startsAt: x.startsAt })}><Icon name="close" size={12} /></button>
+                </div>))}
             </div>))}
-        </div>))}
-      {!f && shown.length > LIMIT && <button type="button" className="ghost-btn" style={{ marginTop: 10 }} onClick={() => setAll(!all)}>{all ? "Ver menos" : `Ver las ${shown.length}`}</button>}
+        </div>
+      </div>
     </div>
   );
 }
