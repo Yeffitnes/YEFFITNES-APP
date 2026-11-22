@@ -1,11 +1,14 @@
 "use client";
 import { Icon } from "@/components/ui/Icon";
 import { useState } from "react";
-import { KIND_LABEL, useCancelBooking, useClients, useCoachBook, useCoachSlots, usePublishSlots, useRemoveSlot, weekBounds, type CoachSlot } from "@/lib/queries";
+import Link from "next/link";
+import { KIND_LABEL, useCancelBooking, useClients, useCoachBook, useCoachSlots, usePublishSlots, useRemoveSlot, useUpcomingSessions, weekBounds, type CoachSlot, type UpcomingSession } from "@/lib/queries";
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { DAYLONG, DAY3, dayIdx, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
 import { useNow } from "@/lib/use-now";
+// Semana (desplazamiento desde la actual) de una fecha "aaaa-mm-dd": para mostrar el día recién publicado.
+const offsetOf = (date: string) => { const d = new Date(`${date}T12:00`), mon = weekBounds(0).from; return Math.floor((d.getTime() - mon.getTime()) / (7 * 86_400_000)); };
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export function AgendaView() {
   const [off, setOff] = useState(0), [sel, setSel] = useState(dayIdx(new Date())), [pub, setPub] = useState<string | null>(null), [assign, setAssign] = useState(false), [cancel, setCancel] = useState<CancelTarget | null>(null);
@@ -17,10 +20,12 @@ export function AgendaView() {
   const slots = data ?? [], conf = slots.reduce((a, s) => a + s.bookings.length, 0), free = slots.filter((s) => s.bookings.length < s.capacity && new Date(s.startsAt) > now).length;
   return (
     <div>
-      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} sesión${conf === 1 ? "" : "es"} confirmada${conf === 1 ? "" : "s"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
+      <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} ${conf === 1 ? "sesión confirmada" : "sesiones confirmadas"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
         <div className="topbar-actions"><button className="ghost-btn" onClick={() => setAssign(true)}>Agendar cliente</button><button className="primary-btn" onClick={() => setPub(ymd(new Date()))}>Publicar disponibilidad</button></div></div>
+      <PendingSessions onCancel={setCancel} />
       <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" onClick={() => setOff(off - 1)}><Icon name="chevronLeft" size={16} /></button><div className="week-nav-label">{weekLabel(from)}</div><button className="week-nav-btn" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}><Icon name="chevron" size={16} /></button><button className="week-today-btn" onClick={() => { setOff(0); setSel(dayIdx(new Date())); }}>Hoy</button></div>
-      <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}{(() => { const n = slots.filter((s) => sameDay(new Date(s.startsAt), d)).length; return n ? <span className="day-tab-n" aria-label={`${n} horarios`}>{n}</span> : null; })()}</div>)}</div>
+      <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}{(() => { const ds = slots.filter((s) => sameDay(new Date(s.startsAt), d)), bk = ds.reduce((a, s) => a + s.bookings.length, 0);
+        return bk ? <span className="day-tab-n booked" aria-label={`${bk} reservada${bk === 1 ? "" : "s"}`}>{bk}</span> : ds.length ? <span className="day-tab-n" aria-label={`${ds.length} horarios libres`}>{ds.length}</span> : null; })()}</div>)}</div>
       {isPending && <Skeleton rows={3} />}
       {isError && <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar la agenda. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>}
       {data && (
@@ -48,20 +53,20 @@ export function AgendaView() {
               </div>);
           })}</div>
         </div>)}
-      {pub && <PublishModal date={pub} onClose={() => setPub(null)} />}
+      {pub && <PublishModal date={pub} onClose={() => setPub(null)} onDone={(date) => { setOff(offsetOf(date)); setSel(dayIdx(new Date(`${date}T12:00`))); }} />}
       {assign && <AssignModal slots={slots.filter((s) => s.bookings.length < s.capacity && new Date(s.startsAt) > now)} onClose={() => setAssign(false)} />}
       {cancel && <CancelModal t={cancel} onClose={() => setCancel(null)} />}
     </div>
   );
 }
-function PublishModal({ date, onClose }: { date: string; onClose: () => void }) {
+function PublishModal({ date, onClose, onDone }: { date: string; onClose: () => void; onDone: (date: string) => void }) {
   const pub = usePublishSlots(useWorkspaceId()), [d, setD] = useState(date), [a, setA] = useState("08:00"), [b, setB] = useState("10:00"), [dur, setDur] = useState(30), [kind, setKind] = useState("initial"), [cap, setCap] = useState(1), [err, setErr] = useState("");
   const starts: string[] = []; const s0 = new Date(`${d}T${a}`), e0 = new Date(`${d}T${b}`);
   if (!isNaN(+s0) && !isNaN(+e0)) for (let t = +s0; t + dur * 60000 <= +e0 && starts.length < 30; t += dur * 60000) starts.push(new Date(t).toISOString());
   const go = () => {
     if (!d || isNaN(+s0) || isNaN(+e0) || +e0 <= +s0) return setErr("Revisa la fecha y que la hora final sea posterior a la inicial.");
     const fut = starts.filter((x) => new Date(x) > new Date()); if (!fut.length) return setErr("Esos horarios ya pasaron. Elige una fecha y hora futuras.");
-    setErr(""); pub.mutate({ starts: fut, duration: dur, kind, capacity: cap }, { onSuccess: onClose });
+    setErr(""); pub.mutate({ starts: fut, duration: dur, kind, capacity: cap }, { onSuccess: () => { onDone(d); onClose(); } });
   };
   return (
     <Modal title="Publicar disponibilidad" sub="Estos huecos quedarán visibles para que tus clientes activos los reserven." onClose={onClose}>
@@ -70,7 +75,7 @@ function PublishModal({ date, onClose }: { date: string; onClose: () => void }) 
       <div className="modal-row2"><div className="modal-field"><label>Duración de cada hueco</label><select aria-label="Duración de cada hueco" value={dur} onChange={(e) => setDur(Number(e.target.value))}><option value={30}>30 min</option><option value={45}>45 min</option><option value={60}>60 min</option></select></div>
         <div className="modal-field"><label>Tipo</label><select aria-label="Tipo" value={kind} onChange={(e) => setKind(e.target.value)}><option value="initial">Llamada inicial</option><option value="followup">Seguimiento</option></select></div></div>
       <div className="modal-field"><label>Cupos por hueco (1 = sesión individual; más de 1 = clase grupal)</label><input aria-label="Cupos por hueco" type="number" min={1} max={30} value={cap} onChange={(e) => setCap(Math.min(30, Math.max(1, Number(e.target.value) || 1)))} /></div>
-      <div className="modal-cap-hint">Se crearán {starts.length} hueco{starts.length === 1 ? "" : "s"} {cap > 1 ? `de clase grupal (${cap} cupos cada uno)` : "individuales"}. Los horarios que ya existan se respetan.</div>
+      <div className="modal-cap-hint">Se crearán {starts.length} hueco{starts.length === 1 ? "" : "s"} {cap > 1 ? `de clase grupal (${cap} cupos cada uno)` : "individuales"}. Si alguno choca con un horario que ya tienes (reservado o libre), ese se salta y te lo decimos.</div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={pub.isPending} onClick={go}>{pub.isPending ? "Publicando…" : "Publicar"}</button></div>
     </Modal>
@@ -89,6 +94,41 @@ function AssignModal({ slots, onClose }: { slots: CoachSlot[]; onClose: () => vo
           <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={book.isPending} onClick={() => (c && s ? book.mutate({ slotId: s, clientId: c }, { onSuccess: onClose }) : setErr("Elige un cliente y un horario."))}>{book.isPending ? "Agendando…" : "Agendar sesión"}</button></div>
         </>)}
     </Modal>
+  );
+}
+// "Sesiones pendientes" (22-nov, pedido de Yeff): todas las reservas que vienen, de cualquier semana, en una lista por día.
+// En el celular la semana muestra un día a la vez y no se veía quién estaba agendado; aquí está todo de un vistazo, con buscador.
+const dayLabel = (iso: string, now: Date) => {
+  const d = new Date(iso), t = new Date(now); t.setHours(0, 0, 0, 0); const k = Math.round((new Date(d).setHours(0, 0, 0, 0) - t.getTime()) / 86_400_000);
+  return k === 0 ? "Hoy" : k === 1 ? "Mañana" : `${DAYLONG[dayIdx(d)]} ${d.getDate()} de ${d.toLocaleDateString("es", { month: "long" })}`;
+};
+function PendingSessions({ onCancel }: { onCancel: (t: CancelTarget) => void }) {
+  const q = useUpcomingSessions(), now = useNow(), [all, setAll] = useState(false), [find, setFind] = useState("");
+  const list = (q.data ?? []).filter((x) => new Date(x.startsAt).getTime() + x.duration * 60_000 > now.getTime());
+  const f = find.trim().toLowerCase(), shown = f ? list.filter((x) => x.clientName.toLowerCase().includes(f)) : list;
+  const LIMIT = 8, cut = all || f ? shown : shown.slice(0, LIMIT);
+  const groups = cut.reduce((m, x) => { const k = dayLabel(x.startsAt, now); m.set(k, [...(m.get(k) ?? []), x]); return m; }, new Map<string, UpcomingSession[]>());
+  if (q.isPending) return <div className="card" style={{ marginBottom: 18 }}><Skeleton rows={2} /></div>;
+  if (q.isError) return null;
+  const clients = new Set(list.map((x) => x.clientId)).size;
+  return (
+    <div className="card pend-card" id="pendientes">
+      <div className="card-head"><div><div className="card-tag">Sesiones pendientes</div>
+        <div className="card-title">{list.length ? `${list.length} ${list.length === 1 ? "sesión" : "sesiones"} por hacer · ${clients} cliente${clients === 1 ? "" : "s"}` : "No tienes sesiones reservadas"}</div></div></div>
+      {list.length > LIMIT && <input className="pend-find" aria-label="Buscar cliente en las sesiones" placeholder="Buscar cliente…" value={find} onChange={(e) => setFind(e.target.value)} />}
+      {!list.length && <p className="dsh-empty">Cuando un cliente reserve (o lo agendes tú), aparece aquí con su día y hora.</p>}
+      {f && !shown.length && <p className="dsh-empty">Nadie con ese nombre tiene sesión.</p>}
+      {Array.from(groups).map(([day, xs]) => (
+        <div key={day} className="pend-day"><div className="pend-day-h">{day}</div>
+          {xs.map((x) => (
+            <div key={x.bookingId} className="pend-row">
+              <span className="pend-time">{hhmm(x.startsAt)}</span>
+              <Link href={`/coach/clientes/${x.clientId}?tab=Agenda`} className="pend-main"><b>{x.clientName}</b><small>{KIND_LABEL[x.kind]} · {x.duration} min{x.capacity > 1 ? " · clase grupal" : ""}{x.by === "coach" ? " · la agendaste tú" : ""}</small></Link>
+              <button type="button" className="pend-x" aria-label={`Cancelar la sesión de ${x.clientName}`} title="Cancelar sesión" onClick={() => onCancel({ bookingId: x.bookingId, clientName: x.clientName, startsAt: x.startsAt })}>×</button>
+            </div>))}
+        </div>))}
+      {!f && shown.length > LIMIT && <button type="button" className="ghost-btn" style={{ marginTop: 10 }} onClick={() => setAll(!all)}>{all ? "Ver menos" : `Ver las ${shown.length}`}</button>}
+    </div>
   );
 }
 // Jeff cancela la sesión de un cliente (desde la Agenda o desde la ficha del cliente): el horario queda libre otra vez y al cliente

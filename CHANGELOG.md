@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-11-22 - Agenda: sesiones pendientes, publicar sin fallas y eliminar clientes
+Reporte de Cristian y Yeff.
+- **En el celular no se veían las sesiones reservadas.** La semana del celular muestra un día a la vez (el de hoy) y la semana va de lunes a domingo: un domingo, las reservas del martes estaban en la "semana siguiente". Nuevo bloque **"Sesiones pendientes"** arriba de la agenda (celular y computador): todas las reservas que vienen, de cualquier semana, por día ("Hoy", "Mañana", "Martes 24 de noviembre"), con hora, cliente (lleva a su ficha), tipo y botón para cancelar. Con muchas, muestra 8 y "Ver las N", y un buscador por nombre. Además, en las pestañas de los días, los que tienen reservas llevan el número en rojo.
+- **"Disponibilidad publicada" sin publicar nada.** Causa: los horarios se guardaban con "si ya existe esa hora, ignóralo", y un horario quitado sigue guardado (como cancelado), así que volver a publicar esa hora no hacía nada y aun así decía "publicada". Ahora (0059, `publish_slots`) un horario quitado se vuelve a abrir, se crean los nuevos, se salta lo que choca con un horario que ya tienes (reservado o libre, también si se monta encima) y el aviso dice la verdad: "2 horarios publicados · 1 no, porque ya tenías un horario a esa hora" o "No se publicó nada: ya tienes horarios a esas horas (08:00, 08:30)". Después de publicar, la agenda salta a ese día.
+- **Eliminar cliente** (abajo en su ficha): pide escribir ELIMINAR; borra su cuenta y todo lo suyo (entrenos, reportes, mensajes, medidas, hábitos, reservas, fotos de progreso) y sus vídeos van a la basura de Bunny. No se puede deshacer.
+- Corregido de paso: "sesiónes" en el resumen de la agenda.
+- Archivos: `components/coach/AgendaView.tsx`, `components/coach/ClientFicha.tsx`, `lib/queries.ts`, `lib/live.ts`, `app/api/clients/delete/route.ts` (nuevo), `app/coach/coach.css`. Base: **migración 0059** (`publish_slots`, `delete_client`, permiso del coach para borrar fotos de su espacio). Sin la 0059, publicar funciona como antes y eliminar avisa que falta la migración.
+- Pruebas: `supabase/tests/rls_publish_delete.sql` y `tests/e2e/agenda_fix.js` (en `all.sh`).
+Revertir: `git revert` de este commit y en Supabase lo que dice la cabecera de `0059_agenda_y_borrar_cliente.sql`.
+
 ## 2026-11-22 - Landing nueva: la app por dentro con un celular interactivo
 Pedido de Cristian: el enlace de Instagram de Yeff. Reemplaza la landing estática del 25-oct (`public/landing/index.html`, con pantallas dibujadas a mano y marca vieja).
 - **Dónde**: `/landing`, ahora como página de la app (`app/landing/page.tsx`, `components/landing/`). Sin sesión y sin pedir instalar (excluida del `middleware` y ahora también de `InstallGate`). No enlaza a la app ni al login.

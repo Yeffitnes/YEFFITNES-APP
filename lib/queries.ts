@@ -527,7 +527,7 @@ export const useFirstCall = (clientId: string) => useQuery({ queryKey: ["first-c
   const next = rows.filter((b) => b.status === "confirmed" && b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => b.availability_slots!.starts_at).sort()[0];
   return { any: rows.length > 0, next: next ? { startsAt: next } : null };
 } });
-function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "first-call", "client-bookings", "coach-attention"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
+function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "coach-upcoming", "first-call", "client-bookings", "coach-attention"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
 export function useBookSlot() {
   const toast = useToast(), inv = useAgendaInvalidate();
   return useMutation({ mutationFn: async (slotId: string) => { const { error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; },
@@ -555,12 +555,35 @@ export const useCoachSlots = (offset: number) => useQuery({ queryKey: ["coach-sl
   return (data as unknown as Raw[]).map((s) => { const bs = s.bookings.filter((x) => x.status === "confirmed").map((b) => ({ id: b.id, clientName: b.clients?.profiles?.full_name || "Cliente", by: b.booked_by }));
     return { id: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, capacity: s.capacity, bookings: bs, booking: bs[0] ?? null }; });
 } });
+// 22-nov (0059): antes se insertaba con "si ya existe, ignóralo": un horario quitado (sigue guardado como 'cancelled') no volvía al
+// publicarlo otra vez, y aun así salía "Disponibilidad publicada". Ahora la base dice cuántos creó, cuántos chocaban y cuántos ya pasaron.
+export type PublishResult = { created: number; reopened: number; clash: number; past: number };
+const fmtHour = (iso: string) => new Date(iso).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false });
 export function usePublishSlots(workspaceId: string) {
   const toast = useToast(), inv = useAgendaInvalidate();
-  return useMutation({ mutationFn: async (v: { starts: string[]; duration: number; kind: string; capacity: number }) => {
-      const { error } = await db().from("availability_slots").upsert(v.starts.map((s) => ({ workspace_id: workspaceId, starts_at: s, duration_min: v.duration, kind: v.kind, capacity: v.capacity })), { onConflict: "workspace_id,starts_at", ignoreDuplicates: true }); if (error) throw error; },
-    onSuccess: () => toast("Disponibilidad publicada"), onError: () => toast("No pudimos publicar los horarios. Revisa los datos e inténtalo de nuevo.", true), onSettled: inv });
+  return useMutation({ mutationFn: async (v: { starts: string[]; duration: number; kind: string; capacity: number }): Promise<PublishResult> => {
+      const { data, error } = await db().rpc("publish_slots", { p_starts: v.starts, p_duration: v.duration, p_kind: v.kind, p_capacity: v.capacity });
+      if (!error) { const r = data as PublishResult & { clash_at?: string[] }; if (!r.created) throw new Error(r.clash ? `clash:${(r.clash_at ?? []).map(fmtHour).join(", ")}` : "past"); return r; }
+      if (!/publish_slots|function/i.test(error.message ?? "")) throw error;
+      // base sin la 0059: como antes
+      const { error: e2 } = await db().from("availability_slots").upsert(v.starts.map((s) => ({ workspace_id: workspaceId, starts_at: s, duration_min: v.duration, kind: v.kind, capacity: v.capacity })), { onConflict: "workspace_id,starts_at", ignoreDuplicates: true }); if (e2) throw e2;
+      return { created: v.starts.length, reopened: 0, clash: 0, past: 0 };
+    },
+    onSuccess: (r) => toast(`${r.created === 1 ? "1 horario publicado" : `${r.created} horarios publicados`}${r.clash ? ` · ${r.clash} no, porque ya tenías un horario a esa hora` : ""}`),
+    onError: (e) => { const m = (e as Error).message ?? ""; toast(m.startsWith("clash:") ? `No se publicó nada: ya tienes horarios a esas horas (${m.slice(6)}). Elige otras horas o quita esos primero.` : m === "past" ? "No se publicó nada: esas horas ya pasaron." : "No pudimos publicar los horarios. Revisa los datos e inténtalo de nuevo.", true); },
+    onSettled: inv });
 }
+// Sesiones reservadas que aún no pasan (todas, no solo las de la semana): la lista "Sesiones pendientes" de la Agenda (22-nov).
+export type UpcomingSession = { bookingId: string; slotId: string; startsAt: string; duration: number; kind: string; capacity: number; clientId: string; clientName: string; by: string };
+export const useUpcomingSessions = () => useQuery({ queryKey: ["coach-upcoming"], staleTime: 20_000, refetchInterval: 60_000, queryFn: async (): Promise<UpcomingSession[]> => {
+  const since = new Date(Date.now() - 4 * 3600_000).toISOString();
+  const { data, error } = await db().from("availability_slots").select("id,starts_at,duration_min,kind,capacity,bookings(id,status,booked_by,client_id,clients(profiles(full_name)))").eq("status", "open").gte("starts_at", since).order("starts_at").limit(500);
+  if (error) throw error;
+  type Raw = { id: string; starts_at: string; duration_min: number; kind: string; capacity: number; bookings: { id: string; status: string; booked_by: string; client_id: string; clients: { profiles: { full_name: string } | null } | null }[] };
+  const now = Date.now();
+  return (data as unknown as Raw[]).filter((s) => new Date(s.starts_at).getTime() + s.duration_min * 60_000 > now).flatMap((s) => s.bookings.filter((b) => b.status === "confirmed").map((b) => ({
+    bookingId: b.id, slotId: s.id, startsAt: s.starts_at, duration: s.duration_min, kind: s.kind, capacity: s.capacity, clientId: b.client_id, clientName: b.clients?.profiles?.full_name || "Cliente", by: b.booked_by })));
+} });
 export function useRemoveSlot() {
   const toast = useToast(), inv = useAgendaInvalidate();
   return useMutation({ mutationFn: async (id: string) => { const { error } = await db().from("availability_slots").update({ status: "cancelled" }).eq("id", id); if (error) throw error; },

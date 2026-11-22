@@ -10,7 +10,10 @@ import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS, videoDuration } from "@/li
 import { ago, initials } from "@/lib/format";
 import { PLAN_DAYS, planMonth, planMonthText, shortDate } from "@/lib/planmonth";
 import type { ClientRow, Plan } from "@/lib/queries";
-import { Skeleton } from "@/components/ui/Modal";
+import { Modal, Skeleton } from "@/components/ui/Modal";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/Providers";
 import { TrainingTab } from "./TrainingTab";
 import { RecentWorkouts } from "./RecentWorkouts";
 import { NotesTab } from "./NotesTab";
@@ -50,6 +53,7 @@ export function ClientFicha({ id, tab: start }: { id: string; tab?: string }) {
           <RecentWorkouts clientId={c.id} />
         </>
       ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Mensajes" ? <ThreadView clientId={c.id} otherName={c.name.split(" ")[0]} coach /> : tab === "Agenda" ? <AgendaTab clientId={c.id} first={c.name.split(" ")[0]} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
+      <DeleteClient c={c} />
     </div>
   );
 }
@@ -131,6 +135,32 @@ function AgendaTab({ clientId, first }: { clientId: string; first: string }) {
           {st === "confirmed" && <button type="button" className="bk-cancel" onClick={() => setCancel({ bookingId: b.id, clientName: name, startsAt: b.startsAt })}>Cancelar</button>}</div>;
       })}
       {cancel && <CancelModal t={cancel} onClose={() => setCancel(null)} />}
+    </div>
+  );
+}
+
+// Eliminar al cliente por completo (22-nov, pedido de Yeff; 0059). Abajo de la ficha, con confirmación escribiendo ELIMINAR.
+// Borra su cuenta y todo lo suyo (entrenos, reportes, mensajes, medidas, fotos, reservas). No se puede deshacer.
+function DeleteClient({ c }: { c: ClientRow }) {
+  const [open, setOpen] = useState(false), [txt, setTxt] = useState(""), [busy, setBusy] = useState(false), [err, setErr] = useState("");
+  const router = useRouter(), qc = useQueryClient(), toast = useToast(), ok = txt.trim().toUpperCase() === "ELIMINAR";
+  const go = async () => {
+    setBusy(true); setErr("");
+    const r = await fetch("/api/clients/delete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId: c.id }) }).catch(() => null);
+    const j = (await r?.json().catch(() => ({}))) as { error?: string } | undefined;
+    if (!r?.ok) { setBusy(false); return setErr(j?.error === "not_ready" ? "Falta correr la migración 0059 en Supabase." : j?.error === "not_found" ? "Este cliente ya no existe." : "No pudimos eliminarlo. Revisa tu conexión e inténtalo de nuevo."); }
+    qc.setQueryData<ClientRow[]>(["clients"], (l) => (l ?? []).filter((x) => x.id !== c.id));
+    ["clients", "coach-upcoming", "coach-slots", "coach-attention", "feature-requests", "threads"].forEach((k) => void qc.invalidateQueries({ queryKey: [k] }));
+    toast(`${c.name} fue eliminado`); router.replace("/coach/clientes");
+  };
+  return (
+    <div className="del-client">
+      <button type="button" className="del-client-btn" onClick={() => setOpen(true)}>Eliminar cliente</button>
+      {open && <Modal title={`Eliminar a ${c.name}`} sub="Se borra su cuenta y todo lo suyo: entrenamientos, reportes, mensajes, medidas, fotos, hábitos y reservas. No se puede deshacer. Si vuelve, tendrá que crear la cuenta de nuevo." onClose={() => !busy && setOpen(false)}>
+        <div className="modal-field"><label htmlFor="del-c">Escribe ELIMINAR para confirmar</label><input id="del-c" autoComplete="off" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="ELIMINAR" /></div>
+        {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
+        <div className="modal-actions"><button className="modal-btn ghost" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button><button className="modal-btn danger" disabled={!ok || busy} onClick={() => void go()}>{busy ? "Eliminando…" : "Eliminar para siempre"}</button></div>
+      </Modal>}
     </div>
   );
 }

@@ -1356,3 +1356,21 @@ html{scroll-behavior:smooth;}
 .req-card .attn-ghost{display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-family:inherit}
 .act-item.hot{color:var(--accent);font-weight:700}
 .act-item.hot::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px rgba(247,37,75,.8);flex:none;margin-right:8px}
+/* 22-nov: Agenda, "Sesiones pendientes" y días con reservas en el celular */
+.pend-card{margin-bottom:18px}
+.pend-find{width:100%;height:40px;margin:12px 0 2px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font:inherit;font-size:14px}
+.pend-day{margin-top:14px}
+.pend-day-h{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.pend-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.pend-day .pend-row:first-of-type{border-top:0}
+.pend-time{flex:none;min-width:58px;height:32px;display:grid;place-items:center;border-radius:10px;background:var(--ink);color:#fff;font-family:var(--font-mono),monospace;font-size:12.5px;box-shadow:0 8px 18px -10px rgba(247,37,75,.8)}
+.pend-main{flex:1;min-width:0;display:grid;gap:2px;color:inherit;text-decoration:none}
+.pend-main b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pend-main small{font-size:12px;color:var(--text-dim)}
+.pend-x{flex:none;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--paper);color:var(--text-dim);font-size:16px;cursor:pointer}
+.pend-x:hover{border-color:var(--danger);color:var(--danger)}
+.day-tab-n.booked{background:var(--accent);color:#fff;box-shadow:0 0 8px rgba(247,37,75,.6)}
+.day-tab.active .day-tab-n.booked{background:var(--accent);color:#fff}
+.del-client{margin-top:28px;padding-top:16px;border-top:1px dashed var(--line);display:flex;justify-content:flex-end}
+.del-client-btn{background:none;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:700;color:var(--danger);cursor:pointer}
+.del-client-btn:hover{border-color:var(--danger)}
