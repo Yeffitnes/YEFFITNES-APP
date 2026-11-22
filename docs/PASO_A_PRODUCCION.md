@@ -78,12 +78,12 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Configurarlo en Netlify, poner `NEXT_PUBLIC_SITE_URL`, actualizar Supabase (punto 2) y las tareas programadas, y volver a desplegar.
 - [ ] Reinstalar la app en los teléfonos (cambia la dirección).
 
-## 6. Landing de venta (`public/landing/`, ruta `/landing`)
-- [ ] **Hoy vive dentro del sitio de la app, en `/landing`** (temporal). Se publica con cada deploy a Netlify. Cualquiera que escriba `/login` puede ver el acceso; es aceptado de forma temporal.
-- [ ] **Pendiente a futuro:** moverla a su propia dirección (pasos en `public/landing/README.md`).
-- [ ] WhatsApp real de Jeff (`COACH_PHONE` y los `wa.me/57XXXXXXXXXX` en `public/landing/index.html`) y su foto `public/landing/assets/jeff.jpg`.
-- [ ] Confirmar planes y precios con Jeff (hoy son propuesta, sin precios).
-- [ ] La imagen para compartir (`og:image`) usa ruta relativa; al tener dirección definitiva, poner la URL completa.
+## 6. Landing de venta (`app/landing`, ruta `/landing`; rehecha el 22-nov)
+- [ ] **WhatsApp de Yeff**: variable `NEXT_PUBLIC_YEFF_WHATSAPP` (solo dígitos con indicativo, ej. `573001234567`) en Netlify y en Vercel, y volver a desplegar. Sin ella, los botones abren WhatsApp con el mensaje escrito pero sin destinatario.
+- [ ] **Paquetes**: hoy son PROPUESTA (Esencial y Completo, los planes de la app). Se cambian en `lib/landing.ts` (`PACKS`). Sin precios: "Preguntar precio" va a WhatsApp.
+- [ ] Enlace para Instagram: `https://<dominio de producción>/landing`. No pide iniciar sesión ni instalar la app (excluida del `middleware` y de `InstallGate`) y no enlaza a la app.
+- Capturas del celular: reales, de la app con datos de ejemplo. Para rehacerlas (si cambia el diseño de la app): ver la cabecera de `tools/landing/capture.sh`; escribe `public/landing/shots/*.webp` y `components/landing/screens.json`.
+- Pendiente a futuro: moverla a su propia dirección (subdominio), si se quiere separar de la app.
 
 ## 7. Limpieza antes de entregar
 - [ ] Borrar clientes, mensajes, reportes, actividad, suscripciones push y reservas **de prueba**.

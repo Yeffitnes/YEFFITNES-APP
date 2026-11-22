@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-11-22 - Landing nueva: la app por dentro con un celular interactivo
+Pedido de Cristian: el enlace de Instagram de Yeff. Reemplaza la landing estática del 25-oct (`public/landing/index.html`, con pantallas dibujadas a mano y marca vieja).
+- **Dónde**: `/landing`, ahora como página de la app (`app/landing/page.tsx`, `components/landing/`). Sin sesión y sin pedir instalar (excluida del `middleware` y ahora también de `InstallGate`). No enlaza a la app ni al login.
+- **Celular interactivo**: pantallas **reales** del portal del cliente (Hoy, un ejercicio con series anotadas, resumen semanal, mensajes, plan, nutrición, agenda, progreso y material) de una clienta de demostración con 12 semanas (Valentina Ríos, datos ficticios; la página lo dice). Puntos rojos sobre cada parte: al tocarlos se resalta la tarjeta y el personaje de Yeff explica para qué sirve, con una pose distinta en cada pantalla. Barra de abajo como la de la app para cambiar de pantalla, "Verlo en la app" para entrar (resumen, ejercicio, mensajes), Anterior / Siguiente y recorrido automático de 25 paradas (arranca solo al ver el celular; cualquier toque lo pausa; no arranca con "reducir movimiento").
+- **Resto de la página**: portada con el personaje saludando, "Un ecosistema completo" (9 tarjetas que abren esa parte en el celular), "Cómo empiezas" (4 pasos), **Paquetes** Esencial y Completo **sin precio** ("Preguntar precio" abre WhatsApp con el paquete escrito) y cierre. Negro con brillo rojo; la sección del celular en claro como la app.
+- **WhatsApp**: variable `NEXT_PUBLIC_YEFF_WHATSAPP` (falta el número). Paquetes: PROPUESTA en `lib/landing.ts`.
+- **Capturas reproducibles**: `tools/landing/demo.sql` (datos de demostración) y `tools/landing/capture.sh` / `capture.js` (pantallas + posición de cada tarjeta en `components/landing/screens.json`).
+- El CSS del personaje pasó de `app/inicio/portal.css` a `app/guide.css` (mismo contenido) para usarlo en la landing; el portal lo importa igual.
+- Prueba: `tests/e2e/landing.js` (en `all.sh`): sin sesión, sin desbordes, capturas cargan, puntos, navegación, tarjetas del ecosistema, todos los contactos a WhatsApp, sin precios; también pasó con el build que exige instalar la app.
+Revertir: `git revert` de este commit (vuelve la landing estática anterior y la regla de `next.config.mjs`). Sin SQL.
+
 ## 2026-11-22 - Solicitudes de clientes, prioritarias en el panel de Yeff
 Yeff dijo que no le llegaban las solicitudes de acceso. La app sí las anotaba, pero solo avisaba con una notificación al teléfono, que puede no llegar (avisos sin activar, o activados en el otro sitio: Vercel y Netlify tienen claves distintas). Cristian pidió que salgan también en el panel y como prioritarias.
 - **Panel (celular y computador)**: tarjeta **"Solicitudes de clientes"** arriba de todo (antes de "Revisar"), con borde y brillo rojo. Muestra a cada cliente nuevo que espera plan (con "Pidió acceso hace X" si tocó el botón, o "Cuenta creada hace X" si aún no lo toca) con "Activar plan", y lo que piden los clientes activos ("Pidió el plan de nutrición") con "Cambiar plan" y "Listo". Si no hay nada, no aparece.

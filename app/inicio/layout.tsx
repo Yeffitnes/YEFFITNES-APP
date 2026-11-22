@@ -11,6 +11,7 @@ import { FirstRun } from "@/components/portal/FirstRun";
 import { Warmup } from "@/components/portal/Warmup";
 import { FirstCallBanner, PendingBanner } from "@/components/portal/LockedPanel";
 import "./portal.css";
+import "../guide.css";
 // La barra del navegador (Safari/Chrome) toma este color: igual que la barra de menú del portal, para que no se vea una banda oscura debajo.
 export const viewport: Viewport = { themeColor: "#FFFFFF", viewportFit: "cover", width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false };
 type Boot = { profile: { id: string; role: string; full_name: string; workspace_id: string } | null; client?: { id: string; status: string; onboarded_at: string | null; objective: string | null; objective_at: string | null; access_requested_at: string | null; objective_video_id: string | null; plans: { name: string; features: string[] } | null } | null; plans?: PlanRaw[] | null; logs?: LogRaw[] | null };

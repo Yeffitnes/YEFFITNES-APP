@@ -11,8 +11,7 @@ const nextConfig = {
   poweredByHeader: false,
   // Volver a una pantalla ya visitada (o precargada) es instantáneo: el navegador reutiliza la pantalla unos minutos.
   experimental: { staleTimes: { dynamic: 180, static: 600 } },
-  // Landing de venta (archivos estáticos en public/landing). Vive aquí de forma temporal; luego irá en su propia dirección.
-  async rewrites() { return [{ source: "/landing", destination: "/landing/index.html" }]; },
+  // Landing de venta: desde el 22-nov es una página de la app (app/landing); en public/landing solo quedan sus capturas.
   async headers() { return [{ source: "/:path*", headers: security }, { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] }]; },
 };
 

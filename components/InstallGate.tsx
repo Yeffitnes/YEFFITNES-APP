@@ -39,7 +39,7 @@ export function InstallGate({ children }: { children: React.ReactNode }) {
   }, []);
   // Rapidez: mientras revisa ("check", también en el servidor) se muestra la app de una vez. Antes salía una pantalla vacía
   // hasta que el teléfono terminaba de cargar todo el código, y eso era buena parte de la espera al abrir.
-  if (!ON || mode === "ok" || mode === "check" || path.startsWith("/auth")) return <>{children}</>;
+  if (!ON || mode === "ok" || mode === "check" || path.startsWith("/auth") || path.startsWith("/landing")) return <>{children}</>;   // la landing es para el navegador (Instagram)
   return (
     <main className="ig">
       <img src="/brand/logo.svg" alt="Yeffitness" width={190} height={46} className="ig-logo" />

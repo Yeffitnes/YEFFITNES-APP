@@ -176,7 +176,7 @@ Armado con `docs/CONTEXT.md`, `docs/PROJECT_STATE.md` y lo trabajado en esta eta
 **Construido (existe en el código; la mayoría sin validar con usuarios reales):**
 - *Coach:* dashboard (tarjetas que se abren, "Hoy: a quién escribirle", mensajes, agenda de hoy, tiempo real, anuncios); clientes y ficha (Hoy, Resumen, Entrenamiento, Nutrición, Progreso, Mensajes, Agenda, Notas privadas); catálogo (ejercicios, rutinas, plantillas de nutrición); revisión de entrenos con comentario de texto o audio; reportes diarios con vídeo; mensajes (texto, foto, vídeo, YouTube, audio de Jeff); agenda con horarios y clases grupales; material educativo; buscador rápido; avisos push.
 - *Cliente:* Hoy, Mi plan, Progreso (mediciones y fotos), Agenda, Material, Mensajes, Objetivos, onboarding básico de 3 pasos, reporte diario, recordatorios automáticos, instalación como app (con puerta de instalación opcional).
-- *Otros:* landing de venta en `/landing`, recortador de vídeo, subida de vídeo en segundo plano para Jeff.
+- *Otros:* landing de venta en `/landing` (22-nov: página de la app, `app/landing` + `components/landing`; capturas reales con `tools/landing/capture.sh`; WhatsApp en `NEXT_PUBLIC_YEFF_WHATSAPP`; paquetes en `lib/landing.ts`), recortador de vídeo, subida de vídeo en segundo plano para Jeff.
 
 **Falta o está a medias (según los documentos del repo):**
 - Onboarding con **personaje guía** y el contenido que defina Jeff (P2).
