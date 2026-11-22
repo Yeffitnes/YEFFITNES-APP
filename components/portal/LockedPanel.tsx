@@ -6,6 +6,7 @@ import { useFirstCall, useMe, useRequestAccess, useTrainingPlans } from "@/lib/q
 import { usePathname } from "next/navigation";
 import { Guide, GuideFace } from "./Guide";
 import { ago } from "@/lib/format";
+import { useMyFeatureRequests, useRequestFeature } from "@/lib/requests";
 // Panel bloqueado (diseño del FeatureGate de DaniFit, en la marca): contenido de muestra borroso + candado + qué hacer.
 // El bloqueo visual NO es la seguridad: la base de datos no entrega nada de lo que el plan no incluye.
 export function LockedPanel({ tag, title, sub, children, lines = 3 }: { tag: string; title: string; sub: string; children?: React.ReactNode; lines?: number }) {
@@ -28,11 +29,24 @@ export function RequestAccessButton({ compact = false }: { compact?: boolean }) 
   if (recent) return <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> {compact ? "Solicitud enviada" : `Solicitud enviada ${ago(at).toLowerCase()}. Te avisamos cuando Yeff active tu plan.`}</span>;
   return <button type="button" className="lk-cta" disabled={req.isPending} onClick={() => req.mutate()}><Icon name="send" size={13} /> {req.isPending ? "Enviando…" : at ? "Volver a avisar a Yeff" : "Solicitar acceso a Yeff"}</button>;
 }
-// Llamada a la acción de un panel bloqueado: pendiente → pedir acceso; con plan → hablar con el coach para ampliarlo.
-export function LockedCta({ upgradeHref }: { upgradeHref?: string }) {
+// Llamada a la acción de un panel bloqueado: pendiente → pedir acceso; con plan → pedírselo a Yeff con un toque (22-nov, 0058: le
+// sale como prioritario en su panel) y, debajo, escribirle si quiere contarle algo más.
+export function LockedCta({ upgradeHref, feature }: { upgradeHref?: string; feature?: string }) {
   const { profileId } = useProfile(), me = useMe(profileId);
   if (me.data?.status === "pending" || !upgradeHref) return <RequestAccessButton compact />;
-  return <Link href={upgradeHref} className="lk-cta">Hablar con tu coach</Link>;
+  if (!feature || !me.data?.id) return <Link href={upgradeHref} className="lk-cta">Hablar con tu coach</Link>;
+  return <RequestFeatureButton clientId={me.data.id} feature={feature} upgradeHref={upgradeHref} />;
+}
+function RequestFeatureButton({ clientId, feature, upgradeHref }: { clientId: string; feature: string; upgradeHref: string }) {
+  const mine = useMyFeatureRequests(clientId), req = useRequestFeature(clientId);
+  const at = (mine.data ?? []).find((r) => r.feature === feature)?.createdAt ?? null, recent = !!at && Date.now() - new Date(at).getTime() < 12 * 3600_000;
+  return (
+    <div className="lk-ask">
+      {recent ? <span className="lk-sent"><Icon name="check" size={13} stroke={2.4} /> Se lo pediste a Yeff {ago(at).toLowerCase()}. Ya le sale en su panel.</span>
+        : <button type="button" className="lk-cta" disabled={req.isPending} onClick={() => req.mutate(feature)}><Icon name="send" size={13} /> {req.isPending ? "Enviando…" : at ? "Volver a pedírselo a Yeff" : "Pedírselo a Yeff"}</button>}
+      <Link href={upgradeHref} className="lk-alt">o escríbele</Link>
+    </div>
+  );
 }
 // Página completa para un cliente sin plan: encabezado + paneles bloqueados.
 export function PendingSection({ eyebrow, title, panels }: { eyebrow: string; title: string; panels: { tag: string; title: string; sub: string }[] }) {

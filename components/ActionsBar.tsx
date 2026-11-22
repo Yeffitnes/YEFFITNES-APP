@@ -18,8 +18,9 @@ import { planMonth } from "@/lib/planmonth";
 import { useHabitBoard } from "@/lib/extras";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
+import { clientRequests, useFeatureRequests } from "@/lib/requests";
 
-type Item = { key: string; text: string; href: string };
+type Item = { key: string; text: string; href: string; hot?: boolean };   // hot: prioritario (solicitudes de clientes), arriba y en rojo
 const PUSH_TXT: Record<PushState, string> = { unsupported: "Tu navegador no permite avisos. Instala la app en la pantalla de inicio e inténtalo de nuevo.", not_configured: "Los avisos aún no están configurados.", denied: "Bloqueaste los avisos. Actívalos en los ajustes del navegador o del teléfono.", off: "Activar avisos en este teléfono", on: "Avisos activados en este teléfono" };
 
 function useItems(side: "client" | "coach"): Item[] {
@@ -28,7 +29,7 @@ function useItems(side: "client" | "coach"): Item[] {
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
   const rep = useTodayReport(cid, today, wantsReport && boot), bookings = useMyBookings(cid);
   // Lo del coach solo se pide en el panel del coach (antes el portal del cliente también lo pedía y lo repetía cada minuto).
-  const coach = side === "coach", hab = useHabitBoard(coach && boot), clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach);
+  const coach = side === "coach", hab = useHabitBoard(coach && boot), clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach), freqs = useFeatureRequests(coach);
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
@@ -47,11 +48,13 @@ function useItems(side: "client" | "coach"): Item[] {
     // Hábitos (14-nov): quién está por debajo de su meta en la semana.
     const habLow = hab.rows.filter((r) => r.lows > 0).length;
     if (habLow) items.push({ key: "hab", text: `${habLow} cliente${habLow === 1 ? "" : "s"} por debajo en sus hábitos esta semana`, href: "/coach/habitos" });
-    if (pending) items.push({ key: "pend", text: `${pending} cliente${pending === 1 ? "" : "s"} esperando plan`, href: "/coach/clientes" });
+    // Solicitudes de clientes (22-nov): primero de todo y en rojo. Con una sola, con nombre.
+    const reqs = clientRequests(clients.data ?? [], freqs.data ?? []);
+    if (reqs.length) items.unshift({ key: "req", hot: true, href: "/coach#solicitudes", text: reqs.length === 1 ? `${reqs[0].name}: ${reqs[0].text.charAt(0).toLowerCase()}${reqs[0].text.slice(1)}` : `${reqs.length} solicitudes de clientes${pending ? ` (${pending} nuevo${pending === 1 ? "" : "s"} esperando plan)` : ""}` });
     // "Necesitan tu atención" (29-oct): urgentes por contactar y lo que falta configurar, también en la campanita.
     const nd = needs(attn.data ?? [], new Map((clients.data ?? []).map((c) => [c.id, c.name])));
     const urgent = new Set(nd.filter((x) => x.kind === "urgent").map((x) => x.clientId)).size, setup = new Set(nd.filter((x) => x.kind === "setup").map((x) => x.clientId)).size;
-    if (urgent) items.unshift({ key: "urg", text: `${urgent} cliente${urgent === 1 ? "" : "s"} urgente${urgent === 1 ? "" : "s"} por contactar (2 días o más sin actividad o sin reporte)`, href: "/coach#atencion" });
+    if (urgent) items.splice(items.some((x) => x.hot) ? 1 : 0, 0, { key: "urg", text: `${urgent} cliente${urgent === 1 ? "" : "s"} urgente${urgent === 1 ? "" : "s"} por contactar (2 días o más sin actividad o sin reporte)`, href: "/coach#atencion" });
     if (setup) items.push({ key: "setup", text: `${setup} cliente${setup === 1 ? "" : "s"} sin rutina o nutrición completa`, href: "/coach#atencion" });
   }
   return items;
@@ -99,7 +102,7 @@ export function ActionsBar({ side }: { side: "client" | "coach" }) {
       {open && <div className="act-pop" role="dialog" aria-label="Avisos">
         <div className="act-pop-title">Avisos</div>
         {!items.length && <p className="act-empty">Todo al día. No tienes pendientes.</p>}
-        {items.map((i) => <Link key={i.key} href={i.href} className="act-item" onClick={(e) => { setOpen(false); const [p, h] = i.href.split("#"); if (h && p === pathname) { e.preventDefault(); focusAnchor(h); } }}>{i.text}<Icon name="chevron" size={14} /></Link>)}
+        {items.map((i) => <Link key={i.key} href={i.href} className={`act-item${i.hot ? " hot" : ""}`} onClick={(e) => { setOpen(false); const [p, h] = i.href.split("#"); if (h && p === pathname) { e.preventDefault(); focusAnchor(h); } }}>{i.text}<Icon name="chevron" size={14} /></Link>)}
         {inst.canInstall && <button type="button" className="act-push" onClick={() => void inst.install()}><Icon name="download" size={16} />Instalar la app en este teléfono</button>}
         {inst.iosHint && <p className="act-empty" style={{ margin: "8px 4px 0" }}>Para instalar en iPhone: toca Compartir y luego “Añadir a pantalla de inicio”.</p>}
         {ps === "off" && <button type="button" className="act-push" onClick={() => void turnOnPush()} disabled={busy}>

@@ -12,7 +12,7 @@ import type { WorkoutLog } from "@/lib/queries";
 // se vuelve a leer todo lo que cambia seguido, por si la conexión en vivo se cortó mientras estaba en segundo plano.
 type Row = Record<string, unknown>;
 const CLIENT_KEYS = [["my-nudges"], ["logs"], ["my-bookings"], ["first-call"], ["coach-cancels"], ["materials"], ["announcements"], ["thread"], ["unread"], ["report"], ["me"], ["records"], ["workout-count"], ["habits"]];
-const COACH_KEYS = [["recent-logs"], ["client-logs"], ["coach-reports"], ["activity"], ["activity-today"], ["activity-unseen"], ["coach-attention"], ["advice-feed"], ["coach-slots"], ["client-bookings"], ["nudges"], ["threads"], ["unread"], ["clients"], ["records"], ["habits"], ["meal-logs-range"], ["report-days"], ["workout-count"]];
+const COACH_KEYS = [["feature-requests"], ["recent-logs"], ["client-logs"], ["coach-reports"], ["activity"], ["activity-today"], ["activity-unseen"], ["coach-attention"], ["advice-feed"], ["coach-slots"], ["client-bookings"], ["nudges"], ["threads"], ["unread"], ["clients"], ["records"], ["habits"], ["meal-logs-range"], ["report-days"], ["workout-count"]];
 
 function batcher(qc: QueryClient, ms: number) {
   const pending = new Set<string>(); let t: ReturnType<typeof setTimeout> | null = null;
@@ -53,6 +53,9 @@ export function useLiveSync(side: "client" | "coach", clientId?: string) {
         .on("postgres_changes", { event: "*", schema: "public", table: "daily_reports" }, () => inv(["coach-reports"], ["coach-attention"], ["report-days"]))
         .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, (p: { new: Row }) => inv(["coach-slots"], ["client-bookings", String(p.new?.client_id ?? "")], ["coach-attention"]))
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "nudges" }, () => inv(["nudges"]))
+        // Solicitudes de clientes (22-nov, 0058): cliente nuevo, "Solicitar acceso" o pedir una función que su plan no incluye.
+        .on("postgres_changes", { event: "*", schema: "public", table: "feature_requests" }, (p: { eventType?: string }) => { inv(["feature-requests"]); if (p.eventType === "INSERT") say("Un cliente te pidió algo"); })
+        .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => inv(["clients"]))
         .subscribe();
     }
     // Respaldo: al volver a la app se relee lo que cambia seguido (en iPhone la conexión en vivo se corta en segundo plano).

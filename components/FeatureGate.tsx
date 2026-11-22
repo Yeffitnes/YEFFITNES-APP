@@ -11,8 +11,8 @@ export function FeatureGate({ features, feature, children }: Props) {
   if (hasFeature(features, feature)) return <>{children}</>;
   const label = FEATURE_LABELS[feature] ?? feature;
   return (
-    <LockedPanel tag={pending ? "Bloqueado" : "No incluido en tu plan"} title={label} sub={pending ? "Se desbloquea cuando Yeff active tu plan." : "Tu plan actual no lo incluye. Pídeselo a tu coach."}>
-      <LockedCta upgradeHref={pending ? undefined : upgradeLink(feature)} />
+    <LockedPanel tag={pending ? "Bloqueado" : "No incluido en tu plan"} title={label} sub={pending ? "Se desbloquea cuando Yeff active tu plan." : "Tu plan actual no lo incluye. Pídeselo a Yeff con un toque."}>
+      <LockedCta upgradeHref={pending ? undefined : upgradeLink(feature)} feature={feature} />
     </LockedPanel>
   );
 }

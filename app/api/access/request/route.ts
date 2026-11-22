@@ -13,7 +13,7 @@ export async function POST() {
   const rows = (data ?? []) as (Target & { client_name: string })[];
   if (!rows.length || !pushConfigured()) return NextResponse.json({ ok: true, sent: 0 });
   const dead = await sendPush(rows.map(({ endpoint, p256dh, auth: a }) => ({ endpoint, p256dh, auth: a })), {
-    title: "Solicitud de acceso", body: `${rows[0].client_name} creó su cuenta y te pide activar su plan.`, url: "/coach/clientes", tag: "access-request",
+    title: "Solicitud de acceso", body: `${rows[0].client_name} creó su cuenta y te pide activar su plan.`, url: "/coach#solicitudes", tag: "access-request",
   });
   if (dead.length) await supabase.rpc("prune_push", { p_endpoints: dead });
   return NextResponse.json({ ok: true, sent: rows.length - dead.length });
