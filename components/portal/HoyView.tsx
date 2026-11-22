@@ -28,7 +28,7 @@ import { DAY_LONG, categoryLabel, weekDates } from "@/lib/week";
 import { Icon } from "@/components/ui/Icon";
 import { QuickRow } from "./QuickRow";
 import { RoutineVideo } from "./RoutineVideo";
-import { ytThumb } from "@/lib/video-poster";
+import { isBunnyRef, ytThumb } from "@/lib/video-poster";
 import { PendingSection, PlanWait } from "./LockedPanel";
 import { repRange, repTarget, setTip } from "@/lib/progression";
 import { NUDGE_TXT } from "@/lib/nudges";
@@ -192,7 +192,7 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
       <div className="card-meta">{[`${items.length} ejercicios`, day.minutes ? `${day.minutes} min aprox.` : null, categoryLabel(day.category) ?? day.category].filter(Boolean).join(" · ")}</div>
       {!log?.completed && <LastTimeFeedback logs={logs} dayId={day.id} dayName={day.name} today={today} />}
       {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} poster={day.hasPersonalVideo ? day.poster : ytThumb(day.videoRef)} onWarm={() => (day.hasPersonalVideo ? prefetchPlay(`day=${day.id}`) : warmYoutube())} onOpen={() => setTeaser(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
-      {teaser === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setTeaser(null)} />}
+      {teaser === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Vídeo de Yeff" onClose={() => setTeaser(null)} />}
       {teaser === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setTeaser(null)} />}
       {guide && !closed && <TrainingGuide />}
       <div className="routine-progress-bar"><div className="routine-progress-fill" style={{ width: `${items.length ? (doneCount / items.length) * 100 : 0}%` }} /></div>
@@ -205,7 +205,9 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
           {open === i.id && <div className="ex-panel"><SwapBar cid={cid} item={i} alts={swapOpts.data?.alts[i.id] ?? []} today={today} locked={closed} hasSets={saved(i.id).length > 0} />{i.videoRef && <button className="tech-link" onClick={() => setVideo(i)}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>Ver técnica</button>}{Array.from({ length: i.sets }, (_, k) => <SetRow key={`${k}-${i.name}`} hint={guide && !anySet && k === 0} cid={cid} item={i} n={k + 1} today={today} saved={saved(i.id).find((s) => s.setNumber === k + 1)} locked={closed} onSaved={(setNumber, reps, weight) => onSetSaved(i, setNumber, reps, weight)} />)}<RepTip item={i} just={just} /></div>}
         </div>))}</div>
       {log && hasFeedback(log) && !feedbackUnseen(log) && <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--surface)", fontSize: 13.5, lineHeight: 1.55 }}><div className="card-tag">Respuesta de tu coach</div><FeedbackBody log={log} /></div>}
-      {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
+      {video?.videoRef && (isBunnyRef(video.videoRef)   // 0057: vídeo de técnica subido por Yeff (no YouTube)
+        ? <BunnyModal param={`exvideo=${video.videoRef}`} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />
+        : <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />)}
       {pic && <ExPicViewer image={pic.image} name={pic.name} note={pic.instructions} onClose={() => setPic(null)} />}
       <Link href="/inicio/plan" className="tech-link" style={{ marginTop: 14, display: "inline-flex" }}>Ver rutina completa <Icon name="arrow" size={13} /></Link>
       <div style={{ marginTop: 18 }}>

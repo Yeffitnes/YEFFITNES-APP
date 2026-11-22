@@ -19,4 +19,6 @@ export async function posterFromVideo(file: File, width = 64): Promise<string | 
   } catch { return null; } finally { URL.revokeObjectURL(url); v.removeAttribute("src"); v.load(); }
 }
 // Miniatura pública de YouTube (la usa el reproductor de YouTube para cualquiera que tenga el enlace).
-export const ytThumb = (id: string | null | undefined) => (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);
+// 0057: un ejercicio puede tener en video_ref un vídeo subido (Bunny, id con forma de UUID) en vez de YouTube (11 caracteres).
+export const isBunnyRef = (ref: string | null | undefined) => !!ref && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+export const ytThumb = (id: string | null | undefined) => (id && !isBunnyRef(id) ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null);

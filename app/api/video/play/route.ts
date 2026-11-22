@@ -8,6 +8,19 @@ const UUID = /^[0-9a-f-]{36}$/i;
 export async function GET(req: NextRequest) {
   if (!bunnyConfigured()) return NextResponse.json({ error: "not_configured" }, { status: 503 });
   const report = req.nextUrl.searchParams.get("report") ?? "", message = req.nextUrl.searchParams.get("message") ?? "", day = req.nextUrl.searchParams.get("day") ?? "", material = req.nextUrl.searchParams.get("material") ?? "", objective = req.nextUrl.searchParams.get("objective") ?? "", feedback = req.nextUrl.searchParams.get("feedback") ?? "";
+  // 0057: vídeo subido de un ejercicio (?exvideo=<id del vídeo>; lo ve quien ve ese ejercicio del catálogo: el coach o el cliente
+  // con entrenamiento, por RLS) o de una rutina del catálogo (?routine=<id>; solo el coach: al cliente le llega copiado a su día).
+  const exvideo = req.nextUrl.searchParams.get("exvideo") ?? "", routine = req.nextUrl.searchParams.get("routine") ?? "";
+  if (exvideo || routine) {
+    if (!UUID.test(exvideo || routine)) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+    const sb = createClient(); const { data: au } = await sb.auth.getUser();
+    if (!au.user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const vid = exvideo
+      ? await sb.from("exercises").select("video_ref").eq("video_provider", "bunny").eq("video_ref", exvideo).limit(1).maybeSingle().then(({ data }) => data?.video_ref ?? null)
+      : await sb.from("routine_templates").select("video_id").eq("id", routine).maybeSingle().then(({ data }) => data?.video_id ?? null);
+    if (!vid) return NextResponse.json({ error: "no_video" }, { status: 404 });
+    return NextResponse.json(await playable(vid));
+  }
   if (!UUID.test(report || message || day || material || objective || feedback)) return NextResponse.json({ error: "bad_request" }, { status: 400 });
   const supabase = createClient();
   const { data: auth } = await supabase.auth.getUser();

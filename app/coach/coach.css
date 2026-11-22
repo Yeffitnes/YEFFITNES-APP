@@ -1337,3 +1337,12 @@ html{scroll-behavior:smooth;}
   html:has(.m-top),body:has(.m-top){background:var(--ink)}
   .shell:has(.m-top){background:var(--surface)}
 }
+/* 21-nov: vídeo de rutina/ejercicio desde YouTube o subido desde el celular */
+.vsrc-tabs{margin-top:2px}
+.vsrc-up{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding:12px 14px;border:1px dashed var(--line);border-radius:14px;background:var(--surface)}
+.vsrc-state{display:grid;gap:2px;min-width:0}
+.vsrc-state b{font-size:13.5px}
+.vsrc-state small{font-size:11.5px;color:var(--text-dim);overflow-wrap:anywhere}
+.vsrc-acts{display:flex;gap:6px;flex-wrap:wrap}
+.cat-vid .cat-poster{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(3px) saturate(.8);transform:scale(1.15)}
+.cat-vid .cat-poster+.cat-play{z-index:1}

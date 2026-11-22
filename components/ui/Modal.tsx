@@ -1,7 +1,12 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+// 21-nov: con una ventana encima de otra (p. ej. "Ver" el vídeo dentro de "Editar rutina"), Escape cierra solo la de arriba.
+// Antes cerraba las dos y se perdía lo que se estaba editando.
+const stack: object[] = [];
 export function Modal({ title, sub, onClose, children, wide }: { title: string; sub?: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
-  useEffect(() => { const k = (e: KeyboardEvent) => e.key === "Escape" && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose]);
+  const me = useRef({}).current;
+  useEffect(() => { stack.push(me); return () => { const i = stack.lastIndexOf(me); if (i >= 0) stack.splice(i, 1); }; }, [me]);
+  useEffect(() => { const k = (e: KeyboardEvent) => e.key === "Escape" && stack[stack.length - 1] === me && onClose(); window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [onClose, me]);
   return (
     <div className="modal-backdrop open" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" role="dialog" aria-modal="true" aria-label={title} style={wide ? { maxWidth: 680 } : undefined}>

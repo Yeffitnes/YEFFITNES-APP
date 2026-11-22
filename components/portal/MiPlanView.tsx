@@ -12,7 +12,7 @@ import { VideoModal, PLAY_PATH, warmYoutube } from "./VideoModal";
 import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
 import { RoutineVideo } from "./RoutineVideo";
-import { ytThumb } from "@/lib/video-poster";
+import { isBunnyRef, ytThumb } from "@/lib/video-poster";
 
 const LEVELS = [["beginner", "Principiante"], ["intermediate", "Intermedio"], ["advanced", "Avanzado"]] as const;
 function relReview(d: string) {
@@ -90,7 +90,9 @@ export function MiPlanView() {
           </div>
         </>
       )}
-      {video?.videoRef && <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />}
+      {video?.videoRef && (isBunnyRef(video.videoRef)   // 0057: vídeo de técnica subido por Yeff (no YouTube)
+        ? <BunnyModal param={`exvideo=${video.videoRef}`} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />
+        : <VideoModal ytId={video.videoRef} title={video.name} sub="Técnica del ejercicio" onClose={() => setVideo(null)} />)}
     </>
   );
 }
@@ -110,7 +112,7 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       <div className="card-title">{day.name}</div>
       <div className="card-meta">{meta}</div>
       {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} poster={day.hasPersonalVideo ? day.poster : ytThumb(day.videoRef)} onWarm={() => (day.hasPersonalVideo ? prefetchPlay(`day=${day.id}`) : warmYoutube())} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
-      {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Grabado para ti" onClose={() => setDv(null)} />}
+      {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Vídeo de Yeff" onClose={() => setDv(null)} />}
       {pic && <ExPicViewer image={pic.image} name={pic.name} note={pic.instructions} onClose={() => setPic(null)} />}
       {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}
       {!day.items.length ? <p className="empty-note" style={{ marginTop: 16 }}>Esta rutina todavía no tiene ejercicios.</p> : (

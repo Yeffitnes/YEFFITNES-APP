@@ -7,7 +7,7 @@ export function RoutineVideo({ locked, personal, label, onOpen, poster, onWarm }
   const inner = (
     <>
       {poster && !locked && <span className="vposter" aria-hidden style={{ backgroundImage: `url("${poster}")` }} />}
-      <span className="rv-tag">{locked ? <><Icon name="lock" size={11} stroke={2} /> Disponible pronto</> : personal ? <><Icon name="check" size={11} stroke={2.4} /> Grabado para ti</> : "Vídeo de la rutina"}</span>
+      <span className="rv-tag">{locked ? <><Icon name="lock" size={11} stroke={2} /> Disponible pronto</> : personal ? <><Icon name="check" size={11} stroke={2.4} /> Vídeo de Yeff</> : "Vídeo de la rutina"}</span>
       <span className="rv-center">{locked ? <Icon name="lock" size={20} stroke={1.7} /> : <svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg>}</span>
       <span className="rv-label">{label}<small>{locked ? "Tu coach lo sube antes de tu sesión" : "Toca para ver"}</small></span>
     </>

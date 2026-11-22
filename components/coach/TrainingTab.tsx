@@ -149,23 +149,28 @@ function AssignModal({ clientId, planId, weekday, week, weeks, dayLabel, replaci
 // Vídeo de la rutina de este día: el de catálogo (lo ven todos) o uno grabado solo para este cliente (lo reemplaza).
 function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
   const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
-  const bg = useBackgroundUpload();
+  const bg = useBackgroundUpload(), routines = useRoutines();
+  // 0057: si el vídeo del día es el vídeo subido de la rutina del catálogo, no es "personal": se muestra como vídeo de catálogo.
+  const tpl = (routines.data ?? []).find((r) => r.id === day.templateId), fromCatalog = !!day.videoId && !!tpl?.videoId && tpl.videoId === day.videoId;
+  const personal = day.hasPersonalVideo && !fromCatalog, fn = clientName.split(" ")[0];
   const upload = (f: File) => { setErr(""); const poster = posterFromVideo(f); bg({ file: f, label: `Vídeo para ${clientName.split(" ")[0]}`, opts: { purpose: "message", clientId }, finish: (id, qc) => assignDayVideo(qc, clientId, day.id, id, poster) }); };
   const { pick, trimmer } = useVideoPick({ maxSeconds: MAX_COACH_VIDEO_SECONDS, maxSourceSeconds: MAX_COACH_VIDEO_SECONDS, maxMB: MAX_COACH_VIDEO_MB, onFile: upload, onError: setErr });
   return (
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
-      {day.videoRef && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Lo ven todos los clientes con esta rutina.</span></span><a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a></div>}
+      {(fromCatalog || day.videoRef) && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>{personal ? `${fn} ve el personal en su lugar.` : "Lo ven todos los clientes con esta rutina."}</span></span>
+        {fromCatalog ? <button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button>
+          : day.videoRef && <a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a>}</div>}
       <div className="info-list-row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <span><b>Vídeo personalizado para {clientName.split(" ")[0]}</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Solo {clientName.split(" ")[0]} lo ve — reemplaza al de catálogo en su plan.</span></span>
+        <span><b>Vídeo personalizado para {fn}</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Solo {fn} lo ve — reemplaza al de catálogo en su plan.</span></span>
         <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {trimmer}
           <input ref={input} type="file" accept="video/*" hidden onChange={(e) => { void pick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-          {day.hasPersonalVideo && <><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => set.mutate({ dayId: day.id, videoId: null })}>Quitar</button></>}
-          <button className="primary-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => input.current?.click()}>{day.hasPersonalVideo ? "Reemplazar" : "Subir vídeo"}</button>
+          {personal && <><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button><button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => set.mutate({ dayId: day.id, videoId: null })}>Quitar</button></>}
+          <button className="primary-btn" style={{ height: 32, fontSize: 11.5 }} disabled={set.isPending} onClick={() => input.current?.click()}>{personal ? "Reemplazar" : "Subir vídeo"}</button>
         </span>
       </div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5 }}>{err}</p>}
-      {play && <BunnyModal param={`day=${day.id}`} title={`Vídeo para ${clientName}`} sub={day.name} onClose={() => setPlay(false)} />}
+      {play && <BunnyModal param={`day=${day.id}&v=${day.videoId ?? ""}`} title={personal ? `Vídeo para ${clientName}` : day.name} sub={personal ? day.name : "Vídeo de la rutina"} onClose={() => setPlay(false)} />}
     </div>
   );
 }

@@ -6,13 +6,18 @@ import { useState } from "react";
 import { CatalogActions } from "./CatalogActions";
 import { ytThumb } from "@/lib/video-poster";
 export type Row = { name: string; sets: number; reps: string; rest: number | null; image?: string | null; muscle?: string | null };
-export function RoutineCard({ name, meta, video, rows, onEdit, onDelete, deleting }: { onEdit: () => void; onDelete: () => void; deleting?: boolean; name: string; meta: string; video: string | null; rows: Row[] }) {
+// 21-nov: uploaded = vídeo subido desde el celular (0057); se muestra con su portada difuminada o, sin portada, el cuadro oscuro.
+export function RoutineCard({ name, meta, video, uploaded, poster, rows, onEdit, onDelete, deleting }: { onEdit: () => void; onDelete: () => void; deleting?: boolean; name: string; meta: string; video: string | null; uploaded?: boolean; poster?: string | null; rows: Row[] }) {
   const [open, setOpen] = useState(false);
   const thumb = ytThumb(video);
   return (
     <div className={`cat-row${open ? " open" : ""}`}>
       <div className="cat-row-line">
-        {thumb ? (
+        {uploaded ? (
+          <button type="button" className="cat-vid has" onClick={() => setOpen(!open)} aria-label={`Rutina ${name}, con vídeo subido`}>
+            {poster && <span className="cat-poster" aria-hidden="true" style={{ backgroundImage: `url("${poster}")` }} />}<span className="cat-play" aria-hidden="true" />
+          </button>
+        ) : thumb ? (
           <button type="button" className="cat-vid has" onClick={() => setOpen(!open)} aria-label={`Rutina ${name}, con vídeo`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={thumb} alt="" loading="lazy" /><span className="cat-play" aria-hidden="true" />

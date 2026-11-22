@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tansta
 import { db } from "@/lib/supabase/browser";
 import { useToast } from "@/components/Providers";
 import { useBackgroundUpload } from "@/lib/upload-manager";
+import { posterFromVideo } from "@/lib/video-poster";
 import { bogotaDay, type NudgeKind } from "@/lib/nudges";
 import { loadLogs, loadTrainingPlans, localDate, missingColumn, missingTable } from "@/lib/fetchers";
 
@@ -12,11 +13,12 @@ export type Plan = { id: string; name: string; features: string[] };
 export type ClientRow = { id: string; name: string; planId: string | null; plan: string | null; status: "pending" | "active" | "paused"; createdAt: string; objective: string | null; objectiveAt: string | null; accessRequestedAt?: string | null; objectiveVideo?: boolean; planSince?: string | null; heightCm?: number | null; startWeight?: number | null };
 export type Ex = { id: string; name: string; category: string; muscle: string | null; equipment: string | null; difficulty: number; instructions: string | null; videoRef: string | null; used: number; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
 export type RoutineItem = { exerciseId: string; name: string; hasVideo: boolean; sets: number; reps: string; rest: number | null; image?: string | null; muscle?: string | null };
-export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; items: RoutineItem[] };
+// video: enlace de YouTube; videoId/poster (0057): vídeo subido desde el celular (Bunny) y su portada. Es uno u otro.
+export type Routine = { id: string; name: string; category: string | null; minutes: number | null; video: string | null; videoId?: string | null; poster?: string | null; items: RoutineItem[] };
 
 type ClientRaw = { id: string; status: string; plan_id: string | null; created_at: string; objective: string | null; objective_at: string | null; access_requested_at?: string | null; objective_video_id?: string | null; plan_since?: string | null; height_cm?: number | null; start_weight_kg?: number | null; plans: unknown; profiles: unknown };
 type ExRaw = { id: string; name: string; category: string; muscle_group: string | null; equipment: string | null; difficulty: number; instructions: string | null; video_ref: string | null; image?: string | null; sugg_sets?: number | null; sugg_reps?: string | null; template_items: unknown; exercise_alternatives?: { alt_exercise_id: string; position: number }[] };
-type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; template_items: unknown };
+type RoutineRaw = { id: string; name: string; category: string | null; est_minutes: number | null; video_ref: string | null; video_id?: string | null; video_poster?: string | null; template_items: unknown };
 export const fetchPlans = async (): Promise<Plan[]> => {
   const { data, error } = await db().from("plans").select("id,name,features").eq("active", true).order("name");
   if (error) throw error; return data as Plan[];
@@ -36,10 +38,12 @@ export const fetchExercises = async (): Promise<Ex[]> => {
     alts: e.exercise_alternatives ? [...e.exercise_alternatives].sort((a, b) => a.position - b.position).map((a) => a.alt_exercise_id) : undefined }));
 };
 export const fetchRoutines = async (): Promise<Routine[]> => {
-  const { data, error } = await db().from("routine_templates").select("id,name,category,est_minutes,video_ref,template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref,image,muscle_group))").eq("active", true).order("created_at", { ascending: false });
+  const q = (extra: string) => db().from("routine_templates").select(`id,name,category,est_minutes,video_ref${extra},template_items(position,exercise_id,sets,reps,rest_seconds,exercises(name,video_ref,image,muscle_group))`).eq("active", true).order("created_at", { ascending: false });
+  let { data, error } = await q(",video_id,video_poster");
+  if (error && missingColumn(error)) ({ data, error } = await q(""));   // base sin la 0057
   if (error) throw error;
   type It = { position: number; exercise_id: string; sets: number; reps: string; rest_seconds: number | null; exercises: { name: string; video_ref: string | null; image?: string | null; muscle_group?: string | null } | null };
-  return (data as unknown as RoutineRaw[]).map((r) => ({ id: r.id, name: r.name, category: r.category, minutes: r.est_minutes, video: r.video_ref,
+  return (data as unknown as RoutineRaw[]).map((r) => ({ id: r.id, name: r.name, category: r.category, minutes: r.est_minutes, video: r.video_ref, videoId: r.video_id ?? null, poster: r.video_poster ?? null,
     items: ((r.template_items as unknown as It[]) ?? []).sort((a, b) => a.position - b.position).map((i) => ({ exerciseId: i.exercise_id, name: i.exercises?.name ?? "—", hasVideo: !!i.exercises?.video_ref, sets: i.sets, reps: i.reps, rest: i.rest_seconds, image: i.exercises?.image ?? null, muscle: i.exercises?.muscle_group ?? null })) }));
 };
 
@@ -72,18 +76,26 @@ export function useSetPlan() {
   });
 }
 
-export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[] };
+// file (0057): vídeo elegido en el celular; se sube en segundo plano al guardar y, al terminar, reemplaza al vídeo anterior.
+// keepUploaded: dejar el vídeo subido que ya tenía (no tocar video_ref).
+export type ExerciseInput = { id?: string; name: string; category: string; muscle: string; equipment: string; difficulty: number; instructions: string; videoRef: string | null; image?: string | null; suggSets?: number | null; suggReps?: string | null; alts?: string[]; file?: File | null; keepUploaded?: boolean };
 export function useSaveExercise(workspaceId: string) {
-  const qc = useQueryClient(), toast = useToast();
+  const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
   return useMutation({
     mutationFn: async (x: ExerciseInput) => {
-      const row = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, video_provider: x.videoRef ? "youtube" : null, video_ref: x.videoRef, image: x.image ?? null, sugg_sets: x.suggSets ?? null, sugg_reps: x.suggReps?.trim() || null };
+      const row: Record<string, unknown> = { name: x.name, category: x.category, muscle_group: x.muscle || null, equipment: x.equipment || null, difficulty: x.difficulty, instructions: x.instructions || null, image: x.image ?? null, sugg_sets: x.suggSets ?? null, sugg_reps: x.suggReps?.trim() || null };
+      if (!x.file && !x.keepUploaded) { row.video_provider = x.videoRef ? "youtube" : null; row.video_ref = x.videoRef; }
       const { data, error } = x.id ? await db().from("exercises").update(row).eq("id", x.id).select("id").single() : await db().from("exercises").insert({ ...row, workspace_id: workspaceId }).select("id").single();
       if (error) throw error;
       // Sustitutos aprobados (0044): solo si Jeff los tocó en el formulario.
       if (x.alts) { const { error: e2 } = await db().rpc("set_alternatives", { p_exercise: (data as { id: string }).id, p_alts: x.alts }); if (e2) throw e2; }
+      const id = (data as { id: string }).id;
+      if (x.file) upload({ file: x.file, label: `Vídeo de "${x.name.slice(0, 28)}"`, opts: { purpose: "material" }, finish: async (vid, q) => {
+        const { error: e3 } = await db().from("exercises").update({ video_provider: "bunny", video_ref: vid }).eq("id", id); if (e3) throw e3;
+        void q.invalidateQueries({ queryKey: KEYS.exercises }); void q.invalidateQueries({ queryKey: KEYS.routines });
+      } });
     },
-    onSuccess: () => { toast("Ejercicio guardado"); qc.invalidateQueries({ queryKey: KEYS.exercises }); qc.invalidateQueries({ queryKey: KEYS.routines }); },
+    onSuccess: (_d, x) => { toast(x.file ? "Ejercicio guardado. El vídeo se está subiendo; queda puesto al terminar." : "Ejercicio guardado"); qc.invalidateQueries({ queryKey: KEYS.exercises }); qc.invalidateQueries({ queryKey: KEYS.routines }); },
     onError: () => toast("No pudimos guardar el ejercicio. Revisa tu conexión e inténtalo de nuevo.", true),
   });
 }
@@ -98,22 +110,34 @@ export function useArchive(table: "exercises" | "routine_templates") {
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 }
-export type RoutineInput = { id?: string; name: string; category: string; minutes: number | null; video: string | null; items: { exercise_id: string; sets: number; reps: string; rest_seconds: number | null }[] };
+// file / keepUploaded (0057): igual que en ejercicios. Al terminar la subida el vídeo llega también a los planes activos que
+// tienen esta rutina (lo hace la base de datos), salvo donde Yeff grabó un vídeo personal.
+export type RoutineInput = { id?: string; name: string; category: string; minutes: number | null; video: string | null; items: { exercise_id: string; sets: number; reps: string; rest_seconds: number | null }[]; file?: File | null; keepUploaded?: boolean; hadUploaded?: boolean };
 export function useSaveRoutine() {
-  const qc = useQueryClient(), toast = useToast();
+  const qc = useQueryClient(), toast = useToast(), upload = useBackgroundUpload();
   return useMutation({
     mutationFn: async (r: RoutineInput) => {
-      const { error } = await db().rpc("save_routine", { p_id: r.id ?? null, p_name: r.name, p_category: r.category || null, p_minutes: r.minutes, p_items: r.items, p_video: r.video });
+      // Pasa a YouTube o a sin vídeo: primero se quita el vídeo subido (si no, la base vacía el enlace de YouTube).
+      if (r.id && r.hadUploaded && !r.file && !r.keepUploaded) { const { error: e0 } = await db().from("routine_templates").update({ video_id: null, video_poster: null }).eq("id", r.id); if (e0) throw e0; }
+      const { data, error } = await db().rpc("save_routine", { p_id: r.id ?? null, p_name: r.name, p_category: r.category || null, p_minutes: r.minutes, p_items: r.items, p_video: r.file || r.keepUploaded ? null : r.video });
       if (error) throw error;
+      const id = (data as string | null) ?? r.id;
+      if (r.file && id) { const f = r.file, poster = posterFromVideo(f); upload({ file: f, label: `Vídeo de "${r.name.slice(0, 28)}"`, opts: { purpose: "material" }, finish: async (vid, q) => {
+        const p = await poster.catch(() => null);
+        let res = await db().from("routine_templates").update({ video_id: vid, video_poster: p }).eq("id", id);
+        if (res.error && p) res = await db().from("routine_templates").update({ video_id: vid, video_poster: null }).eq("id", id);   // portada rara: el vídeo queda igual
+        if (res.error) throw res.error;
+        void q.invalidateQueries({ queryKey: KEYS.routines });
+      } }); }
     },
-    onSuccess: () => { toast("Rutina guardada"); qc.invalidateQueries({ queryKey: KEYS.routines }); qc.invalidateQueries({ queryKey: KEYS.exercises }); },
+    onSuccess: (_d, r) => { toast(r.file ? "Rutina guardada. El vídeo se está subiendo; queda puesto al terminar." : "Rutina guardada"); qc.invalidateQueries({ queryKey: KEYS.routines }); qc.invalidateQueries({ queryKey: KEYS.exercises }); },
     onError: () => toast("No pudimos guardar la rutina. Revisa tu conexión e inténtalo de nuevo.", true),
   });
 }
 
 // ---- Entrenamiento por días ----
 export type PlanItem = { image?: string | null; id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
-export type PlanDay = { id: string; weekday: number; week: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; poster?: string | null; items: PlanItem[] };
+export type PlanDay = { id: string; weekday: number; week: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; videoId?: string | null; templateId?: string | null; poster?: string | null; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; cycleWeeks: number; week: number; allDays: PlanDay[]; days: PlanDay[] };
 export const fetchTrainingPlans = (clientId: string): Promise<TrainingPlan[]> => loadTrainingPlans(db(), clientId);

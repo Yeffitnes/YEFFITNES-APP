@@ -4,7 +4,8 @@ import { useArchive, useExercises, useSaveExercise, type Ex } from "@/lib/querie
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { CatalogTop } from "./CatalogTop";
-import { youtubeId } from "@/lib/format";
+import { isBunnyRef } from "@/lib/video-poster";
+import { CatalogVideoField, initVideoSrc, readVideoSrc } from "./CatalogVideoField";
 import { EQUIPMENT, MUSCLES, equipOf, exImage, muscleOf, norm, options } from "@/lib/exmeta";
 import { ExPic } from "@/components/ExPic";
 import { Icon } from "@/components/ui/Icon";
@@ -91,17 +92,17 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
   const save = useSaveExercise(useWorkspaceId()), archive = useArchive("exercises"), all = useExercises().data ?? [];
   // Sustitutos (0044): hasta 2 ejercicios que el cliente puede usar si la máquina está ocupada. Sin la 0044 corrida, el campo no sale.
   const altsOn = all.some((e) => e.alts !== undefined), [alts, setAlts] = useState<string[]>(ex?.alts ?? []);
-  const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", video: ex?.videoRef ? `https://youtu.be/${ex.videoRef}` : "", image: ex?.image ?? null as string | null, sets: ex?.suggSets ? String(ex.suggSets) : "", reps: ex?.suggReps ?? "" });
+  const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", image: ex?.image ?? null as string | null, sets: ex?.suggSets ? String(ex.suggSets) : "", reps: ex?.suggReps ?? "" });
   const ws = useWorkspaceId(), [up, setUp] = useState(false);
+  const uploaded = isBunnyRef(ex?.videoRef), [video, setVideo] = useState(() => initVideoSrc(uploaded ? null : ex?.videoRef, uploaded));
   const pickImg = async (f: File | null) => { if (!f) return; setErr(""); setUp(true); try { set({ image: await uploadExerciseImage(ws, f) }); } catch { setErr("No pudimos subir la imagen. Prueba con otra foto (JPG o PNG)."); } finally { setUp(false); } };
   const [err, setErr] = useState(""), [confirm, setConfirm] = useState(false);
   const set = (p: Partial<typeof v>) => setV({ ...v, ...p });
   const submit = () => {
     if (!v.name.trim()) return setErr("Escribe el nombre del ejercicio.");
-    const vid = v.video.trim() ? youtubeId(v.video) : null;
-    if (v.video.trim() && !vid) return setErr("Ese enlace de YouTube no es válido.");
+    const vs = readVideoSrc(video, uploaded); if (vs.error) return setErr(vs.error);
     const ss = v.sets.trim() ? Number(v.sets) : null; if (ss != null && !(ss >= 1 && ss <= 10)) return setErr("Las series sugeridas van de 1 a 10.");
-    setErr(""); save.mutate({ id: ex?.id, name: v.name.trim(), category: v.category, muscle: v.muscle.trim(), equipment: v.equipment.trim(), difficulty: v.difficulty, instructions: v.instructions.trim(), videoRef: vid, image: v.image, suggSets: ss, suggReps: v.reps, alts: altsOn ? alts : undefined }, { onSuccess: onClose });
+    setErr(""); save.mutate({ id: ex?.id, name: v.name.trim(), category: v.category, muscle: v.muscle.trim(), equipment: v.equipment.trim(), difficulty: v.difficulty, instructions: v.instructions.trim(), videoRef: vs.videoRef, file: vs.file, keepUploaded: vs.keepUploaded, image: v.image, suggSets: ss, suggReps: v.reps, alts: altsOn ? alts : undefined }, { onSuccess: onClose });
   };
   const F = (label: string, node: React.ReactNode) => <div className="modal-field"><label>{label}</label>{node}</div>;
   return (
@@ -131,7 +132,7 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
       {altsOn && <div className="modal-field"><label>Sustitutos si la máquina está ocupada (hasta 2)</label>
         <AltPicker all={all} self={ex?.id ?? null} muscle={v.muscle} value={alts} onChange={setAlts} />
         <span className="exm-hint">El cliente lo cambia él mismo en su rutina de hoy y tú ves que lo cambió.</span></div>}
-      {F("Vídeo de YouTube (opcional)", <input value={v.video} onChange={(e) => set({ video: e.target.value })} placeholder="https://youtu.be/..." />)}
+      <CatalogVideoField label="Vídeo de técnica (opcional)" value={video} onChange={setVideo} uploaded={uploaded} playParam={uploaded && ex ? `exvideo=${ex.videoRef}` : null} onError={setErr} />
       {F("Instrucciones (opcional)", <textarea value={v.instructions} onChange={(e) => set({ instructions: e.target.value })} />)}
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 12 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending} onClick={submit}>{save.isPending ? "Guardando…" : "Guardar"}</button></div>

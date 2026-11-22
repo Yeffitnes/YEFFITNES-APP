@@ -1,4 +1,16 @@
 # CHANGELOG
+## 2026-11-21 - Rutinas y ejercicios: vídeo de YouTube o subido desde el celular
+Pedido de Cristian: en rutinas y en ejercicios, Yeff elige **"Enlace de YouTube"** o **"Subir desde el celular"** (graba o elige de la galería, hasta 15 min, con el mismo recorte que los demás vídeos). Es uno u otro. El vídeo se sube en segundo plano al tocar Guardar (como en Material); mientras sube queda el vídeo anterior.
+- **Rutinas**: la tarjeta muestra la portada difuminada del vídeo subido. Al asignar la rutina, el vídeo pasa al día del cliente. **Si Yeff cambia o quita el vídeo (o el enlace de YouTube) de una rutina, el cambio llega también a los planes activos que ya la tienen**, salvo los días donde grabó un vídeo personal para ese cliente. Al quitar un vídeo personal vuelve el de la rutina.
+- **Ejercicios**: el cliente lo ve con "Ver técnica" en Hoy y en Mi plan, con el reproductor de Yeffitness (no YouTube).
+- Ficha del cliente: el vídeo subido de la rutina sale como "Vídeo de catálogo" (con "Ver"), no como personal.
+- Cliente: la etiqueta del vídeo de la rutina dice "Vídeo de Yeff" (antes "Grabado para ti", que ya no sería cierto cuando es el de catálogo).
+- Arreglo de paso: con una ventana encima de otra (ver el vídeo dentro de "Editar rutina"), Escape cerraba las dos y se perdía lo editado; ahora cierra solo la de arriba (`components/ui/Modal.tsx`).
+- Base de datos: **migración 0057** (`routine_templates.video_id/video_poster`; los ejercicios usan `video_provider='bunny'` que ya existía; solo se aceptan vídeos subidos por el coach de ese espacio; `assign_day`, `set_day_video` y `_video_in_use` actualizadas). **Correr la 0057 antes de subir vídeos**: sin ella la subida de rutinas falla al terminar y, peor, el vídeo de un ejercicio sí se guarda pero la limpieza automática lo borraría de Bunny a las 3 h. El enlace de YouTube funciona igual con o sin ella.
+- Archivos: `components/coach/CatalogVideoField.tsx` (nuevo), `RoutinesView.tsx`, `RoutineCard.tsx`, `ExercisesView.tsx`, `TrainingTab.tsx`, `lib/queries.ts`, `lib/fetchers.ts`, `lib/video-poster.ts`, `app/api/video/play/route.ts` (`?exvideo=` y `?routine=`), `components/portal/HoyView.tsx`, `MiPlanView.tsx`, `RoutineVideo.tsx`, `app/coach/coach.css`.
+- Pruebas: `supabase/tests/rls_catvideo.sql` (vídeo ajeno, de cliente o de otro espacio rechazado; el cliente y otro coach no pueden cambiarlo; llega al plan sin pisar el personal), `tests/e2e/cat_video.js` (Bunny simulado; en `all.sh`).
+Revertir: `git revert` de este commit y en Supabase lo que dice la cabecera de `0057_video_catalogo.sql`.
+
 ## 2026-11-16 - Cabecera del coach en iPhone: un poco más abajo
 Pegada a la hora, el logo quedaba dentro del difuminado automático de iOS y se veía borroso. Ahora empieza 10 pt por debajo de la zona de la hora (antes de esta mañana eran 14; en la versión de hace un rato, 4 pt dentro). Android sin cambios (12 px). El fondo negro detrás de la hora se mantiene. Solo `app/coach/coach.css` (`.m-top`).
 Revertir: `git revert` de este commit.
