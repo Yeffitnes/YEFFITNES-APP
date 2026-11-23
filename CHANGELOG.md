@@ -1,4 +1,29 @@
 # CHANGELOG
+## 2026-11-23 - Landing rehecha: portada impactante, los muñecos de los ejercicios, progreso y agenda con avisos
+Pedido de Cristian: la landing es lo primero que ve quien llega desde el Instagram de Yeff; tiene que atrapar. Cambiar los muñequitos pequeños por los dibujos de los ejercicios (los "rudos"), mostrar el progreso con gráficas, el resumen y las agendas automáticas, y actualizar el celular si la app cambió.
+- **Portada** (`components/landing/Landing.tsx`, `app/landing/landing.css`):
+  - Titular grande en mayúsculas: "Entrena con plan. Mide cada serie. Mira cómo cambias.", con la última frase en rojo con brillo.
+  - De fondo, el dibujo de la sentadilla con barra.
+  - El llamado "Quiero entrenar con Yeff" (WhatsApp) queda en la primera pantalla del celular.
+  - Al lado, el celular con Hoy (ya con "Mañana tienes sesión con Yeff" arriba), el aviso de la sesión cayendo y la gráfica real de "Semana a semana" (peso movido).
+- **Desfile de ejercicios:** dos filas de dibujos de la app que corren en sentidos contrarios: "Más de 140 ejercicios. Cada ejercicio, con su dibujo." (hay 143 en `public/ex`).
+- **Progreso ("Tu progreso no se adivina. Se ve."):**
+  - Capturas reales de "Semana a semana" y del resumen semanal con el comentario de Yeff.
+  - Récords, la curva de peso y medidas (se dibuja al llegar) y fotos de progreso ("Privadas: solo tú y Yeff las ven").
+- **Agenda ("Tus sesiones con Yeff, sin olvidos"):** pantalla bloqueada donde van cayendo los avisos reales de la 0063 (día antes, esa mañana, 1 hora antes) y el evento en el calendario.
+- **Ecosistema:** cada tarjeta lleva arriba un dibujo de ejercicio en vez del muñequito pequeño; en el celular, dibujo a la izquierda.
+  - Nuevas: "Progreso semana a semana" y "Agenda con avisos".
+  - El cierre lleva el dibujo de los burpees: "¿Empezamos hoy?".
+- Paquetes (`lib/landing.ts`, PROPUESTA): "Progreso semana a semana, récords y resumen semanal" y "Llamadas con Yeff, con avisos y en tu calendario".
+- **Celular interactivo actualizado:** capturas nuevas (`public/landing/shots/*`, `components/landing/screens.json`) con lo de esta semana.
+  - Paradas nuevas: "Tu sesión, lo primero" en Hoy y "Semana a semana" en Progreso (27 paradas).
+  - Recortes nuevos para la landing: `tendencias.webp` y `resumen_card.webp` (`tools/landing/capture.js`).
+  - Arreglado: la parada del plan buscaba "Domingo · hoy" fijo y el ejercicio de Hoy buscaba "Sentadilla goblet" fijo.
+- El pie aclara que pantallas, gráficas, récords y avisos usan datos de ejemplo.
+- Con "reducir movimiento" no hay animaciones y todo se ve quieto.
+- Prueba: `tests/e2e/landing.js` (portada, llamado en la primera pantalla, todas las imágenes cargan, sin muñequitos en el ecosistema).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Sesiones agendadas: recordatorios, lo primero del panel, calendario del celular y estándar en todas las rutinas
 Pedido de Cristian (noche).
 - **Recordatorios de sesión** (migración **0063**, `due_session_notices_cron`; `app/api/cron/reminders/route.ts`). Sin tareas programadas nuevas: van con los avisos que ya existen.

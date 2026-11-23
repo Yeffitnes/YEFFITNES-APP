@@ -10,7 +10,7 @@ export type Pack = { name: string; tagline: string; includes: string[]; highligh
 export const PACKS: Pack[] = [
   { name: "Esencial", tagline: "Tu rutina y el seguimiento de Yeff.", includes: [
     "Rutina hecha para ti, con vídeos de técnica", "Registro de cada serie y descanso automático", "Reporte diario con vídeo, revisado por Yeff",
-    "Seguimiento de progreso y resumen semanal", "Llamadas con Yeff desde la agenda", "Mensajes con Yeff dentro de la app", "Material educativo básico"] },
+    "Progreso semana a semana, récords y resumen semanal", "Llamadas con Yeff, con avisos y en tu calendario", "Mensajes con Yeff dentro de la app", "Material educativo básico"] },
   { name: "Completo", tagline: "Entrenamiento y nutrición, todo con Yeff.", highlight: true, includes: [
     "Todo lo del Esencial", "Plan de nutrición comida por comida", "Calorías y macros para tu objetivo", "Biblioteca completa de material"] },
 ];

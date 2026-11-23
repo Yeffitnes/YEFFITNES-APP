@@ -1,4 +1,5 @@
 // 22-nov: landing pública (/landing) con el celular interactivo. Sin sesión, en celular y computador.
+// 23-nov: portada nueva, desfile de ejercicios, progreso (capturas reales) y agenda con avisos; ecosistema con los dibujos.
 const { chromium } = require("playwright");
 const U = "http://localhost:3000"; let fails = 0;
 const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? ""); } catch (e) { fails++; console.log("FAIL", n, "→", e.message.split("\n")[0].slice(0, 260)); } };
@@ -38,8 +39,23 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
       if (!/^1 de/.test(a) || !/^2 de/.test(b2) || !/^1 de/.test(await p.locator(".lt-count").innerText())) throw new Error(`${a} → ${b2}`);
     });
     await step(`[${tag}] una tarjeta del ecosistema lo muestra en el celular`, async () => {
-      await p.locator(".lp-part", { hasText: "Agenda con Yeff" }).click(); await p.waitForTimeout(1200);
+      await p.locator(".lp-part", { hasText: "Agenda con avisos" }).click(); await p.waitForTimeout(1200);
       if (!/agenda\.webp/.test(await p.locator(".lt-canvas img").getAttribute("src"))) throw new Error("no cambió a agenda");
+    });
+    await step(`[${tag}] portada: titular, llamado a WhatsApp a la vista y sin texto montado`, async () => {
+      await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(300);
+      const h = await p.locator(".lp-hero h1").innerText(); if (!/MIRA CÓMO/i.test(h)) throw new Error(h);
+      const cta = await p.locator(".lp-hero .lp-cta a").first().boundingBox(); if (!cta || cta.y + cta.height > (mobile ? 844 : 900)) throw new Error(`el botón queda fuera de la primera pantalla (${cta && Math.round(cta.y)})`);
+    });
+    await step(`[${tag}] todas las imágenes de la página cargan (dibujos, gráfica y resumen)`, async () => {
+      await p.evaluate(async () => { for (let y = 0; y < document.body.scrollHeight; y += 400) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)); } });
+      await p.waitForTimeout(800);
+      const bad = await p.locator("main img").evaluateAll((is) => is.filter((i) => !(i.complete && i.naturalWidth > 0)).map((i) => i.getAttribute("src")));
+      if (bad.length) throw new Error(bad.join(" "));
+      for (const id of ["#progreso", "#agenda"]) if (!(await p.locator(id).count())) throw new Error(`falta ${id}`);
+      if ((await p.locator(".lp-exc").count()) < 20) throw new Error("faltan dibujos en el desfile");
+      if (await p.locator(".lp-part .gd").count()) throw new Error("siguen los muñequitos pequeños en el ecosistema");
+      return `${await p.locator("main img").count()} imágenes`;
     });
     await step(`[${tag}] todos los botones de contacto van a WhatsApp con el mensaje escrito; paquetes sin precio`, async () => {
       const hrefs = await p.locator("a[href*='wa.me']").evaluateAll((as) => as.map((a) => a.getAttribute("href")));

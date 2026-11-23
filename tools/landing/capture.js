@@ -42,10 +42,11 @@ const go = async (p, u) => { await p.goto(U + u, { waitUntil: "networkidle" }); 
   await go(p, "/inicio");
   out.push(await shoot(p, "hoy", [
     { id: "dia", text: "Hola, Valentina", title: "Tu día de un vistazo", say: "Apenas abres la app ves qué te toca hoy: entrenar, nutrición, hábitos y reporte. Y tu racha de días cumpliendo." },
+    { id: "agenda", sel: ".sess-soon", level: "self", title: "Tu sesión, lo primero", say: "Si tienes sesión conmigo hoy o mañana, es lo primero que ves. Te aviso el día antes, esa mañana y 1 hora antes, y la agregas al calendario de tu celular." },
     { id: "resumen", text: "te envió el resumen de tu semana", title: "Resumen de cada semana", say: "Cada semana te mando un resumen con lo que lograste y cómo vas frente a la anterior, con mi comentario.", go: "resumen" },
     { id: "reporte", text: "Reporte de hoy", title: "Reporte diario", say: "Me cuentas cómo te fue y me mandas un vídeo corto de tu técnica. Yo lo reviso y te respondo." },
     { id: "rutina", text: "Rutina de hoy", title: "Tu rutina con mi vídeo", say: "Tu rutina del día, armada para ti, con un vídeo mío explicándola. Series, repeticiones y el peso que te toca." },
-    { id: "ejercicio", text: "Sentadilla goblet", level: "row", title: "Anota cada serie", say: "Tocas un ejercicio y anotas repeticiones y peso, serie por serie. El descanso se cuenta solo.", go: "ejercicio" },
+    { id: "ejercicio", sel: ".exercise-list > div:first-child", level: "self", title: "Anota cada serie", say: "Tocas un ejercicio y anotas repeticiones y peso, serie por serie. El descanso se cuenta solo.", go: "ejercicio" },
     { id: "sesion", text: "Próxima sesión", title: "Tus llamadas conmigo", say: "Tu próxima sesión conmigo, a la vista. La reservas tú desde la agenda." },
     { id: "nutricion", text: "Tu plan de hoy", title: "Nutrición del día", say: "Tus comidas de hoy. Las vas marcando y yo veo cómo vas." },
     { id: "habitos", text: "Tus hábitos", title: "Hábitos", say: "Agua, pasos, sueño y lo que acordemos. Los anotas en segundos y te muestro tu promedio de la semana." },
@@ -67,6 +68,11 @@ const go = async (p, u) => { await p.goto(U + u, { waitUntil: "networkidle" }); 
   out.push(await shoot(p, "resumen", [
     { id: "titulo", text: "Semana 12", title: "Tu semana en una página", say: "Entrenos, nutrición, hábitos, récords y medidas de la semana, comparados con la anterior. Con mi comentario arriba." },
   ]));
+  // Recorte del resumen (tarjeta de arriba, comentario de Yeff y los primeros números) para la sección de progreso de la landing
+  { const top = await rectOf(p, { text: "récords nuevos", level: "card" }), bot = await rectOf(p, { text: "días completos", level: "self" }), png = path.join(TMP, "resumen_card.png");
+    await p.evaluate(() => window.scrollTo(0, 0)); await p.waitForTimeout(300);
+    await p.screenshot({ path: png, fullPage: true, clip: { x: top.x, y: top.y, width: top.w, height: bot.y + bot.h + 46 - top.y } });
+    execFileSync("python3", ["-c", `from PIL import Image; Image.open("${png}").convert("RGB").save("${SHOTS}/resumen_card.webp", "WEBP", quality=82, method=6)`]); console.log("resumen (recorte) listo"); }
   // ---- Mensajes ----
   await go(p, "/inicio/mensajes");
   out.push(await shoot(p, "mensajes", [
@@ -77,7 +83,7 @@ const go = async (p, u) => { await p.goto(U + u, { waitUntil: "networkidle" }); 
   await go(p, "/inicio/plan");
   out.push(await shoot(p, "plan", [
     { id: "semana", sel: ".mode-toggle", level: "self", title: "Entrenamiento y nutrición", say: "Tu plan completo: los días de la semana con su rutina y, en la otra pestaña, tu nutrición." },
-    { id: "dia", text: "Domingo · hoy", title: "Cada día, su rutina", say: "Cada ejercicio con series, repeticiones, descanso y el peso que te toca. Y el vídeo de la rutina." },
+    { id: "dia", text: `${["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][new Date().getDay()]} · hoy`, title: "Cada día, su rutina", say: "Cada ejercicio con series, repeticiones, descanso y el peso que te toca. Y el vídeo de la rutina." },
     { id: "nivel", text: "Sobre este plan", title: "Tu nivel y la revisión", say: "En qué fase estás, tu nivel y por qué, y cuándo revisamos el plan. Nada de rutinas eternas." },
   ]));
   await p.getByRole("tab", { name: "Nutrición" }).click(); await p.waitForTimeout(1500);
@@ -97,11 +103,21 @@ const go = async (p, u) => { await p.goto(U + u, { waitUntil: "networkidle" }); 
   await go(p, "/inicio/progreso");
   out.push(await shoot(p, "progreso", [
     { id: "resumenes", text: "Resúmenes de Yeff", title: "Todas tus semanas", say: "Cada resumen semanal queda guardado. Puedes volver a cualquier semana." },
+    { id: "tendencias", text: "Semana a semana", exact: true, title: "Semana a semana", say: "Tus entrenos, el peso que mueves, tu nutrición y tus hábitos, semana por semana y con tu promedio. Ves si vas mejorando sin hacer cuentas." },
     { id: "semana", text: "Tu semana", exact: true, title: "Tu semana en números", say: "Entrenos, nutrición, reportes, hábitos y peso de la semana en curso. Y te aviso en qué días te quedaste corto." },
     { id: "logros", text: "Tus récords y logros", title: "Récords y logros", say: "Cada récord que rompes queda aquí, con la fecha. Y medallas por rutinas completas." },
     { id: "habitos", text: "Tus hábitos (30 días)", title: "Constancia", say: "Tus hábitos de los últimos 30 días, día por día." },
     { id: "metrica", text: "Evolución por métrica", title: "Peso y medidas", say: "La curva de tu peso, cintura, cadera y demás medidas desde que empezamos." },
   ]));
+  // Recorte de "Semana a semana" para la sección de progreso de la landing (22-nov, noche)
+  { const png = path.join(TMP, "tendencias.png"); await p.locator(".wt-card").first().scrollIntoViewIfNeeded();
+    await p.locator(".wt-chips button", { hasText: "Peso movido" }).click(); await p.waitForTimeout(800);   // la métrica que más se ve crecer
+    // La barra de arriba de la app es fija: se deja la tarjeta 140 px por debajo para que no la tape.
+    await p.evaluate(() => { const el = document.querySelector(".wt-card"); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 140); }); await p.waitForTimeout(500);
+    // Solo la cabecera y la gráfica (sin la lista de abajo): de la parte de arriba de la tarjeta al final de la gráfica
+    const card = await p.locator(".wt-card").first().boundingBox(), chart = await p.locator(".wt-card .wt-chart").first().boundingBox();
+    await p.screenshot({ path: png, clip: { x: card.x, y: card.y, width: card.width, height: chart.y + chart.height - card.y + 18 } });
+    execFileSync("python3", ["-c", `from PIL import Image; Image.open("${png}").convert("RGB").save("${SHOTS}/tendencias.webp", "WEBP", quality=82, method=6)`]); console.log("tendencias (recorte) listo"); }
   // ---- Material ----
   await go(p, "/inicio/material");
   out.push(await shoot(p, "material", [

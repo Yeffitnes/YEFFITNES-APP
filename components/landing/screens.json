@@ -1,10 +1,10 @@
 {
  "width": 390,
- "capturedOn": "2026-11-22",
+ "capturedOn": "2026-11-23",
  "screens": [
   {
    "id": "hoy",
-   "height": 3902,
+   "height": 4014,
    "start": 0,
    "spots": [
     {
@@ -17,9 +17,18 @@
      "text": "Apenas abres la app ves qué te toca hoy: entrenar, nutrición, hábitos y reporte. Y tu racha de días cumpliendo."
     },
     {
-     "id": "resumen",
+     "id": "agenda",
      "x": 20,
      "y": 493,
+     "w": 350,
+     "h": 110,
+     "title": "Tu sesión, lo primero",
+     "text": "Si tienes sesión conmigo hoy o mañana, es lo primero que ves. Te aviso el día antes, esa mañana y 1 hora antes, y la agregas al calendario de tu celular."
+    },
+    {
+     "id": "resumen",
+     "x": 20,
+     "y": 625,
      "w": 350,
      "h": 261,
      "title": "Resumen de cada semana",
@@ -29,7 +38,7 @@
     {
      "id": "reporte",
      "x": 20,
-     "y": 837,
+     "y": 969,
      "w": 350,
      "h": 63,
      "title": "Reporte diario",
@@ -38,18 +47,18 @@
     {
      "id": "rutina",
      "x": 20,
-     "y": 918,
+     "y": 1050,
      "w": 350,
-     "h": 1083,
+     "h": 1000,
      "title": "Tu rutina con mi vídeo",
      "text": "Tu rutina del día, armada para ti, con un vídeo mío explicándola. Series, repeticiones y el peso que te toca."
     },
     {
      "id": "ejercicio",
      "x": 39,
-     "y": 1254,
+     "y": 1386,
      "w": 312,
-     "h": 67,
+     "h": 66,
      "title": "Anota cada serie",
      "text": "Tocas un ejercicio y anotas repeticiones y peso, serie por serie. El descanso se cuenta solo.",
      "go": "ejercicio"
@@ -57,7 +66,7 @@
     {
      "id": "sesion",
      "x": 20,
-     "y": 2019,
+     "y": 2068,
      "w": 350,
      "h": 231,
      "title": "Tus llamadas conmigo",
@@ -66,7 +75,7 @@
     {
      "id": "nutricion",
      "x": 20,
-     "y": 2467,
+     "y": 2516,
      "w": 350,
      "h": 431,
      "title": "Nutrición del día",
@@ -75,16 +84,16 @@
     {
      "id": "habitos",
      "x": 20,
-     "y": 2916,
+     "y": 2965,
      "w": 350,
-     "h": 631,
+     "h": 694,
      "title": "Hábitos",
      "text": "Agua, pasos, sueño y lo que acordemos. Los anotas en segundos y te muestro tu promedio de la semana."
     },
     {
      "id": "progreso",
      "x": 20,
-     "y": 3565,
+     "y": 3677,
      "w": 350,
      "h": 253,
      "title": "Tu progreso",
@@ -104,15 +113,15 @@
   },
   {
    "id": "ejercicio",
-   "height": 4293,
-   "start": 1164,
+   "height": 4414,
+   "start": 1296,
    "spots": [
     {
      "id": "series",
      "x": 39,
-     "y": 1254,
+     "y": 1386,
      "w": 312,
-     "h": 376,
+     "h": 383,
      "title": "Serie por serie",
      "text": "Repeticiones y peso de cada serie, con mi indicación debajo. Si haces más repeticiones de las del rango, la app te sugiere subir el peso y a mí me avisa."
     }
@@ -120,7 +129,7 @@
   },
   {
    "id": "resumen",
-   "height": 3016,
+   "height": 3110,
    "start": 0,
    "spots": [
     {
@@ -161,7 +170,7 @@
   },
   {
    "id": "plan",
-   "height": 2089,
+   "height": 2032,
    "start": 0,
    "spots": [
     {
@@ -178,14 +187,14 @@
      "x": 20,
      "y": 418,
      "w": 350,
-     "h": 741,
+     "h": 684,
      "title": "Cada día, su rutina",
      "text": "Cada ejercicio con series, repeticiones, descanso y el peso que te toca. Y el vídeo de la rutina."
     },
     {
      "id": "nivel",
      "x": 20,
-     "y": 1177,
+     "y": 1120,
      "w": 350,
      "h": 472,
      "title": "Tu nivel y la revisión",
@@ -245,7 +254,7 @@
   },
   {
    "id": "progreso",
-   "height": 5475,
+   "height": 7957,
    "start": 0,
    "spots": [
     {
@@ -258,36 +267,45 @@
      "text": "Cada resumen semanal queda guardado. Puedes volver a cualquier semana."
     },
     {
+     "id": "tendencias",
+     "x": 20,
+     "y": 1331,
+     "w": 350,
+     "h": 984,
+     "title": "Semana a semana",
+     "text": "Tus entrenos, el peso que mueves, tu nutrición y tus hábitos, semana por semana y con tu promedio. Ves si vas mejorando sin hacer cuentas."
+    },
+    {
      "id": "semana",
      "x": 20,
      "y": 580,
      "w": 350,
-     "h": 718,
+     "h": 735,
      "title": "Tu semana en números",
      "text": "Entrenos, nutrición, reportes, hábitos y peso de la semana en curso. Y te aviso en qué días te quedaste corto."
     },
     {
      "id": "logros",
      "x": 20,
-     "y": 1314,
+     "y": 2333,
      "w": 350,
-     "h": 788,
+     "h": 808,
      "title": "Récords y logros",
      "text": "Cada récord que rompes queda aquí, con la fecha. Y medallas por rutinas completas."
     },
     {
      "id": "habitos",
      "x": 20,
-     "y": 2120,
+     "y": 3158,
      "w": 350,
-     "h": 671,
+     "h": 711,
      "title": "Constancia",
      "text": "Tus hábitos de los últimos 30 días, día por día."
     },
     {
      "id": "metrica",
      "x": 20,
-     "y": 3127,
+     "y": 4205,
      "w": 350,
      "h": 501,
      "title": "Peso y medidas",

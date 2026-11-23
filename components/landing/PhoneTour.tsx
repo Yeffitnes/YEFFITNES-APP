@@ -18,9 +18,9 @@ const POSE: Record<string, GuidePose> = { hoy: "wave", ejercicio: "workout", res
 const BACK: Record<string, string> = { ejercicio: "Volver a Hoy", resumen: "Volver a Hoy", mensajes: "Volver a Hoy", nutricion: "Ver entrenamiento" };
 // El recorrido: en orden, todo lo que ve un cliente.
 export const TOUR: [string, string][] = [
-  ["hoy", "dia"], ["hoy", "rutina"], ["ejercicio", "series"], ["hoy", "reporte"], ["hoy", "resumen"], ["resumen", "titulo"], ["hoy", "nutricion"], ["hoy", "habitos"],
+  ["hoy", "dia"], ["hoy", "agenda"], ["hoy", "rutina"], ["ejercicio", "series"], ["hoy", "reporte"], ["hoy", "resumen"], ["resumen", "titulo"], ["hoy", "nutricion"], ["hoy", "habitos"],
   ["hoy", "sesion"], ["hoy", "progreso"], ["mensajes", "chat"], ["mensajes", "respuestas"], ["plan", "semana"], ["plan", "dia"], ["plan", "nivel"], ["nutricion", "comidas"], ["nutricion", "macros"],
-  ["agenda", "calendario"], ["agenda", "proximas"], ["progreso", "resumenes"], ["progreso", "semana"], ["progreso", "logros"], ["progreso", "habitos"], ["progreso", "metrica"], ["material", "lista"],
+  ["agenda", "calendario"], ["agenda", "proximas"], ["progreso", "tendencias"], ["progreso", "resumenes"], ["progreso", "semana"], ["progreso", "logros"], ["progreso", "habitos"], ["progreso", "metrica"], ["material", "lista"],
 ].filter(([s, p]) => SCREENS.get(s)?.spots.some((x) => x.id === p)) as [string, string][];
 const AUTO_MS = 6000;
 export type TourHandle = { show: (screen: string, spot?: string) => void };
