@@ -49,5 +49,14 @@ export async function POST(req: NextRequest) {
     await Promise.all(list.map((r) => sendPush([r], { title: r.n === 1 ? "Hábitos de ayer: 1 cliente por debajo" : `Hábitos de ayer: ${r.n} clientes por debajo`, body: r.body.length > 140 ? r.body.slice(0, 138) + "…" : r.body, url: "/coach/habitos", tag: "habits-coach" }).catch(() => [])));
     habits += list.length ? 1 : 0;
   }
-  return NextResponse.json({ ok: true, due: rows.length, sent, plans, habits });
+  // Mañana (0062): a Yeff, los clientes que completaron su semana y aún no tienen su resumen enviado.
+  let weeks = 0;
+  if (kind === "morning") {
+    const ws = await createClient().rpc("due_week_summary_cron", { p_secret: secret });
+    if (ws.error) console.error("due_week_summary_cron", ws.error.message);
+    const list = (ws.data ?? []) as (Target & { n: number; body: string })[];
+    await Promise.all(list.map((r) => sendPush([{ endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth }], { title: r.n === 1 ? "1 resumen de semana por enviar" : `${r.n} resúmenes de semana por enviar`, body: `Completaron su semana: ${r.body.length > 120 ? r.body.slice(0, 118) + "…" : r.body}. Revísalos y envíalos.`, url: "/coach#resumenes", tag: "week-sum" }).catch(() => [])));
+    weeks = list.length ? 1 : 0;
+  }
+  return NextResponse.json({ ok: true, due: rows.length, sent, plans, habits, weeks });
 }

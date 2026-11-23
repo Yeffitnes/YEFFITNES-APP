@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-11-22 - Resúmenes por enviar (prioridad para Yeff)
+Pedido de Cristian: cuando un cliente completa una semana, que a Yeff le salga como prioridad enviarle el resumen.
+- **Panel del coach**: tarjeta "Resúmenes por enviar" (debajo de las solicitudes) con cada cliente que completó su semana y aún no tiene el resumen de esa semana enviado. "Revisar y enviar" abre su ficha en Resumen. Al enviarlo, sale de la lista.
+- **Campana**: aviso prioritario "X completó su semana N: envíale el resumen" (o "N resúmenes de semana por enviar" si son varios).
+- **Notificación**: en el aviso de la mañana (cron `kind=morning`), si hoy alguien completó su semana, a Yeff le llega un push "N resúmenes de semana por enviar" que abre el panel en esa tarjeta. Una vez por día.
+- Migración `0062_resumenes_por_enviar.sql` (función `due_week_summary_cron`). Sin ella, la tarjeta y la campana funcionan (se calculan en la app); solo falta el push de la mañana.
+- Archivos: `lib/weeksum.ts` (`usePendingWeekSums`), `components/coach/WeekSumsCard.tsx`, `components/coach/DashboardView.tsx`, `components/ActionsBar.tsx`, `app/api/cron/reminders/route.ts`.
+- Pruebas: `supabase/tests/rls_weeksum_due.sql` (en `run_local.sh`), `tests/e2e/weeksum_pending.js` (en `all.sh`).
+Revertir: `git revert` de este commit; en la base, `drop function public.due_week_summary_cron(text);`.
 ## 2026-11-22 - Armar desde el cliente y que quede guardado en el catálogo
 Pedido de Cristian: que Yeff pueda trabajar de las dos formas, armando primero el catálogo o entrando a un cliente y armando desde cero, y que lo que arme desde el cliente quede guardado solo. El catálogo (Ejercicios, Rutinas, Programas) no cambia.
 - **"+ Crear rutina nueva…"** en el selector de cada día de "Armar/Editar semana": abre el editor de rutinas de siempre; al guardar, la rutina queda en **Rutinas** y se asigna a ese día del cliente.

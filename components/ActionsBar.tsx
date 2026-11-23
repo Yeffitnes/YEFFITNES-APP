@@ -19,6 +19,7 @@ import { useHabitBoard } from "@/lib/extras";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/Icon";
 import { clientRequests, useFeatureRequests } from "@/lib/requests";
+import { usePendingWeekSums } from "@/lib/weeksum";
 
 type Item = { key: string; text: string; href: string; hot?: boolean };   // hot: prioritario (solicitudes de clientes), arriba y en rojo
 const PUSH_TXT: Record<PushState, string> = { unsupported: "Tu navegador no permite avisos. Instala la app en la pantalla de inicio e inténtalo de nuevo.", not_configured: "Los avisos aún no están configurados.", denied: "Bloqueaste los avisos. Actívalos en los ajustes del navegador o del teléfono.", off: "Activar avisos en este teléfono", on: "Avisos activados en este teléfono" };
@@ -29,7 +30,7 @@ function useItems(side: "client" | "coach"): Item[] {
   const wantsReport = side === "client" && hasFeature(me.data?.features, "daily_report");
   const rep = useTodayReport(cid, today, wantsReport && boot), bookings = useMyBookings(cid);
   // Lo del coach solo se pide en el panel del coach (antes el portal del cliente también lo pedía y lo repetía cada minuto).
-  const coach = side === "coach", hab = useHabitBoard(coach && boot), clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach), freqs = useFeatureRequests(coach);
+  const coach = side === "coach", hab = useHabitBoard(coach && boot), clients = useClients(coach), reports = useCoachReports(coach), activity = useUnseenActivity(coach), attn = useCoachAttention(coach), freqs = useFeatureRequests(coach), wsums = usePendingWeekSums(coach);
   const items: Item[] = [], n = unread.data ?? 0;
   if (n > 0) items.push({ key: "msg", text: side === "coach" ? `${n} mensaje${n === 1 ? "" : "s"} sin leer` : `Tu coach te escribió (${n} sin leer)`, href: side === "coach" ? "/coach/mensajes" : "/inicio/mensajes" });
   if (side === "client") {
@@ -50,11 +51,14 @@ function useItems(side: "client" | "coach"): Item[] {
     if (habLow) items.push({ key: "hab", text: `${habLow} cliente${habLow === 1 ? "" : "s"} por debajo en sus hábitos esta semana`, href: "/coach/habitos" });
     // Solicitudes de clientes (22-nov): primero de todo y en rojo. Con una sola, con nombre.
     const reqs = clientRequests(clients.data ?? [], freqs.data ?? []);
+    // Resúmenes por enviar (22-nov): también prioritario, después de las solicitudes.
+    const ws = wsums.data ?? [];
+    if (ws.length) items.unshift({ key: "wsum", hot: true, href: "/coach#resumenes", text: ws.length === 1 ? `${ws[0].name} completó su semana ${ws[0].n}: envíale el resumen` : `${ws.length} resúmenes de semana por enviar` });
     if (reqs.length) items.unshift({ key: "req", hot: true, href: "/coach#solicitudes", text: reqs.length === 1 ? `${reqs[0].name}: ${reqs[0].text.charAt(0).toLowerCase()}${reqs[0].text.slice(1)}` : `${reqs.length} solicitudes de clientes${pending ? ` (${pending} nuevo${pending === 1 ? "" : "s"} esperando plan)` : ""}` });
     // "Necesitan tu atención" (29-oct): urgentes por contactar y lo que falta configurar, también en la campanita.
     const nd = needs(attn.data ?? [], new Map((clients.data ?? []).map((c) => [c.id, c.name])));
     const urgent = new Set(nd.filter((x) => x.kind === "urgent").map((x) => x.clientId)).size, setup = new Set(nd.filter((x) => x.kind === "setup").map((x) => x.clientId)).size;
-    if (urgent) items.splice(items.some((x) => x.hot) ? 1 : 0, 0, { key: "urg", text: `${urgent} cliente${urgent === 1 ? "" : "s"} urgente${urgent === 1 ? "" : "s"} por contactar (2 días o más sin actividad o sin reporte)`, href: "/coach#atencion" });
+    if (urgent) items.splice(items.filter((x) => x.hot).length, 0, { key: "urg", text: `${urgent} cliente${urgent === 1 ? "" : "s"} urgente${urgent === 1 ? "" : "s"} por contactar (2 días o más sin actividad o sin reporte)`, href: "/coach#atencion" });
     if (setup) items.push({ key: "setup", text: `${setup} cliente${setup === 1 ? "" : "s"} sin rutina o nutrición completa`, href: "/coach#atencion" });
   }
   return items;

@@ -1,6 +1,7 @@
 "use client";
 import { PlansDueCard } from "./PlansDueCard";
 import { RequestsCard } from "./RequestsCard";
+import { WeekSumsCard } from "./WeekSumsCard";
 import { AttentionCard } from "./AttentionCard";
 import { WeightAdviceCard } from "./WeightAdviceCard";
 import { useNow } from "@/lib/use-now";
@@ -32,6 +33,7 @@ export function DashboardView() {
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Panel — {new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}</div><h1>Hola, {name.split(" ")[0] || "Coach"}</h1>
         <p className="greeting-sub">{sub}{pending ? ` ${pending} cliente${pending > 1 ? "s" : ""} por activar.` : ""}</p></div></div>
       <RequestsCard clients={cl} />
+      <WeekSumsCard />
       {/* Revisar (2-nov): siempre arriba y sencillo: cuántos clientes por revisar y un solo botón. Colores propios (no card-dark,
           que en computador es blanca y dejaba el texto blanco invisible). */}
       <Link href="/coach/revisar" className="rv-cta">
