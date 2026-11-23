@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-11-22 - Primera llamada guiada para clientes nuevos
+Yeff: los clientes nuevos "se pierden" y no saben cómo agendar.
+- **Al entrar a la app**, un cliente activo que nunca ha agendado (y al que Yeff aún no le armó rutina) va directo a la Agenda. Puede salir cuando quiera; en esa misma sesión no se le vuelve a llevar.
+- **Agenda guiada** (`components/portal/FirstCallPicker.tsx`): el personaje dice en una frase qué hacer y cambia según el paso ("Toca la hora que te sirva…", "Ahora toca Confirmar mi llamada", "¡Listo!"). Los horarios de llamada inicial de las próximas 4 semanas en una lista grande por día ("Martes, 24 de noviembre" → "7:00 a. m.", "6:30 p. m."), sin calendario semanal ni filtros; si Yeff solo publicó seguimientos, salen esos. Barra fija con un botón grande "Confirmar mi llamada". Al terminar: la fecha, "Ir a Hoy" y "Guardar en mi calendario". "Ver el calendario completo" lleva a la agenda de siempre.
+- **Sin horarios**: el cliente ve "Aún no hay horarios disponibles" y un botón para escribirle a Yeff. A Yeff le sale en su Agenda "Laura espera para agendar su llamada inicial" con "Publicar horarios" mientras no haya horarios de llamada inicial libres.
+- Archivos: `FirstCallPicker.tsx` (nuevo), `AgendaClientView.tsx`, `LockedPanel.tsx` (`FirstCallRedirect`), `app/inicio/layout.tsx`, `components/coach/AgendaView.tsx`, `app/inicio/portal.css`, `app/coach/coach.css`.
+- Pruebas: `tests/e2e/first_call.js` (en `all.sh`); `flows.js` ajustada (Andrés nunca agendó).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Cliente: nombres de ejercicio largos sin desordenar la fila
 En "Tu plan" y en "Hoy", series, repeticiones, descanso y peso iban a la derecha del nombre; con un nombre largo se caían hacia abajo. Ahora van en una línea debajo del nombre (el nombre hasta 2 líneas). En "Tu plan", en etiquetas: 3 × 15-20 en negro, descanso ("2 min desc.") y peso.
 Archivos: `components/portal/MiPlanView.tsx`, `components/portal/HoyView.tsx`, `app/inicio/portal.css`. Revertir: `git revert` de este commit.

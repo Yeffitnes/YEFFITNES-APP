@@ -1611,3 +1611,5 @@ html{scroll-behavior:smooth;}
 /* El brillo con medidas fijas: con porcentajes crecía con el alto del bloque y un día con rutina (bloque más alto) "brillaba más"
    que un día de descanso. Ahora es igual siempre, del tamaño que se ve con un día de descanso. */
 .tp-week{background:radial-gradient(560px 300px at 0% 0%,rgba(247,37,75,.34),transparent 60%),radial-gradient(420px 240px at 100% 0%,rgba(205,177,112,.10),transparent 60%),var(--ink)}
+.ag-wait{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 16px;padding:14px 16px;border-radius:16px;border:1px solid rgba(247,37,75,.4);background:rgba(247,37,75,.06)}
+.ag-wait>div{flex:1;min-width:220px}.ag-wait b{font-size:14px}.ag-wait p{font-size:12.5px;color:var(--text-dim);margin:3px 0 0;line-height:1.5}

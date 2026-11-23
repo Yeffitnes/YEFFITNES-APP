@@ -97,7 +97,8 @@ const step = async (name, fn) => { try { const r = await fn(); log("OK  ", name,
   await step("cliente: ve la sesión cancelada con motivo", async () => { const t = await c.locator("body").innerText(); if (!/Yeff canceló tu sesión/.test(t) || !/imprevisto/.test(t)) throw new Error("no"); });
   await step("cliente: ve vídeo del día y de la semana", async () => { const t = await c.locator(".fv-stack").innerText().catch(() => ""); if (!/Vídeo de la semana/i.test(t)) throw new Error(t.slice(0, 80)); });
   await c.screenshot({ path: `${S}/f_camila_hoy2.png`, fullPage: true });
-  const ac = await ctxFor(b, "andres", true), a = await ac.newPage(); watch(a, "andres", errs);
+  const ac = await ctxFor(b, "andres", true); await ac.addInitScript(() => { try { sessionStorage.setItem("yf-fc-go", "1"); } catch {} });   // 22-nov: Andrés nunca agendó; sin esto Hoy lo lleva a la agenda guiada (first_call.js lo prueba)
+  const a = await ac.newPage(); watch(a, "andres", errs);
   await a.goto("http://localhost:3000/inicio", { waitUntil: "networkidle" });
   await step("Andrés: ve el aviso de Jeff", async () => { const t = await a.locator("body").innerText(); if (!/Yeff te está esperando/.test(t)) throw new Error("no"); });
   await a.screenshot({ path: `${S}/f_andres.png`, fullPage: true });

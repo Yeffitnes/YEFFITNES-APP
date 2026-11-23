@@ -3,7 +3,8 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { useProfile } from "@/components/Providers";
 import { useFirstCall, useMe, useRequestAccess, useTrainingPlans } from "@/lib/queries";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Guide, GuideFace } from "./Guide";
 import { ago } from "@/lib/format";
 import { useMyFeatureRequests, useRequestFeature } from "@/lib/requests";
@@ -98,6 +99,18 @@ export function PlanWait({ kind }: { kind: "training" | "nutrition" | "report" }
       </div>
     </div>
   );
+}
+// 22-nov (Cristian): mientras no haya agendado nunca, al ENTRAR a la app (a Hoy) se le lleva a la agenda guiada. Puede salir
+// cuando quiera; en esa misma sesión no se le vuelve a llevar (sessionStorage). Solo después de la bienvenida (onboarded).
+export function FirstCallRedirect() {
+  const { profileId } = useProfile(), me = useMe(profileId), cid = me.data?.status === "active" && me.data.onboarded ? me.data.id : "", call = useFirstCall(cid), plans = useTrainingPlans(cid), path = usePathname(), router = useRouter();
+  useEffect(() => {
+    // Igual que el aviso de abajo: si Yeff ya le armó la rutina, la llamada no frena nada y no se le saca de Hoy.
+    if (!cid || !call.data || call.data.any || !plans.data || plans.data.some((p) => p.status === "active") || path !== "/inicio") return;
+    try { if (sessionStorage.getItem("yf-fc-go")) return; sessionStorage.setItem("yf-fc-go", "1"); } catch { return; }
+    router.replace("/inicio/agenda");
+  }, [cid, call.data, plans.data, path, router]);
+  return null;
 }
 // Aviso fijo arriba hasta que el cliente agende su primera llamada (y mientras no tenga rutina).
 export function FirstCallBanner() {

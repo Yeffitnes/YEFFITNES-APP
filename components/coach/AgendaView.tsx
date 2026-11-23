@@ -1,8 +1,10 @@
 "use client";
 import { Icon } from "@/components/ui/Icon";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { db } from "@/lib/supabase/browser";
 import Link from "next/link";
-import { KIND_LABEL, useCancelBooking, useClients, useCoachBook, useCoachSlots, usePublishSlots, useRemoveSlot, useUpcomingSessions, weekBounds, type CoachSlot, type UpcomingSession } from "@/lib/queries";
+import { KIND_LABEL, useCancelBooking, useClients, useCoachAttention, useCoachBook, useCoachSlots, usePublishSlots, useRemoveSlot, useUpcomingSessions, weekBounds, type CoachSlot, type UpcomingSession } from "@/lib/queries";
 import { useWorkspaceId } from "@/components/Providers";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { DAYLONG, DAY3, dayIdx, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
@@ -22,6 +24,7 @@ export function AgendaView() {
     <div>
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Agenda</h1><p className="greeting-sub">{data ? `${conf} ${conf === 1 ? "sesión confirmada" : "sesiones confirmadas"} · ${free} hueco${free === 1 ? "" : "s"} disponible${free === 1 ? "" : "s"} sin reservar` : "Cargando…"}</p></div>
         <div className="topbar-actions ag-actions"><UpcomingButton onOpen={() => setUp(true)} /><button className="ghost-btn" onClick={() => setAssign(true)}>Agendar cliente</button><button className="primary-btn" onClick={() => setPub(ymd(new Date()))}>Publicar disponibilidad</button></div></div>
+      <WaitingFirstCall onPublish={() => setPub(ymd(new Date()))} />
       {up && <UpcomingPanel onClose={() => setUp(false)} onCancel={setCancel} />}
       <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" onClick={() => setOff(off - 1)}><Icon name="chevronLeft" size={16} /></button><div className="week-nav-label">{weekLabel(from)}</div><button className="week-nav-btn" aria-label="Semana siguiente" onClick={() => setOff(off + 1)}><Icon name="chevron" size={16} /></button><button className="week-today-btn" onClick={() => { setOff(0); setSel(dayIdx(new Date())); }}>Hoy</button></div>
       <div className="day-tab-row">{days.map((d, i) => <div key={i} role="button" tabIndex={0} className={`day-tab${sel === i ? " active" : ""}`} onClick={() => setSel(i)} onKeyDown={(e) => e.key === "Enter" && setSel(i)}>{DAY3[i]} {d.getDate()}{(() => { const ds = slots.filter((s) => sameDay(new Date(s.startsAt), d)), bk = ds.reduce((a, s) => a + s.bookings.length, 0);
@@ -152,6 +155,26 @@ function UpcomingPanel({ onClose, onCancel }: { onClose: () => void; onCancel: (
             </div>))}
         </div>
       </div>
+    </div>
+  );
+}
+// 22-nov: clientes activos que aún no tienen ninguna llamada (ni hecha ni reservada) y NO hay horarios de llamada inicial libres:
+// se quedan esperando en su agenda guiada. Se le avisa a Yeff aquí arriba, con un botón para publicar.
+function WaitingFirstCall({ onPublish }: { onPublish: () => void }) {
+  const attn = useCoachAttention(), clients = useClients();
+  const free = useQuery({ queryKey: ["coach-slots", "free-initial"], staleTime: 30_000, queryFn: async () => {
+    const { data, error } = await db().from("availability_slots").select("id,capacity,bookings(status)").eq("status", "open").eq("kind", "initial").gt("starts_at", new Date().toISOString()).limit(200);
+    if (error) throw error;
+    return ((data ?? []) as { capacity: number; bookings: { status: string }[] }[]).filter((s) => s.bookings.filter((b) => b.status === "confirmed").length < s.capacity).length;
+  } });
+  const active = new Map((clients.data ?? []).filter((c) => c.status === "active").map((c) => [c.id, c.name]));
+  const waiting = (attn.data ?? []).filter((a) => active.has(a.clientId) && !a.lastCall && !a.nextCall).map((a) => active.get(a.clientId)!);
+  if (!waiting.length || free.data === undefined || free.data > 0) return null;
+  return (
+    <div className="ag-wait" role="alert">
+      <div><b>{waiting.length === 1 ? `${waiting[0]} espera` : `${waiting.length} clientes nuevos esperan`} para agendar su llamada inicial</b>
+        <p>No tienes horarios de llamada inicial libres{waiting.length > 1 ? ` (${waiting.slice(0, 3).join(", ")}${waiting.length > 3 ? "…" : ""})` : ""}. Publica algunos para que puedan reservar.</p></div>
+      <button type="button" className="primary-btn" onClick={onPublish}>Publicar horarios</button>
     </div>
   );
 }

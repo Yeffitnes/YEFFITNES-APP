@@ -1437,3 +1437,35 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .ex-chips span{font-family:var(--font-mono),monospace;font-size:10.5px;padding:2px 7px;border-radius:6px;background:var(--surface);color:var(--text-dim);white-space:nowrap}
 .ex-chips span:first-child{background:var(--ink);color:#fff}
 .card-day .ex-row{flex-wrap:nowrap}
+/* 22-nov: primera llamada guiada (FirstCallPicker) */
+.fcp{padding-bottom:110px}
+.fcp-head{display:flex;align-items:flex-end;gap:10px;margin:4px 0 18px}
+.fcp-stage{flex:none;display:grid;place-items:end center;width:96px;height:112px;border-radius:50%;background:radial-gradient(circle at 50% 46%,#fff 0%,rgba(255,255,255,.8) 45%,rgba(255,255,255,0) 70%)}
+.fcp-bubble{flex:1;min-width:0;position:relative;padding:16px 18px;border-radius:20px 20px 20px 6px;color:#fff;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(247,37,75,.34),transparent 60%),radial-gradient(90% 120% at 100% 0%,rgba(205,177,112,.10),transparent 60%),var(--ink)}
+.fcp-step{font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--neon)}
+.fcp-bubble b{display:block;font-family:var(--font-display),sans-serif;font-size:19px;line-height:1.3;margin-top:6px}
+.fcp-bubble p{font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.7);margin:8px 0 0}
+.fcp-days{display:grid;gap:12px}
+.fcp-day{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px}
+.fcp-day h3{font-family:var(--font-display),sans-serif;font-size:16px;font-weight:700;margin:0 0 12px;text-transform:none}
+.fcp-hours{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px}
+.fcp-hour{height:52px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:border-color .15s,background .15s}
+.fcp-hour:hover{border-color:var(--ink)}
+.fcp-hour.on{color:#fff;border-color:var(--neon);background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink);box-shadow:0 10px 24px -12px rgba(247,37,75,.9)}
+.fcp-full{display:block;margin:18px auto 0;background:none;border:0;color:var(--text-dim);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.fcp-bar{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:45;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 18px;border-radius:20px;color:#fff;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.45),transparent 62%),var(--ink);box-shadow:0 20px 40px -14px rgba(10,9,16,.6);animation:ag-up2 .25s ease-out both}
+@keyframes ag-up2{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.fcp-bar-txt{flex:1;min-width:0}.fcp-bar-txt small{display:block;font-size:11px;color:rgba(255,255,255,.6)}.fcp-bar-txt b{font-size:14.5px}
+.fcp-confirm{flex:none;height:48px;padding:0 18px;border-radius:14px;border:0;background:#fff;color:var(--ink);font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.fcp-done{text-align:left}
+.fcp-done-when{display:flex;align-items:center;gap:10px;font-family:var(--font-display),sans-serif;font-size:19px;font-weight:700}
+.fcp-done p{font-size:14px;color:var(--text-dim);line-height:1.55;margin:8px 0 16px}
+.fcp-done-acts{display:flex;gap:10px;flex-wrap:wrap}
+.fcp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 20px;border-radius:14px;font-weight:700;font-size:15px;color:#fff;text-decoration:none;
+  background:radial-gradient(120% 220% at 0% 0%,rgba(247,37,75,.5),transparent 62%),var(--ink)}
+.fcp-btn.ghost{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+.fcp-empty b{font-size:16px}.fcp-empty p{font-size:14px;color:var(--text-dim);line-height:1.55;margin:6px 0 14px}
+@media (min-width:900px){.fcp{max-width:720px}.fcp-bar{position:sticky;left:auto;right:auto;bottom:20px;margin-top:16px}.fcp{padding-bottom:20px}}
+.fcp-card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px}

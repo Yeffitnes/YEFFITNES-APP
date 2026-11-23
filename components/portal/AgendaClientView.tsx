@@ -5,7 +5,8 @@ import Link from "next/link";
 import { changeSessionLink } from "@/lib/features";
 import { icsHref } from "@/lib/ics";
 import { PendingSection } from "./LockedPanel";
-import { CANCEL_WINDOW_MS, KIND_COLOR, KIND_LABEL, upcomingOnly, useBookSlot, useCancelBooking, useMe, useMyBookings, useOpenSlots, weekBounds, type MyBooking, type Slot } from "@/lib/queries";
+import { CANCEL_WINDOW_MS, KIND_COLOR, KIND_LABEL, upcomingOnly, useBookSlot, useCancelBooking, useFirstCall, useMe, useMyBookings, useOpenSlots, weekBounds, type MyBooking, type Slot } from "@/lib/queries";
+import { FirstCallPicker } from "./FirstCallPicker";
 import { useNow } from "@/lib/use-now";
 import { useProfile } from "@/components/Providers";
 import { DAY3, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
@@ -13,13 +14,17 @@ import { Icon } from "@/components/ui/Icon";
 // Cuánto le queda al cliente para cancelar (decisión de Cristian, 29-oct): 10 min desde que reservó, y solo lo que reservó él.
 const cancelLeft = (b: MyBooking, now: Date) => (b.bookedBy !== "client" || !b.createdAt ? 0 : Math.max(0, new Date(b.createdAt).getTime() + CANCEL_WINDOW_MS - now.getTime()));
 export function AgendaClientView() {
-  const { profileId } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "";
+  const { profileId, name } = useProfile(), me = useMe(profileId), cid = me.data?.id ?? "";
   const [off, setOff] = useState(0), [filter, setFilter] = useState("all"), [sel, setSel] = useState<Slot | null>(null), [done, setDone] = useState<Slot | null>(null);
   const slots = useOpenSlots(off), mine = useMyBookings(cid), book = useBookSlot(), cancel = useCancelBooking();
   const { from } = weekBounds(off), days = weekDays(from), now = useNow(15_000);
   const list = (slots.data ?? []).filter((s) => new Date(s.startsAt) > now && (filter === "all" || s.kind === filter));
   const when = (iso: string) => `${new Date(iso).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })} · ${hhmm(iso)}`;
   const upcoming = upcomingOnly(mine.data, now);
+  // 22-nov: si nunca ha agendado, la agenda guiada de la primera llamada (salvo que pida el calendario completo).
+  const call = useFirstCall(me.data?.status === "active" ? cid : ""), [full, setFull] = useState(false), [guided, setGuided] = useState<boolean | null>(null);
+  if (guided === null && call.data) setGuided(!call.data.any);
+  if (me.data?.status === "active" && guided && !full) return <FirstCallPicker first={name.split(" ")[0] ?? ""} onFull={() => setFull(true)} />;
   if (me.data?.status === "pending") return <PendingSection eyebrow="Agenda" title="Tus sesiones con Yeff" panels={[
     { tag: "Agenda", title: "Horarios disponibles", sub: "Yeff publica sus horarios y tú eliges el que te sirva." },
     { tag: "Reservas", title: "Tus próximas sesiones", sub: "Tus llamadas reservadas, con recordatorio antes de empezar." },
