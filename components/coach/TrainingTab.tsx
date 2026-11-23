@@ -132,7 +132,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
         </section>)}
       {creating !== null && active && <RoutineModal r={null} exercises={exs.data ?? []} noExercises={!!exs.data && !exs.data.length} sub={`Queda guardada en Rutinas y se asigna al ${DAYS_LONG[creating - 1].toLowerCase()} de ${first}.`}
         onClose={() => setCreating(null)} onSaved={(id) => { const w = creating; setDay(w); assignNew.mutate({ planId: active.id, weekdays: [w], templateId: id, week }); }} />}
-      {asRoutine && d && <RoutineModal r={null} exercises={exs.data ?? []} noExercises={false} sub={`Se guarda en Rutinas con las series, repeticiones y descansos que tiene hoy ${first}. Podrás asignarla a otros clientes.`}
+      {asRoutine && d && <RoutineModal r={null} exercises={exs.data ?? []} noExercises={false} sub={`Se guarda en Rutinas con las series, repeticiones y descansos del ${DAYS_LONG[day - 1].toLowerCase()} de ${first}. Podrás asignarla a otros clientes.`}
         initial={{ name: d.name, minutes: d.minutes, items: d.items.filter((i) => i.exerciseId).map((i) => ({ exercise_id: i.exerciseId!, sets: i.sets, reps: i.reps, rest_seconds: i.rest })) }} onClose={() => setAsRoutine(false)} />}
       {asProgram && active && <SaveWeekProgram first={first} cycle={cycle} days={active.allDays ?? active.days} onClose={() => setAsProgram(false)} />}
       {prog && <ProgramModal clientId={clientId} first={first} hasActive={!!active} onClose={() => setProg(false)} onDone={() => { setDay(today); setWeekSel(null); }} />}
@@ -284,16 +284,19 @@ function ProgramModal({ clientId, first, hasActive, onClose, onDone }: { clientI
 // Guardar la semana del cliente como programa (22-nov): queda en Catálogo → Programas para asignarla a otros con un toque. Se guardan
 // las rutinas de cada día (las del catálogo); los ajustes de series o pesos de este cliente no (para eso, "Guardar este día como rutina").
 function SaveWeekProgram({ first, cycle, days, onClose }: { first: string; cycle: number; days: PlanDay[]; onClose: () => void }) {
-  const routines = useRoutines(), save = useSaveProgram(), [name, setName] = useState(`Semana de ${first}`), [err, setErr] = useState("");
+  // 22-nov (revisión): antes la duración quedaba igual a las semanas distintas (1 semana que se repite = programa de 1 semana, y
+  // la revisión del plan quedaba a los 7 días). Ahora Yeff la elige, como al crear un programa en el catálogo (4 por defecto).
+  const routines = useRoutines(), save = useSaveProgram(), [name, setName] = useState(`Semana de ${first}`), [err, setErr] = useState(""), [weeks, setWeeks] = useState(Math.max(cycle, 4));
   const known = new Set((routines.data ?? []).map((r) => r.id)), ok = days.filter((x) => x.templateId && known.has(x.templateId)), skipped = days.filter((x) => !x.templateId || !known.has(x.templateId));
   const go = () => {
     if (!name.trim()) return setErr("Ponle un nombre al programa."); if (!ok.some((x) => (x.week ?? 1) === 1)) return setErr("La semana 1 no tiene rutinas del catálogo para guardar.");
-    setErr(""); save.mutate({ name: name.trim(), weeks: Math.max(cycle, 1), notes: "", days: ok.map((x) => ({ week: x.week ?? 1, weekday: x.weekday, template_id: x.templateId! })) }, { onSuccess: onClose });
+    setErr(""); save.mutate({ name: name.trim(), weeks: Math.max(weeks, cycle), notes: "", days: ok.map((x) => ({ week: x.week ?? 1, weekday: x.weekday, template_id: x.templateId! })) }, { onSuccess: onClose });
   };
   return (
-    <Modal title="Guardar la semana como programa" sub="Queda en Catálogo → Programas. Después se la asignas a otro cliente con un toque desde su ficha." onClose={onClose}>
+    <Modal title="Guardar como programa" sub="La semana de este cliente queda en Catálogo → Programas. Después se la asignas a otro cliente con un toque desde su ficha." onClose={onClose}>
       <div className="modal-field"><label htmlFor="swp-n">Nombre del programa</label><input id="swp-n" autoFocus maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></div>
-      <div className="modal-cap-hint">{cycle > 1 ? `${cycle} semanas distintas. ` : "Una semana que se repite. "}{ok.length} día{ok.length === 1 ? "" : "s"} con rutina: {ok.filter((x) => (x.week ?? 1) === 1).sort((a, b) => a.weekday - b.weekday).map((x) => `${DAYS[x.weekday - 1]} ${x.name}`).join(" · ")}.
+      <div className="modal-field"><label htmlFor="swp-w">Duración</label><select id="swp-w" value={weeks} onChange={(e) => setWeeks(Number(e.target.value))}>{Array.from({ length: 17 - cycle }, (_, k) => cycle + k).map((i) => <option key={i} value={i}>{i} semana{i > 1 ? "s" : ""}</option>)}</select></div>
+      <div className="modal-cap-hint">{cycle > 1 ? `${cycle} semanas distintas que se turnan durante ${weeks} semanas. ` : `Una semana que se repite ${weeks} veces. `}{ok.length} día{ok.length === 1 ? "" : "s"} con rutina: {ok.filter((x) => (x.week ?? 1) === 1).sort((a, b) => a.weekday - b.weekday).map((x) => `${DAYS[x.weekday - 1]} ${x.name}`).join(" · ")}.
         {skipped.length ? ` ${skipped.length} día${skipped.length === 1 ? "" : "s"} no se guarda${skipped.length === 1 ? "" : "n"} porque su rutina ya no está en el catálogo.` : ""} Se guardan las rutinas como están en el catálogo; los ajustes de series o pesos de {first} se quedan solo en su plan.</div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending || !routines.data} onClick={go}>{save.isPending ? "Guardando…" : "Guardar programa"}</button></div>

@@ -6,7 +6,7 @@ import { changeSessionLink } from "@/lib/features";
 import { icsHref } from "@/lib/ics";
 import { PendingSection } from "./LockedPanel";
 import { CANCEL_WINDOW_MS, KIND_COLOR, KIND_LABEL, upcomingOnly, useBookSlot, useCancelBooking, useFirstCall, useMe, useMyBookings, useOpenSlots, weekBounds, type MyBooking, type Slot } from "@/lib/queries";
-import { FirstCallPicker } from "./FirstCallPicker";
+import { FirstCallModes, FirstCallPicker } from "./FirstCallPicker";
 import { useNow } from "@/lib/use-now";
 import { useProfile } from "@/components/Providers";
 import { DAY3, hhmm, sameDay, weekDays, weekLabel } from "@/lib/dates";
@@ -24,13 +24,14 @@ export function AgendaClientView() {
   // 22-nov: si nunca ha agendado, la agenda guiada de la primera llamada (salvo que pida el calendario completo).
   const call = useFirstCall(me.data?.status === "active" ? cid : ""), [full, setFull] = useState(false), [guided, setGuided] = useState<boolean | null>(null);
   if (guided === null && call.data) setGuided(!call.data.any);
-  if (me.data?.status === "active" && guided && !full) return <FirstCallPicker first={name.split(" ")[0] ?? ""} onFull={() => setFull(true)} />;
+  if (me.data?.status === "active" && guided && !full) return <FirstCallPicker first={name.split(" ")[0] ?? ""} onFull={(at) => { setFull(true); if (at) { const w = weekBounds(0).from; setOff(Math.min(6, Math.max(0, Math.floor((new Date(at).getTime() - w.getTime()) / (7 * 86_400_000))))); } }} />;
   if (me.data?.status === "pending") return <PendingSection eyebrow="Agenda" title="Tus sesiones con Yeff" panels={[
     { tag: "Agenda", title: "Horarios disponibles", sub: "Yeff publica sus horarios y tú eliges el que te sirva." },
     { tag: "Reservas", title: "Tus próximas sesiones", sub: "Tus llamadas reservadas, con recordatorio antes de empezar." },
   ]} />;
   return (
     <>
+      {guided && !upcoming.length && <FirstCallModes mode="full" onChange={(m) => m === "list" && setFull(false)} />}
       <div className="topbar"><div className="greeting"><div className="greeting-eyebrow">Agenda</div><h1>Reserva tu próxima sesión</h1><p className="greeting-sub">Tu coach publica horarios cada semana. Elige el que te sirve y confirma al instante. Puedes tener una sesión reservada a la vez. Si te equivocaste, tienes 10 minutos para cancelarla; después, escríbele a Yeff para cambiarla.</p></div></div>
       <div className="week-nav"><button className="week-nav-btn" aria-label="Semana anterior" disabled={off <= 0} onClick={() => { setOff(off - 1); setSel(null); }}><Icon name="chevronLeft" size={16} /></button>
         <div className="week-nav-label"><div className="week-nav-range">{weekLabel(from)}</div><div className="week-nav-tag">{off === 0 ? "Semana actual" : off === 1 ? "Próxima semana" : `En ${off} semanas`}</div></div>

@@ -11,8 +11,10 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   await p.goto(`${U}/coach/clientes/${CA}?tab=Entrenamiento`, { waitUntil: "networkidle" }); await p.waitForTimeout(1200);
   await step("crear una rutina nueva desde el miércoles: queda en Rutinas y asignada a ese día", async () => {
     await p.getByRole("button", { name: /^(Armar la|Editar) semana$/ }).click(); await p.waitForTimeout(300);
+    await p.screenshot({ path: `${S}/wfc_semana.png`, fullPage: true });
     await p.locator(".wk-day").nth(2).locator("select").selectOption("__new"); await p.waitForTimeout(400);
     if (!/miércoles de Camila/.test(await p.locator(".modal-box").innerText())) throw new Error("no dice que se asigna al miércoles");
+    await p.screenshot({ path: `${S}/wfc_nueva.png` });
     await p.getByLabel("Nombre", { exact: true }).fill("Rutina creada en la ficha");
     const sel = p.getByLabel("Ejercicio 1", { exact: true }), opt = await sel.locator("option").nth(1).getAttribute("value"); await sel.selectOption(opt);
     await p.getByRole("button", { name: "Guardar", exact: true }).click(); await p.waitForTimeout(2000);
@@ -24,6 +26,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   await step("guardar el día como rutina con los ajustes del cliente", async () => {
     await p.getByRole("button", { name: "Listo" }).click(); await p.waitForTimeout(300);
     await p.locator(".wk-chip").nth(2).evaluate((e) => { if (!e.classList.contains("sel")) e.click(); }); await p.waitForTimeout(300);
+    await p.screenshot({ path: `${S}/wfc_dia.png`, fullPage: true });
     const row = p.locator(".tp-item").first(), nm = (await row.locator("b").innerText()).trim();
     await row.getByLabel(`Series de ${nm}`).fill("5"); await row.getByLabel(`Repeticiones de ${nm}`).click(); await p.waitForTimeout(1200);
     await p.getByRole("button", { name: /Guardar este día como rutina/ }).click(); await p.waitForTimeout(400);
@@ -38,6 +41,8 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     await p.getByRole("button", { name: "Guardar programa" }).click(); await p.waitForTimeout(1500);
     const n = sql(`select (select count(*) from program_days pd where pd.program_id=pt.id) from program_templates pt where pt.name='Semana de Camila (prueba)'`);
     const want = sql(`select count(*) from plan_days where plan_id='${plan}'`); if (n !== want) throw new Error(`${n} días en el programa, ${want} en el plan`);
+    // 22-nov (revisión): la duración la elige Yeff (4 semanas por defecto), ya no queda en 1 semana.
+    const wk = sql(`select weeks from program_templates where name='Semana de Camila (prueba)'`); if (wk !== "4") throw new Error(`duración ${wk}`);
     await p.goto(`${U}/coach/catalogo/programas`, { waitUntil: "networkidle" }); await p.waitForTimeout(1000);
     if (!(await p.getByText("Semana de Camila (prueba)").count())) throw new Error("no sale en Programas");
     await p.goto(`${U}/coach/catalogo/rutinas`, { waitUntil: "networkidle" }); await p.waitForTimeout(1000);

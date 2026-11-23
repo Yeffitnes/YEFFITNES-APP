@@ -22,17 +22,21 @@ function Bars({ m, weeks }: { m: Metric; weeks: TrendWeek[] }) {
   const isW = m.key === "weight", have = m.vals.filter((v): v is number => v != null);
   const hi = Math.max(1e-9, ...vs, ...of), lo = isW && have.length ? Math.min(...have) - 1 : 0, top = isW && have.length ? Math.max(...have) + 1 : hi;
   const h = (v: number) => Math.max(3, ((v - lo) / (top - lo)) * 100);
-  const c = compare(m, weeks), meanH = c.mean != null && c.count > 1 ? h(c.mean) : null;
+  // 22-nov (revisión): el promedio no va en el peso (no se promedia), y la línea se mide sobre la misma altura que las barras
+  // (antes se medía sobre todo el recuadro, con las cifras encima incluidas, y quedaba más alta que la barra que tocaba).
+  const c = compare(m, weeks), meanH = !isW && c.mean != null && c.count > 1 ? h(c.mean) : null;
   return (
     <div className="wt-chart" role="img" aria-label={`${m.label} por semana: ${weeks.map((w, i) => `semana ${w.n} ${m.vals[i] == null ? "sin dato" : m.fmt(m.vals[i]!)}`).join(", ")}`}>
       <div className="wt-plot">
-        {meanH != null && <div className="wt-mean" style={{ bottom: `${meanH}%` }}><span>prom. {mfmt(c.mean!)}</span></div>}
-        {weeks.map((w, i) => { const v = m.vals[i];
-          return (
-            <div key={w.n} className={`wt-col${w.complete ? "" : " now"}${c.last?.w.n === w.n ? " last" : ""}`}>
-              <span className="wt-val">{v == null ? "–" : m.fmt(v)}</span>
-              <div className="wt-track">{m.of && of[i] > 0 && <div className="wt-of" style={{ height: `${h(of[i])}%` }} />}{v != null && <div className="wt-bar" style={{ height: `${h(v)}%` }} />}</div>
-            </div>); })}
+        <div className="wt-area">
+          {meanH != null && <div className="wt-mean" style={{ bottom: `${meanH}%` }}><span>prom. {mfmt(c.mean!)}</span></div>}
+          {weeks.map((w, i) => { const v = m.vals[i], top = v != null ? h(v) : 0;   // la cifra va sobre la barra (no sobre el recuadro de lo planeado)
+            return (
+              <div key={w.n} className={`wt-col${w.complete ? "" : " now"}${c.last?.w.n === w.n ? " last" : ""}`}>
+                {m.of && of[i] > 0 && <div className="wt-of" style={{ height: `${h(of[i])}%` }} />}{v != null && <div className="wt-bar" style={{ height: `${h(v)}%` }} />}
+                <span className="wt-val" style={{ bottom: `${top}%` }}>{v == null ? "–" : m.fmt(v)}</span>
+              </div>); })}
+        </div>
       </div>
       <div className="wt-x">{weeks.map((w) => <span key={w.n} className={w.complete ? "" : "now"}>{w.complete ? `S${w.n}` : "Ahora"}</span>)}</div>
     </div>

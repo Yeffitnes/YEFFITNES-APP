@@ -1,3 +1,25 @@
+## 2026-11-22 - Revisión de lo último: primera llamada rehecha, semana a semana y armar desde el cliente
+Pedido de Cristian (chat nuevo): revisar lo del 22-nov, sobre todo "Armar desde el cliente" y "Progreso semana a semana", y rediseñar la primera llamada guiada ("todo grande", sin intención) y el error de "Ver el calendario completo" (quien entraba no podía volver).
+- **Primera llamada guiada** (`components/portal/FirstCallPicker.tsx`, bloque `.fcp-*` en `app/inicio/portal.css`):
+  - Cabecera oscura de la marca (brillo de tamaño fijo) con el personaje en su luz: "Conozcámonos, {nombre}", la duración de la llamada y una frase que cambia según el paso (buscar, elegir, confirmar, listo). Debajo, los 3 pasos a la vista: Elige la hora, Confírmala, Listo.
+  - Cambio **"Horarios para ti" / "Calendario completo"** arriba. Se ve en las dos vistas: desde el calendario se vuelve a la lista con el mismo cambio. El calendario abre en la semana del día elegido (antes abría en la semana actual, que podía estar vacía). Desaparece cuando el cliente ya tiene una sesión.
+  - Los días con horario en una fila compacta (como la semana del plan) y las horas de ese día agrupadas en Mañana, Tarde y Noche, más pequeñas que antes. Lo elegido: oscuro con borde rojo fino, no blanco. Si Yeff solo publicó seguimientos, lo dice.
+  - Listo: tarjeta con día, hora, tipo y duración, "Ir a Hoy" y "Guardar en mi calendario".
+  - `components/portal/AgendaClientView.tsx`: el cambio arriba del calendario completo y la semana inicial.
+- **Semana a semana** (`components/WeekTrends.tsx`, `app/globals.css`, `lib/weektrends.ts`):
+  - La línea del promedio quedaba más alta que la barra que le tocaba (se medía sobre todo el recuadro, con las cifras incluidas). Ahora barras, cifras y promedio se miden sobre la misma área.
+  - El peso no se promedia (así lo decía la lista), pero la gráfica sí le dibujaba "prom.": quitado.
+  - La cifra va encima de la barra, no encima del recuadro punteado de lo planeado.
+  - En el celular, "+2 · más que la semana anterior" y el promedio se alinean a la izquierda (antes quedaban corridos a la derecha).
+  - Si un cliente tuviera más de 1.000 entrenos, ahora se descartan los más viejos y no los de las semanas que se muestran.
+- **Armar desde el cliente** (`components/coach/TrainingTab.tsx`): funciona bien (crear rutina desde un día, guardar el día como rutina, guardar la semana como programa). Corregido:
+  - "Guardar la semana como programa" guardaba un programa de 1 semana si el plan repetía la misma semana, y al asignarlo la revisión del plan quedaba a los 7 días. Ahora Yeff elige la duración (4 semanas por defecto, como en el catálogo).
+  - El título del modal se cortaba en el celular ("Guardar como programa").
+  - "Guardar este día como rutina" decía "las series que tiene hoy"; ahora dice el día ("del miércoles de Camila").
+- Borrado `tests/e2e/_tmp_ficha.js` (prueba temporal que quedó en el repo).
+- Pruebas: `tests/e2e/first_call.js` (diseño nuevo, ir al calendario y volver, semana correcta), `tests/e2e/week_from_client.js` (duración del programa), `tests/e2e/week_trends.js`.
+Revertir: `git revert` de este commit.
+
 # CHANGELOG
 ## 2026-11-22 - Tu plan: series y descanso en gris suave
 Pedido de Cristian: debajo del nombre de cada ejercicio, "3 × 10 · 90 s desc. · 40 kg" va en gris suave, sin recuadros ni el primero en negro (menos ruido visual). Solo CSS: `.ex-chips` en `app/inicio/portal.css`.

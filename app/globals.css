@@ -223,12 +223,13 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 .wt-vs{font-weight:700;color:rgba(255,255,255,.75)}
 .wt-vs.up{color:#fff;text-shadow:0 0 12px rgba(247,37,75,.55)}
 .wt-chart{margin:4px 0 4px}
-.wt-plot{position:relative;display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:18px}
-.wt-col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}
-.wt-val{font-size:10.5px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap}
-.wt-track{position:relative;width:100%;max-width:34px;flex:1;display:flex;align-items:flex-end}
-.wt-of{position:absolute;left:0;right:0;bottom:0;border-radius:7px 7px 3px 3px;border:1px dashed rgba(255,255,255,.18)}
-.wt-bar{position:relative;width:100%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.16))}
+.wt-plot{height:140px;padding-top:20px}
+/* 22-nov (revisión): barras, cifras y línea del promedio medidas sobre la misma área (.wt-area) */
+.wt-area{position:relative;display:flex;gap:6px;height:100%}
+.wt-col{position:relative;flex:1;min-width:0;height:100%}
+.wt-val{position:absolute;left:50%;transform:translateX(-50%);margin-bottom:4px;font-size:10.5px;font-weight:700;color:rgba(255,255,255,.72);white-space:nowrap;line-height:1}
+.wt-of{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:34px;box-sizing:border-box;border-radius:7px 7px 3px 3px;border:1px dashed rgba(255,255,255,.18)}
+.wt-bar{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:34px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,.16))}
 .wt-col.last .wt-bar{background:linear-gradient(180deg,#F7254B,rgba(247,37,75,.45));box-shadow:0 0 16px rgba(247,37,75,.4)}
 .wt-col.last .wt-val{color:#fff}
 .wt-col.now .wt-bar{background:repeating-linear-gradient(135deg,rgba(255,255,255,.22) 0 4px,rgba(255,255,255,.08) 4px 8px)}
@@ -246,5 +247,6 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 .wt-d{font-weight:700;color:rgba(255,255,255,.6);white-space:nowrap}
 .wt-d.up{color:#fff;text-shadow:0 0 10px rgba(247,37,75,.5)}
 .wt-avg{color:rgba(255,255,255,.65);white-space:nowrap;text-align:right}
+@media (max-width:759px){.wt-facts{align-items:flex-start;text-align:left}}
 @media (min-width:760px){.card.wt-card{padding:22px 22px}.wt-chips{margin:0 0 12px;padding:0;flex-wrap:wrap}.wt-plot{height:170px}}
 .wt-row-h span:last-child{text-align:right}

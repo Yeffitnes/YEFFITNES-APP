@@ -1,6 +1,7 @@
 // 22-nov: primera llamada guiada. Un cliente activo que nunca agendó entra a la app → va directo a la agenda guiada: el personaje
-// le dice qué hacer, horarios de llamada inicial en lista grande, botón grande para confirmar. Sin horarios: lo dice, y a Yeff le
-// sale "N clientes esperan" en su Agenda. Base recién creada.
+// le dice qué hacer, días en una fila y horas por mañana/tarde/noche, confirmar abajo. "Calendario completo" lleva a la agenda de
+// siempre y desde allí se vuelve con el mismo cambio (22-nov, noche). Sin horarios: lo dice, y a Yeff le sale "N clientes esperan"
+// en su Agenda. Base recién creada.
 const { execSync } = require("child_process");
 const { chromium, ctxFor, watch } = require("./lib.js");
 const S = __dirname + "/shots", U = "http://localhost:3000"; let fails = 0;
@@ -27,11 +28,22 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     sql(`insert into availability_slots (workspace_id, starts_at, kind) select id, x, 'initial' from workspaces, (values (('${d} 07:00')::timestamp at time zone 'America/Bogota'), (('${d} 18:30')::timestamp at time zone 'America/Bogota')) v(x) where slug='yeffitnes' on conflict (workspace_id, starts_at) do update set status='open', kind='initial'`);
     await l.reload({ waitUntil: "networkidle" }); await l.waitForTimeout(1200);
     const hours = await l.locator(".fcp-hour").allInnerTexts(); if (hours.length < 2 || !/7:00 a\. m\./.test(hours.join("|")) || !/6:30 p\. m\./.test(hours.join("|"))) throw new Error(hours.join("|"));
-    if (!/Toca la hora/.test(await l.locator(".fcp-bubble").innerText())) throw new Error("el personaje no explica");
+    if (!/Elige el día y la hora/.test(await l.locator(".fcp-hero p").innerText())) throw new Error("el personaje no explica");
+    const parts = await l.locator(".fcp-part-t").allInnerTexts(); if (parts.join("|") !== "Mañana|Noche") throw new Error(`partes del día: ${parts.join("|")}`);
+    if ((await l.locator(".fcp-dchip").count()) < 1) throw new Error("sin fila de días");
     await l.screenshot({ path: `${S}/fc_lista.png`, fullPage: true });
     await l.locator(".fcp-hour").first().click(); await l.waitForTimeout(300);
-    if (!/Confirmar mi llamada/.test(await l.locator(".fcp-bubble").innerText())) throw new Error("el personaje no dice el siguiente paso");
+    if (!/Confirmar mi llamada/.test(await l.locator(".fcp-hero p").innerText())) throw new Error("el personaje no dice el siguiente paso");
+    if (!/now/.test(await l.locator(".fcp-steps li").nth(1).getAttribute("class"))) throw new Error("el paso 2 no está marcado");
     await l.screenshot({ path: `${S}/fc_elegido.png` });
+    await l.locator(".fcp-hour").first().click(); await l.waitForTimeout(200);
+    // Calendario completo y volver a la lista sencilla con el mismo cambio
+    await l.getByRole("tab", { name: /Calendario completo/ }).click(); await l.locator(".cal-grid").waitFor({ timeout: 5000 });
+    if (await l.locator(".fcp-hero").count()) throw new Error("sigue la lista al pedir el calendario");
+    await l.waitForTimeout(800); if (!(await l.locator(".cal-grid .slot").count())) throw new Error("el calendario no abrió en la semana del horario");
+    await l.screenshot({ path: `${S}/fc_calendario.png` });
+    await l.getByRole("tab", { name: /Horarios para ti/ }).click(); await l.locator(".fcp-hero").waitFor({ timeout: 5000 });
+    await l.locator(".fcp-hour").first().click(); await l.waitForTimeout(300);
     await l.getByRole("button", { name: "Confirmar mi llamada" }).click(); await l.locator(".fcp-done").waitFor({ timeout: 8000 });
     if (sql(`select count(*) from bookings where client_id='${LA}' and status='confirmed'`) !== "1") throw new Error("no quedó la reserva");
     await l.screenshot({ path: `${S}/fc_listo.png` });

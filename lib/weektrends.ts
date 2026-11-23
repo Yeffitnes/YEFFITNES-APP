@@ -21,8 +21,9 @@ type LogRow = { log_date: string; effort: number | null; plan_day_id: string | n
 // Todo el historial de entrenos terminados (para los récords hace falta saber el mejor peso de antes).
 const useAllLogs = (clientId: string) => useQuery({ queryKey: ["trend-logs", clientId], enabled: !!clientId, staleTime: 60_000, queryFn: async (): Promise<LogRow[]> => {
   const { data, error } = await db().from("workout_logs").select("log_date,effort,plan_day_id,set_logs(exercise_name,weight,reps,kind,plan_item_id,set_number),plan_days(plan_items(id,sets))")
-    .eq("client_id", clientId).not("completed_at", "is", null).order("log_date").limit(1000);
-  if (error) throw error; return (data ?? []) as unknown as LogRow[];
+    .eq("client_id", clientId).not("completed_at", "is", null).order("log_date", { ascending: false }).limit(1000);
+  // Los 1.000 más recientes (si hubiera más, se pierden los más viejos y no las semanas que se muestran); en orden de fecha.
+  if (error) throw error; return ((data ?? []) as unknown as LogRow[]).reverse();
 } });
 
 /** La semana del cliente que empezó en `from`: `days` son los que cuentan (7, o los que van si está en curso). */
