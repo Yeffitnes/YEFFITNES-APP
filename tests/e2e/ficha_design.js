@@ -18,6 +18,9 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     await step(`[${tag}] Entrenamiento: cabecera oscura y los 7 días con su selector`, async () => {
       await p.goto(`${U}/coach/clientes/${CA}?tab=Entrenamiento`, { waitUntil: "networkidle" }); await p.waitForTimeout(1200);
       const bg = await p.locator(".tp-hero").evaluate((e) => getComputedStyle(e).backgroundColor); if (!/rgb\(10, 9, 16\)/.test(bg)) throw new Error("la cabecera no es oscura: " + bg);
+      if (await p.locator(".wk-day select").count()) throw new Error("los selectores deberían estar plegados");
+      if (await p.locator(".wk-chip").count() !== 7) throw new Error("faltan los 7 días");
+      await p.getByRole("button", { name: "Armar la semana" }).click(); await p.waitForTimeout(300);
       const n = await p.locator(".wk-day select").count(); if (n !== 7) throw new Error(`${n} selectores`);
       await p.screenshot({ path: `${S}/ficha_entreno_${tag}.png`, fullPage: true });
     });
@@ -28,7 +31,11 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
       }
       const d = days(); for (const w of ["2:", "4:", "6:"]) if (!d.includes(w)) throw new Error("falta el día " + w + " en " + d);
       if (/^Descanso$/m.test(await p.locator(".wk-day").nth(5).locator(".wk-top b").innerText())) throw new Error("el sábado sigue de descanso en pantalla");
-      if (!/sábado/i.test(await p.locator(".tp-day-band").innerText())) throw new Error("abajo no muestra el día que se acaba de armar");
+      await p.getByRole("button", { name: "Listo" }).click(); await p.waitForTimeout(300);
+      if (!/sábado/i.test(await p.locator(".tp-dayc-when").innerText())) throw new Error("no muestra desplegado el día que se acaba de armar");
+      await p.screenshot({ path: `${S}/ficha_semana_${tag}.png`, fullPage: true });
+      await p.getByRole("button", { name: "Plegar el día" }).click(); await p.waitForTimeout(200); if (await p.locator(".tp-dayc").count()) throw new Error("no se plegó");
+      await p.getByRole("button", { name: "Armar la semana" }).click(); await p.waitForTimeout(300);
       return d;
     });
     await step(`[${tag}] dejar un día de descanso pide confirmar y lo quita`, async () => {
@@ -36,6 +43,19 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
       await p.locator(".wk-day").nth(5).getByRole("button", { name: "Sí" }).click(); await p.waitForTimeout(1200);
       if (days().includes("6:")) throw new Error("el sábado sigue con rutina");
       sql(`delete from plan_days where plan_id='${plan}' and weekday in (2,4)`);   // deja la semilla como estaba para la otra vuelta
+    });
+    await step(`[${tag}] día de descanso: texto al lado del muñeco y el botón debajo`, async () => {
+      await p.getByRole("button", { name: "Listo" }).click().catch(() => {}); await p.waitForTimeout(200);
+      await p.locator(".wk-chip").nth(2).evaluate((e) => { if (!e.classList.contains("sel")) e.click(); }); await p.waitForTimeout(300);
+      const t = await p.locator(".tp-rest2 p").boundingBox(), bt = await p.locator(".tp-rest2-btn").boundingBox();
+      if (!t || !bt || bt.y < t.y + t.height - 2) throw new Error("el botón no quedó debajo del texto");
+      if (t.width < 150) throw new Error(`texto apretado: ${Math.round(t.width)}px`);
+      await p.screenshot({ path: `${S}/ficha_descanso_${tag}.png` });
+    });
+    await step(`[${tag}] menú del plan: Eliminar cliente está ahí (y no suelto en la ficha)`, async () => {
+      if (await p.locator(".del-client-btn").count()) throw new Error("sigue el botón suelto");
+      await p.locator(".plan-pill").click(); if (!(await p.locator(".plan-menu").getByRole("button", { name: "Eliminar cliente" }).isVisible())) throw new Error("no está en el menú");
+      await p.keyboard.press("Escape"); await p.waitForTimeout(200);
     });
     await step(`[${tag}] Nutrición: los botones caben en la tarjeta`, async () => {
       await p.goto(`${U}/coach/clientes/${CA}?tab=${encodeURIComponent("Nutrición")}`, { waitUntil: "networkidle" }); await p.waitForTimeout(1200);

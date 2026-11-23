@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-11-22 - Entrenamiento plegable en el celular, eliminar cliente en el menú del plan y vídeo que no cambiaba
+Reporte de Cristian (sobre todo en el celular).
+- **Vídeo viejo después de cambiarlo** (objetivo actual, y lo mismo podía pasar en el vídeo del día y en Material): la app guardaba 20 min el enlace de reproducción por "cliente" o "día", no por vídeo; al quitar uno y subir otro seguía abriendo el anterior. Ahora esas pistas llevan el id del vídeo (`&v=`), las que pueden cambiar se guardan solo 15 s y al cambiar el vídeo del objetivo se olvida la anterior (`components/ui/BunnyModal.tsx`, `ClientFicha.tsx`, `HoySide.tsx`, `HoyView.tsx`, `MiPlanView.tsx`, `lib/queries.ts`).
+- **Entrenamiento** (`TrainingTab.tsx`): la semana como antes, 7 días en una fila (punto rojo = tiene rutina, el elegido en blanco); al tocar un día se despliega debajo con sus ejercicios y se pliega con la flecha o tocándolo otra vez. **"Armar la semana"** abre los 7 selectores (sigue funcionando igual: se guarda al elegir) y ahí están "+ Semanas distintas" y "Una rutina a varios días". Se quitaron los botones repetidos del día ("Asignar a varios días", "Dejar de descanso"). Día de descanso: muñeco y texto al lado, bien legible, y el botón "Ponerle rutina" debajo. Menos rosado: brillos rojos más suaves y acentos en blanco. Cifras del plan en una fila y ejercicios más compactos en el celular.
+- **Eliminar cliente**: ya no es un botón al final de todas las pestañas; está en el menú del **plan** del cliente (arriba, "Plan ↓" → "Eliminar cliente").
+- Pruebas: `ficha_design.js` (semana plegable, día desplegado, descanso, menú del plan), `plan_weeks.js` y `agenda_fix.js` ajustadas.
+Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Ficha del cliente con diseño (Entrenamiento, Nutrición, Progreso), "Arma la semana" y avisos para Yeff
 Pedido de Cristian mientras armaba el plan de un cliente.
 - **Entrenamiento** (`components/coach/TrainingTab.tsx`):

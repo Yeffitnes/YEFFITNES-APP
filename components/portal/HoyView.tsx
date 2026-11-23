@@ -192,7 +192,7 @@ function Routine({ cid, day, title, items: planned, log, logs, today, guide }: {
       <div className="card-meta">{[`${items.length} ejercicios`, day.minutes ? `${day.minutes} min aprox.` : null, categoryLabel(day.category) ?? day.category].filter(Boolean).join(" · ")}</div>
       {!log?.completed && <LastTimeFeedback logs={logs} dayId={day.id} dayName={day.name} today={today} />}
       {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} poster={day.hasPersonalVideo ? day.poster : ytThumb(day.videoRef)} onWarm={() => (day.hasPersonalVideo ? prefetchPlay(`day=${day.id}`) : warmYoutube())} onOpen={() => setTeaser(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
-      {teaser === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Vídeo de Yeff" onClose={() => setTeaser(null)} />}
+      {teaser === "personal" && <BunnyModal param={`day=${day.id}&v=${day.videoId ?? ""}`} title={day.name} sub="Vídeo de Yeff" onClose={() => setTeaser(null)} />}
       {teaser === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setTeaser(null)} />}
       {guide && !closed && <TrainingGuide />}
       <div className="routine-progress-bar"><div className="routine-progress-fill" style={{ width: `${items.length ? (doneCount / items.length) * 100 : 0}%` }} /></div>

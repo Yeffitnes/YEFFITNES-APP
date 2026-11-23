@@ -49,11 +49,10 @@ export function ClientFicha({ id, tab: start }: { id: string; tab?: string }) {
           </div>
           <WeekSummary clientId={c.id} first={c.name.split(" ")[0]} mode="coach" />
           <ClientHabitGoals clientId={c.id} first={c.name.split(" ")[0]} />
-          <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} hasVideo={!!c.objectiveVideo} />
+          <ObjectiveCard clientId={c.id} value={c.objective ?? ""} first={c.name.split(" ")[0]} hasVideo={!!c.objectiveVideo} videoId={c.objectiveVideoId ?? null} />
           <RecentWorkouts clientId={c.id} />
         </>
       ) : tab === "Entrenamiento" ? <TrainingTab clientId={c.id} clientName={c.name} /> : tab === "Progreso" ? <ProgressPanels clientId={c.id} mode="coach" /> : tab === "Nutrición" ? <NutritionTab clientId={c.id} clientName={c.name} hasFeature={!!plans?.find((p) => p.id === c.planId)?.features?.includes("nutrition")} /> : tab === "Mensajes" ? <ThreadView clientId={c.id} otherName={c.name.split(" ")[0]} coach /> : tab === "Agenda" ? <AgendaTab clientId={c.id} first={c.name.split(" ")[0]} /> : tab === "Notas privadas" ? <NotesTab clientId={c.id} clientName={c.name} /> : <div className="card"><div className="card-tag">{tab}</div><p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 10 }}>{SOON[tab]} <span style={{ color: "var(--accent)", fontWeight: 700 }}>Próximamente.</span></p></div>}
-      <DeleteClient c={c} />
     </div>
   );
 }
@@ -70,7 +69,7 @@ function PlanMonthLine({ c }: { c: ClientRow }) {
   </div>;
 }
 function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {
-  const setPlan = useSetPlan(), [open, setOpen] = useState(false), box = useRef<HTMLDivElement>(null);
+  const setPlan = useSetPlan(), [open, setOpen] = useState(false), [del, setDel] = useState(false), box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
     const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); }, esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -88,12 +87,15 @@ function PlanPicker({ c, plans }: { c: ClientRow; plans: Plan[] }) {
       {open && <div className="plan-menu" role="listbox" aria-label="Elegir plan">
         {plans.map((p) => <button key={p.id} type="button" role="option" aria-selected={p.id === c.planId} className={p.id === c.planId ? "on" : ""} onClick={() => pick(p.id)}>{p.name}{p.id === c.planId && <Icon name="check" size={13} stroke={2.4} />}</button>)}
         <button type="button" role="option" aria-selected={!c.planId} className={`off${!c.planId ? " on" : ""}`} onClick={() => pick(null)}>Sin plan (todo bloqueado)</button>
+        {/* 22-nov: eliminar al cliente vive aquí, en su plan (antes era un botón al final de todas las pestañas). */}
+        <button type="button" className="plan-menu-del" onClick={() => { setOpen(false); setDel(true); }}>Eliminar cliente</button>
       </div>}
+      {del && <DeleteClient c={c} onClose={() => setDel(false)} />}
     </div>
   );
 }
 
-function ObjectiveCard({ clientId, value, first, hasVideo }: { clientId: string; value: string; first: string; hasVideo: boolean }) {
+function ObjectiveCard({ clientId, value, first, hasVideo, videoId }: { clientId: string; value: string; first: string; hasVideo: boolean; videoId: string | null }) {
   const set = useSetObjective(clientId), [t, setT] = useState<string | null>(null), cur = t ?? value, vid = useObjectiveVideo(clientId), fileIn = useRef<HTMLInputElement>(null), [watch, setWatch] = useState(false), [vErr, setVErr] = useState("");
   const pickVideo = async (f: File | null) => { setVErr(""); if (!f) return; if (!f.type.startsWith("video/")) return setVErr("Elige un archivo de vídeo."); if (f.size > MAX_COACH_VIDEO_MB * 1024 * 1024) return setVErr("El vídeo es muy pesado."); const d = await videoDuration(f); if (d != null && d > MAX_COACH_VIDEO_SECONDS) return setVErr(`El vídeo dura más de ${MAX_COACH_VIDEO_SECONDS / 60} minutos.`); vid.upload(f); };
   return (
@@ -111,7 +113,7 @@ function ObjectiveCard({ clientId, value, first, hasVideo }: { clientId: string;
         </> : <button type="button" className="ghost-btn" onClick={() => fileIn.current?.click()}><Icon name="video" size={13} /> Subir vídeo del objetivo</button>}
         {vErr && <p role="alert" style={{ color: "var(--accent)", fontSize: 12.5, width: "100%" }}>{vErr}</p>}
       </div>
-      {watch && <BunnyModal param={`objective=${clientId}`} title="Vídeo del objetivo" onClose={() => setWatch(false)} />}
+      {watch && <BunnyModal param={`objective=${clientId}&v=${videoId ?? ""}`} title="Vídeo del objetivo" onClose={() => setWatch(false)} />}
     </div>
   );
 }
@@ -139,10 +141,10 @@ function AgendaTab({ clientId, first }: { clientId: string; first: string }) {
   );
 }
 
-// Eliminar al cliente por completo (22-nov, pedido de Yeff; 0059). Abajo de la ficha, con confirmación escribiendo ELIMINAR.
+// Eliminar al cliente por completo (22-nov, pedido de Yeff; 0059). Se abre desde el menú de su plan; confirmación escribiendo ELIMINAR.
 // Borra su cuenta y todo lo suyo (entrenos, reportes, mensajes, medidas, fotos, reservas). No se puede deshacer.
-function DeleteClient({ c }: { c: ClientRow }) {
-  const [open, setOpen] = useState(false), [txt, setTxt] = useState(""), [busy, setBusy] = useState(false), [err, setErr] = useState("");
+function DeleteClient({ c, onClose }: { c: ClientRow; onClose: () => void }) {
+  const [txt, setTxt] = useState(""), [busy, setBusy] = useState(false), [err, setErr] = useState("");
   const router = useRouter(), qc = useQueryClient(), toast = useToast(), ok = txt.trim().toUpperCase() === "ELIMINAR";
   const go = async () => {
     setBusy(true); setErr("");
@@ -154,13 +156,12 @@ function DeleteClient({ c }: { c: ClientRow }) {
     toast(`${c.name} fue eliminado`); router.replace("/coach/clientes");
   };
   return (
-    <div className="del-client">
-      <button type="button" className="del-client-btn" onClick={() => setOpen(true)}>Eliminar cliente</button>
-      {open && <Modal title={`Eliminar a ${c.name}`} sub="Se borra su cuenta y todo lo suyo: entrenamientos, reportes, mensajes, medidas, fotos, hábitos y reservas. No se puede deshacer. Si vuelve, tendrá que crear la cuenta de nuevo." onClose={() => !busy && setOpen(false)}>
+    <>
+      {<Modal title={`Eliminar a ${c.name}`} sub="Se borra su cuenta y todo lo suyo: entrenamientos, reportes, mensajes, medidas, fotos, hábitos y reservas. No se puede deshacer. Si vuelve, tendrá que crear la cuenta de nuevo." onClose={() => !busy && onClose()}>
         <div className="modal-field"><label htmlFor="del-c">Escribe ELIMINAR para confirmar</label><input id="del-c" autoComplete="off" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="ELIMINAR" /></div>
         {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
-        <div className="modal-actions"><button className="modal-btn ghost" disabled={busy} onClick={() => setOpen(false)}>Cancelar</button><button className="modal-btn danger" disabled={!ok || busy} onClick={() => void go()}>{busy ? "Eliminando…" : "Eliminar para siempre"}</button></div>
+        <div className="modal-actions"><button className="modal-btn ghost" disabled={busy} onClick={onClose}>Cancelar</button><button className="modal-btn danger" disabled={!ok || busy} onClick={() => void go()}>{busy ? "Eliminando…" : "Eliminar para siempre"}</button></div>
       </Modal>}
-    </div>
+    </>
   );
 }

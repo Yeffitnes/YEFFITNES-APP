@@ -5,9 +5,15 @@ import { BrandLoader } from "@/components/ui/BrandLoader";
 type Play = { url?: string; processing?: boolean; progress?: number | null; width?: number | null; height?: number | null };
 // Enlaces de reproducción ya pedidos (válidos 2 h en el servidor; aquí se reutilizan 20 min). prefetchPlay los pide antes de que
 // la persona toque "ver": así el vídeo abre sin esperar al servidor (pedido de Cristian, 29-oct: "el vídeo se demora muchísimo").
+// 22-nov (reporte de Cristian): "objective=<cliente>", "day=<día>", "material=<id>"... siguen igual aunque se CAMBIE el vídeo; con la
+// caché de 20 min, después de quitar un vídeo y subir otro se seguía viendo el anterior. Ahora solo se guardan 20 min las pistas
+// que no pueden cambiar de vídeo (un mensaje, un vídeo de ejercicio o las que llevan "&v=<id del vídeo>"); las demás, 15 s (lo
+// justo para que precargar siga sirviendo).
 const cache = new Map<string, { at: number; p: Promise<Play> }>();
+const stable = (param: string) => /^(message|exvideo)=/.test(param) || /(^|&)v=[^&]+/.test(param);
+export const forgetPlay = (prefix: string) => { Array.from(cache.keys()).forEach((k) => { if (k.startsWith(prefix)) cache.delete(k); }); };
 export function getPlay(param: string): Promise<Play> {
-  const hit = cache.get(param); if (hit && Date.now() - hit.at < 20 * 60_000) return hit.p;
+  const hit = cache.get(param); if (hit && Date.now() - hit.at < (stable(param) ? 20 * 60_000 : 15_000)) return hit.p;
   const p = fetch(`/api/video/play?${param}`).then((r) => r.json() as Promise<Play>).then((j) => { if (!j.url || j.processing) cache.delete(param); return j; }).catch((e) => { cache.delete(param); throw e; });
   cache.set(param, { at: Date.now(), p }); return p;
 }

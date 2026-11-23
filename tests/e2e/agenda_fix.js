@@ -58,7 +58,8 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   });
   await step("eliminar a Andrés desde su ficha: pide escribir ELIMINAR, lo borra todo y sale de la lista", async () => {
     await j.goto(`${U}/coach/clientes/${AN}`, { waitUntil: "networkidle" }); await j.waitForTimeout(1000);
-    await j.getByRole("button", { name: "Eliminar cliente" }).click();
+    if (await j.getByRole("button", { name: "Eliminar cliente" }).count()) throw new Error("no debería estar suelto en la ficha");
+    await j.locator(".plan-pill").click(); await j.getByRole("button", { name: "Eliminar cliente" }).click();
     const btn = j.getByRole("button", { name: "Eliminar para siempre" }); if (await btn.isEnabled()) throw new Error("se puede sin confirmar");
     await j.getByLabel("Escribe ELIMINAR para confirmar").fill("eliminar"); await btn.click();
     await j.waitForURL(/\/coach\/clientes$/, { timeout: 8000 }); await j.waitForTimeout(800);

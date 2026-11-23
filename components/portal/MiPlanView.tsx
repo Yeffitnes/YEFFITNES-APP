@@ -112,7 +112,7 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
       <div className="card-title">{day.name}</div>
       <div className="card-meta">{meta}</div>
       {day.hasPersonalVideo || day.videoRef ? <RoutineVideo personal={day.hasPersonalVideo} label={day.name} poster={day.hasPersonalVideo ? day.poster : ytThumb(day.videoRef)} onWarm={() => (day.hasPersonalVideo ? prefetchPlay(`day=${day.id}`) : warmYoutube())} onOpen={() => setDv(day.hasPersonalVideo ? "personal" : "yt")} /> : <RoutineVideo locked label={day.name} />}
-      {dv === "personal" && <BunnyModal param={`day=${day.id}`} title={day.name} sub="Vídeo de Yeff" onClose={() => setDv(null)} />}
+      {dv === "personal" && <BunnyModal param={`day=${day.id}&v=${day.videoId ?? ""}`} title={day.name} sub="Vídeo de Yeff" onClose={() => setDv(null)} />}
       {pic && <ExPicViewer image={pic.image} name={pic.name} note={pic.instructions} onClose={() => setPic(null)} />}
       {dv === "yt" && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina" onClose={() => setDv(null)} />}
       {!day.items.length ? <p className="empty-note" style={{ marginTop: 16 }}>Esta rutina todavía no tiene ejercicios.</p> : (

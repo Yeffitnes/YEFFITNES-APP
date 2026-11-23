@@ -40,7 +40,7 @@ export function ObjectiveCard() {
       {me?.objective ? <><p className="objective-text">{me.objective}</p><div className="objective-meta"><span className={`live-dot sm${days !== null && days > 30 ? " old" : ""}`} />{days === null ? "Definido por tu coach" : days <= 0 ? "Actualizado hoy" : `Actualizado hace ${days} día${days === 1 ? "" : "s"}`}</div></>
         : <p className="empty-note" style={{ marginTop: 10 }}>Tu coach aún no define tu objetivo. Aparecerá aquí.</p>}
       {me?.objectiveVideo && <button type="button" className="obj-play" onClick={() => setWatch(true)}><Icon name="play" size={12} /> Ver el vídeo de tu coach</button>}
-      {watch && me && <BunnyModal param={`objective=${me.id}`} title="Tu objetivo" sub="Vídeo de tu coach" onClose={() => setWatch(false)} />}
+      {watch && me && <BunnyModal param={`objective=${me.id}&v=${me.objectiveVideoId ?? ""}`} title="Tu objetivo" sub="Vídeo de tu coach" onClose={() => setWatch(false)} />}
     </div>
   );
 }
