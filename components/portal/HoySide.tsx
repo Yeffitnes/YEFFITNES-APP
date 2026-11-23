@@ -16,7 +16,7 @@ import { VideoModal, warmYoutube } from "./VideoModal";
 import { BunnyModal, prefetchPlay } from "@/components/ui/BunnyModal";
 import { MealChecklist } from "./MealChecklist";
 import { Icon } from "@/components/ui/Icon";
-import { icsHref } from "@/lib/ics";
+import { AddToCalendar } from "@/components/AddToCalendar";
 const ARROW = <svg viewBox="0 0 10 10"><path d="M2 5h6M5 2l3 3-3 3" /></svg>;
 // Tarjetas laterales de "Hoy" (diseño portal-hoy): próxima sesión, objetivo, nutrición de hoy y progreso reciente.
 const rel = (iso: string) => { const d0 = new Date(); d0.setHours(0, 0, 0, 0); const d1 = new Date(iso); d1.setHours(0, 0, 0, 0); const n = Math.round((d1.getTime() - d0.getTime()) / 86400000); return n <= 0 ? "Hoy" : n === 1 ? "Mañana" : n < 14 ? `En ${n} días` : n < 60 ? `En ${Math.round(n / 7)} semanas` : `En ${Math.round(n / 30)} meses`; };
@@ -28,7 +28,7 @@ export function SessionCard({ cid }: { cid: string }) {
       {isPending ? <div className="sk" style={{ height: 70 }} /> : !b ? <><p className="empty-note" style={{ marginTop: 10 }}>Aún no tienes una sesión reservada. Elige un horario para tu llamada con tu coach.</p><div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none" }}>Reservar</Link></div></>
         : <><div className="session-block"><div className="session-date">{DAY3[(new Date(b.startsAt).getDay() + 6) % 7]}<span>{new Date(b.startsAt).getDate()}</span></div>
             <div><div className="session-name">{rel(b.startsAt)} · {hhmm(b.startsAt)}</div><div className="session-type">{KIND_LABEL[b.kind]} · {b.duration} min{more > 0 ? ` · +${more} más` : ""}</div></div></div>
-          <div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none", textAlign: "center" }}>Ver sesión</Link><a className="mini-btn ghost" href={icsHref(b)} download="sesion-yeffitnes.ics" style={{ textDecoration: "none", textAlign: "center" }}><Icon name="bell" size={14} /> Recordarme</a></div></>}
+          <div className="session-actions"><Link href="/inicio/agenda" className="mini-btn primary" style={{ textDecoration: "none", textAlign: "center" }}>Ver sesión</Link><AddToCalendar s={b} label="Calendario" /></div></>}
     </div>
   );
 }
@@ -111,6 +111,27 @@ export function FeaturedVideo() {
       })}
       {shown?.ytId && <VideoModal ytId={shown.ytId} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
       {shown && !shown.ytId && shown.priv && <BunnyModal param={`material=${shown.id}`} title={shown.title} sub={shown.category} onClose={() => setShown(null)} />}
+    </div>
+  );
+}
+
+// Sesión de hoy o de mañana, arriba de todo en Hoy (22-nov, noche: pedido de Cristian, "que sea lo primero que le salga"). Se
+// queda hasta que la sesión termina. Con "Agregar a mi calendario" para que el celular también se la recuerde.
+export function SessionSoon({ cid }: { cid: string }) {
+  const { data: raw } = useMyBookings(cid), now = useNow(), b = upcomingOnly(raw, now)[0];
+  if (!b) return null;
+  const d0 = new Date(now); d0.setHours(0, 0, 0, 0); const d1 = new Date(b.startsAt); d1.setHours(0, 0, 0, 0);
+  const k = Math.round((d1.getTime() - d0.getTime()) / 86_400_000); if (k > 1) return null;
+  const start = new Date(b.startsAt).getTime(), live = start <= now.getTime(), mins = Math.round((start - now.getTime()) / 60_000);
+  const when = live ? "Ahora" : k === 0 ? (mins <= 90 ? `En ${mins} min` : "Hoy") : "Mañana";
+  return (
+    <div className="sess-soon" role="status">
+      <span className="sess-soon-ic"><Icon name="calendar" size={18} /></span>
+      <div className="sess-soon-txt">
+        <small>{live ? "Tu sesión con Yeff es ahora" : `${when} tienes sesión con Yeff`}</small>
+        <b>{hhmm(b.startsAt)} · {KIND_LABEL[b.kind] ?? "Sesión"} · {b.duration} min</b>
+      </div>
+      <div className="sess-soon-acts"><AddToCalendar s={b} label="Calendario" className="sess-soon-btn" /><Link href="/inicio/agenda" className="sess-soon-btn ghost">Ver</Link></div>
     </div>
   );
 }

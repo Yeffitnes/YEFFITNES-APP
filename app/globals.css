@@ -250,3 +250,6 @@ button, a, [role="button"], input, select, textarea { -webkit-tap-highlight-colo
 @media (max-width:759px){.wt-facts{align-items:flex-start;text-align:left}}
 @media (min-width:760px){.card.wt-card{padding:22px 22px}.wt-chips{margin:0 0 12px;padding:0;flex-wrap:wrap}.wt-plot{height:170px}}
 .wt-row-h span:last-child{text-align:right}
+/* 22-nov (noche): "Agregar a mi calendario" en computador ofrece los dos (archivo y Google Calendar) */
+.cal-add-two{display:inline-flex;gap:6px;flex-wrap:wrap}
+.cal-on-dark{color:#fff !important;background:rgba(255,255,255,.08) !important;border-color:rgba(255,255,255,.2) !important}

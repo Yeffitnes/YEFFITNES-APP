@@ -69,6 +69,8 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 
 - [x] **`0055` a `0061`** (corridas, confirmado por Cristian el 22-nov en la noche): rutinas base, semanas, vídeo en el catálogo, solicitudes, agenda y eliminar cliente, avisos de reservas a Yeff, estándar 3 × 15-20.
 - [ ] **`0062_resumenes_por_enviar.sql`** (22-nov): push de la mañana a Yeff con los resúmenes de semana por enviar. Sin ella, la tarjeta del panel y la campana funcionan; solo falta ese push. Confirmar: `select to_regprocedure('public.due_week_summary_cron(text)') is not null;` → `true`.
+- [ ] **`0063_recordatorios_sesiones.sql`** (22-nov, noche): recordatorios de sesiones al cliente (día anterior al mediodía y en la noche, esa mañana) y a Yeff (resumen de mañana y de hoy), "Yeff te agendó una sesión" y "Recordarle". Sin tareas nuevas: usa `-buenosdias`, `-mediodia` y `-noche`. Compatible con `main`. Confirmar: `select to_regprocedure('public.due_session_notices_cron(text,text)') is not null;` → `true`.
+- [ ] **`0064_estandar_en_rutinas.sql`** (22-nov, noche): pone 3 × 15-20 / 120 s en todas las rutinas del catálogo y planes activos (copia en `estandar_0064_backup`; el `update` para volver atrás está en la cabecera). Solo datos. Confirmar: `select count(*) from public.template_items where reps <> '15-20';` → 0.
 
 ## 4. Bunny Stream
 - [ ] Crear cuenta y biblioteca; poner las variables en Netlify (y Vercel).
@@ -101,7 +103,7 @@ Quien cambie claves, dominios, variables o tareas programadas debe **actualizar 
 - [ ] Anotar la fecha en `CHANGELOG.md`.
 
 ## 10. Salida a `main` del 15-nov (hecha; la siguiente, igual: NO fusionar hasta que Cristian diga "fusiona")
-**Pendiente para la próxima (22-nov, noche):** Cristian confirmó corridas hasta la `0061`. Falta solo la `0062` ANTES de fusionar (consulta de comprobación en `docs/HANDOFF.md` §4). La 0062 no crea tarea nueva: va dentro del aviso de la mañana que ya existe. Poner `NEXT_PUBLIC_YEFF_WHATSAPP` (§ de la landing, arriba).
+**Pendiente para la próxima (22-nov, noche):** Cristian confirmó corridas hasta la `0061`. Faltan la `0062`, la `0063` y la `0064` ANTES de fusionar (consulta de comprobación en `docs/HANDOFF.md` §4). La 0062 no crea tarea nueva: va dentro del aviso de la mañana que ya existe. Poner `NEXT_PUBLIC_YEFF_WHATSAPP` (§ de la landing, arriba).
 **Hecha el 15-nov:** migraciones 0038-0054 corridas, 4 chequeos y `all.sh` OK. Falta lo de §9 (probar en Netlify).
 La fusión anterior fue el 28-oct (`main` = `37970c1`, con 0032-0037). Lo que entra ahora necesita de la 0038 a la 0052: **corridas hasta la 0049 (Cristian, 12-nov); la 0050 en curso; faltan la 0051 y la 0052**. Si se crea una nueva (0053 en adelante), correrla antes de fusionar.
 Orden:

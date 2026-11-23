@@ -21,7 +21,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { ReportCard } from "./ReportCard";
 import { TrainingGuide } from "./TrainingGuide";
 import { DayDone } from "./DayDone";
-import { FeaturedVideo, NutritionTodayCard, ObjectiveCard, ProgressCard, SessionCard } from "./HoySide";
+import { FeaturedVideo, NutritionTodayCard, ObjectiveCard, ProgressCard, SessionCard, SessionSoon } from "./HoySide";
 import { CHECK_ICON } from "./icons";
 import { VideoModal, PLAY_PATH, warmYoutube } from "./VideoModal";
 import { DAY_LONG, categoryLabel, weekDates } from "@/lib/week";
@@ -98,6 +98,7 @@ export function HoyView() {
       </div>
       </DayHero>
       <div className="qrows">
+      {cid && <SessionSoon cid={cid} />}
       <WhileAway cid={cid} plan={plan} logs={logList} today={today} />
       <FromCoach cid={cid} />
       {cid && <NewWeekSummary cid={cid} />}

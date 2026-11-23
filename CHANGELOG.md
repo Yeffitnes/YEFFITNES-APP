@@ -1,4 +1,29 @@
 # CHANGELOG
+## 2026-11-22 - Sesiones agendadas: recordatorios, lo primero del panel, calendario del celular y estándar en todas las rutinas
+Pedido de Cristian (noche).
+- **Recordatorios de sesión** (migración **0063**, `due_session_notices_cron`; `app/api/cron/reminders/route.ts`). Sin tareas programadas nuevas: van con los avisos que ya existen.
+  - **Cliente:** el día anterior dos veces (con el aviso del mediodía, 12:30, y el de la noche, 8:00 p. m.): "Mañana tienes sesión con Yeff · A las 7:00 a. m.". El mismo día temprano (aviso de las 7:00 a. m.): "Hoy tienes sesión con Yeff". Y 1 hora antes (ya existía).
+  - **Yeff:** al reservar un cliente (ya existía, 0060). Un resumen "Mañana: N sesiones agendadas" con nombres y horas (mediodía y noche) y "Hoy: N sesiones" (mañana). Y 1 hora antes (ya existía).
+  - **Nuevo:** si Yeff agenda a un cliente, al cliente le llega "Yeff te agendó una sesión" (`/api/push/booking-client`, `booking_client_targets`).
+  - Horas = PROPUESTA (las de los avisos que ya existen). Cada aviso sale una sola vez.
+- **Panel de Yeff: "Sesiones agendadas" es lo primero** (`components/coach/SessionsSoonCard.tsx`, `lib/sessions.ts`, `app/coach/coach.css` bloque `.ss-*`): las sesiones de hoy y de mañana, cada una hasta que termina, con la hora grande, "En 40 min" o "En curso". Por sesión:
+  - **Recordarle:** aviso al teléfono del cliente con día y hora (`/api/push/session-remind`, `session_remind_targets`, una vez al día; queda "Recordado").
+  - **Escribirle** y **Calendario**.
+  - Tocar el nombre abre la ficha. La notificación "Mañana: N sesiones" abre el panel en esta tarjeta.
+- **Cliente: arriba de Hoy** (`SessionSoon` en `components/portal/HoySide.tsx`): "Mañana tienes sesión con Yeff · 07:00 · Seguimiento" (o "Hoy", "En 30 min", "Ahora") con Calendario y Ver, hasta que la sesión termina.
+- **Agregar al calendario del celular** (`components/AddToCalendar.tsx`, `lib/ics.ts`, ruta nueva `/api/ics`):
+  - **iPhone:** abre el archivo de calendario y el iPhone muestra "Agregar al calendario", con alarmas 1 día y 1 hora antes.
+  - **Android:** abre Google Calendar con el evento escrito.
+  - **Computador:** los dos.
+  - Va en la confirmación de la primera llamada, la confirmación del calendario completo, "Tus próximas sesiones", la tarjeta de Hoy y el panel de Yeff.
+  - La web no puede agregarlo sola: la persona toca "Guardar" en su calendario.
+- **Estándar en lo que ya estaba armado** (migración **0064**, decisión de Cristian: "todo, sin excepción"): todos los ejercicios de las rutinas del catálogo y de los planes ACTIVOS de los clientes quedan en 3 × 15-20 con 2 min de descanso.
+  - El peso no cambia. Los planes terminados (historial) no se tocan.
+  - También cambian los ejercicios por tiempo o "por lado".
+  - Copia de los valores viejos en `estandar_0064_backup`.
+- Pruebas: `supabase/tests/rls_session_notices.sql` y `rls_estandar.sql` (en `run_local.sh`); `tests/e2e/sessions_soon.js` (en `all.sh`).
+Revertir: `git revert` de este commit. En Supabase, lo que dicen las cabeceras de `0063_recordatorios_sesiones.sql` y `0064_estandar_en_rutinas.sql` (la 0064 trae el `update` para volver a los valores viejos).
+
 ## 2026-11-22 - Revisión completa antes de cambiar de chat; prueba de agenda estable de noche
 - `tests/e2e/all.sh` (37 corridas, con red lenta): 36 OK a la primera. `agenda_fix.js` falló solo de noche: la semilla crea un horario 50 h después de "ahora", y a las 10 p. m. cae a la 01:00 del mismo día que la prueba revisa. La app estaba bien. La prueba ahora solo mira las horas que ella publica (08:00 a 09:00); vuelta a correr: 8 de 8 OK. Hoy y Progreso sin redibujar al abrir; sin errores de consola ni de red.
 - Después llegó a `bloque-hoy` la revisión de otro chat (`05aed4e`: primera llamada, semana a semana, programa con duración); se puso encima y se volvieron a correr las pruebas que toca: `first_call`, `week_from_client`, `week_trends`, `agenda_fix` y Progreso sin redibujar: todo OK. Esa entrada estaba arriba del título del archivo; se movió debajo.

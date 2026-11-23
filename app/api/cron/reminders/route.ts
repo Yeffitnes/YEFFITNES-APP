@@ -58,5 +58,14 @@ export async function POST(req: NextRequest) {
     await Promise.all(list.map((r) => sendPush([{ endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth }], { title: r.n === 1 ? "1 resumen de semana por enviar" : `${r.n} resúmenes de semana por enviar`, body: `Completaron su semana: ${r.body.length > 120 ? r.body.slice(0, 118) + "…" : r.body}. Revísalos y envíalos.`, url: "/coach#resumenes", tag: "week-sum" }).catch(() => [])));
     weeks = list.length ? 1 : 0;
   }
-  return NextResponse.json({ ok: true, due: rows.length, sent, plans, habits, weeks });
+  // Sesiones agendadas (0063): al cliente el día anterior (mediodía y noche) y el mismo día (mañana); a Yeff un resumen de las
+  // sesiones de mañana o de hoy. El aviso 1 hora antes sigue en kind=session. Si falta la migración, no frena lo demás.
+  let sessions = 0;
+  if (kind === "morning" || kind === "midday" || kind === "night") {
+    const sn = await createClient().rpc("due_session_notices_cron", { p_secret: secret, p_kind: kind });
+    if (sn.error) console.error("due_session_notices_cron", sn.error.message);
+    const list = (sn.data ?? []) as Row[];
+    await Promise.all(list.map(async (r) => { const dead = await sendPush([r], { title: r.title, body: r.body, url: r.url, tag: r.tag }).catch(() => []); if (!dead.length) sessions++; }));
+  }
+  return NextResponse.json({ ok: true, due: rows.length, sent, plans, habits, weeks, sessions });
 }

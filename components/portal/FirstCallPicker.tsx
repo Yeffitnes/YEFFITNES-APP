@@ -9,7 +9,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { db } from "@/lib/supabase/browser";
 import { KIND_LABEL, useBookSlot, type Slot } from "@/lib/queries";
-import { icsHref } from "@/lib/ics";
+import { AddToCalendar } from "@/components/AddToCalendar";
 import { useNow } from "@/lib/use-now";
 import { Guide } from "./Guide";
 import { Icon } from "@/components/ui/Icon";
@@ -80,8 +80,8 @@ export function FirstCallPicker({ first, onFull }: { first: string; onFull: (at?
       {done ? (
         <div className="fcp-card fcp-done">
           <div className="fcp-done-when"><span className="fcp-done-ic"><Icon name="calendar" size={18} /></span><span><b>{dayLabel(done.startsAt, now)}</b><small>{ampm(done.startsAt)} · {KIND_LABEL[done.kind] ?? "Llamada"}{done.duration ? ` · ${done.duration} min` : ""}</small></span></div>
-          <p>Te llega un recordatorio antes de la llamada. Si necesitas cambiarla, escríbeme desde Mensajes.</p>
-          <div className="fcp-done-acts"><Link href="/inicio" className="fcp-btn">Ir a Hoy</Link><a className="fcp-btn ghost" href={icsHref(done)} download="llamada-yeffitness.ics"><Icon name="bell" size={14} /> Guardar en mi calendario</a></div>
+          <p>Te aviso el día anterior, esa mañana y 1 hora antes. Agrégala también a tu calendario para que tu celular te la recuerde. Si necesitas cambiarla, escríbeme desde Mensajes.</p>
+          <div className="fcp-done-acts"><Link href="/inicio" className="fcp-btn">Ir a Hoy</Link><AddToCalendar s={done} className="fcp-btn ghost" /></div>
         </div>
       ) : q.isError ? (
         <div className="fcp-card"><p role="alert" className="fcp-note">No pudimos cargar los horarios.</p><button type="button" className="fcp-btn ghost" onClick={() => q.refetch()}>Reintentar</button></div>

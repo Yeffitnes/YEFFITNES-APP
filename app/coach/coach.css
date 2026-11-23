@@ -1615,3 +1615,34 @@ html{scroll-behavior:smooth;}
 .ag-wait>div{flex:1;min-width:220px}.ag-wait b{font-size:14px}.ag-wait p{font-size:12.5px;color:var(--text-dim);margin:3px 0 0;line-height:1.5}
 .tp-saveas{display:inline-flex;align-items:center;gap:6px;margin:0 12px 12px;padding:0;background:none;border:0;font:inherit;font-size:12.5px;font-weight:700;color:var(--text-dim);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .tp-saveas:hover{color:var(--ink)}
+/* 22-nov (noche): "Sesiones agendadas", lo primero del panel (SessionsSoonCard). Degradado de la marca con brillo de tamaño fijo. */
+.ss-card{position:relative;overflow:hidden;margin:0 0 18px;padding:16px 16px 12px;border-radius:20px;color:#fff;border:1px solid rgba(247,37,75,.35);
+  background:radial-gradient(560px 300px at 0% 0%,rgba(247,37,75,.34),transparent 60%),radial-gradient(420px 240px at 100% 100%,rgba(205,177,112,.10),transparent 60%),var(--ink);box-shadow:0 18px 40px -24px rgba(42,10,22,.7)}
+.ss-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ss-tag{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono),monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.62)}
+.ss-tag .live-dot,.ss-tag .live-dot::after{background:var(--neon)}
+.ss-head h2{font-family:var(--font-display),sans-serif;font-size:19px;line-height:1.2;margin:5px 0 0;color:#fff}
+.ss-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:rgba(255,255,255,.75);text-decoration:none;white-space:nowrap;margin-top:2px}
+.ss-group{margin-top:8px}
+.ss-group-h{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);padding:6px 0 2px}
+.ss-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}
+.ss-main{flex:1;min-width:0;display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.ss-time{flex:none;width:54px;display:grid;line-height:1.05}
+.ss-time b{font-family:var(--font-display),sans-serif;font-size:19px}
+.ss-time small{font-size:10.5px;color:rgba(255,255,255,.55)}
+.ss-av{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:11px;font-weight:700;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+.ss-row.live .ss-av{border-color:rgba(247,37,75,.75);box-shadow:0 0 10px rgba(247,37,75,.45)}
+.ss-body{min-width:0;display:grid}
+.ss-body b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ss-body small{font-size:12px;color:rgba(255,255,255,.6)}
+.ss-body em{font-style:normal;color:#fff;font-weight:700}
+.ss-acts{flex:none;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.ss-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:10px;font:inherit;font-size:12px;font-weight:700;color:#fff;cursor:pointer;text-decoration:none;white-space:nowrap;
+  background:rgba(247,37,75,.16);border:1px solid rgba(247,37,75,.6)}
+.ss-btn svg{stroke:currentColor}
+.ss-btn.ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16)}
+.ss-btn:disabled{opacity:.6}
+.ss-done{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
+.ss-note{font-size:11.5px;color:rgba(255,255,255,.5);margin:8px 0 0;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)}
+.ss-card .cal-add-two{gap:6px}
+@media (max-width:760px){.ss-row{flex-wrap:wrap}.ss-acts{width:100%;justify-content:flex-start;padding-left:64px}}

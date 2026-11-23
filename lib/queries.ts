@@ -596,8 +596,9 @@ export function useRemoveSlot() {
 }
 export function useCoachBook() {
   const toast = useToast(), inv = useAgendaInvalidate();
-  return useMutation({ mutationFn: async (v: { slotId: string; clientId: string }) => { const { error } = await db().rpc("coach_book_slot", { p_slot: v.slotId, p_client: v.clientId }); if (error) throw error; },
-    onSuccess: () => toast("Cliente agendado"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
+  // 0063: al agendar Yeff, al cliente le llega "Yeff te agendó una sesión" (si falta la migración, no pasa nada).
+  return useMutation({ mutationFn: async (v: { slotId: string; clientId: string }) => { const { data, error } = await db().rpc("coach_book_slot", { p_slot: v.slotId, p_client: v.clientId }); if (error) throw error; return data as string | null; },
+    onSuccess: (bid) => { toast("Cliente agendado"); if (bid) void fetch("/api/push/booking-client", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookingId: bid }) }).catch(() => {}); }, onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
 
 // ---- Material educativo ----
