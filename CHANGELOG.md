@@ -11,7 +11,7 @@ Pedido de Cristian: la landing es lo primero que ve quien llega desde el Instagr
   - Capturas reales de "Semana a semana" y del resumen semanal con el comentario de Yeff.
   - Récords, la curva de peso y medidas (se dibuja al llegar) y fotos de progreso ("Privadas: solo tú y Yeff las ven").
 - **Agenda ("Tus sesiones con Yeff, sin olvidos"):** pantalla bloqueada donde van cayendo los avisos reales de la 0063 (día antes, esa mañana, 1 hora antes) y el evento en el calendario.
-- **Ecosistema:** cada tarjeta lleva arriba un dibujo de ejercicio en vez del muñequito pequeño; en el celular, dibujo a la izquierda.
+- **Ecosistema:** cada tarjeta lleva arriba la escena del personaje que hace eso (registro con cronómetro, reporte grabándose, progreso con la gráfica, resumen, agenda con la campana, rutina, nutrición, hábitos, material). Las hizo Cristian en ChatGPT (23-nov); recortadas en `public/landing/parts/*.webp`. En el celular, la escena va a la izquierda.
   - Nuevas: "Progreso semana a semana" y "Agenda con avisos".
   - El cierre lleva el dibujo de los burpees: "¿Empezamos hoy?".
 - Paquetes (`lib/landing.ts`, PROPUESTA): "Progreso semana a semana, récords y resumen semanal" y "Llamadas con Yeff, con avisos y en tu calendario".

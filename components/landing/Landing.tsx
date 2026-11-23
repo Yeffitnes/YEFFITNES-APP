@@ -16,17 +16,17 @@ const WA = (t: string) => ({ href: waLink(t), target: "_blank", rel: "noopener n
 const HELLO = "Hola Yeff, vi tu página y quiero entrenar contigo. ¿Me cuentas cómo funciona?";
 const EX = (f: string) => `/ex/${f}.webp`;
 
-// El ecosistema: cada tarjeta lleva un dibujo de la app y abre esa parte en el celular.
+// El ecosistema: cada tarjeta lleva su escena del personaje (23-nov, hechas por Cristian: public/landing/parts) y abre esa parte en el celular.
 const PARTS: { t: string; d: string; screen: string; spot: string; img: string }[] = [
-  { t: "Rutina del día", d: "Armada para ti, con vídeo de técnica, series, repeticiones y peso.", screen: "hoy", spot: "rutina", img: "30-sentadilla-con-barra" },
-  { t: "Registro serie por serie", d: "Anotas lo que haces y el descanso se cuenta solo.", screen: "ejercicio", spot: "series", img: "13-peso-muerto" },
-  { t: "Reporte diario con vídeo", d: "Le muestras a Yeff tu técnica y él te corrige.", screen: "hoy", spot: "reporte", img: "08-dominadas" },
-  { t: "Progreso semana a semana", d: "Entrenos, peso movido, nutrición y hábitos, con tu promedio.", screen: "progreso", spot: "tendencias", img: "38-hip-thrust" },
-  { t: "Resumen semanal", d: "Cada semana, lo que lograste y el comentario de Yeff.", screen: "resumen", spot: "titulo", img: "49-burpees" },
-  { t: "Agenda con avisos", d: "Reservas tu llamada y te avisamos antes. Queda en tu calendario.", screen: "agenda", spot: "calendario", img: "06-flexiones" },
-  { t: "Nutrición", d: "Comida por comida, con calorías y macros para tu objetivo.", screen: "nutricion", spot: "comidas", img: "147-paseo-del-granjero" },
-  { t: "Hábitos", d: "Agua, pasos y sueño, con tu promedio de la semana.", screen: "hoy", spot: "habitos", img: "150-saltar-la-cuerda" },
-  { t: "Material educativo", d: "Vídeos y artículos de técnica, nutrición y recuperación.", screen: "material", spot: "lista", img: "44-plancha" },
+  { t: "Rutina del día", d: "Armada para ti, con vídeo de técnica, series, repeticiones y peso.", screen: "hoy", spot: "rutina", img: "rutina" },
+  { t: "Registro serie por serie", d: "Anotas lo que haces y el descanso se cuenta solo.", screen: "ejercicio", spot: "series", img: "registro" },
+  { t: "Reporte diario con vídeo", d: "Le muestras a Yeff tu técnica y él te corrige.", screen: "hoy", spot: "reporte", img: "reporte" },
+  { t: "Progreso semana a semana", d: "Entrenos, peso movido, nutrición y hábitos, con tu promedio.", screen: "progreso", spot: "tendencias", img: "progreso" },
+  { t: "Resumen semanal", d: "Cada semana, lo que lograste y el comentario de Yeff.", screen: "resumen", spot: "titulo", img: "resumen" },
+  { t: "Agenda con avisos", d: "Reservas tu llamada y te avisamos antes. Queda en tu calendario.", screen: "agenda", spot: "calendario", img: "agenda" },
+  { t: "Nutrición", d: "Comida por comida, con calorías y macros para tu objetivo.", screen: "nutricion", spot: "comidas", img: "nutricion" },
+  { t: "Hábitos", d: "Agua, pasos y sueño, con tu promedio de la semana.", screen: "hoy", spot: "habitos", img: "habitos" },
+  { t: "Material educativo", d: "Vídeos y artículos de técnica, nutrición y recuperación.", screen: "material", spot: "lista", img: "material" },
 ];
 // Desfile de ejercicios (dos filas, en sentidos contrarios)
 const ROW1 = ["30-sentadilla-con-barra", "08-dominadas", "38-hip-thrust", "18-elevaciones-laterales", "13-peso-muerto", "54-swing-con-kettlebell", "34-sentadilla-bulgara", "01-press-de-banca-con-barra", "151-thruster-con-mancuernas", "22-curl-con-barra"];
@@ -191,7 +191,7 @@ export function Landing() {
           <button key={x.t} type="button" className="lp-part" onClick={() => open(x.screen, x.spot)} data-rv>
             <span className="lp-part-img">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={EX(x.img)} alt="" width={360} height={360} loading="lazy" decoding="async" />
+              <img src={`/landing/parts/${x.img}.webp`} alt="" width={400} height={400} loading="lazy" decoding="async" />
             </span>
             <span className="lp-part-txt"><b>{x.t}</b><span>{x.d}</span><small>Ver en la app</small></span></button>))}</div>
       </section>
