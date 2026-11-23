@@ -1,3 +1,9 @@
+# CHANGELOG
+## 2026-11-22 - Revisión completa antes de cambiar de chat; prueba de agenda estable de noche
+- `tests/e2e/all.sh` (37 corridas, con red lenta): 36 OK a la primera. `agenda_fix.js` falló solo de noche: la semilla crea un horario 50 h después de "ahora", y a las 10 p. m. cae a la 01:00 del mismo día que la prueba revisa. La app estaba bien. La prueba ahora solo mira las horas que ella publica (08:00 a 09:00); vuelta a correr: 8 de 8 OK. Hoy y Progreso sin redibujar al abrir; sin errores de consola ni de red.
+- Después llegó a `bloque-hoy` la revisión de otro chat (`05aed4e`: primera llamada, semana a semana, programa con duración); se puso encima y se volvieron a correr las pruebas que toca: `first_call`, `week_from_client`, `week_trends`, `agenda_fix` y Progreso sin redibujar: todo OK. Esa entrada estaba arriba del título del archivo; se movió debajo.
+- 4 chequeos OK. Solo cambia la prueba, la app no.
+Revertir: `git revert` de este commit.
 ## 2026-11-22 - Revisión de lo último: primera llamada rehecha, semana a semana y armar desde el cliente
 Pedido de Cristian (chat nuevo): revisar lo del 22-nov, sobre todo "Armar desde el cliente" y "Progreso semana a semana", y rediseñar la primera llamada guiada ("todo grande", sin intención) y el error de "Ver el calendario completo" (quien entraba no podía volver).
 - **Primera llamada guiada** (`components/portal/FirstCallPicker.tsx`, bloque `.fcp-*` en `app/inicio/portal.css`):
@@ -19,8 +25,6 @@ Pedido de Cristian (chat nuevo): revisar lo del 22-nov, sobre todo "Armar desde 
 - Borrado `tests/e2e/_tmp_ficha.js` (prueba temporal que quedó en el repo).
 - Pruebas: `tests/e2e/first_call.js` (diseño nuevo, ir al calendario y volver, semana correcta), `tests/e2e/week_from_client.js` (duración del programa), `tests/e2e/week_trends.js`.
 Revertir: `git revert` de este commit.
-
-# CHANGELOG
 ## 2026-11-22 - Tu plan: series y descanso en gris suave
 Pedido de Cristian: debajo del nombre de cada ejercicio, "3 × 10 · 90 s desc. · 40 kg" va en gris suave, sin recuadros ni el primero en negro (menos ruido visual). Solo CSS: `.ex-chips` en `app/inicio/portal.css`.
 Revertir: `git revert` de este commit.

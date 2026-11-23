@@ -40,7 +40,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     await j.getByLabel("Fecha").fill(D3); await j.getByLabel("Desde").fill("08:00"); await j.locator(".modal-box input[type=time]").nth(1).fill("09:00");
     await j.getByLabel("Duración de cada hueco").selectOption("30"); await j.getByRole("button", { name: "Publicar", exact: true }).click();
     await j.getByText("2 horarios publicados").waitFor({ timeout: 6000 });
-    const st = sql(`select string_agg(to_char(starts_at at time zone 'America/Bogota','HH24:MI')||' '||status, ',' order by starts_at) from availability_slots where (starts_at at time zone 'America/Bogota')::date = '${D3}'`);
+    const st = sql(`select string_agg(to_char(starts_at at time zone 'America/Bogota','HH24:MI')||' '||status, ',' order by starts_at) from availability_slots where (starts_at at time zone 'America/Bogota')::date = '${D3}' and (starts_at at time zone 'America/Bogota')::time between '08:00' and '09:00'`);   // solo las horas de esta prueba: de noche, la semilla deja un horario a las 00-01 h de ese día
     if (st !== "08:00 open,08:30 open") throw new Error(st);
     await j.waitForTimeout(800); const col = await j.locator(".day-col.active").innerText(); if (!/08:00/.test(col) || !/08:30/.test(col)) throw new Error("no saltó al día publicado: " + col.slice(0, 120));
   });

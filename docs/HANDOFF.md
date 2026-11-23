@@ -137,6 +137,7 @@ Estado al **22-nov-2026** (última fusión a `main`: 15-nov, `7775e7f`; lo const
 - **Si Cristian dice que algo "se ve distinto", revisa el sitio PUBLICADO, no solo el código** (13-nov: la letra de Vercel salía con serifa por la memoria de compilación de Vercel; el código estaba igual y se le dijo que no había cambiado). Para la letra: el HTML trae `__variable_xxx` y el CSS debe definir esas mismas clases. `vercel.json` ahora fuerza compilación limpia.
 - **Antes de crear un archivo, mira si ya existe** (4-nov: se pisó `lib/week.ts` y solo lo detectó `tsc`).
 - **Si Cristian reporta un fallo, pregunta o revisa en qué sitio lo vio.** Netlify (`main`) va atrás de Vercel: el 4-nov reportó que marcar la última serie recogía el ejercicio; ya estaba arreglado desde el 29-oct en `bloque-hoy` y seguía en producción. Compara con `git show origin/main:<archivo>`.
+- **Pruebas que dependen de la hora:** la semilla crea horarios relativos a "ahora" (`now() - 5 h`, `+26 h`, `+50 h`); de noche caen en otro día y pueden chocar con lo que revisa una prueba. Filtra por las horas que la prueba crea (22-nov, `agenda_fix.js`).
 - **Comandos de más de 10 min se cortan** en este entorno: la revisión completa (`tests/e2e/all.sh`) va en segundo plano con `nohup`.
 
 ## 8. NO verificado en dispositivos reales (diselo a Cristian cuando toque)
@@ -162,7 +163,7 @@ Lo lento al elegir un vídeo de cámara en iPhone es la **conversión del propio
   - **Progreso, semana a semana:** gráfica por métrica de las últimas 8 semanas, comparación con la anterior y promedio (`lib/weektrends.ts`, `components/WeekTrends.tsx`), para cliente y coach.
   - Tu plan (cliente): nombres largos sin desordenar; series/descanso/peso debajo, en gris suave, sin recuadro.
 - **Gustos de Cristian aprendidos el 22-nov (respétalos):** nada de colores nuevos ni brillantes (el vino tinto se rechazó); los colores de Yeff son el **degradado oscuro con brillo rojo en la esquina** (como la cabecera del celular `.m-top`), no el negro plano; en bloques altos el brillo va con **tamaño fijo en px** (`560px 300px` / `420px 240px`) para que no crezca; lo seleccionado **no va en blanco**: borde rojo fino; **celular primero y compacto**; poco ruido visual (texto secundario en gris suave, sin cajitas ni negrilla); sin botones repetidos.
-- **Verificado el 22-nov:** 4 chequeos OK y la revisión completa `tests/e2e/all.sh` antes de cambiar de chat (resultado en `CHANGELOG.md`, primera entrada). **NO verificado:** push real llegando al teléfono de Yeff (resúmenes, reservas, solicitudes), nada de esto en un iPhone real, ni contra la base real sin las migraciones 0055-0062.
+- **Verificado el 22-nov (noche):** 4 chequeos OK y `tests/e2e/all.sh` completo: 37 de 37 OK (una prueba de agenda fallaba solo de noche por la semilla; corregida la prueba, la app estaba bien). Hoy y Progreso sin redibujar al abrir, sin errores de consola ni de red. Tras la revisión del otro chat (`05aed4e`) se repitieron sus pruebas: OK. **NO verificado:** push real llegando al teléfono de Yeff (resúmenes, reservas, solicitudes), nada de esto en un iPhone real, ni contra la base real sin las migraciones 0055-0062.
 - **Siguiente (sin empezar):** esperar lo que Cristian pruebe en Vercel. Ideas ofrecidas no pedidas: ninguna pendiente nueva.
 
 **Bloque del 4-nov (histórico):**
