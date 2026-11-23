@@ -61,7 +61,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   });
   await step("ficha: + Semana 3 (copia de la 2)", async () => {
     await j.locator(".tab-btn", { hasText: "Entrenamiento" }).click(); await j.waitForTimeout(500);
-    await j.getByRole("button", { name: "Armar la semana" }).click(); await j.waitForTimeout(300);   // 22-nov: las semanas se agregan al armar la semana
+    await j.getByRole("button", { name: /^(Armar|Editar) (la )?semana$/ }).click(); await j.waitForTimeout(300);   // 22-nov: las semanas se agregan al armar la semana
     await j.getByRole("button", { name: /\+ Semana 3/ }).click(); await j.waitForTimeout(1500);
     const n = sql(`select cycle_weeks||'/'||(select count(*) from plan_days pd where pd.plan_id=tp.id and pd.week=3) from training_plans tp where client_id='${CA}' and status='active'`);
     if (n !== "3/1") throw new Error(n); return n;

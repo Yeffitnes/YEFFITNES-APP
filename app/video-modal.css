@@ -1,0 +1,39 @@
+/* Reproductor de YouTube dentro de la app (VideoModal). Copia de las reglas de app/inicio/portal.css para el panel del coach,
+   que no carga portal.css (22-nov: "ningún enlace me puede sacar de la app"). */
+.video-modal-backdrop{
+  position:fixed; inset:0; background:rgba(8,6,14,0.72); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; padding:24px; z-index:100;
+  opacity:0; pointer-events:none; transition:opacity 0.25s ease;
+}
+.video-modal-backdrop.open{opacity:1; pointer-events:auto;}
+.video-modal{
+  width:100%; max-width:760px; background:#0A0910; border-radius:18px; overflow:hidden;
+  transform:scale(0.96) translateY(10px); transition:transform 0.28s cubic-bezier(0.2,0.8,0.2,1);
+  box-shadow:0 40px 80px -20px rgba(0,0,0,0.5);
+}
+.video-modal-backdrop.open .video-modal{transform:scale(1) translateY(0);}
+.video-modal-stage{
+  aspect-ratio:16/9; position:relative;
+  background:linear-gradient(135deg,#2a1119,#1B0A10 60%,#0A0910);
+}
+.video-modal-stage::before{
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse 500px 300px at 30% 35%, rgba(247,37,75,0.32), transparent 60%), radial-gradient(ellipse 400px 260px at 75% 75%, rgba(242,64,107,0.24), transparent 60%);
+}
+.video-modal-playbtn{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,0.12); border:1.5px solid rgba(255,255,255,0.3);
+  backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.video-modal-playbtn svg{width:20px; height:20px; fill:#fff; margin-left:3px;}
+.video-modal-bar{display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#0A0910;}
+.video-modal-info{color:#fff;}
+.video-modal-title{font-family:var(--font-display), sans-serif; font-weight:600; font-size:14.5px;}
+.video-modal-sub{font-family:var(--font-mono), monospace; font-size:10.5px; color:rgba(255,255,255,0.45); margin-top:2px;}
+.video-modal-close{
+  width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,0.08); border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.video-modal-close svg{width:15px; height:15px; stroke:#fff; fill:none; stroke-width:1.8;}
+.video-modal-stage iframe{position:absolute; inset:0; width:100%; height:100%; border:0; z-index:1}
+.video-modal-stage{overflow:hidden}

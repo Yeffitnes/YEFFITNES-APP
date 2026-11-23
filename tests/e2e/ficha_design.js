@@ -17,10 +17,10 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     const tag = mobile ? "cel" : "pc", p = await (await ctxFor(b, "jeff", mobile)).newPage(); watch(p, `jeff-${tag}`, errs);
     await step(`[${tag}] Entrenamiento: cabecera oscura y los 7 días con su selector`, async () => {
       await p.goto(`${U}/coach/clientes/${CA}?tab=Entrenamiento`, { waitUntil: "networkidle" }); await p.waitForTimeout(1200);
-      const bg = await p.locator(".tp-hero").evaluate((e) => getComputedStyle(e).backgroundColor); if (!/rgb\(10, 9, 16\)/.test(bg)) throw new Error("la cabecera no es oscura: " + bg);
+      const bg = await p.locator(".tp-hero").evaluate((e) => getComputedStyle(e).backgroundImage); if (!/rgb\(10, 9, 16\)/.test(bg)) throw new Error("la cabecera no es oscura: " + bg.slice(0, 120));
       if (await p.locator(".wk-day select").count()) throw new Error("los selectores deberían estar plegados");
       if (await p.locator(".wk-chip").count() !== 7) throw new Error("faltan los 7 días");
-      await p.getByRole("button", { name: "Armar la semana" }).click(); await p.waitForTimeout(300);
+      await p.getByRole("button", { name: /^(Armar|Editar) semana$|^Armar la semana$/ }).click(); await p.waitForTimeout(300);
       const n = await p.locator(".wk-day select").count(); if (n !== 7) throw new Error(`${n} selectores`);
       await p.screenshot({ path: `${S}/ficha_entreno_${tag}.png`, fullPage: true });
     });
@@ -35,7 +35,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
       if (!/sábado/i.test(await p.locator(".tp-dayc-when").innerText())) throw new Error("no muestra desplegado el día que se acaba de armar");
       await p.screenshot({ path: `${S}/ficha_semana_${tag}.png`, fullPage: true });
       await p.getByRole("button", { name: "Plegar el día" }).click(); await p.waitForTimeout(200); if (await p.locator(".tp-dayc").count()) throw new Error("no se plegó");
-      await p.getByRole("button", { name: "Armar la semana" }).click(); await p.waitForTimeout(300);
+      await p.getByRole("button", { name: /^(Armar|Editar) semana$|^Armar la semana$/ }).click(); await p.waitForTimeout(300);
       return d;
     });
     await step(`[${tag}] dejar un día de descanso pide confirmar y lo quita`, async () => {
@@ -51,6 +51,21 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
       if (!t || !bt || bt.y < t.y + t.height - 2) throw new Error("el botón no quedó debajo del texto");
       if (t.width < 150) throw new Error(`texto apretado: ${Math.round(t.width)}px`);
       await p.screenshot({ path: `${S}/ficha_descanso_${tag}.png` });
+    });
+    await step(`[${tag}] vídeo de YouTube de la rutina: se ve dentro de la app (sin enlace afuera)`, async () => {
+      sql(`update plan_days set video_ref='dQw4w9WgXcQ' where plan_id='${plan}' and weekday=7`);
+      await p.reload({ waitUntil: "networkidle" }); await p.waitForTimeout(900);
+      await p.locator(".wk-chip").nth(6).evaluate((e) => { if (!e.classList.contains("sel")) e.click(); }); await p.waitForTimeout(300);
+      if (await p.locator(".tp-dayc a[target=_blank]").count()) throw new Error("hay un enlace que saca de la app");
+      await p.locator(".tp-dayc").getByRole("button", { name: "Ver", exact: true }).first().click(); await p.waitForTimeout(600);
+      if (!(await p.locator(".video-modal iframe[src*='youtube-nocookie']").count())) throw new Error("no abrió el reproductor");
+      if (await p.locator(".video-modal a[href*='youtube.com']").count()) throw new Error("el reproductor tiene enlace a YouTube");
+      const pos = await p.locator(".video-modal-backdrop").evaluate((e) => getComputedStyle(e).position); if (pos !== "fixed") throw new Error("sin estilos del reproductor");
+      await p.screenshot({ path: `${S}/ficha_yt_${tag}.png` }); await p.keyboard.press("Escape"); await p.waitForTimeout(300);
+      sql(`update plan_days set video_ref=null where plan_id='${plan}' and weekday=7`);
+    });
+    await step(`[${tag}] el botón dice "Editar semana" cuando ya hay rutinas`, async () => {
+      if (!(await p.getByRole("button", { name: "Editar semana" }).count())) throw new Error("no dice Editar semana");
     });
     await step(`[${tag}] menú del plan: Eliminar cliente está ahí (y no suelto en la ficha)`, async () => {
       if (await p.locator(".del-client-btn").count()) throw new Error("sigue el botón suelto");

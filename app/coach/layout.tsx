@@ -9,6 +9,7 @@ import { CoachPushBanner } from "@/components/coach/CoachPushBanner";
 import { initials } from "@/lib/format";
 import "./coach.css";
 import "../guide.css";
+import "../video-modal.css";
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   // Perfil y número de clientes a la vez (antes uno después del otro).
   const [{ profile }, { count }] = await Promise.all([requireUser(), serverDb().from("clients").select("id", { count: "exact", head: true })]);

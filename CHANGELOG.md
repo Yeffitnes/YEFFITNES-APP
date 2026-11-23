@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-11-22 - Entrenamiento con detalle premium, "Editar semana" y YouTube dentro de la app
+Cristian: le faltaba "un toque premium", lo elegido no debe ser blanco, el bloque se veía muy negro o rosado, y un enlace de YouTube lo sacaba de la app.
+- **Colores**: cabecera del plan y bloque de la semana en vino tinto (degradado rojo oscuro a negro, borde vino y un brillo fino arriba) en vez de negro plano con rosado. **Lo elegido** (día, "Listo", pestaña de semana, número del ejercicio) en **rojo con negro degradado**, no blanco.
+- **"Editar semana"** cuando la semana ya tiene rutinas; "Armar la semana" solo si está vacía.
+- **Series, reps, descanso y peso**: celdas más finas con la etiqueta dentro y el número en tipografía fija (antes se veían grandes y sueltos); al editar, la celda se marca en vino.
+- **YouTube dentro de la app**: el vídeo de catálogo de la rutina ya no abre YouTube afuera ("Abrir"); ahora "Ver" lo reproduce en la app. También se quitó "¿No carga? Ábrelo en YouTube" del reproductor (cliente y coach). El panel del coach no tenía los estilos del reproductor de YouTube (Material del coach lo usaba): ahora sí (`app/video-modal.css`).
+- Archivos: `components/coach/TrainingTab.tsx`, `components/portal/VideoModal.tsx`, `app/video-modal.css` (nuevo), `app/coach/layout.tsx`, `app/coach/coach.css`. Pruebas: `ficha_design.js` (vídeo de YouTube en la app, "Editar semana"), `plan_weeks.js`.
+Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Entrenamiento plegable en el celular, eliminar cliente en el menú del plan y vídeo que no cambiaba
 Reporte de Cristian (sobre todo en el celular).
 - **Vídeo viejo después de cambiarlo** (objetivo actual, y lo mismo podía pasar en el vídeo del día y en Material): la app guardaba 20 min el enlace de reproducción por "cliente" o "día", no por vídeo; al quitar uno y subir otro seguía abriendo el anterior. Ahora esas pistas llevan el id del vídeo (`&v=`), las que pueden cambiar se guardan solo 15 s y al cambiar el vídeo del objetivo se olvida la anterior (`components/ui/BunnyModal.tsx`, `ClientFicha.tsx`, `HoySide.tsx`, `HoyView.tsx`, `MiPlanView.tsx`, `lib/queries.ts`).

@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, assignDayVideo, useSetItem, useSetPlanWeeks, useTrainingPlans, type ItemPatch, type PlanDay, type PlanItem } from "@/lib/queries";
 import { ExPic } from "@/components/ExPic";
 import { BunnyModal } from "@/components/ui/BunnyModal";
+import { VideoModal } from "@/components/portal/VideoModal";
 import { MAX_COACH_VIDEO_MB, MAX_COACH_VIDEO_SECONDS } from "@/lib/upload-video";
 import { posterFromVideo } from "@/lib/video-poster";
 import { useBackgroundUpload } from "@/lib/upload-manager";
@@ -83,7 +84,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
         <section className="tp-week">
           <div className="tp-week-head">
             <div className="tp-eyebrow">Semana del plan{cycle > 1 ? ` · semana ${week} de ${cycle}` : ""}</div>
-            <button type="button" className={`tp-build${build ? " on" : ""}`} aria-expanded={build} onClick={() => setBuild(!build)}>{build ? "Listo" : "Armar la semana"}</button>
+            <button type="button" className={`tp-build${build ? " on" : ""}`} aria-expanded={build} onClick={() => setBuild(!build)}>{build ? "Listo" : wdays.length ? "Editar semana" : "Armar la semana"}</button>
           </div>
           {cycle > 1 && <div className="tp-wtabs dark" role="tablist" aria-label="Semanas del plan">{Array.from({ length: cycle }, (_, k) => k + 1).map((w) => (
             <button key={w} role="tab" aria-selected={w === week} className={`tp-wtab${w === week ? " on" : ""}`} onClick={() => setWeekSel(w)}>Semana {w}{w === active.week ? <i> · en curso</i> : null}</button>))}</div>}
@@ -221,7 +222,7 @@ function AssignModal({ clientId, planId, weekday, week, weeks, dayLabel, replaci
 
 // Vídeo de la rutina de este día: el de catálogo (lo ven todos) o uno grabado solo para este cliente (lo reemplaza).
 function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientName: string; day: PlanDay }) {
-  const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false);
+  const set = useSetDayVideo(clientId), input = useRef<HTMLInputElement>(null), [err, setErr] = useState(""), [play, setPlay] = useState(false), [yt, setYt] = useState(false);
   const bg = useBackgroundUpload(), routines = useRoutines();
   // 0057: si el vídeo del día es el vídeo subido de la rutina del catálogo, no es "personal": se muestra como vídeo de catálogo.
   const tpl = (routines.data ?? []).find((r) => r.id === day.templateId), fromCatalog = !!day.videoId && !!tpl?.videoId && tpl.videoId === day.videoId;
@@ -232,7 +233,8 @@ function DayVideoBox({ clientId, clientName, day }: { clientId: string; clientNa
     <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
       {(fromCatalog || day.videoRef) && <div className="info-list-row" style={{ alignItems: "center" }}><span><b>Vídeo de catálogo</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>{personal ? `${fn} ve el personal en su lugar.` : "Lo ven todos los clientes con esta rutina."}</span></span>
         {fromCatalog ? <button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setPlay(true)}>Ver</button>
-          : day.videoRef && <a href={`https://www.youtube.com/watch?v=${day.videoRef}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 700, fontSize: 12.5 }}>Abrir <Icon name="arrow" size={12} /></a>}</div>}
+          : day.videoRef && <button className="ghost-btn" style={{ height: 32, fontSize: 11.5 }} onClick={() => setYt(true)}>Ver</button>}</div>}
+      {yt && day.videoRef && <VideoModal ytId={day.videoRef} title={day.name} sub="Vídeo de la rutina · YouTube" onClose={() => setYt(false)} />}
       <div className="info-list-row" style={{ alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <span><b>Vídeo personalizado para {fn}</b><br /><span style={{ fontSize: 12, color: "var(--text-dim)" }}>Solo {fn} lo ve — reemplaza al de catálogo en su plan.</span></span>
         <span style={{ display: "flex", gap: 8, alignItems: "center" }}>

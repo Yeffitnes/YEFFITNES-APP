@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { BrandLoader } from "@/components/ui/BrandLoader";
-// Reproductor del diseño (modal oscuro). Vídeos de YouTube sin cookies; los privados (Bunny) se agregarán con su propia fuente.
+// Reproductor del diseño (modal oscuro). Vídeos de YouTube sin cookies, siempre dentro de la app: 22-nov se quitó "Ábrelo en
+// YouTube" (Cristian: ningún enlace puede sacar a la persona de la app).
 export function VideoModal({ ytId, title, sub, onClose }: { ytId: string; title: string; sub?: string; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null), [ready, setReady] = useState(false);
   useEffect(() => {
@@ -14,7 +15,7 @@ export function VideoModal({ ytId, title, sub, onClose }: { ytId: string; title:
       <div className="video-modal" role="dialog" aria-modal="true" aria-label={title}>
         <div className="video-modal-stage">{!ready && <div style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none" }}><BrandLoader dark label="Cargando vídeo" height={0} /></div>}<iframe onLoad={() => setReady(true)} src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1&autoplay=1`} title={title} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen /></div>
         <div className="video-modal-bar">
-          <div className="video-modal-info"><div className="video-modal-title">{title}</div>{sub && <div className="video-modal-sub">{sub}</div>}<a className="video-modal-sub" style={{ textDecoration: "underline", marginTop: 4, display: "inline-block" }} href={`https://www.youtube.com/watch?v=${ytId}`} target="_blank" rel="noopener noreferrer">¿No carga? Ábrelo en YouTube</a></div>
+          <div className="video-modal-info"><div className="video-modal-title">{title}</div>{sub && <div className="video-modal-sub">{sub}</div>}</div>
           <button ref={closeRef} className="video-modal-close" aria-label="Cerrar vídeo" onClick={onClose}><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" /></svg></button>
         </div>
       </div>
