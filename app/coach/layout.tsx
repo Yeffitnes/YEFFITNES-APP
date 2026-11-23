@@ -5,8 +5,10 @@ import { Providers } from "@/components/Providers";
 import { ActionsBar } from "@/components/ActionsBar";
 import { SideNav, MobileNav } from "@/components/coach/CoachNav";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { CoachPushBanner } from "@/components/coach/CoachPushBanner";
 import { initials } from "@/lib/format";
 import "./coach.css";
+import "../guide.css";
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   // Perfil y número de clientes a la vez (antes uno después del otro).
   const [{ profile }, { count }] = await Promise.all([requireUser(), serverDb().from("clients").select("id", { count: "exact", head: true })]);
@@ -24,7 +26,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
           <SignOutButton label="Salir" style={{ background: "none", border: 0, color: "rgba(255,255,255,.5)", fontSize: 12, cursor: "pointer", textDecoration: "underline" }} />
         </div>
       </aside>
-      <main className="main">{/* 16-nov: en el celular, cabecera oscura con brillo rojo (logo, menú y búsqueda), como el portal del cliente */}<div className="m-top"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo.svg" alt="Yeffitness" height={29} /><ProfileMenu name={profile.full_name} role="Coach" /></div></div><MobileNav /><ActionsBar side="coach" /></div>{children}</main>
+      <main className="main">{/* 16-nov: en el celular, cabecera oscura con brillo rojo (logo, menú y búsqueda), como el portal del cliente */}<div className="m-top"><div className="m-logo"><div className="m-logo-row"><img src="/brand/logo.svg" alt="Yeffitness" height={29} /><ProfileMenu name={profile.full_name} role="Coach" /></div></div><MobileNav /><ActionsBar side="coach" /></div><CoachPushBanner />{children}</main>
     </div>
     </Providers>
   );

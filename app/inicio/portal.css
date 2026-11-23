@@ -1423,3 +1423,9 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 /* 22-nov: pedir una función que el plan no incluye (0058) */
 .lk-ask{display:flex;flex-direction:column;align-items:center;gap:8px}
 .lk-alt{font-size:12px;font-weight:600;color:var(--text-dim);text-decoration:underline;text-underline-offset:2px}
+/* 22-nov: regla de marca "sin verde": lo que quedaba verde (variable --ok y "bajó" en las medidas) pasa a dorado; "Brazo" a gris. */
+:root{--ok:#B08A3E}
+.metric-summary-delta.down{color:#8D6526}.metric-summary-delta.up{color:var(--accent)}
+.history-vals{display:flex;flex-wrap:wrap;gap:6px 8px}
+.history-vals .hv{display:inline-flex;gap:5px;align-items:baseline;padding:4px 9px;border-radius:8px;background:var(--surface);font-family:var(--font-mono),monospace;font-size:12px;color:var(--text);margin:0}
+.history-vals .hv span{font-family:var(--font-body),sans-serif;font-size:11.5px;color:var(--text-dim);margin:0}

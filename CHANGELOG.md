@@ -1,4 +1,20 @@
 # CHANGELOG
+## 2026-11-22 - Ficha del cliente con diseño (Entrenamiento, Nutrición, Progreso), "Arma la semana" y avisos para Yeff
+Pedido de Cristian mientras armaba el plan de un cliente.
+- **Entrenamiento** (`components/coach/TrainingTab.tsx`):
+  - Cabecera oscura con brillo rojo: nombre del plan y cifras (días de entreno, ejercicios y minutos por semana, semanas).
+  - **"Arma la semana"**: los 7 días a la vista, cada uno con su selector de rutina; al elegir se asigna en el momento, sin salir ni abrir ventanas. Antes había que entrar a cada día y asignar en un modal. Poner "Descanso" pide confirmar (borra lo ajustado ese día).
+  - Debajo, el día elegido con banda oscura y sus ejercicios para ajustar series, repeticiones, descanso y peso.
+  - El personaje aparece donde ayuda: plan vacío (con planilla) y día de descanso (con su botella). "Asignar a varios días" reemplaza a "Cambiar rutina".
+- **Nutrición**: cabecera oscura con las calorías y los macros en cifras; "Editar" y "Quitar" en su propia fila (antes se salían de la tarjeta en el celular); comidas en tarjetas numeradas e indicaciones aparte.
+- **Progreso** (ficha): cabecera oscura con peso y cintura actuales y cuánto cambiaron desde la primera medición, número de mediciones y de fotos. El historial de mediciones en etiquetas legibles (antes se amontonaba). **Sin verde**: lo que quedaba verde (bajó en las medidas, la línea de "Brazo", la variable `--ok`) pasa a dorado o gris; también en el portal del cliente.
+- **Avisos de Yeff**:
+  - Franja oscura arriba del panel cuando el teléfono no tiene los avisos activos: "Activar avisos" (pide el permiso, registra el teléfono y manda una prueba). Si están bloqueados, los pasos exactos según el teléfono (Android: Chrome → Configuración de sitios → Notificaciones, y Ajustes → Apps → Chrome). En iPhone sin instalar, cómo instalarla. "Ahora no" la esconde hasta mañana. Una página web no puede abrir los ajustes del teléfono por sí sola: por eso los pasos.
+  - **Nuevo: aviso a Yeff cuando un cliente reserva una sesión y cuando la cancela** (migración **0060**, `booking_coach_targets`; ruta `/api/push/booking-coach`). Ya le llegaban: mensajes, solicitudes de acceso y de funciones, y entrenamientos terminados.
+- Archivos: `components/coach/TrainingTab.tsx`, `NutritionTab.tsx`, `CoachPushBanner.tsx` (nuevo), `components/portal/ProgressPanels.tsx`, `app/coach/layout.tsx` (franja y CSS del personaje), `lib/queries.ts`, `app/api/push/booking-coach/route.ts` (nuevo), `app/coach/coach.css`, `app/inicio/portal.css`.
+- Pruebas: `tests/e2e/ficha_design.js` (en `all.sh`), `tests/e2e/push_coach.js` (con claves VAPID de prueba, fuera de `all.sh`), `supabase/tests/rls_booking_push.sql`; `plan_weeks.js` ajustada a "Arma la semana".
+Revertir: `git revert` de este commit y en Supabase lo que dice la cabecera de `0060_avisos_reservas_coach.sql`.
+
 ## 2026-11-22 - Agenda: "Próximas sesiones" como botón y panel oscuro
 Cristian: que la lista no vaya encima de la agenda. Ahora es un botón oscuro con brillo rojo junto a "Agendar cliente" y "Publicar disponibilidad", con el número de sesiones y la siguiente ("Martes 24 de noviembre 10:00 · Camila"). Al tocarlo se abre un panel oscuro (a la derecha en computador, desde abajo en el celular) con todas las sesiones por día, buscador desde 7 sesiones, enlace a la ficha y la × para cancelar (la confirmación sale encima y el panel sigue abierto). En el celular el botón ocupa todo el ancho y debajo van las otras dos acciones.
 Archivos: `components/coach/AgendaView.tsx`, `app/coach/coach.css` (bloque "Próximas sesiones"), `tests/e2e/agenda_fix.js`.

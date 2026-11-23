@@ -2,7 +2,7 @@
 # Revisión completa de punta a punta (4-nov). Corre cada prueba con la base recién creada y los datos que necesita, y resume.
 # Uso: bash tests/e2e/all.sh   (tarda ~20 min: en un chat con límite de 10 min por comando, lánzalo en segundo plano:
 #      nohup bash tests/e2e/all.sh > /tmp/e2e_all.out 2>&1 &   y revisa /tmp/e2e_all.out). Logs por prueba en tests/e2e/logs/.
-# push.js NO está aquí: necesita compilar con claves VAPID de prueba (ver README). Al terminar, vuelve a compilar normal antes de subir.
+# push.js y push_coach.js NO están aquí: necesita compilar con claves VAPID de prueba (ver README). Al terminar, vuelve a compilar normal antes de subir.
 cd "$(dirname "$0")/../.."; OUT=tests/e2e/logs; mkdir -p $OUT
 P() { runuser -u postgres -- psql -q -d e2e -c "$1" >/dev/null; }
 REP="insert into daily_reports (workspace_id, client_id, report_date, comment) select workspace_id, id, (now() at time zone 'America/Bogota')::date, 'Hoy me sentí bien' from clients where profile_id='00000000-0000-0000-0000-00000000000a' on conflict do nothing"
@@ -13,7 +13,7 @@ run() { local t=$1; shift; bash tests/e2e/run.sh setup >/dev/null 2>&1; for q in
   LATENCY=150 bash tests/e2e/run.sh $t > $OUT/$t.log 2>&1; local r=$?; [ $r = 0 ] || FAIL=1
   echo "$([ $r = 0 ] && echo "OK   " || echo "FALLA") $t · $(grep -c '^OK' $OUT/$t.log) pasos OK · $(grep -c '^FAIL' $OUT/$t.log) fallas"; }
 run smoke.js; run flows.js; run extras.js; run photos.js; run offline.js; run catalog.js; run swaps.js
-run nudge_row.js "$NUDGE"; run review2.js "$REP"; run review3.js; run set_order.js; run week_plan.js; run advice.js; run tip_noweight.js; run rest_end.js; run habits_cfg.js; run offline2.js; run week_send.js; run habits_cta.js; run catalog_del.js; run plan_weeks.js; run cat_video.js; run requests.js; run landing.js; run agenda_fix.js; run login_brand.js; run report_time.js "$REP_T"; run away.js; run ficha.js "$REP"; run stuck.js
+run nudge_row.js "$NUDGE"; run review2.js "$REP"; run review3.js; run set_order.js; run week_plan.js; run advice.js; run tip_noweight.js; run rest_end.js; run habits_cfg.js; run offline2.js; run week_send.js; run habits_cta.js; run catalog_del.js; run plan_weeks.js; run cat_video.js; run requests.js; run landing.js; run agenda_fix.js; run ficha_design.js; run login_brand.js; run report_time.js "$REP_T"; run away.js; run ficha.js "$REP"; run stuck.js
 bash tests/e2e/run.sh setup >/dev/null 2>&1
 LATENCY=150 bash tests/e2e/run.sh hydration.js > $OUT/hydration.log 2>&1; n=$(grep -vc ' ok$' $OUT/hydration.log); [ "$n" = 0 ] || FAIL=1; echo "$([ "$n" = 0 ] && echo "OK   " || echo "FALLA") hydration.js (Hoy) · $n aperturas con redibujo"
 PAGE=/inicio/progreso LATENCY=150 bash tests/e2e/run.sh hydration.js > $OUT/hydration_prog.log 2>&1; n=$(grep -vc ' ok$' $OUT/hydration_prog.log); [ "$n" = 0 ] || FAIL=1; echo "$([ "$n" = 0 ] && echo "OK   " || echo "FALLA") hydration.js (Progreso) · $n aperturas con redibujo"

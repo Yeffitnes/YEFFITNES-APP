@@ -1404,3 +1404,121 @@ html{scroll-behavior:smooth;}
 .del-client{margin-top:28px;padding-top:16px;border-top:1px dashed var(--line);display:flex;justify-content:flex-end}
 .del-client-btn{background:none;border:1px solid var(--line);border-radius:10px;padding:8px 14px;font:inherit;font-size:12.5px;font-weight:700;color:var(--danger);cursor:pointer}
 .del-client-btn:hover{border-color:var(--danger)}
+/* ───── 22-nov: Entrenamiento de la ficha con más diseño (cabecera oscura, "Arma la semana", día elegido) ───── */
+.tp{display:flex;flex-direction:column;gap:16px}
+.tp>.card{margin:0}
+.tp-eyebrow{font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#FF6F8A}
+.tp-hero{position:relative;overflow:hidden;border-radius:22px;padding:22px;color:#fff;
+  background:radial-gradient(110% 120% at 0% 0%,rgba(247,37,75,.38),transparent 55%),radial-gradient(80% 90% at 100% 100%,rgba(156,21,53,.3),transparent 60%),var(--ink);
+  box-shadow:0 24px 50px -30px rgba(247,37,75,.75)}
+.tp-hero-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-top:8px}
+.tp-hero-name{font-family:var(--font-display),sans-serif;font-size:24px;font-weight:700;letter-spacing:-.02em;margin:0;line-height:1.15}
+.tp-hero-sub{font-size:13px;color:rgba(255,255,255,.62);margin:6px 0 0;line-height:1.5}
+.tp-hero-sub b{color:#fff}
+.tp-hero-acts{display:flex;gap:8px;flex-wrap:wrap}
+.tp-glass{height:36px;padding:0 14px;border-radius:11px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:border-color .2s,background .2s}
+.tp-glass:hover{border-color:rgba(247,37,75,.7);background:rgba(255,255,255,.1)}
+.tp-glass.danger{border-color:rgba(255,111,138,.6);color:#FF8FA5}
+.tp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.tp-stats>div{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.tp-stats b{display:block;font-family:var(--font-mono),monospace;font-size:22px;font-weight:500;color:#fff}
+.tp-stats span{font-size:11.5px;color:rgba(255,255,255,.55)}
+.tp-hist{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);display:grid;gap:8px}
+.tp-hist div{display:flex;justify-content:space-between;gap:10px;font-size:13px}.tp-hist small{color:rgba(255,255,255,.5)}
+.tp-empty{display:flex;gap:18px;align-items:center;margin-top:10px}
+.tp-stage{flex:none;display:grid;place-items:end center;width:112px;height:124px;border-radius:50%;background:radial-gradient(circle at 50% 46%,#fff 0%,#F4F1EA 50%,rgba(244,241,234,0) 70%)}
+.tp-stage.sm{width:84px;height:92px}
+.tp-hero .tp-start{grid-template-columns:1fr 1fr;margin-top:14px}
+.tp-hero .tp-start button{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff}
+.tp-hero .tp-start button span{color:rgba(255,255,255,.6)}
+.tp-hero .tp-start button:hover{border-color:rgba(247,37,75,.7);box-shadow:0 12px 28px -16px rgba(247,37,75,.9)}
+/* Arma la semana */
+.tp-week{border-radius:22px;padding:20px;color:#fff;background:radial-gradient(70% 90% at 100% 0%,rgba(247,37,75,.22),transparent 60%),#121019;border:1px solid #1E1A28}
+.tp-week-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.tp-week-head p{font-size:13px;color:rgba(255,255,255,.6);margin:6px 0 0;max-width:560px;line-height:1.5}
+.tp-link.light{color:#FF6F8A}.tp-link.light.danger{color:#FF8FA5}
+.tp-week .tp-weeks{margin-top:12px}
+.tp-wtabs.dark .tp-wtab{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.7)}
+.tp-wtabs.dark .tp-wtab.on{background:#fff;color:var(--ink);border-color:#fff}
+.wk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin-top:16px}
+.wk-day{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);transition:border-color .2s,box-shadow .2s,background .2s}
+.wk-day.on{background:radial-gradient(120% 90% at 0% 0%,rgba(247,37,75,.26),transparent 60%),rgba(255,255,255,.05);border-color:rgba(247,37,75,.35)}
+.wk-day.rest{border-style:dashed}
+.wk-day.sel{border-color:#FF6F8A;box-shadow:0 0 0 1px #FF6F8A,0 14px 30px -16px rgba(247,37,75,.9)}
+.wk-day.busy{opacity:.7}
+.wk-top{display:grid;gap:3px;text-align:left;background:none;border:0;padding:0;color:#fff;font:inherit;cursor:pointer;min-height:66px;align-content:start}
+.wk-dn{display:flex;align-items:center;gap:6px;font-family:var(--font-mono),monospace;font-size:10.5px;letter-spacing:.12em;color:rgba(255,255,255,.55)}
+.wk-dn i{font-style:normal;letter-spacing:.04em;padding:1px 6px;border-radius:6px;background:#fff;color:var(--ink);font-size:9.5px}
+.wk-top b{font-size:13px;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.wk-day.rest .wk-top b{color:rgba(255,255,255,.45);font-weight:600}
+.wk-top small{font-size:11px;color:rgba(255,255,255,.5)}
+.wk-day select{width:100%;height:34px;padding:0 26px 0 9px;border-radius:10px;border:1px solid rgba(255,255,255,.16);font:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  color:#fff;background:rgba(10,9,16,.6) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23fff' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 9px center/9px;-webkit-appearance:none;appearance:none}
+.wk-day select option{color:#0A0910;background:#fff}
+.wk-day select:focus{outline:none;border-color:#FF6F8A}
+.wk-ask{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:rgba(255,255,255,.75)}
+.wk-ask span{flex-basis:100%}
+.wk-ask button{height:28px;padding:0 10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.wk-ask .yes{border-color:#FF6F8A;color:#FF8FA5}
+.wk-none{grid-column:1/-1;font-size:13px;color:rgba(255,255,255,.65)}.wk-none a{color:#FF6F8A;font-weight:700}
+/* Día elegido */
+.tp-day{padding:0;overflow:hidden}
+.tp-day-band{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:18px 20px;color:#fff;
+  background:radial-gradient(90% 140% at 0% 0%,rgba(247,37,75,.34),transparent 60%),var(--ink)}
+.tp-day-name{font-family:var(--font-display),sans-serif;font-size:20px;font-weight:700;margin-top:4px}
+.tp-day-sub{font-size:12.5px;color:rgba(255,255,255,.6);margin-top:3px}
+.tp-day .tp-items{padding:16px 20px 0;margin:0 0 14px}
+.tp-day>div:last-child:not(.tp-items):not(.tp-rest){padding:0 20px 6px}
+.tp-day .tp-item{background:var(--surface);border-color:transparent;border-radius:14px}
+.tp-day .tp-item:hover{border-color:var(--line)}
+.tp-day .tp-rest{margin:16px 20px 20px;background:var(--surface);border-radius:16px;align-items:center;flex-wrap:nowrap}
+.tp-day .tp-rest p{flex:1}
+@media (max-width:1100px){.wk-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:700px){
+  .tp-hero,.tp-week{padding:18px 16px;border-radius:20px}
+  .tp-hero-name{font-size:21px}
+  .tp-stats{grid-template-columns:1fr 1fr}
+  .tp-empty{flex-direction:column;align-items:flex-start}
+  .tp-hero .tp-start{grid-template-columns:1fr}
+  .wk-grid{grid-template-columns:1fr;gap:8px}
+  .wk-day{display:grid;grid-template-columns:minmax(0,1fr) 150px;align-items:center;gap:10px}
+  .wk-top{min-height:0}
+  .wk-ask{grid-column:1/-1}
+  .tp-day-band{padding:16px}
+  .tp-day .tp-items{padding:14px 14px 0}
+  .tp-day>div:last-child:not(.tp-items):not(.tp-rest){padding:0 14px 6px}
+  .tp-day .tp-rest{margin:14px;flex-wrap:wrap}
+}
+/* 22-nov: Nutrición de la ficha */
+.nt-hero .tp-hero-row{align-items:center}
+.tp-stats b small{font-size:13px;color:rgba(255,255,255,.55)}
+.nt-meals{display:grid;gap:18px}
+.nt-list{display:grid;gap:8px;margin-top:10px}
+.nt-meal{display:flex;gap:12px;padding:12px 14px;border-radius:14px;background:var(--surface)}
+.nt-n{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--ink);color:#fff;font-family:var(--font-mono),monospace;font-size:12px;box-shadow:0 6px 14px -8px rgba(247,37,75,.9)}
+.nt-meal b{font-size:14px}.nt-meal p{font-size:13.5px;line-height:1.55;color:var(--text-dim);margin:3px 0 0;white-space:pre-wrap}
+.nt-note{padding:14px;border-radius:14px;border:1px dashed var(--line)}.nt-note b{font-size:13px}.nt-note p{font-size:13.5px;color:var(--text-dim);margin:4px 0 0;line-height:1.55;white-space:pre-wrap}
+.nt-assign-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.nt-assign-row select{height:40px;border-radius:11px;border:1px solid var(--line);padding:0 12px;font:inherit;font-size:13px;flex:1;min-width:180px;background:var(--paper)}
+@media (max-width:700px){.nt-assign-row>*{flex:1 1 100%}}
+.private-warning+.tp-hero{margin-top:0}
+/* 22-nov: regla de marca "sin verde": lo que quedaba verde (variable --ok y "bajó" en las medidas) pasa a dorado; "Brazo" a gris. */
+:root{--ok:#B08A3E}
+.metric-summary-delta.down{color:#8D6526}.metric-summary-delta.up{color:var(--accent)}
+/* 22-nov: Progreso en la ficha */
+.pg-hero{margin-bottom:18px}
+.history-vals{display:flex;flex-wrap:wrap;gap:6px 8px}
+.history-vals .hv{display:inline-flex;gap:5px;align-items:baseline;padding:4px 9px;border-radius:8px;background:var(--surface);font-family:var(--font-mono),monospace;font-size:12px;color:var(--text);margin:0}
+.history-vals .hv span{font-family:var(--font-body),sans-serif;font-size:11.5px;color:var(--text-dim);margin:0}
+/* 22-nov: franja de avisos del coach */
+.cpb{display:flex;align-items:center;gap:14px;margin:0 0 18px;padding:14px 16px;border-radius:18px;color:#fff;
+  background:radial-gradient(90% 160% at 0% 0%,rgba(247,37,75,.42),transparent 60%),var(--ink);box-shadow:0 18px 40px -24px rgba(247,37,75,.9)}
+.cpb-face{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,#fff,#ECE8DF)}
+.cpb-main{flex:1;min-width:0}
+.cpb-main b{font-size:14.5px}
+.cpb-main p{font-size:12.5px;color:rgba(255,255,255,.68);margin:3px 0 0;line-height:1.5}
+.cpb-main ol{list-style:decimal;margin:6px 0 0;padding-left:18px;font-size:12.5px;line-height:1.55;color:rgba(255,255,255,.85)}
+.cpb-acts{display:flex;flex-direction:column;gap:6px;flex:none}
+.cpb-btn{height:38px;padding:0 16px;border-radius:11px;border:0;background:#fff;color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 0 18px rgba(247,37,75,.45)}
+.cpb-later{background:none;border:0;color:rgba(255,255,255,.55);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+@media (max-width:640px){.cpb{flex-wrap:wrap;align-items:flex-start}.cpb-main{flex-basis:calc(100% - 70px)}.cpb-acts{flex-direction:row;align-items:center;width:100%}.cpb-btn{flex:1}}

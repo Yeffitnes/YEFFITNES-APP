@@ -11,10 +11,15 @@ import { useBackgroundUpload } from "@/lib/upload-manager";
 import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
 import Link from "next/link";
+import { Guide } from "@/components/portal/Guide";
 import { useApplyProgram, usePrograms } from "@/lib/extras";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const DAYS_LONG = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
+// 22-nov (pedido de Cristian): la pestaña se veía "muy blanca" y armar la semana pedía entrar día por día a un modal.
+// Ahora: cabecera oscura del plan; "Arma la semana" con los 7 días a la vista, cada uno con su selector de rutina (se guarda al
+// elegir, sin salir de ahí); y abajo el día elegido con sus ejercicios para ajustarlos. El personaje sale donde ayuda: plan vacío
+// y día de descanso.
 export function TrainingTab({ clientId, clientName }: { clientId: string; clientName: string }) {
   const { data, isPending, isError, refetch } = useTrainingPlans(clientId);
   const today = (new Date().getDay() + 6) % 7 + 1;
@@ -29,70 +34,131 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
   const cycle = active?.cycleWeeks ?? 1, week = Math.min(weekSel ?? active?.week ?? 1, cycle);
   const wdays = (active?.allDays ?? active?.days ?? []).filter((x) => (x.week ?? 1) === week);
   const d = wdays.find((x) => x.weekday === day);
+  const trainDays = wdays.length, exCount = wdays.reduce((a, x) => a + x.items.length, 0), mins = wdays.reduce((a, x) => a + (x.minutes ?? 0), 0);
   const addWeek = () => { if (!active) return; weeksM.mutate({ planId: active.id, weeks: cycle + 1, copyFrom: cycle }, { onSuccess: () => setWeekSel(cycle + 1) }); };
   const dropWeek = () => { if (!active || cycle <= 1) return; weeksM.mutate({ planId: active.id, weeks: cycle - 1 }, { onSuccess: () => setWeekSel(Math.min(week, cycle - 1)) }); };
   return (
-    <div>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div className="card-tag">Plan de entrenamiento</div>
-        {active ? (
-          <div className="tp-head">
-            <div>
-              <div className="tp-name">{active.name}</div>
-              <div className="tp-sub">Desde {fmt(active.startsOn)}{cycle > 1 ? <> · <b>Semana {active.week} de {cycle}</b> esta semana</> : " · la misma semana se repite"}</div>
+    <div className="tp">
+      <section className="tp-hero">
+        <div className="tp-eyebrow">Plan de entrenamiento</div>
+        {active ? (<>
+          <div className="tp-hero-row">
+            <div style={{ minWidth: 0 }}>
+              <h2 className="tp-hero-name">{active.name}</h2>
+              <div className="tp-hero-sub">Desde {fmt(active.startsOn)}{cycle > 1 ? <> · <b>semana {active.week} de {cycle}</b> en curso</> : " · la misma semana se repite"}</div>
             </div>
-            <div className="tp-actions">
-              {!!past.length && <button className="ghost-btn sm" onClick={() => setHist(!hist)}>Planes anteriores</button>}
-              <button className="ghost-btn sm" onClick={() => setProg(true)}>Asignar programa</button>
-              <button className="ghost-btn sm" onClick={() => setNewPlan(true)}>Plan vacío nuevo</button>
+            <div className="tp-hero-acts">
+              {!!past.length && <button className="tp-glass" onClick={() => setHist(!hist)}>Planes anteriores</button>}
+              <button className="tp-glass" onClick={() => setProg(true)}>Asignar programa</button>
+              <button className="tp-glass" onClick={() => setNewPlan(true)}>Plan vacío nuevo</button>
             </div>
           </div>
-        ) : (
-          <>
-            <p className="tp-sub" style={{ marginTop: 4 }}>{first} todavía no tiene plan. Elige cómo armarlo:</p>
-            <div className="tp-start">
-              <button type="button" onClick={() => setProg(true)}><b>Usar un programa</b><span>Semanas completas que ya armaste en Catálogo. Un toque y queda listo; luego lo ajustas.</span></button>
-              <button type="button" onClick={() => setNewPlan(true)}><b>Armar día por día</b><span>Creas el plan y eliges la rutina de cada día.</span></button>
+          <div className="tp-stats">
+            <div><b>{trainDays}</b><span>{trainDays === 1 ? "día de entreno" : "días de entreno"}</span></div>
+            <div><b>{exCount}</b><span>ejercicios por semana</span></div>
+            <div><b>{mins ? `${mins}′` : "—"}</b><span>minutos por semana</span></div>
+            <div><b>{cycle}</b><span>{cycle === 1 ? "semana que se repite" : "semanas distintas"}</span></div>
+          </div>
+          {hist && <div className="tp-hist">{past.map((p) => <div key={p.id}><span>{p.name}</span><small>Finalizado · {fmt(p.startsOn)}{p.endsOn ? ` – ${fmt(p.endsOn)}` : ""}</small></div>)}</div>}
+        </>) : (
+          <div className="tp-empty">
+            <span className="tp-stage" aria-hidden><Guide size={86} pose="clipboard" dir="right" /></span>
+            <div style={{ minWidth: 0 }}>
+              <h2 className="tp-hero-name">{first} todavía no tiene plan</h2>
+              <p className="tp-hero-sub">Elige cómo armarlo. Después pones la rutina de cada día en un solo lugar.</p>
+              <div className="tp-start">
+                <button type="button" onClick={() => setProg(true)}><b>Usar un programa</b><span>Semanas completas de tu catálogo. Un toque y queda listo; luego lo ajustas.</span></button>
+                <button type="button" onClick={() => setNewPlan(true)}><b>Armar la semana</b><span>Creas el plan y eliges la rutina de cada día, todos a la vista.</span></button>
+              </div>
             </div>
-          </>
+          </div>
         )}
-        {hist && <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)" }}>{past.map((p) => <div key={p.id} className="info-list-row"><span>{p.name}</span><span style={{ color: "var(--text-faint)" }}>Finalizado · {fmt(p.startsOn)}{p.endsOn ? ` – ${fmt(p.endsOn)}` : ""}</span></div>)}</div>}
-      </div>
+      </section>
       {active && <PlanInfoForm key={active.id + (active.level ?? "") + (active.reviewOn ?? "")} plan={active} clientId={clientId} clientName={clientName} />}
       {active && (
-        <div className="card">
-          <div className="tp-weeks">
-            {cycle > 1 ? <>
-              <div className="tp-wtabs" role="tablist" aria-label="Semanas del plan">{Array.from({ length: cycle }, (_, k) => k + 1).map((w) => (
-                <button key={w} role="tab" aria-selected={w === week} className={`tp-wtab${w === week ? " on" : ""}`} onClick={() => { setWeekSel(w); setConfirm(false); }}>Semana {w}{w === active.week ? <i> · en curso</i> : null}</button>))}</div>
-              <div className="tp-wtools">
-                {cycle < 16 && <button className="tp-link" disabled={weeksM.isPending} onClick={addWeek}>+ Semana {cycle + 1} (copia de la {cycle})</button>}
-                {week === cycle && <button className="tp-link danger" disabled={weeksM.isPending} onClick={dropWeek}>Quitar semana {cycle}</button>}
-              </div>
-            </> : <>
-              <div className="card-tag" style={{ marginBottom: 0 }}>Semana del plan</div>
-              <button className="tp-link" disabled={weeksM.isPending} onClick={addWeek} title="Agrega la semana 2 copiando esta; luego cambias lo que quieras.">+ Semanas distintas</button>
-            </>}
+        <section className="tp-week">
+          <div className="tp-week-head">
+            <div><div className="tp-eyebrow">Arma la semana</div><p>Elige la rutina de cada día aquí mismo: se guarda al elegirla. Toca un día para ajustar sus ejercicios.</p></div>
+            {cycle === 1 && <button className="tp-link light" disabled={weeksM.isPending} onClick={addWeek} title="Agrega la semana 2 copiando esta; luego cambias lo que quieras.">+ Semanas distintas</button>}
           </div>
-          <div className="day-pill-row" style={{ marginTop: 12 }}>{DAYS.map((t, i) => <button key={t} className={`day-pill${day === i + 1 ? " active" : ""}`} onClick={() => { setDay(i + 1); setConfirm(false); }}>{t}{wdays.some((x) => x.weekday === i + 1) ? " ●" : ""}</button>)}</div>
-          {d ? (
-            <>
-              <div className="tp-dayhead">
-                <div><div className="tp-dayname">{d.name}</div><div className="tp-sub">{d.items.length} ejercicio{d.items.length === 1 ? "" : "s"}{d.minutes ? ` · ${d.minutes} min aprox.` : ""} · lo que cambies aquí es solo para {first}</div></div>
-                <div className="tp-actions"><button className="ghost-btn sm" onClick={() => setAssign(true)}>Cambiar rutina</button>
-                  {confirm ? <><button className="ghost-btn sm" onClick={() => setConfirm(false)}>Conservar</button><button className="ghost-btn sm danger" disabled={clear.isPending} onClick={() => clear.mutate(d.id, { onSuccess: () => setConfirm(false) })}>Sí, descanso</button></>
-                    : <button className="ghost-btn sm" onClick={() => setConfirm(true)}>Dejar de descanso</button>}</div>
-              </div>
-              <div className="tp-items">{d.items.map((i, k) => <ItemRow key={i.id} n={k + 1} item={i} clientId={clientId} />)}</div>
-              <DayVideoBox clientId={clientId} clientName={clientName} day={d} />
-            </>
-          ) : (
-            <div className="tp-rest"><p>{DAYS_LONG[day - 1]}{cycle > 1 ? ` (semana ${week})` : ""}: día de descanso. {first} lo verá así.</p><button className="primary-btn sm" onClick={() => setAssign(true)}>Asignar rutina</button></div>
+          {cycle > 1 && <div className="tp-weeks">
+            <div className="tp-wtabs dark" role="tablist" aria-label="Semanas del plan">{Array.from({ length: cycle }, (_, k) => k + 1).map((w) => (
+              <button key={w} role="tab" aria-selected={w === week} className={`tp-wtab${w === week ? " on" : ""}`} onClick={() => { setWeekSel(w); setConfirm(false); }}>Semana {w}{w === active.week ? <i> · en curso</i> : null}</button>))}</div>
+            <div className="tp-wtools">
+              {cycle < 16 && <button className="tp-link light" disabled={weeksM.isPending} onClick={addWeek}>+ Semana {cycle + 1} (copia de la {cycle})</button>}
+              {week === cycle && <button className="tp-link light danger" disabled={weeksM.isPending} onClick={dropWeek}>Quitar semana {cycle}</button>}
+            </div>
+          </div>}
+          <WeekBuilder key={`${active.id}-${week}`} clientId={clientId} planId={active.id} week={week} days={wdays} sel={day} today={week === (active.week ?? 1) ? today : 0} onSel={(w) => { setDay(w); setConfirm(false); }} />
+        </section>)}
+      {active && (
+        <section className="card tp-day" id="tp-day">
+          <div className="tp-day-band">
+            <div style={{ minWidth: 0 }}>
+              <div className="tp-eyebrow">{DAYS_LONG[day - 1]}{cycle > 1 ? ` · semana ${week}` : ""}{day === today && week === (active.week ?? 1) ? " · hoy" : ""}</div>
+              <div className="tp-day-name">{d ? d.name : "Descanso"}</div>
+              <div className="tp-day-sub">{d ? `${d.items.length} ejercicio${d.items.length === 1 ? "" : "s"}${d.minutes ? ` · ${d.minutes} min aprox.` : ""} · lo que cambies aquí es solo para ${first}` : `${first} lo verá como día de descanso.`}</div>
+            </div>
+            {d && <div className="tp-hero-acts">
+              <button className="tp-glass" onClick={() => setAssign(true)}>Asignar a varios días</button>
+              {confirm ? <><button className="tp-glass" onClick={() => setConfirm(false)}>Conservar</button><button className="tp-glass danger" disabled={clear.isPending} onClick={() => clear.mutate(d.id, { onSuccess: () => setConfirm(false) })}>Sí, descanso</button></>
+                : <button className="tp-glass" onClick={() => setConfirm(true)}>Dejar de descanso</button>}
+            </div>}
+          </div>
+          {d ? (<>
+            <div className="tp-items">{d.items.map((i, k) => <ItemRow key={i.id} n={k + 1} item={i} clientId={clientId} />)}</div>
+            <DayVideoBox clientId={clientId} clientName={clientName} day={d} />
+          </>) : (
+            <div className="tp-rest">
+              <span className="tp-stage sm" aria-hidden><Guide size={62} pose="hydrate" /></span>
+              <p>Hoy {first} descansa: agua, sueño y movilidad suave. Si quieres que entrene este día, elige la rutina arriba en <b>Arma la semana</b> o aquí.</p>
+              <button className="primary-btn sm" onClick={() => setAssign(true)}>Elegir rutina</button>
+            </div>
           )}
-        </div>)}
+        </section>)}
       {prog && <ProgramModal clientId={clientId} first={first} hasActive={!!active} onClose={() => setProg(false)} onDone={() => { setDay(today); setWeekSel(null); }} />}
       {newPlan && <NewPlan clientId={clientId} hasActive={!!active} onClose={() => setNewPlan(false)} />}
       {assign && active && <AssignModal clientId={clientId} planId={active.id} weekday={day} week={week} weeks={cycle} dayLabel={DAYS_LONG[day - 1]} replacing={!!d} onClose={() => setAssign(false)} />}
+    </div>
+  );
+}
+// Los 7 días con su rutina a la vista (22-nov). Elegir en el selector asigna esa rutina a ese día en el momento (assign_day copia
+// la rutina del catálogo); "Descanso" pide confirmar porque borra lo que se haya ajustado ese día.
+function WeekBuilder({ clientId, planId, week, days, sel, today, onSel }: { clientId: string; planId: string; week: number; days: PlanDay[]; sel: number; today: number; onSel: (w: number) => void }) {
+  const routines = useRoutines(), assign = useAssignDay(clientId), clear = useClearDay(clientId), [busy, setBusy] = useState<number | null>(null), [ask, setAsk] = useState<number | null>(null);
+  const list = routines.data ?? [];
+  const pick = (w: number, v: string) => {
+    const cur = days.find((x) => x.weekday === w);
+    if (v === "__cur") return;
+    if (!v) { if (cur) setAsk(w); return; }
+    if (cur?.templateId === v) return;
+    setBusy(w); setAsk(null); onSel(w);
+    assign.mutate({ planId, weekdays: [w], templateId: v, week }, { onSettled: () => setBusy(null) });
+  };
+  return (
+    <div className="wk-grid">{DAYS.map((t, i) => {
+      const w = i + 1, x = days.find((y) => y.weekday === w), known = !!x?.templateId && list.some((r) => r.id === x.templateId);
+      return (
+        <div key={t} className={`wk-day${x ? " on" : " rest"}${sel === w ? " sel" : ""}${busy === w ? " busy" : ""}`}>
+          <button type="button" className="wk-top" onClick={() => onSel(w)} aria-pressed={sel === w} aria-label={`${DAYS_LONG[i]}: ${x ? x.name : "descanso"}. Ver el día`}>
+            <span className="wk-dn">{t}{today === w && <i>hoy</i>}</span>
+            <b>{busy === w ? "Guardando…" : x ? x.name : "Descanso"}</b>
+            <small>{x ? `${x.items.length} ejercicio${x.items.length === 1 ? "" : "s"}${x.minutes ? ` · ${x.minutes}′` : ""}` : "Sin rutina"}</small>
+          </button>
+          {ask === w ? (
+            <div className="wk-ask"><span>¿Dejarlo de descanso?</span>
+              <button type="button" onClick={() => setAsk(null)}>No</button>
+              <button type="button" className="yes" disabled={clear.isPending} onClick={() => { if (x) clear.mutate(x.id, { onSuccess: () => setAsk(null) }); }}>Sí</button></div>
+          ) : (
+            <select aria-label={`Rutina del ${DAYS_LONG[i].toLowerCase()}`} value={x ? (known ? x.templateId! : "__cur") : ""} disabled={busy !== null || !routines.data} onChange={(e) => pick(w, e.target.value)}>
+              <option value="">Descanso</option>
+              {x && !known && <option value="__cur">{x.name} (ajustada)</option>}
+              {list.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          )}
+        </div>);
+    })}
+      {routines.data && !list.length && <p className="wk-none">Aún no tienes rutinas. Créalas en <Link href="/coach/catalogo/rutinas">Catálogo → Rutinas</Link>.</p>}
     </div>
   );
 }
@@ -120,7 +186,7 @@ function NewPlan({ clientId, hasActive, onClose }: { clientId: string; hasActive
   const create = useCreatePlan(clientId), [name, setName] = useState(""), [err, setErr] = useState("");
   const go = () => { if (!name.trim()) return setErr("Ponle un nombre al plan."); create.mutate(name.trim(), { onSuccess: onClose }); };
   return (
-    <Modal title="Crear nuevo plan" sub={hasActive ? "El plan actual pasará a “Finalizado” y este será el activo. Las rutinas se asignan después, día por día." : "Después le asignas una rutina a cada día de la semana."} onClose={onClose}>
+    <Modal title="Crear nuevo plan" sub={hasActive ? "El plan actual pasará a “Finalizado” y este será el activo. Después eliges la rutina de cada día en “Arma la semana”." : "Después eliges la rutina de cada día en “Arma la semana”, todos a la vista."} onClose={onClose}>
       <div className="modal-field"><label>Nombre del plan</label><input aria-label="Nombre del plan" autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && go()} placeholder="Ej. Fuerza — semana 1" /></div>
       {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={create.isPending} onClick={go}>{create.isPending ? "Creando…" : "Crear plan"}</button></div>

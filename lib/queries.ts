@@ -527,17 +527,20 @@ export const useFirstCall = (clientId: string) => useQuery({ queryKey: ["first-c
   const next = rows.filter((b) => b.status === "confirmed" && b.availability_slots && new Date(b.availability_slots.starts_at) > new Date()).map((b) => b.availability_slots!.starts_at).sort()[0];
   return { any: rows.length > 0, next: next ? { startsAt: next } : null };
 } });
+const coachBookingPush = (bookingId: string, kind: "booked" | "cancelled") => { void fetch("/api/push/booking-coach", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookingId, kind }) }).catch(() => {}); };
 function useAgendaInvalidate() { const qc = useQueryClient(); return () => ["open-slots", "my-bookings", "coach-slots", "coach-upcoming", "first-call", "client-bookings", "coach-attention"].forEach((k) => qc.invalidateQueries({ queryKey: [k] })); }
 export function useBookSlot() {
   const toast = useToast(), inv = useAgendaInvalidate();
-  return useMutation({ mutationFn: async (slotId: string) => { const { error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; },
+  // 22-nov (0060): después de reservar o cancelar, el cliente pide que le llegue la notificación a Yeff (la base valida que toque).
+  return useMutation({ mutationFn: async (slotId: string) => { const { data, error } = await db().rpc("book_slot", { p_slot: slotId }); if (error) throw error; if (typeof data === "string") coachBookingPush(data, "booked"); },
     onSuccess: () => toast("¡Sesión reservada!"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
 export function useCancelBooking() {
   const toast = useToast(), inv = useAgendaInvalidate();
   // reason: motivo de Jeff para el cliente (0041); se guarda en la reserva y sale en la notificación y en la pantalla Hoy del cliente.
   return useMutation({ mutationFn: async (v: string | { id: string; reason?: string }) => { const id = typeof v === "string" ? v : v.id, reason = typeof v === "string" ? "" : v.reason?.trim() ?? "";
-      const { error } = await db().rpc("cancel_booking", reason ? { p_booking: id, p_reason: reason } : { p_booking: id }); if (error) throw error; },
+      const { error } = await db().rpc("cancel_booking", reason ? { p_booking: id, p_reason: reason } : { p_booking: id }); if (error) throw error;
+      coachBookingPush(id, "cancelled"); },   // si cancela el coach, la base no devuelve a nadie
     onSuccess: () => toast("Sesión cancelada"), onError: (e) => toast(agendaError(e), true), onSettled: inv });
 }
 export type ClientBookingRow = { id: string; startsAt: string; duration: number; kind: string; status: string; capacity: number; bookedBy?: string };

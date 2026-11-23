@@ -10,7 +10,7 @@ type K = keyof MeasureInput;
 const M: { id: string; label: string; k: K; unit: string; color: string }[] = [
   { id: "peso", label: "Peso", k: "weight", unit: "kg", color: "var(--neon)" }, { id: "cintura", label: "Cintura", k: "waist", unit: "cm", color: "var(--garnet)" },
   { id: "caderas", label: "Caderas", k: "hip", unit: "cm", color: "var(--pearl)" }, { id: "pecho", label: "Pecho", k: "chest", unit: "cm", color: "var(--rose)" },
-  { id: "brazo", label: "Brazo", k: "arm", unit: "cm", color: "var(--ok)" }, { id: "pierna", label: "Pierna", k: "thigh", unit: "cm", color: "var(--amber)" },
+  { id: "brazo", label: "Brazo", k: "arm", unit: "cm", color: "#6B6F80" }, { id: "pierna", label: "Pierna", k: "thigh", unit: "cm", color: "var(--amber)" },
 ];
 const day = (d: string, y = false) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", ...(y ? { year: "numeric" } : {}) });
 const fmt = (n: number) => n.toFixed(1);
@@ -28,6 +28,7 @@ export function ProgressPanels({ clientId, mode }: { clientId: string; mode: "cl
     return s.map((p) => ({ x: dates.length > 1 ? (dates.indexOf(p.d) / (dates.length - 1)) * W : W / 2, y: hi === lo ? H / 2 : 175 - ((p.v - lo) / (hi - lo)) * 150 })); };
   return (
     <>
+      {!mine && <CoachProgressHero list={list} photos={photos.data?.length ?? 0} />}
       {extra}
       {!list.length ? <div className="card"><div className="card-tag">Mediciones</div><p style={{ fontSize: 14, color: "var(--text-dim)", margin: "8px 0 12px", lineHeight: 1.6 }}>{mine ? "Aún no tienes mediciones. Registra tu peso y tus medidas para empezar a ver tu evolución." : "El cliente aún no ha registrado mediciones."}</p>{mine && <button className="add-btn" onClick={() => setModal(true)}>Registrar medición</button>}</div> : (
         <>
@@ -44,7 +45,7 @@ export function ProgressPanels({ clientId, mode }: { clientId: string; mode: "cl
                   <div className="chart-x-axis">{dates.map((d) => <span key={d}>{day(d)}</span>)}</div></div>
               </div>
               <div className="card"><div className="card-tag">Historial</div><div className="card-title" style={{ fontSize: 16 }}>Mediciones registradas</div>
-                <div style={{ marginTop: 6 }}>{[...list].reverse().map((m: Measure) => <div key={m.id} className="history-row"><div className="history-date">{day(m.date)}</div><div className="history-body"><div className="history-vals">{M.filter((x) => m[x.k] != null).map((x) => <span key={x.id} style={{ marginRight: 12 }}><span>{x.label}</span> {fmt(m[x.k] as number)} {x.unit}</span>)}</div></div><div className={`history-source ${m.by}`}>{m.by === "coach" ? "Coach" : mine ? "Tú" : "Cliente"}</div></div>)}</div></div>
+                <div style={{ marginTop: 6 }}>{[...list].reverse().map((m: Measure) => <div key={m.id} className="history-row"><div className="history-date">{day(m.date)}</div><div className="history-body"><div className="history-vals">{M.filter((x) => m[x.k] != null).map((x) => <span key={x.id} className="hv"><span>{x.label}</span> {fmt(m[x.k] as number)} {x.unit}</span>)}</div></div><div className={`history-source ${m.by}`}>{m.by === "coach" ? "Coach" : mine ? "Tú" : "Cliente"}</div></div>)}</div></div>
             </div>
             <Photos clientId={clientId} mine={mine} photos={photos} />
           </div>
@@ -110,5 +111,26 @@ function Photos({ clientId, mine, photos }: { clientId: string; mine: boolean; p
             después de guardar el permiso no hacía nada). El permiso se guarda a la vez, mientras la persona elige la foto. */}
           <label htmlFor="ph-file" className="modal-btn primary" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} onClick={() => { if (!give.isPending && !give.isSuccess) give.mutate(undefined); }}>Acepto y elegir foto</label></div></Modal>}
     </div>
+  );
+}
+
+// 22-nov (pedido de Cristian: "Progreso está muy blanco"): arriba, en oscuro, lo que el coach quiere ver primero: cuánto cambió
+// el peso y la cintura desde la primera medición, cuántas mediciones y fotos hay y cuándo fue la última.
+function CoachProgressHero({ list, photos }: { list: Measure[]; photos: number }) {
+  const change = (k: K) => { const s = list.filter((m) => m[k] != null); if (s.length < 1) return null; const a = s[0][k] as number, b = s[s.length - 1][k] as number; return { now: b, d: s.length > 1 ? b - a : null, since: s[0].date }; };
+  const w = change("weight"), c = change("waist"), last = list[list.length - 1]?.date;
+  const sign = (d: number) => `${d > 0 ? "+" : d < 0 ? "−" : ""}${Math.abs(d).toFixed(1)}`;
+  return (
+    <section className="tp-hero pg-hero">
+      <div className="tp-eyebrow">Progreso</div>
+      <h2 className="tp-hero-name" style={{ marginTop: 6 }}>{list.length ? `${list.length} medición${list.length === 1 ? "" : "es"} desde el ${day(list[0].date, true)}` : "Aún sin mediciones"}</h2>
+      <p className="tp-hero-sub">{last ? `Última medición: ${day(last, true)}.` : "Cuando registre su peso y sus medidas, aquí verás cuánto ha cambiado."}</p>
+      <div className="tp-stats">
+        <div><b>{w ? fmt(w.now) : "—"}<small> kg</small></b><span>{w?.d != null ? `${sign(w.d)} kg desde el inicio` : "peso actual"}</span></div>
+        <div><b>{c ? fmt(c.now) : "—"}<small> cm</small></b><span>{c?.d != null ? `${sign(c.d)} cm de cintura` : "cintura"}</span></div>
+        <div><b>{list.length}</b><span>mediciones</span></div>
+        <div><b>{photos}</b><span>fotos de progreso</span></div>
+      </div>
+    </section>
   );
 }

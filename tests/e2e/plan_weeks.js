@@ -44,8 +44,8 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     const hint = await j.locator(".modal-cap-hint").last().innerText(); if (!/Semana 1:.*Semana 2:/s.test(hint)) throw new Error(hint);
     await j.locator(".modal-actions").getByRole("button", { name: "Asignar programa" }).click(); await j.waitForTimeout(1800);
     if (await j.getByRole("tab", { name: /Semana 2/ }).count() !== 1) throw new Error("sin pestañas de semana");
-    await j.locator(".day-pill", { hasText: "LUN" }).click(); await j.getByRole("tab", { name: /Semana 2/ }).click(); await j.waitForTimeout(300);
-    if (!/Funcional/.test(await j.locator(".tp-dayname").innerText())) throw new Error("la semana 2 no tiene Funcional el lunes");
+    await j.locator(".wk-day .wk-top").first().click(); await j.getByRole("tab", { name: /Semana 2/ }).click(); await j.waitForTimeout(300);
+    if (!/Funcional/.test(await j.locator(".tp-day-name").innerText())) throw new Error("la semana 2 no tiene Funcional el lunes");
     await j.screenshot({ path: `${S}/pw_ficha.png`, fullPage: true }); return sql(`select cycle_weeks from training_plans where client_id='${CA}' and status='active'`) + " semanas";
   });
   await step("ficha: series, repeticiones, descanso y peso se guardan solo para este cliente", async () => {
@@ -53,7 +53,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     await row.getByLabel(`Series de ${name}`).fill("5"); await row.getByLabel(`Repeticiones de ${name}`).click();
     await row.getByLabel(`Repeticiones de ${name}`).fill("6-8"); await row.getByLabel(`Descanso de ${name} en segundos`).click();
     await row.getByLabel(`Descanso de ${name} en segundos`).fill("75"); await row.getByLabel(`Peso objetivo de ${name} en kilos`).click();
-    await row.getByLabel(`Peso objetivo de ${name} en kilos`).fill("22.5"); await j.locator(".tp-dayname").click(); await j.waitForTimeout(1500);
+    await row.getByLabel(`Peso objetivo de ${name} en kilos`).fill("22.5"); await j.locator(".tp-day-name").click(); await j.waitForTimeout(1500);
     const r = sql(`select pi.sets||'|'||pi.reps||'|'||pi.rest_seconds||'|'||pi.target_weight from plan_items pi join plan_days pd on pd.id=pi.plan_day_id join training_plans tp on tp.id=pd.plan_id where tp.client_id='${CA}' and tp.status='active' and pd.week=2 and pd.weekday=1 order by pi.position limit 1`);
     if (r !== "5|6-8|75|22.50") throw new Error(r);
     const cat = sql(`select ti.sets||'|'||ti.reps from template_items ti join routine_templates t on t.id=ti.template_id where t.name='Funcional' order by ti.position limit 1`); if (cat !== "3|10") throw new Error("cambió el catálogo: " + cat);
@@ -73,7 +73,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
   await step("celular de Jeff: ficha y editor de rutina ordenados, sin desborde", async () => {
     const m = await (await ctxFor(b, "jeff", true)).newPage(); watch(m, "jeff-cel", errs);
     await m.goto(`${U}/coach/clientes/${CA}`, { waitUntil: "networkidle" }); await m.locator(".tab-btn", { hasText: "Entrenamiento" }).click(); await m.waitForTimeout(800);
-    await m.locator(".day-pill", { hasText: "LUN" }).click(); await m.waitForTimeout(300); await m.locator(".tp-items").scrollIntoViewIfNeeded(); await m.screenshot({ path: `${S}/pw_ficha_cel.png` });
+    await m.locator(".wk-day .wk-top").first().click(); await m.waitForTimeout(300); await m.locator(".tp-items").scrollIntoViewIfNeeded(); await m.screenshot({ path: `${S}/pw_ficha_cel.png` });
     let o = await m.evaluate(() => document.documentElement.scrollWidth > innerWidth); if (o) throw new Error("desborde en la ficha");
     await m.goto(`${U}/coach/catalogo/rutinas`, { waitUntil: "networkidle" }); await m.screenshot({ path: `${S}/pw_rutinas_cel.png` });
     await m.locator(".cat-row").first().locator(".cat-row-head").click(); await m.locator(".cat-row").first().getByRole("button", { name: "Editar", exact: true }).click(); await m.waitForTimeout(600);

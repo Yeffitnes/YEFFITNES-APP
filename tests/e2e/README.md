@@ -33,3 +33,4 @@ de pantalla y de "hidratación" (React redibujando todo al abrir) que no se ven 
 - `bash tests/e2e/run.sh catalog.js`: galería de ejercicios (arranca Compacta; Normal se recuerda por filtro) en celular y computador.
 Límites: `proxy.js` simula solo lo mínimo de Supabase (sesión y /rest). No hay Storage (fotos, audios), Realtime, avisos push ni Bunny.
 **Después de usarlo, vuelve a compilar normal** (`npx next build` con las variables de siempre) antes de los chequeos para subir.
+- `push_coach.js` (22-nov): franja de avisos del coach (iPhone sin instalar, Android apagados y bloqueados, "Ahora no") y aviso a Yeff cuando un cliente reserva o cancela (0060). Claves VAPID de prueba, como `push.js`; no está en `all.sh`. `ficha_design.js`: Entrenamiento ("Arma la semana"), Nutrición y Progreso de la ficha.
