@@ -102,8 +102,8 @@ export function Landing() {
 
       {/* 2. Desfile de ejercicios */}
       <section className="lp-ex" aria-labelledby="lp-ex-t">
-        <div className="lp-head dark"><p className="lp-eyebrow">Más de 140 ejercicios</p><h2 id="lp-ex-t">Cada ejercicio, con su dibujo.</h2>
-          <p>Antes de hacerlo, ves cómo se hace. Y en tu rutina, la técnica explicada por Yeff.</p></div>
+        <div className="lp-head dark"><p className="lp-eyebrow">Tu rutina</p><h2 id="lp-ex-t">Rutinas completas, <span className="lp-glow">a tu medida.</span></h2>
+          <p>Hechas para tu nivel y tu objetivo, y ajustadas según tu progreso. Más de 140 ejercicios, cada uno con su guía para que sepas cómo se hace.</p></div>
         {/* Sin "lazy": las fichas entran de lado mientras el desfile corre y con "lazy" aparecían en blanco. Prioridad baja. */}
         {[ROW1, ROW2].map((row, r) => (
           <div key={r} className={`lp-marq${r ? " rev" : ""}`} aria-hidden={r === 1}>

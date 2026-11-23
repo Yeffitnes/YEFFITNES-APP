@@ -6,7 +6,7 @@ Pedido de Cristian: la landing es lo primero que ve quien llega desde el Instagr
   - De fondo, el dibujo de la sentadilla con barra.
   - El llamado "Quiero entrenar con Yeff" (WhatsApp) queda en la primera pantalla del celular.
   - Al lado, el celular con Hoy (ya con "Mañana tienes sesión con Yeff" arriba), el aviso de la sesión cayendo y la gráfica real de "Semana a semana" (peso movido).
-- **Desfile de ejercicios:** dos filas de dibujos de la app que corren en sentidos contrarios: "Más de 140 ejercicios. Cada ejercicio, con su dibujo." (hay 143 en `public/ex`).
+- **Desfile de ejercicios:** dos filas de dibujos de la app que corren en sentidos contrarios, con el título "Rutinas completas, a tu medida." (cambiado a pedido de Cristian; antes "Cada ejercicio, con su dibujo"). El texto menciona "más de 140 ejercicios" (hay 143 en `public/ex`).
 - **Progreso ("Tu progreso no se adivina. Se ve."):**
   - Capturas reales de "Semana a semana" y del resumen semanal con el comentario de Yeff.
   - Récords, la curva de peso y medidas (se dibuja al llegar) y fotos de progreso ("Privadas: solo tú y Yeff las ven").
