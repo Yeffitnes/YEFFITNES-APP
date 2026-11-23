@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-22 - Semana del plan: el brillo ya no cambia según el día
+Cristian: con un día de descanso el bloque se veía bien, pero al abrir un día con rutina "brillaba más". El brillo rojo estaba medido en porcentaje del bloque: con un día con rutina el bloque es más alto y el brillo crecía con él. Ahora tiene medidas fijas, las mismas que se ven con un día de descanso.
+Archivo: `app/coach/coach.css`. Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Entrenamiento: el degradado de la marca en el plan y la semana
 Cristian: "todo negro no es un color de Yeff". La cabecera del plan y el bloque de la semana usan ahora el mismo degradado de la cabecera del celular y de las tarjetas oscuras (brillo rojo en la esquina, un toque dorado y negro). Lo elegido sigue con borde rojo fino.
 Archivo: `app/coach/coach.css` (bloque "cuarta vuelta"). Revertir: `git revert` de este commit.
