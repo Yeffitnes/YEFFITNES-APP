@@ -1,4 +1,9 @@
 # CHANGELOG
+## 2026-11-22 - Entrenamiento: vuelven los colores de antes; lo elegido con borde rojo
+A Cristian no le gustó el vino tinto (muy brillante). Vuelven los colores de antes (negro con brillo rojo suave). Lo elegido (día, "Listo", pestaña de semana, día en "Editar semana") queda oscuro y se marca con un borde rojo fino y un brillo leve, sin blanco y sin otro color. Las celdas nuevas de series, reps, descanso y peso se quedan (a Cristian le gustaron), con el número del ejercicio en negro y el foco en rojo.
+Archivos: `app/coach/coach.css` (bloque "tercera vuelta (corregida)"), `tests/e2e/ficha_design.js`.
+Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Entrenamiento con detalle premium, "Editar semana" y YouTube dentro de la app
 Cristian: le faltaba "un toque premium", lo elegido no debe ser blanco, el bloque se veía muy negro o rosado, y un enlace de YouTube lo sacaba de la app.
 - **Colores**: cabecera del plan y bloque de la semana en vino tinto (degradado rojo oscuro a negro, borde vino y un brillo fino arriba) en vez de negro plano con rosado. **Lo elegido** (día, "Listo", pestaña de semana, número del ejercicio) en **rojo con negro degradado**, no blanco.

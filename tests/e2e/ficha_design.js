@@ -17,7 +17,7 @@ const step = async (n, fn) => { try { console.log("OK  ", n, (await fn()) ?? "")
     const tag = mobile ? "cel" : "pc", p = await (await ctxFor(b, "jeff", mobile)).newPage(); watch(p, `jeff-${tag}`, errs);
     await step(`[${tag}] Entrenamiento: cabecera oscura y los 7 días con su selector`, async () => {
       await p.goto(`${U}/coach/clientes/${CA}?tab=Entrenamiento`, { waitUntil: "networkidle" }); await p.waitForTimeout(1200);
-      const bg = await p.locator(".tp-hero").evaluate((e) => getComputedStyle(e).backgroundImage); if (!/rgb\(10, 9, 16\)/.test(bg)) throw new Error("la cabecera no es oscura: " + bg.slice(0, 120));
+      const bg = await p.locator(".tp-hero").evaluate((e) => getComputedStyle(e).backgroundColor + " " + getComputedStyle(e).backgroundImage); if (!/rgb\(10, 9, 16\)/.test(bg)) throw new Error("la cabecera no es oscura: " + bg.slice(0, 120));
       if (await p.locator(".wk-day select").count()) throw new Error("los selectores deberían estar plegados");
       if (await p.locator(".wk-chip").count() !== 7) throw new Error("faltan los 7 días");
       await p.getByRole("button", { name: /^(Armar|Editar) semana$|^Armar la semana$/ }).click(); await p.waitForTimeout(300);
