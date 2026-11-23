@@ -2,7 +2,7 @@
 import { useVideoPick } from "@/components/ui/useVideoPick";
 import { Icon } from "@/components/ui/Icon";
 import { useRef, useState } from "react";
-import { useAssignDay, useClearDay, useCreatePlan, useRoutines, useSetDayVideo, assignDayVideo, useSetItem, useSetPlanWeeks, useTrainingPlans, type ItemPatch, type PlanDay, type PlanItem } from "@/lib/queries";
+import { useAssignDay, useClearDay, useCreatePlan, useExercises, useRoutines, useSetDayVideo, assignDayVideo, useSetItem, useSetPlanWeeks, useTrainingPlans, type ItemPatch, type PlanDay, type PlanItem } from "@/lib/queries";
 import { ExPic } from "@/components/ExPic";
 import { BunnyModal } from "@/components/ui/BunnyModal";
 import { VideoModal } from "@/components/portal/VideoModal";
@@ -13,7 +13,8 @@ import { Modal, Skeleton } from "@/components/ui/Modal";
 import { PlanInfoForm } from "./PlanInfoForm";
 import Link from "next/link";
 import { Guide } from "@/components/portal/Guide";
-import { useApplyProgram, usePrograms } from "@/lib/extras";
+import { useApplyProgram, usePrograms, useSaveProgram } from "@/lib/extras";
+import { RoutineModal } from "./RoutinesView";
 const DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
 const DAYS_LONG = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const fmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
@@ -26,8 +27,10 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
   const today = (new Date().getDay() + 6) % 7 + 1;
   const [day, setDay] = useState(today), [weekSel, setWeekSel] = useState<number | null>(null);
   const [prog, setProg] = useState(false);
-  const [hist, setHist] = useState(false), [newPlan, setNewPlan] = useState(false), [build, setBuild] = useState(false), [assign, setAssign] = useState(false);
+  const [hist, setHist] = useState(false), [newPlan, setNewPlan] = useState(false), [buildSel, setBuild] = useState<boolean | null>(null), [assign, setAssign] = useState(false);
   const weeksM = useSetPlanWeeks(clientId);
+  // 22-nov: crear una rutina desde un día (queda en Rutinas y se asigna a ese día), guardar un día como rutina y la semana como programa.
+  const exs = useExercises(), assignNew = useAssignDay(clientId), [creating, setCreating] = useState<number | null>(null), [asRoutine, setAsRoutine] = useState(false), [asProgram, setAsProgram] = useState(false);
   if (isPending) return <Skeleton rows={2} />;
   if (isError) return <div className="card"><p role="alert" style={{ fontSize: 14 }}>No pudimos cargar el entrenamiento. <button className="filter-chip" onClick={() => refetch()}>Reintentar</button></p></div>;
   const active = data?.find((p) => p.status === "active"), past = data?.filter((p) => p.status === "finished") ?? [];
@@ -39,6 +42,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
   const addWeek = () => { if (!active) return; weeksM.mutate({ planId: active.id, weeks: cycle + 1, copyFrom: cycle }, { onSuccess: () => setWeekSel(cycle + 1) }); };
   const dropWeek = () => { if (!active || cycle <= 1) return; weeksM.mutate({ planId: active.id, weeks: cycle - 1 }, { onSuccess: () => setWeekSel(Math.min(week, cycle - 1)) }); };
   const isToday = (w: number) => w === today && week === (active?.week ?? 1);
+  const build = buildSel ?? (!!active && !wdays.length);   // plan vacío: "Armar la semana" ya abierto
   return (
     <div className="tp">
       <section className="tp-hero">
@@ -90,11 +94,12 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
             <button key={w} role="tab" aria-selected={w === week} className={`tp-wtab${w === week ? " on" : ""}`} onClick={() => setWeekSel(w)}>Semana {w}{w === active.week ? <i> · en curso</i> : null}</button>))}</div>}
           {build ? (<>
             <p className="tp-week-hint">Elige la rutina de cada día: se guarda al elegirla.</p>
-            <WeekBuilder key={`${active.id}-${week}`} clientId={clientId} planId={active.id} week={week} days={wdays} sel={day} today={isToday(today) ? today : 0} onSel={(w) => setDay(w)} />
+            <WeekBuilder key={`${active.id}-${week}`} clientId={clientId} planId={active.id} week={week} days={wdays} sel={day} today={isToday(today) ? today : 0} onSel={(w) => setDay(w)} onCreate={(w) => setCreating(w)} />
             <div className="tp-week-tools">
               {cycle < 16 && <button className="tp-link light" disabled={weeksM.isPending} onClick={addWeek} title="Agrega otra semana copiando la última; luego cambias lo que quieras.">{cycle === 1 ? "+ Semanas distintas" : `+ Semana ${cycle + 1} (copia de la ${cycle})`}</button>}
               {cycle > 1 && week === cycle && <button className="tp-link light danger" disabled={weeksM.isPending} onClick={dropWeek}>Quitar semana {cycle}</button>}
               <button className="tp-link light" onClick={() => setAssign(true)}>Una rutina a varios días</button>
+              {!!(active.allDays ?? active.days).length && <button className="tp-link light" onClick={() => setAsProgram(true)}>Guardar la semana como programa</button>}
             </div>
           </>) : (
             <div className="wk-strip" role="tablist" aria-label="Días de la semana">{DAYS.map((t, i) => { const w = i + 1, x = wdays.find((y) => y.weekday === w);
@@ -113,6 +118,7 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
               </div>
               {d ? (<>
                 <div className="tp-items">{d.items.map((i, k) => <ItemRow key={i.id} n={k + 1} item={i} clientId={clientId} />)}</div>
+                {d.items.some((i) => i.exerciseId) && <button type="button" className="tp-saveas" onClick={() => setAsRoutine(true)}><Icon name="download" size={13} /> Guardar este día como rutina</button>}
                 <DayVideoBox clientId={clientId} clientName={clientName} day={d} />
               </>) : (
                 <div className="tp-rest2">
@@ -124,6 +130,11 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
             </div>
           )}
         </section>)}
+      {creating !== null && active && <RoutineModal r={null} exercises={exs.data ?? []} noExercises={!!exs.data && !exs.data.length} sub={`Queda guardada en Rutinas y se asigna al ${DAYS_LONG[creating - 1].toLowerCase()} de ${first}.`}
+        onClose={() => setCreating(null)} onSaved={(id) => { const w = creating; setDay(w); assignNew.mutate({ planId: active.id, weekdays: [w], templateId: id, week }); }} />}
+      {asRoutine && d && <RoutineModal r={null} exercises={exs.data ?? []} noExercises={false} sub={`Se guarda en Rutinas con las series, repeticiones y descansos que tiene hoy ${first}. Podrás asignarla a otros clientes.`}
+        initial={{ name: d.name, minutes: d.minutes, items: d.items.filter((i) => i.exerciseId).map((i) => ({ exercise_id: i.exerciseId!, sets: i.sets, reps: i.reps, rest_seconds: i.rest })) }} onClose={() => setAsRoutine(false)} />}
+      {asProgram && active && <SaveWeekProgram first={first} cycle={cycle} days={active.allDays ?? active.days} onClose={() => setAsProgram(false)} />}
       {prog && <ProgramModal clientId={clientId} first={first} hasActive={!!active} onClose={() => setProg(false)} onDone={() => { setDay(today); setWeekSel(null); }} />}
       {newPlan && <NewPlan clientId={clientId} hasActive={!!active} onClose={() => setNewPlan(false)} />}
       {assign && active && <AssignModal clientId={clientId} planId={active.id} weekday={day || today} week={week} weeks={cycle} dayLabel={DAYS_LONG[(day || today) - 1]} replacing={!!d} onClose={() => setAssign(false)} />}
@@ -132,12 +143,13 @@ export function TrainingTab({ clientId, clientName }: { clientId: string; client
 }
 // Los 7 días con su rutina a la vista (22-nov). Elegir en el selector asigna esa rutina a ese día en el momento (assign_day copia
 // la rutina del catálogo); "Descanso" pide confirmar porque borra lo que se haya ajustado ese día.
-function WeekBuilder({ clientId, planId, week, days, sel, today, onSel }: { clientId: string; planId: string; week: number; days: PlanDay[]; sel: number; today: number; onSel: (w: number) => void }) {
+function WeekBuilder({ clientId, planId, week, days, sel, today, onSel, onCreate }: { clientId: string; planId: string; week: number; days: PlanDay[]; sel: number; today: number; onSel: (w: number) => void; onCreate: (w: number) => void }) {
   const routines = useRoutines(), assign = useAssignDay(clientId), clear = useClearDay(clientId), [busy, setBusy] = useState<number | null>(null), [ask, setAsk] = useState<number | null>(null);
   const list = routines.data ?? [];
   const pick = (w: number, v: string) => {
     const cur = days.find((x) => x.weekday === w);
     if (v === "__cur") return;
+    if (v === "__new") { onCreate(w); return; }
     if (!v) { if (cur) setAsk(w); return; }
     if (cur?.templateId === v) return;
     setBusy(w); setAsk(null); onSel(w);
@@ -162,6 +174,7 @@ function WeekBuilder({ clientId, planId, week, days, sel, today, onSel }: { clie
               <option value="">Descanso</option>
               {x && !known && <option value="__cur">{x.name} (ajustada)</option>}
               {list.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              <option value="__new">+ Crear rutina nueva…</option>
             </select>
           )}
         </div>);
@@ -264,6 +277,26 @@ function ProgramModal({ clientId, first, hasActive, onClose, onDone }: { clientI
       {p && <div className="modal-cap-hint">{Array.from({ length: p.distinct }, (_, k) => k + 1).map((w) => <div key={w}>{p.distinct > 1 && <b>Semana {w}: </b>}{p.days.filter((d) => d.week === w).map((d) => `${DAYS[d.weekday - 1]} ${d.routine}`).join(" · ") || "descanso"}</div>)}
         <div style={{ marginTop: 4 }}>{p.distinct > 1 ? `Las ${p.distinct} semanas se van turnando. ` : "La misma semana se repite. "}Revisión del plan en {p.weeks} semana{p.weeks === 1 ? "" : "s"}.</div></div>}
       <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={!sel || apply.isPending} onClick={() => apply.mutate(sel, { onSuccess: () => { onDone(); onClose(); } })}>{apply.isPending ? "Asignando…" : "Asignar programa"}</button></div>
+    </Modal>
+  );
+}
+
+// Guardar la semana del cliente como programa (22-nov): queda en Catálogo → Programas para asignarla a otros con un toque. Se guardan
+// las rutinas de cada día (las del catálogo); los ajustes de series o pesos de este cliente no (para eso, "Guardar este día como rutina").
+function SaveWeekProgram({ first, cycle, days, onClose }: { first: string; cycle: number; days: PlanDay[]; onClose: () => void }) {
+  const routines = useRoutines(), save = useSaveProgram(), [name, setName] = useState(`Semana de ${first}`), [err, setErr] = useState("");
+  const known = new Set((routines.data ?? []).map((r) => r.id)), ok = days.filter((x) => x.templateId && known.has(x.templateId)), skipped = days.filter((x) => !x.templateId || !known.has(x.templateId));
+  const go = () => {
+    if (!name.trim()) return setErr("Ponle un nombre al programa."); if (!ok.some((x) => (x.week ?? 1) === 1)) return setErr("La semana 1 no tiene rutinas del catálogo para guardar.");
+    setErr(""); save.mutate({ name: name.trim(), weeks: Math.max(cycle, 1), notes: "", days: ok.map((x) => ({ week: x.week ?? 1, weekday: x.weekday, template_id: x.templateId! })) }, { onSuccess: onClose });
+  };
+  return (
+    <Modal title="Guardar la semana como programa" sub="Queda en Catálogo → Programas. Después se la asignas a otro cliente con un toque desde su ficha." onClose={onClose}>
+      <div className="modal-field"><label htmlFor="swp-n">Nombre del programa</label><input id="swp-n" autoFocus maxLength={80} value={name} onChange={(e) => setName(e.target.value)} /></div>
+      <div className="modal-cap-hint">{cycle > 1 ? `${cycle} semanas distintas. ` : "Una semana que se repite. "}{ok.length} día{ok.length === 1 ? "" : "s"} con rutina: {ok.filter((x) => (x.week ?? 1) === 1).sort((a, b) => a.weekday - b.weekday).map((x) => `${DAYS[x.weekday - 1]} ${x.name}`).join(" · ")}.
+        {skipped.length ? ` ${skipped.length} día${skipped.length === 1 ? "" : "s"} no se guarda${skipped.length === 1 ? "" : "n"} porque su rutina ya no está en el catálogo.` : ""} Se guardan las rutinas como están en el catálogo; los ajustes de series o pesos de {first} se quedan solo en su plan.</div>
+      {err && <p role="alert" style={{ color: "var(--danger)", fontSize: 12.5, marginTop: 10 }}>{err}</p>}
+      <div className="modal-actions"><button className="modal-btn ghost" onClick={onClose}>Cancelar</button><button className="modal-btn primary" disabled={save.isPending || !routines.data} onClick={go}>{save.isPending ? "Guardando…" : "Guardar programa"}</button></div>
     </Modal>
   );
 }

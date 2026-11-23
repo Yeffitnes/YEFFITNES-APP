@@ -21,23 +21,25 @@ export function RoutinesView() {
       <div className="cat-list">{list.map((r) => <RoutineCard key={r.id} name={r.name} video={r.video} uploaded={!!r.videoId} poster={r.poster} onEdit={() => setEdit(r)} onDelete={() => del.mutate(r.id)} deleting={del.isPending && del.variables === r.id}
         meta={[`${r.items.length} ejercicio${r.items.length === 1 ? "" : "s"}`, r.minutes ? `${r.minutes} min` : null, r.category].filter(Boolean).join(" · ")}
         rows={r.items.map((i) => ({ name: i.name, sets: i.sets, reps: i.reps, rest: i.rest, image: i.image, muscle: i.muscle }))} />)}</div>
-      {edit && <RoutineModal r={edit === "new" ? null : edit} noExercises={!!exs && !exs.length} exercises={exs?.map((e) => ({ id: e.id, name: e.name })) ?? []} onClose={() => setEdit(null)} />}
+      {edit && <RoutineModal r={edit === "new" ? null : edit} noExercises={!!exs && !exs.length} exercises={exs ?? []} onClose={() => setEdit(null)} />}
     </div>
   );
 }
-function RoutineModal({ r, exercises, noExercises, onClose }: { r: Routine | null; exercises: { id: string; name: string }[]; noExercises: boolean; onClose: () => void }) {
+// 22-nov: también se abre desde la ficha de un cliente ("Crear rutina nueva" en un día, o "Guardar como rutina" con los ajustes
+// de ese día): onSaved recibe el id para asignarla enseguida; initial rellena nombre y ejercicios. Siempre queda en Rutinas.
+export function RoutineModal({ r, exercises, noExercises, onClose, onSaved, initial, sub }: { r: Routine | null; exercises: { id: string; name: string; muscle?: string | null; suggSets?: number | null; suggReps?: string | null }[]; noExercises: boolean; onClose: () => void; onSaved?: (id: string) => void; initial?: { name: string; minutes?: number | null; items: Item[] }; sub?: string }) {
   const save = useSaveRoutine(), archive = useArchive("routine_templates");
-  const [name, setName] = useState(r?.name ?? ""), [cat, setCat] = useState(r?.category ?? ""), [min, setMin] = useState(r?.minutes ? String(r.minutes) : "");
-  const [items, setItems] = useState<Item[]>(r?.items.map((i) => ({ exercise_id: i.exerciseId, sets: i.sets, reps: i.reps, rest_seconds: i.rest })) ?? []);
+  const [name, setName] = useState(r?.name ?? initial?.name ?? ""), [cat, setCat] = useState(r?.category ?? ""), [min, setMin] = useState(r?.minutes ? String(r.minutes) : initial?.minutes ? String(initial.minutes) : "");
+  const [items, setItems] = useState<Item[]>(r?.items.map((i) => ({ exercise_id: i.exerciseId, sets: i.sets, reps: i.reps, rest_seconds: i.rest })) ?? initial?.items ?? []);
   const [err, setErr] = useState(""), [confirm, setConfirm] = useState(false), [video, setVideo] = useState(() => initVideoSrc(r?.video, !!r?.videoId));
   const submit = () => {
     const ok = items.filter((i) => i.exercise_id && i.sets > 0 && i.reps.trim());
     if (!name.trim() || !ok.length) return setErr("Escribe un nombre y agrega al menos un ejercicio completo.");
     const v = readVideoSrc(video, !!r?.videoId); if (v.error) return setErr(v.error);
-    setErr(""); save.mutate({ id: r?.id, name: name.trim(), category: cat.trim(), minutes: Number(min) > 0 ? Number(min) : null, video: v.videoRef, file: v.file, keepUploaded: v.keepUploaded, hadUploaded: !!r?.videoId, items: ok }, { onSuccess: onClose });
+    setErr(""); save.mutate({ id: r?.id, name: name.trim(), category: cat.trim(), minutes: Number(min) > 0 ? Number(min) : null, video: v.videoRef, file: v.file, keepUploaded: v.keepUploaded, hadUploaded: !!r?.videoId, items: ok }, { onSuccess: (id) => { onClose(); if (id && onSaved) onSaved(id); } });
   };
   return (
-    <Modal wide title={r ? "Editar rutina" : "Nueva rutina"} sub="Junta ejercicios de tu catálogo con sus series y repeticiones." onClose={onClose}>
+    <Modal wide title={r ? "Editar rutina" : "Nueva rutina"} sub={sub ?? "Junta ejercicios de tu catálogo con sus series y repeticiones."} onClose={onClose}>
       {noExercises ? <p style={{ fontSize: 14, color: "var(--text-dim)", marginTop: 16 }}>Primero crea algunos ejercicios en el catálogo. <Link href="/coach/catalogo/ejercicios" onClick={onClose} style={{ color: "var(--accent)", fontWeight: 700 }}>Ir a ejercicios</Link></p> : (
         <>
           <div className="modal-field"><label>Nombre</label><input aria-label="Nombre" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Tren superior completo" /></div>

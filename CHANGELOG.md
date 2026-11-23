@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-11-22 - Armar desde el cliente y que quede guardado en el catálogo
+Pedido de Cristian: que Yeff pueda trabajar de las dos formas, armando primero el catálogo o entrando a un cliente y armando desde cero, y que lo que arme desde el cliente quede guardado solo. El catálogo (Ejercicios, Rutinas, Programas) no cambia.
+- **"+ Crear rutina nueva…"** en el selector de cada día de "Armar/Editar semana": abre el editor de rutinas de siempre; al guardar, la rutina queda en **Rutinas** y se asigna a ese día del cliente.
+- **"Guardar este día como rutina"** en el día desplegado: guarda en Rutinas los ejercicios de ese día con las series, repeticiones y descansos que tiene ese cliente.
+- **"Guardar la semana como programa"** en "Editar semana": guarda en **Programas** la semana (o las semanas distintas) del cliente, con las rutinas de cada día, para asignarla a otro con un toque. Avisa qué días no se pueden guardar (rutina eliminada del catálogo).
+- Un plan nuevo sin días abre "Armar la semana" directamente.
+- De paso: el editor de rutinas del catálogo ahora agrupa los ejercicios por músculo y usa lo sugerido de cada ejercicio (antes recibía solo el nombre y lo agrupaba todo como "Sin músculo").
+- Archivos: `components/coach/TrainingTab.tsx`, `components/coach/RoutinesView.tsx` (`RoutineModal` exportado), `lib/queries.ts` (guardar rutina devuelve su id; `exerciseId` en los ejercicios del plan), `lib/fetchers.ts`, `app/coach/coach.css`.
+- Prueba: `tests/e2e/week_from_client.js` (en `all.sh`).
+Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Primera llamada guiada para clientes nuevos
 Yeff: los clientes nuevos "se pierden" y no saben cómo agendar.
 - **Al entrar a la app**, un cliente activo que nunca ha agendado (y al que Yeff aún no le armó rutina) va directo a la Agenda. Puede salir cuando quiera; en esa misma sesión no se le vuelve a llevar.

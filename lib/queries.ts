@@ -130,6 +130,7 @@ export function useSaveRoutine() {
         if (res.error) throw res.error;
         void q.invalidateQueries({ queryKey: KEYS.routines });
       } }); }
+      return id ?? null;   // 22-nov: quien la crea desde la ficha de un cliente la asigna enseguida a ese día
     },
     onSuccess: (_d, r) => { toast(r.file ? "Rutina guardada. El vídeo se está subiendo; queda puesto al terminar." : "Rutina guardada"); qc.invalidateQueries({ queryKey: KEYS.routines }); qc.invalidateQueries({ queryKey: KEYS.exercises }); },
     onError: () => toast("No pudimos guardar la rutina. Revisa tu conexión e inténtalo de nuevo.", true),
@@ -137,7 +138,7 @@ export function useSaveRoutine() {
 }
 
 // ---- Entrenamiento por días ----
-export type PlanItem = { image?: string | null; id: string; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
+export type PlanItem = { image?: string | null; id: string; exerciseId?: string | null; position: number; sets: number; reps: string; rest: number | null; weight: number | null; name: string; muscle: string | null; equipment: string | null; videoRef: string | null; instructions: string | null };
 export type PlanDay = { id: string; weekday: number; week: number; name: string; minutes: number | null; category: string | null; videoRef: string | null; hasPersonalVideo: boolean; videoId?: string | null; templateId?: string | null; poster?: string | null; items: PlanItem[] };
 export type PlanLevel = "beginner" | "intermediate" | "advanced";
 export type TrainingPlan = { id: string; name: string; status: "active" | "finished"; startsOn: string; endsOn: string | null; level: PlanLevel | null; levelReason: string | null; reviewOn: string | null; coachNote: string | null; cycleWeeks: number; week: number; allDays: PlanDay[]; days: PlanDay[] };
