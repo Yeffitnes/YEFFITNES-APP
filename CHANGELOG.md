@@ -1,4 +1,7 @@
 # CHANGELOG
+## 2026-11-22 - Tu plan: series y descanso en gris suave
+Pedido de Cristian: debajo del nombre de cada ejercicio, "3 × 10 · 90 s desc. · 40 kg" va en gris suave, sin recuadros ni el primero en negro (menos ruido visual). Solo CSS: `.ex-chips` en `app/inicio/portal.css`.
+Revertir: `git revert` de este commit.
 ## 2026-11-22 - Progreso: semana a semana (gráficas, comparación y promedio)
 Pedido de Cristian: en el progreso del cliente, gráficas para comparar las semanas y ver el promedio de todo.
 - Nueva tarjeta **"Semana a semana"** en Progreso, para el cliente (su Progreso) y para Yeff (ficha, pestaña Progreso). Usa los colores de Yeff (degradado oscuro con el brillo rojo de la esquina) y está pensada primero para el celular.
