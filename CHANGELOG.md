@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-23 - Landing: imagen propia al compartir el enlace
+Pedido de Cristian: que el enlace de la landing no muestre la imagen de la app. Ahora la vista previa (WhatsApp, iMessage, Facebook, etc.) es `public/landing/og.jpg`: el titular "Entrena con plan. Mide cada serie. Mira cómo cambias." con el logo y la escena de Progreso del personaje. Va en `app/landing/page.tsx` (openGraph y twitter); la plantilla para regenerarla está en `tools/landing/og/`. El resto de la app sigue con su imagen de siempre.
+Revertir: `git revert` de este commit.
+
 ## 2026-11-23 - Landing rehecha: portada impactante, los muñecos de los ejercicios, progreso y agenda con avisos
 Pedido de Cristian: la landing es lo primero que ve quien llega desde el Instagram de Yeff; tiene que atrapar. Cambiar los muñequitos pequeños por los dibujos de los ejercicios (los "rudos"), mostrar el progreso con gráficas, el resumen y las agendas automáticas, y actualizar el celular si la app cambió.
 - **Portada** (`components/landing/Landing.tsx`, `app/landing/landing.css`):
