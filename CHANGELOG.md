@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-22 - Entrenamiento: el degradado de la marca en el plan y la semana
+Cristian: "todo negro no es un color de Yeff". La cabecera del plan y el bloque de la semana usan ahora el mismo degradado de la cabecera del celular y de las tarjetas oscuras (brillo rojo en la esquina, un toque dorado y negro). Lo elegido sigue con borde rojo fino.
+Archivo: `app/coach/coach.css` (bloque "cuarta vuelta"). Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Entrenamiento: vuelven los colores de antes; lo elegido con borde rojo
 A Cristian no le gustó el vino tinto (muy brillante). Vuelven los colores de antes (negro con brillo rojo suave). Lo elegido (día, "Listo", pestaña de semana, día en "Editar semana") queda oscuro y se marca con un borde rojo fino y un brillo leve, sin blanco y sin otro color. Las celdas nuevas de series, reps, descanso y peso se quedan (a Cristian le gustaron), con el número del ejercicio en negro y el foco en rojo.
 Archivos: `app/coach/coach.css` (bloque "tercera vuelta (corregida)"), `tests/e2e/ficha_design.js`.
