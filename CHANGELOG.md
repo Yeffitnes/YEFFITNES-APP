@@ -1,4 +1,15 @@
 # CHANGELOG
+## 2026-11-22 - Progreso: semana a semana (gráficas, comparación y promedio)
+Pedido de Cristian: en el progreso del cliente, gráficas para comparar las semanas y ver el promedio de todo.
+- Nueva tarjeta **"Semana a semana"** en Progreso, para el cliente (su Progreso) y para Yeff (ficha, pestaña Progreso). Usa los colores de Yeff (degradado oscuro con el brillo rojo de la esquina) y está pensada primero para el celular.
+- Métricas: Entrenos (contra los planeados), Rutinas completas (logros), Esfuerzo, Peso movido, Récords (veces que superó el mejor peso de un ejercicio), Nutrición (días con todas las comidas), Reportes, cada hábito activo y Peso. Solo salen las que tienen algún dato.
+- Gráfica de barras de las últimas 8 semanas del cliente (las mismas semanas del resumen: 7 días desde que empezó). Se ve en rojo la última semana completa, la semana en curso va rayada como "Ahora", y una línea marca el promedio.
+- Arriba: el valor de la última semana completa, "+N · más que la semana anterior" o "menos", y el promedio por semana. Debajo: todas las métricas en una lista con la última semana, la diferencia con la anterior y el promedio. Tocar una fila cambia la gráfica.
+- La comparación y el promedio usan solo semanas completas. El peso no se promedia: se muestra si subió o bajó.
+- Sin migración: lee tablas que ya existen.
+- Archivos: `lib/weektrends.ts` (nuevo), `components/WeekTrends.tsx` (nuevo), `components/portal/ProgressPanels.tsx`, `app/globals.css` (bloque `.wt-*`).
+- Prueba: `tests/e2e/week_trends.js` (en `all.sh`).
+Revertir: `git revert` de este commit.
 ## 2026-11-22 - Resúmenes por enviar (prioridad para Yeff)
 Pedido de Cristian: cuando un cliente completa una semana, que a Yeff le salga como prioridad enviarle el resumen.
 - **Panel del coach**: tarjeta "Resúmenes por enviar" (debajo de las solicitudes) con cada cliente que completó su semana y aún no tiene el resumen de esa semana enviado. "Revisar y enviar" abre su ficha en Resumen. Al enviarlo, sale de la lista.
