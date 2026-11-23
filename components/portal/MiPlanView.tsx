@@ -121,8 +121,10 @@ function DayCard({ day, weekday, isToday, onVideo }: { day?: PlanDay; weekday: n
           <div key={i.id} className={`ex-row${i.image || i.instructions ? " tap" : ""}`} style={{ cursor: i.image || i.instructions ? "pointer" : "default" }}
             {...(i.image || i.instructions ? { role: "button", tabIndex: 0, "aria-label": `Ver cómo se hace: ${i.name}`, onClick: () => setPic(i), onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPic(i); } } } : {})}>
             <ExPic image={i.image} name={i.name} size={48} onClick={() => setPic(i)} fallback={<div className="ex-thumb" style={{ background: gradient(k) }}>{initials(i.name)}</div>} />
-            <div className="ex-body"><div className="ex-name">{i.name}</div><div className="ex-sub">{[i.muscle, i.equipment].filter(Boolean).join(" · ") || "—"}</div></div>
-            <div className="ex-meta">{i.sets}×{i.reps}{i.rest ? <><br />{i.rest}s desc.</> : null}{i.weight ? <><br />{i.weight} kg</> : null}</div>
+            {/* 22-nov: series, repeticiones, descanso y peso en una línea debajo del nombre (antes, a la derecha: con un nombre largo se
+                caían hacia abajo y la fila se veía desordenada). */}
+            <div className="ex-body ex-body2"><div className="ex-name">{i.name}</div>
+              <div className="ex-chips"><span>{i.sets} × {i.reps}</span>{i.rest ? <span>{i.rest >= 60 && i.rest % 60 === 0 ? `${i.rest / 60} min` : `${i.rest} s`} desc.</span> : null}{i.weight ? <span>{i.weight} kg</span> : null}</div></div>
             {i.videoRef && <button className="ex-play" aria-label={`Ver técnica: ${i.name}`} onClick={(e) => { e.stopPropagation(); onVideo(i); }}><svg viewBox="0 0 20 20"><path d={PLAY_PATH} /></svg></button>}
           </div>))}</div>
       )}

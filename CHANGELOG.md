@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-11-22 - Cliente: nombres de ejercicio largos sin desordenar la fila
+En "Tu plan" y en "Hoy", series, repeticiones, descanso y peso iban a la derecha del nombre; con un nombre largo se caían hacia abajo. Ahora van en una línea debajo del nombre (el nombre hasta 2 líneas). En "Tu plan", en etiquetas: 3 × 15-20 en negro, descanso ("2 min desc.") y peso.
+Archivos: `components/portal/MiPlanView.tsx`, `components/portal/HoyView.tsx`, `app/inicio/portal.css`. Revertir: `git revert` de este commit.
+
 ## 2026-11-22 - Estándar de Yeff: 3 series de 15 a 20 repeticiones, 2 minutos de descanso
 Pedido de Yeff vía Cristian.
 - **Migración 0061**: todos los ejercicios del catálogo quedan con lo sugerido en 3 series y 15-20 repeticiones, y ese es el valor por defecto para los ejercicios nuevos. No toca rutinas ya armadas ni los planes de los clientes.

@@ -1429,3 +1429,11 @@ html{overflow-x:hidden; max-width:100%;} body{overflow-x:clip; max-width:100%;}
 .history-vals{display:flex;flex-wrap:wrap;gap:6px 8px}
 .history-vals .hv{display:inline-flex;gap:5px;align-items:baseline;padding:4px 9px;border-radius:8px;background:var(--surface);font-family:var(--font-mono),monospace;font-size:12px;color:var(--text);margin:0}
 .history-vals .hv span{font-family:var(--font-body),sans-serif;font-size:11.5px;color:var(--text-dim);margin:0}
+/* 22-nov: nombre de ejercicio largo sin desordenar la fila: el nombre (hasta 2 líneas) y debajo series, reps, descanso y peso */
+.ex-body2{flex:1 1 0;min-width:0;display:grid;gap:4px}
+.ex-body2 .ex-name{flex:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}
+.ex-body2 .ex-meta{text-align:left;margin:0;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex-chips{display:flex;flex-wrap:wrap;gap:4px}
+.ex-chips span{font-family:var(--font-mono),monospace;font-size:10.5px;padding:2px 7px;border-radius:6px;background:var(--surface);color:var(--text-dim);white-space:nowrap}
+.ex-chips span:first-child{background:var(--ink);color:#fff}
+.card-day .ex-row{flex-wrap:nowrap}
