@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-11-22 - Estándar de Yeff: 3 series de 15 a 20 repeticiones, 2 minutos de descanso
+Pedido de Yeff vía Cristian.
+- **Migración 0061**: todos los ejercicios del catálogo quedan con lo sugerido en 3 series y 15-20 repeticiones, y ese es el valor por defecto para los ejercicios nuevos. No toca rutinas ya armadas ni los planes de los clientes.
+- Al armar una rutina, cada ejercicio nuevo arranca en 3 × 15-20 con 2 min (120 s) de descanso (antes 3 × 10 con 60 s). Al crear un ejercicio, el formulario ya trae 3 y 15-20. Todo se puede cambiar como siempre.
+- Archivos: `supabase/migrations/0061_estandar_ejercicios.sql`, `components/coach/RoutineForm.tsx`, `components/coach/ExercisesView.tsx`.
+Revertir: `git revert` de este commit y quitar los valores por defecto (cabecera de la 0061); los valores sugeridos anteriores no se guardan.
+
 ## 2026-11-22 - Semana del plan: el brillo ya no cambia según el día
 Cristian: con un día de descanso el bloque se veía bien, pero al abrir un día con rutina "brillaba más". El brillo rojo estaba medido en porcentaje del bloque: con un día con rutina el bloque es más alto y el brillo crecía con él. Ahora tiene medidas fijas, las mismas que se ven con un día de descanso.
 Archivo: `app/coach/coach.css`. Revertir: `git revert` de este commit.

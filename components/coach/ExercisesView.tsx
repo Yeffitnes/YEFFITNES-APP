@@ -92,7 +92,7 @@ function ExerciseModal({ ex, onClose }: { ex: Ex | null; onClose: () => void }) 
   const save = useSaveExercise(useWorkspaceId()), archive = useArchive("exercises"), all = useExercises().data ?? [];
   // Sustitutos (0044): hasta 2 ejercicios que el cliente puede usar si la máquina está ocupada. Sin la 0044 corrida, el campo no sale.
   const altsOn = all.some((e) => e.alts !== undefined), [alts, setAlts] = useState<string[]>(ex?.alts ?? []);
-  const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", image: ex?.image ?? null as string | null, sets: ex?.suggSets ? String(ex.suggSets) : "", reps: ex?.suggReps ?? "" });
+  const [v, setV] = useState({ name: ex?.name ?? "", category: ex?.category ?? "other", muscle: ex?.muscle ?? "", equipment: ex?.equipment ?? "", difficulty: ex?.difficulty ?? 1, instructions: ex?.instructions ?? "", image: ex?.image ?? null as string | null, sets: ex ? (ex.suggSets ? String(ex.suggSets) : "") : "3", reps: ex ? ex.suggReps ?? "" : "15-20" });   // nuevo: el estándar de Yeff (22-nov)
   const ws = useWorkspaceId(), [up, setUp] = useState(false);
   const uploaded = isBunnyRef(ex?.videoRef), [video, setVideo] = useState(() => initVideoSrc(uploaded ? null : ex?.videoRef, uploaded));
   const pickImg = async (f: File | null) => { if (!f) return; setErr(""); setUp(true); try { set({ image: await uploadExerciseImage(ws, f) }); } catch { setErr("No pudimos subir la imagen. Prueba con otra foto (JPG o PNG)."); } finally { setUp(false); } };

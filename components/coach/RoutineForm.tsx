@@ -8,7 +8,8 @@ function groups(exercises: Ex[]) {
   return order.filter((k) => m.has(k)).map((k) => [k, m.get(k)!.sort((a, b) => a.name.localeCompare(b.name))] as const);
 }
 type Item = { exercise_id: string; sets: number; reps: string; rest_seconds: number | null };
-const blank = (): Item => ({ exercise_id: "", sets: 3, reps: "10", rest_seconds: 60 });
+// 22-nov (Yeff): el estándar es 3 series de 15 a 20 repeticiones con 2 minutos de descanso.
+const blank = (): Item => ({ exercise_id: "", sets: 3, reps: "15-20", rest_seconds: 120 });
 // 15-nov: cada ejercicio en su bloque (ejercicio arriba; series, repeticiones y descanso con su nombre debajo) y flechas para ordenar.
 // Antes, en el celular los cuatro campos se amontonaban sin etiqueta y se veía desordenado.
 export function RoutineForm({ exercises, items, onChange }: { exercises: Ex[]; items: Item[]; onChange: (i: Item[]) => void }) {
@@ -22,7 +23,7 @@ export function RoutineForm({ exercises, items, onChange }: { exercises: Ex[]; i
         <div key={i} className="rf-item">
           <div className="rf-top">
             <span className="rf-num">{i + 1}</span>
-            <select aria-label={`Ejercicio ${i + 1}`} value={it.exercise_id} onChange={(e) => { const ex = exercises.find((x) => x.id === e.target.value), untouched = it.sets === 3 && it.reps === "10"; set(i, { exercise_id: e.target.value, ...(ex && untouched ? { sets: ex.suggSets ?? 3, reps: ex.suggReps ?? "10" } : {}) }); }}>
+            <select aria-label={`Ejercicio ${i + 1}`} value={it.exercise_id} onChange={(e) => { const ex = exercises.find((x) => x.id === e.target.value), untouched = it.sets === 3 && it.reps === "15-20"; set(i, { exercise_id: e.target.value, ...(ex && untouched ? { sets: ex.suggSets ?? 3, reps: ex.suggReps ?? "15-20" } : {}) }); }}>
               <option value="">Elige un ejercicio…</option>{groups(exercises).map(([g, list]) => <optgroup key={g} label={g}>{list.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}</optgroup>)}
             </select>
           </div>
